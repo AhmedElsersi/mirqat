@@ -5,6 +5,8 @@ import '../../data/datasources/progress_local_data_source.dart';
 import '../../data/datasources/quran_local_data_source.dart';
 import '../../data/repositories/progress_repository.dart';
 import '../../data/repositories/quran_repository.dart';
+import '../../domain/engine/repetition_plan_builder.dart';
+import '../../services/audio/memorization_player_service.dart';
 
 /// The service locator.
 final GetIt sl = GetIt.instance;
@@ -34,6 +36,10 @@ Future<void> configureDependencies() async {
     () => ProgressRepositoryImpl(sl<ProgressLocalDataSource>()),
   );
 
-  // Phase 3 registers the audio services here.
+  sl.registerLazySingleton<RepetitionPlanBuilder>(RepetitionPlanBuilder.new);
+  sl.registerLazySingleton<MemorizationPlayerService>(
+    () => MemorizationPlayerService(quranRepository: sl<QuranRepository>()),
+  );
+
   // Phase 4 registers the cubits here.
 }

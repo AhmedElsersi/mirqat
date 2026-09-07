@@ -52,14 +52,15 @@ class SessionPlan extends Equatable {
       micros += clip.inMicroseconds;
 
       if (i == units.length - 1) break;
-      micros += _gapAfter(unit).inMicroseconds;
+      micros += gapAfter(unit).inMicroseconds;
     }
 
     return Duration(microseconds: (micros / config.playbackSpeed).round());
   }
 
-  /// The silence that follows [unit] before whatever comes next.
-  Duration _gapAfter(PlaybackUnit unit) {
+  /// The silence that follows [unit] before whatever comes next. The playback
+  /// queue realises this with spacer clips; the estimate above just adds it up.
+  Duration gapAfter(PlaybackUnit unit) {
     if (unit.isLastUnitOfStep) {
       return Duration(milliseconds: config.betweenStepsPauseMs);
     }
