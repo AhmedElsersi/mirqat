@@ -9,7 +9,11 @@ class AssetPaths {
   static const String surahsCatalog = '$_data/surahs.json';
   static const String recitersCatalog = '$_data/reciters.json';
 
-  static const String silenceSpacer = 'assets/audio/silence_400ms.mp3';
+  /// The WAV, not the MP3. MP3 cannot encode exactly 400 ms — encoder delay
+  /// and frame padding leave the shipped MP3 at 391.7 ms, and that error
+  /// accumulates across every gap in a session. The WAV is sample-exact at
+  /// 44.1 kHz mono, matching the ayah clips.
+  static const String silenceSpacer = 'assets/audio/silence_400ms.wav';
 
   /// Zero-pads a surah or ayah number to the 3-digit form used by every
   /// file name in the asset tree (`1` -> `001`).
@@ -37,4 +41,12 @@ class AssetPaths {
   /// Standalone bismillah clip, used only by surahs whose `bismillahMode`
   /// is `separate_preamble`.
   static String bismillahFile(String basePath) => '$basePath/bismillah.mp3';
+
+  /// Optional isti'adhah preamble: `<basePath>/001/istiadhah.mp3`.
+  ///
+  /// It is not an ayah and never enters the playback queue as one. It lives
+  /// under the surah directory because that is how the recordings are
+  /// delivered, even though the formula itself is surah-independent.
+  static String istiadhahFile(String basePath, int surahNumber) =>
+      '$basePath/${pad3(surahNumber)}/istiadhah.mp3';
 }

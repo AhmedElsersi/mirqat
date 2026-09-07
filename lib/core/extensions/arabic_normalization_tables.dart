@@ -1,0 +1,151 @@
+// GENERATED FILE - DO NOT EDIT BY HAND.
+// Regenerate with: python3 tools/gen_arabic_normalization_tables.py
+//
+// Source: Unicode Character Database 13.0.0, via Python's
+// `unicodedata` module. Covers the Arabic blocks only:
+//   U+0600..U+06FF  Arabic
+//   U+0750..U+077F  Arabic Supplement
+//   U+0870..U+089F  Arabic Extended-B
+//   U+08A0..U+08FF  Arabic Extended-A
+//   U+FB50..U+FDFF  Arabic Presentation Forms-A
+//   U+FE70..U+FEFF  Arabic Presentation Forms-B
+
+/// Canonical combining class for every Arabic-range codepoint that has a
+/// non-zero one. Codepoints absent from this map are treated as class 0.
+const Map<int, int> arabicCombiningClass = <int, int>{
+  0x0610: 230,
+  0x0611: 230,
+  0x0612: 230,
+  0x0613: 230,
+  0x0614: 230,
+  0x0615: 230,
+  0x0616: 230,
+  0x0617: 230,
+  0x0618: 30,
+  0x0619: 31,
+  0x061A: 32,
+  0x064B: 27,
+  0x064C: 28,
+  0x064D: 29,
+  0x064E: 30,
+  0x064F: 31,
+  0x0650: 32,
+  0x0651: 33,
+  0x0652: 34,
+  0x0653: 230,
+  0x0654: 230,
+  0x0655: 220,
+  0x0656: 220,
+  0x0657: 230,
+  0x0658: 230,
+  0x0659: 230,
+  0x065A: 230,
+  0x065B: 230,
+  0x065C: 220,
+  0x065D: 230,
+  0x065E: 230,
+  0x065F: 220,
+  0x0670: 35,
+  0x06D6: 230,
+  0x06D7: 230,
+  0x06D8: 230,
+  0x06D9: 230,
+  0x06DA: 230,
+  0x06DB: 230,
+  0x06DC: 230,
+  0x06DF: 230,
+  0x06E0: 230,
+  0x06E1: 230,
+  0x06E2: 230,
+  0x06E3: 220,
+  0x06E4: 230,
+  0x06E7: 230,
+  0x06E8: 230,
+  0x06EA: 220,
+  0x06EB: 230,
+  0x06EC: 230,
+  0x06ED: 220,
+  0x08D3: 220,
+  0x08D4: 230,
+  0x08D5: 230,
+  0x08D6: 230,
+  0x08D7: 230,
+  0x08D8: 230,
+  0x08D9: 230,
+  0x08DA: 230,
+  0x08DB: 230,
+  0x08DC: 230,
+  0x08DD: 230,
+  0x08DE: 230,
+  0x08DF: 230,
+  0x08E0: 230,
+  0x08E1: 230,
+  0x08E3: 220,
+  0x08E4: 230,
+  0x08E5: 230,
+  0x08E6: 220,
+  0x08E7: 230,
+  0x08E8: 230,
+  0x08E9: 220,
+  0x08EA: 230,
+  0x08EB: 230,
+  0x08EC: 230,
+  0x08ED: 220,
+  0x08EE: 220,
+  0x08EF: 220,
+  0x08F0: 27,
+  0x08F1: 28,
+  0x08F2: 29,
+  0x08F3: 230,
+  0x08F4: 230,
+  0x08F5: 230,
+  0x08F6: 220,
+  0x08F7: 230,
+  0x08F8: 230,
+  0x08F9: 220,
+  0x08FA: 220,
+  0x08FB: 230,
+  0x08FC: 230,
+  0x08FD: 230,
+  0x08FE: 230,
+  0x08FF: 230,
+};
+
+/// Canonical decompositions: precomposed codepoint -> [base, mark].
+const Map<int, List<int>> arabicCanonicalDecomposition = <int, List<int>>{
+  0x0622: <int>[0x0627, 0x0653],
+  0x0623: <int>[0x0627, 0x0654],
+  0x0624: <int>[0x0648, 0x0654],
+  0x0625: <int>[0x0627, 0x0655],
+  0x0626: <int>[0x064A, 0x0654],
+  0x06C0: <int>[0x06D5, 0x0654],
+  0x06C2: <int>[0x06C1, 0x0654],
+  0x06D3: <int>[0x06D2, 0x0654],
+};
+
+/// The inverse of [arabicCanonicalDecomposition]: base -> mark -> composed.
+/// The Arabic blocks contain no composition exclusions, so every pair here
+/// round-trips.
+const Map<int, Map<int, int>> arabicCanonicalComposition =
+    <int, Map<int, int>>{
+  0x0627: <int, int>{
+    0x0653: 0x0622,
+    0x0654: 0x0623,
+    0x0655: 0x0625,
+  },
+  0x0648: <int, int>{
+    0x0654: 0x0624,
+  },
+  0x064A: <int, int>{
+    0x0654: 0x0626,
+  },
+  0x06C1: <int, int>{
+    0x0654: 0x06C2,
+  },
+  0x06D2: <int, int>{
+    0x0654: 0x06D3,
+  },
+  0x06D5: <int, int>{
+    0x0654: 0x06C0,
+  },
+};

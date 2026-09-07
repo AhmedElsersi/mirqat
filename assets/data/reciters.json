@@ -6,6 +6,9 @@
     "audioMode": "per_ayah_files",
     "basePath": "assets/audio/ahmed_khalil_shaheen",
     "bundled": true,
-    "availableSurahs": [1]
+    "availableSurahs": [
+      1
+    ],
+    "hasIstiadhah": true
   }
 ]

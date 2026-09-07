@@ -8,9 +8,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class AppTextStyles {
   const AppTextStyles._();
 
-  /// Family for Quranic text. `null` falls back to the platform Arabic font
-  /// until an Uthmani-capable font is bundled.
-  static const String? quranFontFamily = null;
+  /// Family for Quranic text: KFGQPC Hafs Uthmanic v18, declared in
+  /// pubspec.yaml. Verified to cover all 32 codepoints in the shipped text,
+  /// including U+0671 alef wasla, U+06E1 Uthmani sukun, U+0670 superscript
+  /// alef and U+0653 maddah.
+  static const String quranFontFamily = 'QuranUthmani';
 
   static TextStyle get displayLarge =>
       TextStyle(fontSize: 28.sp, fontWeight: FontWeight.w700, height: 1.3);

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/di/injection.dart';
@@ -11,6 +12,7 @@ import 'core/theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  await Hive.initFlutter();
   await configureDependencies();
 
   runApp(

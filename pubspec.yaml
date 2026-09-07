@@ -63,11 +63,21 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Flutter bundles only the DIRECT children of a declared directory, so every
+  # nested folder needs its own line. A new reciter adds one line here.
   assets:
     - assets/translations/
     - assets/data/
     - assets/data/ayahs/
-    - assets/data/timings/
+    - assets/data/timings/ahmed_khalil_shaheen/
     - assets/audio/
-    - assets/audio/ahmed_khalil_shaheen/
     - assets/audio/ahmed_khalil_shaheen/001/
+
+  fonts:
+    # KFGQPC Hafs is the exact companion to the v18 text in assets/data/ayahs,
+    # so diacritic positioning is as its designers intended.
+    # assets/fonts/AmiriQuran.ttf (SIL OFL 1.1) is the fallback if the KFGQPC
+    # terms do not cover distribution; swap the asset line below to use it.
+    - family: QuranUthmani
+      fonts:
+        - asset: assets/fonts/KFGQPCHafs-Uthmanic-v18.ttf
