@@ -34,6 +34,11 @@ class CatalogValidationException extends AppException {
   final String assetPath;
 }
 
+/// A session configuration cannot produce a plan.
+class SessionConfigException extends AppException {
+  const SessionConfigException(super.message);
+}
+
 /// Local storage could not be read or written.
 class StorageException extends AppException {
   const StorageException(super.message);

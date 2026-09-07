@@ -44,6 +44,12 @@ class CatalogValidationFailure extends Failure {
   List<Object?> get props => <Object?>[assetPath, message];
 }
 
+/// A session configuration cannot produce a plan — an inverted range, a
+/// repeat count out of bounds, ayahs beyond the end of the surah.
+class SessionConfigFailure extends Failure {
+  const SessionConfigFailure(super.message);
+}
+
 /// Local storage failed.
 class StorageFailure extends Failure {
   const StorageFailure(super.message);
@@ -58,5 +64,6 @@ Failure failureFromException(AppException e) => switch (e) {
     e.assetPath,
     e.message,
   ),
+  SessionConfigException() => SessionConfigFailure(e.message),
   StorageException() => StorageFailure(e.message),
 };
