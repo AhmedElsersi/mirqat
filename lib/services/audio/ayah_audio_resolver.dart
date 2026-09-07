@@ -65,9 +65,8 @@ class PerAyahFilesResolver extends AyahAudioResolver with _PreambleResolution {
     required Reciter reciter,
     required int surah,
     required int ayah,
-  }) => AudioSource.asset(
-    AssetPaths.perAyahFile(reciter.basePath, surah, ayah),
-  );
+  }) =>
+      AudioSource.asset(AssetPaths.perAyahFile(reciter.basePath, surah, ayah));
 }
 
 /// One whole-surah file, clipped to each ayah's window.
@@ -90,9 +89,7 @@ class TimingsAudioResolver extends AyahAudioResolver with _PreambleResolution {
       );
     }
     return ClippingAudioSource(
-      child: AudioSource.asset(
-        AssetPaths.surahFile(reciter.basePath, surah),
-      ),
+      child: AudioSource.asset(AssetPaths.surahFile(reciter.basePath, surah)),
       start: timing.start,
       end: timing.end,
     );
@@ -113,9 +110,7 @@ class TimingsAudioResolver extends AyahAudioResolver with _PreambleResolution {
       );
     }
     return ClippingAudioSource(
-      child: AudioSource.asset(
-        AssetPaths.surahFile(reciter.basePath, surah),
-      ),
+      child: AudioSource.asset(AssetPaths.surahFile(reciter.basePath, surah)),
       start: timing.start,
       end: timing.end,
     );

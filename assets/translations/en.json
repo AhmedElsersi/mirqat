@@ -6,10 +6,82 @@
     "error": "Something went wrong",
     "retry": "Retry",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "done": "Done",
+    "ayah_number": "Ayah {}",
+    "ayah_range": "Ayahs {} - {}"
   },
   "surah_list": {
     "title": "Surahs",
-    "empty": "No surahs in the catalog"
+    "empty": "No surahs in the catalog",
+    "ayah_count": "{} ayahs",
+    "progress": "{} of {} memorized",
+    "not_started": "Not started"
+  },
+  "session_setup": {
+    "title": "Session setup",
+    "range": "Ayah range",
+    "from": "From",
+    "to": "To",
+    "repeat_count": "Repetitions",
+    "connect_mode": "Connect mode",
+    "connect_cumulative": "Cumulative",
+    "connect_cumulative_hint": "After each ayah, replay from the start of the range up to it",
+    "connect_pairwise": "Pairwise",
+    "connect_pairwise_hint": "After each ayah, join it to the previous one only",
+    "connect_none": "No connecting",
+    "connect_none_hint": "Drill each ayah on its own",
+    "final_full_pass": "Full pass at the end",
+    "play_istiadhah": "Isti'adhah before starting",
+    "advanced": "Advanced",
+    "intra_block_pause": "Gap between ayahs",
+    "between_repeat_pause": "Gap between repetitions",
+    "between_steps_pause": "Gap between steps",
+    "playback_speed": "Playback speed",
+    "milliseconds": "{} ms",
+    "summary": "{} steps · {} recitations · {}",
+    "start": "Start session"
+  },
+  "player": {
+    "title": "Session",
+    "step_header": "Step {} of {}",
+    "learning": "Learning ayah {}",
+    "connecting": "Connecting ayahs {} - {}",
+    "repeat_pips": "{} / {}",
+    "play": "Play",
+    "pause": "Pause",
+    "previous_step": "Previous step",
+    "next_step": "Next step",
+    "restart_step": "Restart step",
+    "stop": "Stop",
+    "keep_awake": "Keep screen awake",
+    "timeline": "Session steps",
+    "finished": "Session finished"
+  },
+  "progress": {
+    "title": "Progress",
+    "status_not_started": "Not started",
+    "status_in_progress": "In progress",
+    "status_memorized": "Memorized",
+    "mark_memorized": "Mark as memorized",
+    "unmark_memorized": "Unmark",
+    "repeats": "{} repetitions"
+  },
+  "settings": {
+    "title": "Settings",
+    "reciter": "Reciter",
+    "default_repeat_count": "Default repetitions",
+    "default_connect_mode": "Default connect mode",
+    "theme": "Theme",
+    "theme_system": "System",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "arabic_font_size": "Arabic font size",
+    "language": "Language"
+  },
+  "duration": {
+    "minutes": "{} min",
+    "seconds": "{} s",
+    "minutes_seconds": "{} min {} s"
   }
 }

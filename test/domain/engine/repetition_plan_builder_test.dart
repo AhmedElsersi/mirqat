@@ -15,18 +15,22 @@ const int kFatihaAyahCount = 7;
 SessionPlan buildPlan(
   SessionConfig config, {
   int surahAyahCount = kFatihaAyahCount,
-}) => builder.build(config, surahAyahCount: surahAyahCount).fold(
-  (Failure f) => fail('expected a plan, got a failure: ${f.message}'),
-  (SessionPlan plan) => plan,
-);
+}) => builder
+    .build(config, surahAyahCount: surahAyahCount)
+    .fold(
+      (Failure f) => fail('expected a plan, got a failure: ${f.message}'),
+      (SessionPlan plan) => plan,
+    );
 
 String failureMessage(
   SessionConfig config, {
   int surahAyahCount = kFatihaAyahCount,
-}) => builder.build(config, surahAyahCount: surahAyahCount).fold(
-  (Failure f) => f.message,
-  (SessionPlan _) => fail('expected a failure, but a plan was built'),
-);
+}) => builder
+    .build(config, surahAyahCount: surahAyahCount)
+    .fold(
+      (Failure f) => f.message,
+      (SessionPlan _) => fail('expected a failure, but a plan was built'),
+    );
 
 /// Compact rendering of a step, for readable expectations.
 String describe(PlanStep step) => switch (step) {
@@ -65,16 +69,13 @@ void main() {
     });
 
     test('plays the units in exactly the order the spec lists', () {
-      expect(
-        plan.units.map((PlaybackUnit u) => u.ayahNumber),
-        <int>[
-          1, 1, 1, // step 0: LEARN 1
-          2, 2, 2, // step 1: LEARN 2
-          1, 2, 1, 2, 1, 2, // step 2: CONNECT 1-2, three times through
-          3, 3, 3, // step 3: LEARN 3
-          1, 2, 3, 1, 2, 3, 1, 2, 3, // step 4: CONNECT 1-3, three times
-        ],
-      );
+      expect(plan.units.map((PlaybackUnit u) => u.ayahNumber), <int>[
+        1, 1, 1, // step 0: LEARN 1
+        2, 2, 2, // step 1: LEARN 2
+        1, 2, 1, 2, 1, 2, // step 2: CONNECT 1-2, three times through
+        3, 3, 3, // step 3: LEARN 3
+        1, 2, 3, 1, 2, 3, 1, 2, 3, // step 4: CONNECT 1-3, three times
+      ]);
     });
 
     test('tags each unit with its step, repeat and block', () {
@@ -122,7 +123,10 @@ void main() {
             .toList();
         expect(stepUnits.first.repeatIndex, 1);
         expect(stepUnits.last.repeatIndex, 3);
-        expect(stepUnits.every((PlaybackUnit u) => u.totalRepeats == 3), isTrue);
+        expect(
+          stepUnits.every((PlaybackUnit u) => u.totalRepeats == 3),
+          isTrue,
+        );
       }
     });
   });
@@ -204,58 +208,67 @@ void main() {
         'LEARN 3 x1',
         'CONNECT 1-3 x1',
       ]);
-      expect(
-        plan.units.map((PlaybackUnit u) => u.ayahNumber),
-        <int>[1, 2, 1, 2, 3, 1, 2, 3],
-      );
-      expect(
-        plan.units.every((PlaybackUnit u) => u.repeatIndex == 1),
-        isTrue,
-      );
-      expect(
-        plan.units.every((PlaybackUnit u) => u.isLastUnitOfRepeat == u.isLastUnitOfStep),
-        isTrue,
-      );
-    });
-
-    test('a range that does not start at ayah 1 connects from its own start',
-        () {
-      final SessionPlan plan = buildPlan(
-        const SessionConfig(surahNumber: 1, startAyah: 5, endAyah: 7),
-      );
-
-      expect(plan.steps.map(describe), <String>[
-        'LEARN 5 x3',
-        'LEARN 6 x3',
-        'CONNECT 5-6 x3',
-        'LEARN 7 x3',
-        'CONNECT 5-7 x3',
+      expect(plan.units.map((PlaybackUnit u) => u.ayahNumber), <int>[
+        1,
+        2,
+        1,
+        2,
+        3,
+        1,
+        2,
+        3,
       ]);
+      expect(plan.units.every((PlaybackUnit u) => u.repeatIndex == 1), isTrue);
+      expect(
+        plan.units.every(
+          (PlaybackUnit u) => u.isLastUnitOfRepeat == u.isLastUnitOfStep,
+        ),
+        isTrue,
+      );
     });
+
+    test(
+      'a range that does not start at ayah 1 connects from its own start',
+      () {
+        final SessionPlan plan = buildPlan(
+          const SessionConfig(surahNumber: 1, startAyah: 5, endAyah: 7),
+        );
+
+        expect(plan.steps.map(describe), <String>[
+          'LEARN 5 x3',
+          'LEARN 6 x3',
+          'CONNECT 5-6 x3',
+          'LEARN 7 x3',
+          'CONNECT 5-7 x3',
+        ]);
+      },
+    );
   });
 
   group('pairwise mode', () {
-    test('connects each ayah to the previous one and closes with a full pass',
-        () {
-      final SessionPlan plan = buildPlan(
-        const SessionConfig(
-          surahNumber: 1,
-          startAyah: 1,
-          endAyah: 3,
-          connectMode: ConnectMode.pairwise,
-        ),
-      );
+    test(
+      'connects each ayah to the previous one and closes with a full pass',
+      () {
+        final SessionPlan plan = buildPlan(
+          const SessionConfig(
+            surahNumber: 1,
+            startAyah: 1,
+            endAyah: 3,
+            connectMode: ConnectMode.pairwise,
+          ),
+        );
 
-      expect(plan.steps.map(describe), <String>[
-        'LEARN 1 x3',
-        'LEARN 2 x3',
-        'CONNECT 1-2 x3',
-        'LEARN 3 x3',
-        'CONNECT 2-3 x3',
-        'CONNECT 1-3 x3',
-      ]);
-      expect(plan.unitCount, 3 + 3 + 6 + 3 + 6 + 9);
-    });
+        expect(plan.steps.map(describe), <String>[
+          'LEARN 1 x3',
+          'LEARN 2 x3',
+          'CONNECT 1-2 x3',
+          'LEARN 3 x3',
+          'CONNECT 2-3 x3',
+          'CONNECT 1-3 x3',
+        ]);
+        expect(plan.unitCount, 3 + 3 + 6 + 3 + 6 + 9);
+      },
+    );
 
     test('defaults finalFullPass to true', () {
       expect(
@@ -303,21 +316,23 @@ void main() {
       ]);
     });
 
-    test('emits nothing but learn steps when the full pass is switched off',
-        () {
-      final SessionPlan plan = buildPlan(
-        const SessionConfig(
-          surahNumber: 1,
-          startAyah: 1,
-          endAyah: 3,
-          connectMode: ConnectMode.none,
-          finalFullPass: false,
-        ),
-      );
+    test(
+      'emits nothing but learn steps when the full pass is switched off',
+      () {
+        final SessionPlan plan = buildPlan(
+          const SessionConfig(
+            surahNumber: 1,
+            startAyah: 1,
+            endAyah: 3,
+            connectMode: ConnectMode.none,
+            finalFullPass: false,
+          ),
+        );
 
-      expect(plan.steps.every((PlanStep s) => s is LearnStep), isTrue);
-      expect(plan.unitCount, 9);
-    });
+        expect(plan.steps.every((PlanStep s) => s is LearnStep), isTrue);
+        expect(plan.unitCount, 9);
+      },
+    );
   });
 
   group('cumulative with finalFullPass switched on', () {
@@ -410,10 +425,7 @@ void main() {
         endAyah: 20,
       );
 
-      expect(
-        builder.build(config, surahAyahCount: 286).isRight(),
-        isTrue,
-      );
+      expect(builder.build(config, surahAyahCount: 286).isRight(), isTrue);
       expect(
         failureMessage(config, surahAyahCount: 3),
         contains('which has 3 ayahs'),

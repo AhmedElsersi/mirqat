@@ -44,8 +44,15 @@ void main() {
     final List<MemorizationProgress> all = await source.getForSurah(1, 7);
 
     expect(all, hasLength(7));
-    expect(all.map((MemorizationProgress p) => p.ayahNumber),
-        <int>[1, 2, 3, 4, 5, 6, 7]);
+    expect(all.map((MemorizationProgress p) => p.ayahNumber), <int>[
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+    ]);
     expect(all[1].status, MemorizationStatus.memorized);
     expect(all[0].status, MemorizationStatus.notStarted);
   });
@@ -121,12 +128,14 @@ void main() {
 
       expect((await repository.recordRepeats(1, 2, 5)).isRight(), isTrue);
 
-      final Either<Failure, MemorizationProgress> read =
-          await repository.getAyah(1, 2);
+      final Either<Failure, MemorizationProgress> read = await repository
+          .getAyah(1, 2);
       expect(
-        read.getOrElse(
-          () => const MemorizationProgress(surahNumber: 0, ayahNumber: 0),
-        ).cumulativeRepeats,
+        read
+            .getOrElse(
+              () => const MemorizationProgress(surahNumber: 0, ayahNumber: 0),
+            )
+            .cumulativeRepeats,
         5,
       );
     });
@@ -136,17 +145,17 @@ void main() {
         await openSource(),
       );
 
-      final Either<Failure, Unit> result =
-          await repository.recordRepeats(1, 2, -1);
+      final Either<Failure, Unit> result = await repository.recordRepeats(
+        1,
+        2,
+        -1,
+      );
 
       expect(result.isLeft(), isTrue);
-      result.fold(
-        (Failure f) {
-          expect(f, isA<StorageFailure>());
-          expect(f.message, contains('must not be negative'));
-        },
-        (_) => fail('expected a Left'),
-      );
+      result.fold((Failure f) {
+        expect(f, isA<StorageFailure>());
+        expect(f.message, contains('must not be negative'));
+      }, (_) => fail('expected a Left'));
     });
   });
 }

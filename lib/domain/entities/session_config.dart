@@ -30,8 +30,7 @@ class SessionConfig extends Equatable {
     this.betweenStepsPauseMs = defaultBetweenStepsPauseMs,
     this.playbackSpeed = defaultPlaybackSpeed,
     this.playIstiadhah = false,
-  }) : finalFullPass =
-           finalFullPass ?? (connectMode != ConnectMode.cumulative);
+  }) : finalFullPass = finalFullPass ?? (connectMode != ConnectMode.cumulative);
 
   static const int defaultRepeatCount = 3;
   static const int minRepeatCount = 1;

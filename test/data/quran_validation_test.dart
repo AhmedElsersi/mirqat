@@ -64,32 +64,36 @@ Future<String> _messageFrom(Future<void> Function() body) async {
 
 void main() {
   group('ayah sequence validation', () {
-    test('rejects a file holding fewer ayahs than the catalog declares',
-        () async {
-      final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile('[{"number":1,"text":"ب"},{"number":2,"text":"ب"}]'),
-      );
+    test(
+      'rejects a file holding fewer ayahs than the catalog declares',
+      () async {
+        final QuranLocalDataSource source = _sourceWith(
+          ayahs: _ayahFile('[{"number":1,"text":"ب"},{"number":2,"text":"ب"}]'),
+        );
 
-      expect(
-        await _messageFrom(() => source.getAyahs(1)),
-        allOf(contains('missing ayah 3'), contains('contiguous 1..3')),
-      );
-    });
+        expect(
+          await _messageFrom(() => source.getAyahs(1)),
+          allOf(contains('missing ayah 3'), contains('contiguous 1..3')),
+        );
+      },
+    );
 
-    test('rejects a file holding more ayahs than the catalog declares',
-        () async {
-      final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile(
-          '[{"number":1,"text":"ب"},{"number":2,"text":"ب"},'
-          '{"number":3,"text":"ب"},{"number":4,"text":"ب"}]',
-        ),
-      );
+    test(
+      'rejects a file holding more ayahs than the catalog declares',
+      () async {
+        final QuranLocalDataSource source = _sourceWith(
+          ayahs: _ayahFile(
+            '[{"number":1,"text":"ب"},{"number":2,"text":"ب"},'
+            '{"number":3,"text":"ب"},{"number":4,"text":"ب"}]',
+          ),
+        );
 
-      expect(
-        await _messageFrom(() => source.getAyahs(1)),
-        allOf(contains('ayah 4'), contains('beyond the ayahCount of 3')),
-      );
-    });
+        expect(
+          await _messageFrom(() => source.getAyahs(1)),
+          allOf(contains('ayah 4'), contains('beyond the ayahCount of 3')),
+        );
+      },
+    );
 
     test('rejects a duplicated ayah number', () async {
       final QuranLocalDataSource source = _sourceWith(
@@ -107,9 +111,7 @@ void main() {
 
     test('rejects a gap in the sequence', () async {
       final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile(
-          '[{"number":1,"text":"ب"},{"number":3,"text":"ب"}]',
-        ),
+        ayahs: _ayahFile('[{"number":1,"text":"ب"},{"number":3,"text":"ب"}]'),
       );
 
       expect(
@@ -219,7 +221,8 @@ void main() {
 
     test('rejects a duplicated surah number', () async {
       final QuranLocalDataSource source = _sourceWith(
-        surahs: '[${_goodSurahs.substring(1, _goodSurahs.length - 2)},'
+        surahs:
+            '[${_goodSurahs.substring(1, _goodSurahs.length - 2)},'
             '${_goodSurahs.substring(1, _goodSurahs.length - 2)}]',
       );
 
@@ -240,7 +243,8 @@ void main() {
 
     test('rejects a timings file that does not cover every ayah', () async {
       final QuranLocalDataSource source = _sourceWith(
-        timings: '{"surah":1,"ayahs":['
+        timings:
+            '{"surah":1,"ayahs":['
             '{"number":1,"startMs":0,"endMs":100},'
             '{"number":2,"startMs":100,"endMs":200}]}',
       );
@@ -276,13 +280,10 @@ void main() {
       final Either<Failure, List<Ayah>> result = await repository.getAyahs(1);
 
       expect(result.isLeft(), isTrue);
-      result.fold(
-        (Failure f) {
-          expect(f, isA<CatalogValidationFailure>());
-          expect(f.message, contains('missing ayah 1'));
-        },
-        (_) => fail('expected a Left'),
-      );
+      result.fold((Failure f) {
+        expect(f, isA<CatalogValidationFailure>());
+        expect(f.message, contains('missing ayah 1'));
+      }, (_) => fail('expected a Left'));
     });
 
     test('maps a missing asset onto AssetNotFoundFailure', () async {
@@ -359,10 +360,10 @@ void main() {
         endAyah: 3,
       );
 
-      expect(
-        result.getOrElse(() => <Ayah>[]).map((Ayah a) => a.number),
-        <int>[2, 3],
-      );
+      expect(result.getOrElse(() => <Ayah>[]).map((Ayah a) => a.number), <int>[
+        2,
+        3,
+      ]);
     });
   });
 }

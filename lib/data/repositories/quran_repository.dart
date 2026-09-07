@@ -63,14 +63,14 @@ class QuranRepositoryImpl implements QuranRepository {
       throw CatalogValidationException(
         'range',
         'Ayah range $startAyah..$endAyah is outside surah $surahNumber, '
-        'which has ${surah.ayahCount} ayahs.',
+            'which has ${surah.ayahCount} ayahs.',
       );
     }
     if (startAyah > endAyah) {
       throw CatalogValidationException(
         'range',
         'Ayah range is inverted: startAyah $startAyah is after endAyah '
-        '$endAyah.',
+            '$endAyah.',
       );
     }
 

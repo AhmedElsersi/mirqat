@@ -126,26 +126,11 @@ const Map<int, List<int>> arabicCanonicalDecomposition = <int, List<int>>{
 /// The inverse of [arabicCanonicalDecomposition]: base -> mark -> composed.
 /// The Arabic blocks contain no composition exclusions, so every pair here
 /// round-trips.
-const Map<int, Map<int, int>> arabicCanonicalComposition =
-    <int, Map<int, int>>{
-  0x0627: <int, int>{
-    0x0653: 0x0622,
-    0x0654: 0x0623,
-    0x0655: 0x0625,
-  },
-  0x0648: <int, int>{
-    0x0654: 0x0624,
-  },
-  0x064A: <int, int>{
-    0x0654: 0x0626,
-  },
-  0x06C1: <int, int>{
-    0x0654: 0x06C2,
-  },
-  0x06D2: <int, int>{
-    0x0654: 0x06D3,
-  },
-  0x06D5: <int, int>{
-    0x0654: 0x06C0,
-  },
+const Map<int, Map<int, int>> arabicCanonicalComposition = <int, Map<int, int>>{
+  0x0627: <int, int>{0x0653: 0x0622, 0x0654: 0x0623, 0x0655: 0x0625},
+  0x0648: <int, int>{0x0654: 0x0624},
+  0x064A: <int, int>{0x0654: 0x0626},
+  0x06C1: <int, int>{0x0654: 0x06C2},
+  0x06D2: <int, int>{0x0654: 0x06D3},
+  0x06D5: <int, int>{0x0654: 0x06C0},
 };

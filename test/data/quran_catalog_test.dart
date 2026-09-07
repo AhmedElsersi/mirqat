@@ -36,8 +36,10 @@ void main() {
     });
 
     test('caches, so a second read returns the identical list', () async {
-      expect(identical(await source.getSurahs(), await source.getSurahs()),
-          isTrue);
+      expect(
+        identical(await source.getSurahs(), await source.getSurahs()),
+        isTrue,
+      );
     });
 
     test('reports a surah that is not in the catalog', () async {
@@ -100,16 +102,18 @@ void main() {
       }
     });
 
-    test('the istiadhah clip is present when the reciter declares one',
-        () async {
-      final Reciter reciter = await source.getReciter('ahmed_khalil_shaheen');
-      expect(reciter.hasIstiadhah, isTrue);
+    test(
+      'the istiadhah clip is present when the reciter declares one',
+      () async {
+        final Reciter reciter = await source.getReciter('ahmed_khalil_shaheen');
+        expect(reciter.hasIstiadhah, isTrue);
 
-      final ByteData data = await rootBundle.load(
-        AssetPaths.istiadhahFile(reciter.basePath, 1),
-      );
-      expect(data.lengthInBytes, greaterThan(0));
-    });
+        final ByteData data = await rootBundle.load(
+          AssetPaths.istiadhahFile(reciter.basePath, 1),
+        );
+        expect(data.lengthInBytes, greaterThan(0));
+      },
+    );
 
     test('the silence spacer is bundled', () async {
       final ByteData data = await rootBundle.load(AssetPaths.silenceSpacer);
@@ -118,30 +122,32 @@ void main() {
   });
 
   group('timings', () {
-    test('load and cover every ayah, with the istiadhah kept separate',
-        () async {
-      final SurahTimings timings = await source.getTimings(
-        reciterId: 'ahmed_khalil_shaheen',
-        surahNumber: 1,
-      );
+    test(
+      'load and cover every ayah, with the istiadhah kept separate',
+      () async {
+        final SurahTimings timings = await source.getTimings(
+          reciterId: 'ahmed_khalil_shaheen',
+          surahNumber: 1,
+        );
 
-      expect(timings.surahNumber, 1);
-      expect(timings.ayahs, hasLength(7));
-      for (int ayah = 1; ayah <= 7; ayah++) {
-        final AyahTiming? t = timings.timingFor(ayah);
-        expect(t, isNotNull, reason: 'no timing for ayah $ayah');
-        expect(t!.endMs, greaterThan(t.startMs));
-      }
+        expect(timings.surahNumber, 1);
+        expect(timings.ayahs, hasLength(7));
+        for (int ayah = 1; ayah <= 7; ayah++) {
+          final AyahTiming? t = timings.timingFor(ayah);
+          expect(t, isNotNull, reason: 'no timing for ayah $ayah');
+          expect(t!.endMs, greaterThan(t.startMs));
+        }
 
-      // The recording opens with the isti'adhah. It is not ayah 1, and it must
-      // never be reachable through the ayah map.
-      expect(timings.istiadhah, isNotNull);
-      expect(timings.istiadhah!.number, isNull);
-      expect(
-        timings.istiadhah!.endMs,
-        lessThanOrEqualTo(timings.timingFor(1)!.startMs),
-      );
-    });
+        // The recording opens with the isti'adhah. It is not ayah 1, and it must
+        // never be reachable through the ayah map.
+        expect(timings.istiadhah, isNotNull);
+        expect(timings.istiadhah!.number, isNull);
+        expect(
+          timings.istiadhah!.endMs,
+          lessThanOrEqualTo(timings.timingFor(1)!.startMs),
+        );
+      },
+    );
   });
 
   group('MemorizationProgress', () {

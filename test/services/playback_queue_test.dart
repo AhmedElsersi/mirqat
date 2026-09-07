@@ -92,11 +92,30 @@ void main() {
       ];
 
       expect(recited, <int>[
-        1, 1, 1,
-        2, 2, 2,
-        1, 2, 1, 2, 1, 2,
-        3, 3, 3,
-        1, 2, 3, 1, 2, 3, 1, 2, 3,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        3,
+        3,
+        3,
+        1,
+        2,
+        3,
+        1,
+        2,
+        3,
+        1,
+        2,
+        3,
       ]);
       expect(recited, hasLength(24));
     });
@@ -131,10 +150,7 @@ void main() {
       // 23 boundaries: 4 between steps (4 clips each), 10 between repeats
       // (2 each), 9 intra-block (1 each).
       const int expected = 4 * 4 + 10 * 2 + 9 * 1;
-      expect(
-        queue.entries.whereType<SpacerQueueEntry>().length,
-        expected,
-      );
+      expect(queue.entries.whereType<SpacerQueueEntry>().length, expected);
       expect(queue.length, 24 + expected);
     });
 
@@ -176,10 +192,7 @@ void main() {
       );
       expect(queue.unitAt(0), isNull);
       // The recitation count is untouched by the preamble.
-      expect(
-        queue.entries.whereType<AyahQueueEntry>().length,
-        plan.unitCount,
-      );
+      expect(queue.entries.whereType<AyahQueueEntry>().length, plan.unitCount);
     });
 
     test('a separate_preamble surah gets a bismillah clip', () {
@@ -212,18 +225,15 @@ void main() {
       final PlaybackQueue queue = builder.build(plan: plan);
 
       // Walk the whole queue the way the player would.
-      final Stream<int?> indices = Stream<int?>.fromIterable(
-        <int?>[for (int i = 0; i < queue.length; i++) i],
-      );
+      final Stream<int?> indices = Stream<int?>.fromIterable(<int?>[
+        for (int i = 0; i < queue.length; i++) i,
+      ]);
 
       final List<PlaybackUnit> seen = await queue
           .unitStreamFrom(indices)
           .toList();
 
-      expect(
-        seen.map((PlaybackUnit u) => u.ayahNumber),
-        <int>[1, 2, 1, 2],
-      );
+      expect(seen.map((PlaybackUnit u) => u.ayahNumber), <int>[1, 2, 1, 2]);
     });
 
     test('a null index emits nothing', () async {
@@ -253,9 +263,7 @@ void main() {
       final AyahAudioResolver resolver = PerAyahFilesResolver();
 
       expect(
-        uriOf(
-          resolver.resolveIstiadhah(reciter: perAyahReciter, surah: 1)!,
-        ),
+        uriOf(resolver.resolveIstiadhah(reciter: perAyahReciter, surah: 1)!),
         endsWith('assets/audio/ahmed_khalil_shaheen/001/istiadhah.mp3'),
       );
       expect(
@@ -273,10 +281,7 @@ void main() {
       );
       expect(
         uriOf(
-          resolver.resolveBismillah(
-            reciter: perAyahReciter,
-            surah: baqarah,
-          )!,
+          resolver.resolveBismillah(reciter: perAyahReciter, surah: baqarah)!,
         ),
         endsWith('assets/audio/ahmed_khalil_shaheen/bismillah.mp3'),
       );

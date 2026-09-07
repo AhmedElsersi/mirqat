@@ -11,8 +11,7 @@ sealed class AppException implements Exception {
 
 /// An asset declared in the catalog is missing from the bundle.
 class AssetNotFoundException extends AppException {
-  const AssetNotFoundException(this.assetPath, String message)
-    : super(message);
+  const AssetNotFoundException(this.assetPath, String message) : super(message);
 
   final String assetPath;
 }

@@ -23,7 +23,6 @@ class MemorizationPlayerService {
   }) : _quran = quranRepository,
        _player = player ?? AudioPlayer();
 
-
   final QuranRepository _quran;
   final AudioPlayer _player;
   final PlaybackQueueBuilder queueBuilder;
@@ -117,10 +116,7 @@ class MemorizationPlayerService {
       ),
       SpacerQueueEntry() => resolver.resolveSpacer(),
       PreambleQueueEntry(kind: PreambleKind.istiadhah) =>
-        resolver.resolveIstiadhah(
-              reciter: reciter,
-              surah: surah.number,
-            ) ??
+        resolver.resolveIstiadhah(reciter: reciter, surah: surah.number) ??
             resolver.resolveSpacer(),
       PreambleQueueEntry(kind: PreambleKind.bismillah) =>
         resolver.resolveBismillah(reciter: reciter, surah: surah) ??
@@ -128,7 +124,10 @@ class MemorizationPlayerService {
     };
   }
 
-  Future<AyahAudioResolver> _createResolver(Reciter reciter, Surah surah) async {
+  Future<AyahAudioResolver> _createResolver(
+    Reciter reciter,
+    Surah surah,
+  ) async {
     switch (reciter.audioMode) {
       case AudioMode.perAyahFiles:
         return PerAyahFilesResolver();

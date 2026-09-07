@@ -10,9 +10,9 @@ import 'package:tahfiz/core/extensions/arabic_text_extensions.dart';
 /// Regenerate the fixture with `python3 tools/gen_nfc_cases.py`.
 void main() {
   test('matches the reference NFC implementation on every fixture case', () {
-    final List<dynamic> cases = jsonDecode(
-      File('test/fixtures/nfc_cases.json').readAsStringSync(),
-    ) as List<dynamic>;
+    final List<dynamic> cases =
+        jsonDecode(File('test/fixtures/nfc_cases.json').readAsStringSync())
+            as List<dynamic>;
 
     expect(cases, isNotEmpty);
 
@@ -37,9 +37,9 @@ void main() {
   });
 
   test('is idempotent', () {
-    final List<dynamic> cases = jsonDecode(
-      File('test/fixtures/nfc_cases.json').readAsStringSync(),
-    ) as List<dynamic>;
+    final List<dynamic> cases =
+        jsonDecode(File('test/fixtures/nfc_cases.json').readAsStringSync())
+            as List<dynamic>;
 
     for (final dynamic entry in cases) {
       final String once = ((entry as Map<String, dynamic>)['in'] as String)

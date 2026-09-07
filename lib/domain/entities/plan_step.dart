@@ -19,8 +19,7 @@ sealed class PlanStep extends Equatable {
   int get toAyah;
 
   /// Ayahs played once per repetition, in order.
-  List<int> get ayahs =>
-      <int>[for (int a = fromAyah; a <= toAyah; a++) a];
+  List<int> get ayahs => <int>[for (int a = fromAyah; a <= toAyah; a++) a];
 
   /// Ayah plays contributed by this step.
   int get unitCount => ayahs.length * repeats;

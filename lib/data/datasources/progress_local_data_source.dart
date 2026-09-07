@@ -154,7 +154,9 @@ class ProgressLocalDataSourceImpl implements ProgressLocalDataSource {
     } on StorageException {
       rethrow;
     } catch (e) {
-      throw StorageException('Could not clear progress for surah $surahNumber: $e');
+      throw StorageException(
+        'Could not clear progress for surah $surahNumber: $e',
+      );
     }
   }
 

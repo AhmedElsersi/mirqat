@@ -6,10 +6,82 @@
     "error": "حدث خطأ",
     "retry": "إعادة المحاولة",
     "cancel": "إلغاء",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "done": "تم",
+    "ayah_number": "الآية {}",
+    "ayah_range": "الآيات {} - {}"
   },
   "surah_list": {
     "title": "السور",
-    "empty": "لا توجد سور في الفهرس"
+    "empty": "لا توجد سور في الفهرس",
+    "ayah_count": "{} آيات",
+    "progress": "{} من {} محفوظة",
+    "not_started": "لم يبدأ بعد"
+  },
+  "session_setup": {
+    "title": "إعداد الجلسة",
+    "range": "نطاق الآيات",
+    "from": "من",
+    "to": "إلى",
+    "repeat_count": "عدد التكرارات",
+    "connect_mode": "طريقة الوصل",
+    "connect_cumulative": "تراكمي",
+    "connect_cumulative_hint": "بعد كل آية تُعاد من بداية النطاق إليها",
+    "connect_pairwise": "ثنائي",
+    "connect_pairwise_hint": "بعد كل آية تُوصل بالآية التي قبلها فقط",
+    "connect_none": "بدون وصل",
+    "connect_none_hint": "تكرار كل آية على حدة دون وصل",
+    "final_full_pass": "مراجعة كاملة في النهاية",
+    "play_istiadhah": "الاستعاذة قبل البدء",
+    "advanced": "إعدادات متقدمة",
+    "intra_block_pause": "الوقفة بين الآيات",
+    "between_repeat_pause": "الوقفة بين التكرارات",
+    "between_steps_pause": "الوقفة بين الخطوات",
+    "playback_speed": "سرعة التلاوة",
+    "milliseconds": "{} مللي ثانية",
+    "summary": "{} خطوات · {} تلاوة · {}",
+    "start": "ابدأ الجلسة"
+  },
+  "player": {
+    "title": "الجلسة",
+    "step_header": "الخطوة {} من {}",
+    "learning": "حفظ الآية {}",
+    "connecting": "وصل الآيات {} - {}",
+    "repeat_pips": "{} / {}",
+    "play": "تشغيل",
+    "pause": "إيقاف مؤقت",
+    "previous_step": "الخطوة السابقة",
+    "next_step": "الخطوة التالية",
+    "restart_step": "إعادة الخطوة",
+    "stop": "إنهاء",
+    "keep_awake": "إبقاء الشاشة مضاءة",
+    "timeline": "خطوات الجلسة",
+    "finished": "انتهت الجلسة"
+  },
+  "progress": {
+    "title": "المتابعة",
+    "status_not_started": "لم يبدأ",
+    "status_in_progress": "قيد الحفظ",
+    "status_memorized": "محفوظة",
+    "mark_memorized": "تعليم كمحفوظة",
+    "unmark_memorized": "إلغاء التعليم",
+    "repeats": "{} تكرار"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "reciter": "القارئ",
+    "default_repeat_count": "عدد التكرارات الافتراضي",
+    "default_connect_mode": "طريقة الوصل الافتراضية",
+    "theme": "المظهر",
+    "theme_system": "حسب النظام",
+    "theme_light": "فاتح",
+    "theme_dark": "داكن",
+    "arabic_font_size": "حجم الخط العربي",
+    "language": "اللغة"
+  },
+  "duration": {
+    "minutes": "{} د",
+    "seconds": "{} ث",
+    "minutes_seconds": "{} د {} ث"
   }
 }
