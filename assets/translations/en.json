@@ -1,0 +1,15 @@
+{
+  "app": {
+    "name": "Tahfiz"
+  },
+  "common": {
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "surah_list": {
+    "title": "Surahs",
+    "empty": "No surahs in the catalog"
+  }
+}
