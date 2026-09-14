@@ -7,8 +7,14 @@
     "basePath": "assets/audio/ahmed_khalil_shaheen",
     "bundled": true,
     "availableSurahs": [
-      1
+      1,
+      58,
+      112,
+      113,
+      114
     ],
-    "hasIstiadhah": true
+    "hasIstiadhah": true,
+    "hasBismillah": true,
+    "imagePath": "assets/images/reciters/ahmed_khalil_shaheen.jpeg"
   }
 ]

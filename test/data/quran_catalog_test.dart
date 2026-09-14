@@ -1,14 +1,14 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tahfiz/core/constants/asset_paths.dart';
-import 'package:tahfiz/data/datasources/asset_reader.dart';
-import 'package:tahfiz/data/datasources/quran_local_data_source.dart';
-import 'package:tahfiz/data/models/ayah.dart';
-import 'package:tahfiz/data/models/ayah_timing.dart';
-import 'package:tahfiz/data/models/memorization_progress.dart';
-import 'package:tahfiz/data/models/reciter.dart';
-import 'package:tahfiz/data/models/surah.dart';
-import 'package:tahfiz/core/extensions/arabic_text_extensions.dart';
+import 'package:mirqat/core/constants/asset_paths.dart';
+import 'package:mirqat/data/datasources/bundle_asset_reader.dart';
+import 'package:mirqat/data/datasources/quran_local_data_source.dart';
+import 'package:mirqat/data/models/ayah.dart';
+import 'package:mirqat/data/models/ayah_timing.dart';
+import 'package:mirqat/data/models/memorization_progress.dart';
+import 'package:mirqat/data/models/reciter.dart';
+import 'package:mirqat/data/models/surah.dart';
+import 'package:mirqat/core/extensions/arabic_text_extensions.dart';
 
 /// Exercises the loaders against the assets that actually ship, so a file that
 /// is missing, undeclared in pubspec.yaml, or out of step with the catalog
@@ -21,14 +21,42 @@ void main() {
   setUp(() => source = QuranLocalDataSourceImpl(BundleAssetReader()));
 
   group('surah catalog', () {
-    test('loads and matches the shipped data contract', () async {
+    test('loads every entry the catalog holds, in ascending order', () async {
       final List<Surah> surahs = await source.getSurahs();
 
-      expect(surahs, hasLength(1));
-      final Surah fatiha = surahs.single;
-      expect(fatiha.number, 1);
-      expect(fatiha.nameAr, 'الفاتحة');
-      expect(fatiha.nameEn, 'Al-Fatiha');
+      // Deliberately no expected count: the catalog grows by adding data, and
+      // a test that has to be edited for each new surah is a test that will
+      // be edited to match whatever shipped.
+      expect(surahs, isNotEmpty);
+      expect(
+        surahs.map((Surah s) => s.number).toList(),
+        orderedEquals(
+          (surahs.map((Surah s) => s.number).toList()..sort()).toList(),
+        ),
+      );
+      expect(
+        surahs.map((Surah s) => s.number).toSet(),
+        hasLength(surahs.length),
+        reason: 'the catalog lists a surah twice',
+      );
+
+      for (final Surah surah in surahs) {
+        expect(surah.number, greaterThan(0));
+        expect(surah.ayahCount, greaterThan(0));
+        expect(surah.nameAr.trim(), isNotEmpty);
+        expect(surah.nameEn.trim(), isNotEmpty);
+        expect(
+          surah.needsBismillahPreamble,
+          surah.bismillahMode == BismillahMode.separatePreamble,
+          reason: 'surah ${surah.number} disagrees with its own mode',
+        );
+      }
+    });
+
+    test('Al-Fatiha keeps the numbering its mode implies', () async {
+      // The one surah pinned by name, because its bismillah being ayah 1 is
+      // what stops it being recited twice — see SessionPreambles.
+      final Surah fatiha = await source.getSurah(1);
       expect(fatiha.ayahCount, 7);
       expect(fatiha.revelationPlace, RevelationPlace.makkah);
       expect(fatiha.bismillahMode, BismillahMode.countedAsAyah1);
@@ -43,33 +71,44 @@ void main() {
     });
 
     test('reports a surah that is not in the catalog', () async {
-      await expectLater(source.getSurah(2), throwsA(isA<Exception>()));
+      final Set<int> known =
+          (await source.getSurahs()).map((Surah s) => s.number).toSet();
+      final int absent = List<int>.generate(115, (int i) => i + 1)
+          .firstWhere((int n) => !known.contains(n));
+      await expectLater(source.getSurah(absent), throwsA(isA<Exception>()));
     });
   });
 
   group('ayah text', () {
-    test('loads exactly the ayahs the catalog declares', () async {
-      final Surah fatiha = await source.getSurah(1);
-      final List<Ayah> ayahs = await source.getAyahs(1);
+    test('loads exactly the ayahs the catalog declares, for every '
+        'surah', () async {
+      for (final Surah surah in await source.getSurahs()) {
+        final List<Ayah> ayahs = await source.getAyahs(surah.number);
 
-      expect(ayahs, hasLength(fatiha.ayahCount));
-      expect(
-        ayahs.map((Ayah a) => a.number),
-        List<int>.generate(fatiha.ayahCount, (int i) => i + 1),
-      );
-      for (final Ayah ayah in ayahs) {
-        expect(ayah.surahNumber, 1);
-        expect(ayah.text.trim(), isNotEmpty);
+        expect(ayahs, hasLength(surah.ayahCount), reason: 'surah ${surah.number}');
+        expect(
+          ayahs.map((Ayah a) => a.number),
+          List<int>.generate(surah.ayahCount, (int i) => i + 1),
+          reason: 'surah ${surah.number} is not numbered 1..${surah.ayahCount}',
+        );
+        for (final Ayah ayah in ayahs) {
+          expect(ayah.surahNumber, surah.number);
+          expect(ayah.text.trim(), isNotEmpty);
+        }
       }
     });
 
     test('is NFC-normalised, so equal ayahs compare equal', () async {
-      for (final Ayah ayah in await source.getAyahs(1)) {
-        expect(
-          ayah.text.isArabicNfc,
-          isTrue,
-          reason: 'ayah ${ayah.number} is not in NFC after loading',
-        );
+      for (final Surah surah in await source.getSurahs()) {
+        for (final Ayah ayah in await source.getAyahs(surah.number)) {
+          expect(
+            ayah.text.isArabicNfc,
+            isTrue,
+            reason:
+                'surah ${surah.number} ayah ${ayah.number} is not in NFC '
+                'after loading',
+          );
+        }
       }
     });
   });
@@ -78,40 +117,62 @@ void main() {
     test('loads the bundled reciter', () async {
       final List<Reciter> reciters = await source.getReciters();
 
-      expect(reciters, hasLength(1));
-      final Reciter reciter = reciters.single;
+      expect(reciters, isNotEmpty);
+      final Reciter reciter = reciters.first;
       expect(reciter.id, 'ahmed_khalil_shaheen');
       expect(reciter.nameAr, 'أحمد خليل شاهين');
       expect(reciter.audioMode, AudioMode.perAyahFiles);
       expect(reciter.bundled, isTrue);
       expect(reciter.hasIstiadhah, isTrue);
-      expect(reciter.hasSurah(1), isTrue);
-      expect(reciter.hasSurah(2), isFalse);
+      expect(reciter.hasBismillah, isTrue);
+
+      // availableSurahs tracks the catalog, so it is read rather than asserted.
+      for (final Surah surah in await source.getSurahs()) {
+        expect(
+          reciter.hasSurah(surah.number),
+          reciter.availableSurahs.contains(surah.number),
+        );
+      }
+      expect(reciter.hasSurah(999), isFalse);
+    });
+
+    test('hasBismillah defaults to false when a catalog omits it', () {
+      final Reciter old = Reciter.fromJson(<String, dynamic>{
+        'id': 'legacy',
+        'nameAr': '-',
+        'nameEn': 'Legacy entry',
+        'audioMode': 'per_ayah_files',
+        'basePath': 'assets/audio/legacy',
+        'availableSurahs': <int>[1],
+      }, 'synthetic');
+
+      expect(old.hasBismillah, isFalse);
+      expect(old.hasIstiadhah, isFalse);
     });
   });
 
   group('bundled audio', () {
-    test('every ayah the catalog declares has a clip in the bundle', () async {
-      final Reciter reciter = await source.getReciter('ahmed_khalil_shaheen');
-      final Surah fatiha = await source.getSurah(1);
-
-      for (int ayah = 1; ayah <= fatiha.ayahCount; ayah++) {
-        final String path = AssetPaths.perAyahFile(reciter.basePath, 1, ayah);
-        final ByteData data = await rootBundle.load(path);
-        expect(data.lengthInBytes, greaterThan(0), reason: '$path is empty');
-      }
-    });
+    // Per-ayah clip existence lives in assets_integrity_test.dart, which owns
+    // it for every surah in the catalog. Duplicating it here would mean one
+    // dropped file failing two suites with the same news.
 
     test(
-      'the istiadhah clip is present when the reciter declares one',
+      'each declared preamble is present, once, at reciter level',
       () async {
-        final Reciter reciter = await source.getReciter('ahmed_khalil_shaheen');
-        expect(reciter.hasIstiadhah, isTrue);
-
-        final ByteData data = await rootBundle.load(
-          AssetPaths.istiadhahFile(reciter.basePath, 1),
-        );
-        expect(data.lengthInBytes, greaterThan(0));
+        for (final Reciter reciter in await source.getReciters()) {
+          if (reciter.hasIstiadhah) {
+            final ByteData data = await rootBundle.load(
+              AssetPaths.istiadhahFile(reciter.basePath),
+            );
+            expect(data.lengthInBytes, greaterThan(0));
+          }
+          if (reciter.hasBismillah) {
+            final ByteData data = await rootBundle.load(
+              AssetPaths.bismillahFile(reciter.basePath),
+            );
+            expect(data.lengthInBytes, greaterThan(0));
+          }
+        }
       },
     );
 
@@ -125,14 +186,15 @@ void main() {
     test(
       'load and cover every ayah, with the istiadhah kept separate',
       () async {
+        final Surah fatiha = await source.getSurah(1);
         final SurahTimings timings = await source.getTimings(
           reciterId: 'ahmed_khalil_shaheen',
-          surahNumber: 1,
+          surahNumber: fatiha.number,
         );
 
-        expect(timings.surahNumber, 1);
-        expect(timings.ayahs, hasLength(7));
-        for (int ayah = 1; ayah <= 7; ayah++) {
+        expect(timings.surahNumber, fatiha.number);
+        expect(timings.ayahs, hasLength(fatiha.ayahCount));
+        for (int ayah = 1; ayah <= fatiha.ayahCount; ayah++) {
           final AyahTiming? t = timings.timingFor(ayah);
           expect(t, isNotNull, reason: 'no timing for ayah $ayah');
           expect(t!.endMs, greaterThan(t.startMs));

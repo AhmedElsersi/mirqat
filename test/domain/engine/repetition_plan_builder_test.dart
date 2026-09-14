@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tahfiz/core/error/failures.dart';
-import 'package:tahfiz/domain/engine/repetition_plan_builder.dart';
-import 'package:tahfiz/domain/entities/playback_unit.dart';
-import 'package:tahfiz/domain/entities/plan_step.dart';
-import 'package:tahfiz/domain/entities/session_config.dart';
-import 'package:tahfiz/domain/entities/session_plan.dart';
+import 'package:mirqat/core/error/failures.dart';
+import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
+import 'package:mirqat/domain/entities/playback_unit.dart';
+import 'package:mirqat/domain/entities/plan_step.dart';
+import 'package:mirqat/domain/entities/session_config.dart';
+import 'package:mirqat/domain/entities/session_plan.dart';
 
 const RepetitionPlanBuilder builder = RepetitionPlanBuilder();
 
@@ -245,55 +245,148 @@ void main() {
     );
   });
 
-  group('pairwise mode', () {
-    test(
-      'connects each ayah to the previous one and closes with a full pass',
-      () {
-        final SessionPlan plan = buildPlan(
-          const SessionConfig(
-            surahNumber: 1,
-            startAyah: 1,
-            endAyah: 3,
-            connectMode: ConnectMode.pairwise,
-          ),
-        );
+  group('continuous mode', () {
+    test('the worked example: range 1-3 at 3 repeats is 1,2,3 x3', () {
+      final SessionPlan plan = buildPlan(
+        const SessionConfig(
+          surahNumber: 1,
+          startAyah: 1,
+          endAyah: 3,
+          repeatCount: 3,
+          connectMode: ConnectMode.continuous,
+        ),
+      );
 
-        expect(plan.steps.map(describe), <String>[
-          'LEARN 1 x3',
-          'LEARN 2 x3',
-          'CONNECT 1-2 x3',
-          'LEARN 3 x3',
-          'CONNECT 2-3 x3',
-          'CONNECT 1-3 x3',
-        ]);
-        expect(plan.unitCount, 3 + 3 + 6 + 3 + 6 + 9);
-      },
-    );
+      // One step, nine recitations — asserted as the literal sequence rather
+      // than as a count, because a count of nine is also what three separate
+      // three-repeat learn steps would produce, and those are a different
+      // session entirely.
+      expect(plan.steps.map(describe), <String>['CONNECT 1-3 x3']);
+      expect(
+        plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(),
+        <int>[1, 2, 3, 1, 2, 3, 1, 2, 3],
+      );
+      expect(plan.unitCount, 9);
+    });
 
-    test('defaults finalFullPass to true', () {
+    test('a single-ayah range is that ayah, repeatCount times', () {
+      final SessionPlan plan = buildPlan(
+        const SessionConfig(
+          surahNumber: 1,
+          startAyah: 4,
+          endAyah: 4,
+          repeatCount: 3,
+          connectMode: ConnectMode.continuous,
+        ),
+      );
+
+      expect(plan.steps.map(describe), <String>['CONNECT 4-4 x3']);
+      expect(
+        plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(),
+        <int>[4, 4, 4],
+      );
+    });
+
+    test('a two-ayah range alternates', () {
+      final SessionPlan plan = buildPlan(
+        const SessionConfig(
+          surahNumber: 1,
+          startAyah: 2,
+          endAyah: 3,
+          repeatCount: 3,
+          connectMode: ConnectMode.continuous,
+        ),
+      );
+
+      expect(
+        plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(),
+        <int>[2, 3, 2, 3, 2, 3],
+      );
+    });
+
+    test('repeatCount 1 is a single pass', () {
+      final SessionPlan plan = buildPlan(
+        const SessionConfig(
+          surahNumber: 1,
+          startAyah: 1,
+          endAyah: 3,
+          repeatCount: 1,
+          connectMode: ConnectMode.continuous,
+        ),
+      );
+
+      expect(plan.steps.map(describe), <String>['CONNECT 1-3 x1']);
+      expect(
+        plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(),
+        <int>[1, 2, 3],
+      );
+    });
+
+    test('emits no per-ayah learn steps at all', () {
+      final SessionPlan plan = buildPlan(
+        const SessionConfig(
+          surahNumber: 1,
+          startAyah: 1,
+          endAyah: 7,
+          connectMode: ConnectMode.continuous,
+        ),
+      );
+
+      expect(plan.steps.whereType<LearnStep>(), isEmpty);
+    });
+
+    test('defaults finalFullPass to false', () {
+      // The single step already spans the range, so a closing pass would just
+      // recite it again — and would break the worked example above.
       expect(
         const SessionConfig(
           surahNumber: 1,
           startAyah: 1,
           endAyah: 3,
-          connectMode: ConnectMode.pairwise,
+          connectMode: ConnectMode.continuous,
         ).finalFullPass,
-        isTrue,
+        isFalse,
       );
     });
 
-    test('suppresses the final full pass on a single-ayah range', () {
+    test('honours finalFullPass when it is switched on explicitly', () {
       final SessionPlan plan = buildPlan(
         const SessionConfig(
           surahNumber: 1,
-          startAyah: 2,
-          endAyah: 2,
-          connectMode: ConnectMode.pairwise,
+          startAyah: 1,
+          endAyah: 3,
+          repeatCount: 2,
+          connectMode: ConnectMode.continuous,
+          finalFullPass: true,
         ),
       );
 
-      expect(plan.stepCount, 1);
-      expect(plan.unitCount, 3);
+      expect(plan.steps.map(describe), <String>[
+        'CONNECT 1-3 x2',
+        'CONNECT 1-3 x2',
+      ]);
+    });
+
+    test('gaps: ayahs inside a pass, the longer repeat gap between passes', () {
+      final SessionPlan plan = buildPlan(
+        const SessionConfig(
+          surahNumber: 1,
+          startAyah: 1,
+          endAyah: 3,
+          repeatCount: 2,
+          connectMode: ConnectMode.continuous,
+          intraBlockPauseMs: 300,
+          betweenRepeatPauseMs: 900,
+        ),
+      );
+
+      // The project already had a between-repetitions pause, so continuous
+      // reuses it for the gap between passes rather than inventing pause x 2.
+      final List<int> gaps = <int>[
+        for (int i = 0; i < plan.units.length - 1; i++)
+          plan.gapAfter(plan.units[i]).inMilliseconds,
+      ];
+      expect(gaps, <int>[300, 300, 900, 300, 300]);
     });
   });
 
@@ -380,7 +473,7 @@ void main() {
             repeatCount: 0,
           ),
         ),
-        contains('repeatCount must be between 1 and 20'),
+        contains('repeatCount must be between 1 and 999'),
       );
     });
 
@@ -391,10 +484,10 @@ void main() {
             surahNumber: 1,
             startAyah: 1,
             endAyah: 3,
-            repeatCount: 21,
+            repeatCount: 1000,
           ),
         ),
-        contains('got 21'),
+        contains('got 1000'),
       );
     });
 

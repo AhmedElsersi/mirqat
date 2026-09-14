@@ -7,15 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:tahfiz/core/constants/app_constants.dart';
-import 'package:tahfiz/core/di/injection.dart';
-import 'package:tahfiz/core/error/exceptions.dart';
-import 'package:tahfiz/core/localization/app_localization.dart';
-import 'package:tahfiz/data/datasources/asset_reader.dart';
-import 'package:tahfiz/data/models/reciter.dart';
-import 'package:tahfiz/data/models/surah.dart';
-import 'package:tahfiz/main.dart';
-import 'package:tahfiz/services/audio/ayah_duration_service.dart';
+import 'package:mirqat/core/bootstrap.dart';
+import 'package:mirqat/core/constants/app_constants.dart';
+import 'package:mirqat/core/di/injection.dart';
+import 'package:mirqat/core/error/exceptions.dart';
+import 'package:mirqat/core/localization/app_localization.dart';
+import 'package:mirqat/data/datasources/asset_reader.dart';
+import 'package:mirqat/data/models/reciter.dart';
+import 'package:mirqat/data/models/surah.dart';
+import 'package:mirqat/core/router/app_router.dart';
+import 'package:mirqat/features/splash/screen/splash_screen.dart';
+import 'package:mirqat/main.dart';
+import 'package:mirqat/services/audio/ayah_duration_service.dart';
 
 /// Real clip lengths for Ahmed Khalil Shaheen's Al-Fatiha, so the session
 /// summary is exercised with the same numbers the app would measure.
@@ -111,12 +114,16 @@ class AppHarness {
     }
 
     if (_storageDir == null) {
-      _storageDir = Directory.systemTemp.createTempSync('tahfiz_ui');
+      _storageDir = Directory.systemTemp.createTempSync('mirqat_ui');
       Hive.init(_storageDir!.path);
     }
 
     await sl.reset();
     await configureDependencies();
+
+    // The harness has just done by hand what AppBootstrap does, so the app
+    // must not do it again — opening the boxes twice would fight this setup.
+    AppBootstrap.overrideWith(Future<void>.value());
 
     // Swap in measured durations rather than probing audio, which has no
     // plugin implementation under `flutter test`.
@@ -151,10 +158,48 @@ class AppHarness {
   Future<void> pumpApp(
     WidgetTester tester, {
     Locale locale = AppLocalization.arabic,
+    bool skipSplash = true,
   }) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(app(locale: locale));
+    // One frame, not `settle`: the splash's sun breathes on a repeating
+    // controller, so while it is on screen there is always another frame
+    // scheduled and `pumpAndSettle` can never return. Get past it first.
+    await tester.pump();
+    if (!skipSplash) {
+      // Stop on the splash. Settling is impossible while it is mounted — the
+      // sun breathes on a repeating controller, so a frame is always
+      // scheduled — and a caller that asked to see the splash must drive it
+      // with explicit `pump(duration)` calls.
+      return;
+    }
+    await dismissSplash(tester);
     await settle(tester);
+  }
+
+  /// Taps through the launch animation and waits for the home screen.
+  ///
+  /// The splash is the app's first route now, so every test that wants a
+  /// screen behind it has to get past it. Tapping is how a person skips it,
+  /// which means the skip path is exercised by the whole suite rather than by
+  /// one test — and it costs a frame instead of the animation's 2.4 s.
+  ///
+  /// Pass `skipSplash: false` to [pumpApp] to test the splash itself.
+  static Future<void> dismissSplash(WidgetTester tester) async {
+    final Finder splash = find.byType(SplashScreen);
+    if (!tester.any(splash)) return;
+
+    // Explicit pumps throughout, never `pumpAndSettle`: the breathing sun
+    // keeps scheduling frames until the splash is disposed, so settling is
+    // only possible once it is gone.
+    await tester.runAsync(() async {
+      await tester.tap(splash);
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();                          // the `go` is processed
+    await tester.pump(AppRouter.splashFadeOut);   // the 300 ms dissolve
+    await tester.pump();
   }
 
   /// Taps and waits.
@@ -195,6 +240,6 @@ class AppHarness {
     startLocale: locale,
     fallbackLocale: AppLocalization.fallbackLocale,
     assetLoader: const FileTranslationLoader(),
-    child: const TahfizApp(),
+    child: const IqraWartaqApp(),
   );
 }

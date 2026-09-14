@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 
 import '../../data/datasources/asset_reader.dart';
+import '../../data/datasources/bundle_asset_reader.dart';
 import '../../data/datasources/progress_local_data_source.dart';
 import '../../data/datasources/quran_local_data_source.dart';
 import '../../data/datasources/settings_local_data_source.dart';
@@ -10,7 +11,7 @@ import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
 import '../../features/player/cubit/player_cubit.dart';
 import '../../features/progress/cubit/progress_cubit.dart';
-import '../../features/session_setup/cubit/session_setup_cubit.dart';
+import '../../features/reader/cubit/reader_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
 import '../../services/audio/ayah_duration_service.dart';
@@ -73,8 +74,8 @@ Future<void> configureDependencies() async {
       progressRepository: sl<ProgressRepository>(),
     ),
   );
-  sl.registerFactory<SessionSetupCubit>(
-    () => SessionSetupCubit(
+  sl.registerFactory<ReaderCubit>(
+    () => ReaderCubit(
       quranRepository: sl<QuranRepository>(),
       settingsRepository: sl<SettingsRepository>(),
       durationService: sl<AyahDurationService>(),

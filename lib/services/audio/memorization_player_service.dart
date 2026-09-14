@@ -8,6 +8,7 @@ import '../../domain/entities/playback_unit.dart';
 import '../../domain/entities/session_plan.dart';
 import 'ayah_audio_resolver.dart';
 import 'playback_queue.dart';
+import 'session_preambles.dart';
 
 /// Every player call goes through this class.
 ///
@@ -76,14 +77,16 @@ class MemorizationPlayerService {
     final AyahAudioResolver resolver = await _createResolver(reciter, surah);
     _resolver = resolver;
 
-    final bool includeIstiadhah =
-        plan.config.playIstiadhah && reciter.hasIstiadhah;
-    final bool includeBismillah = surah.needsBismillahPreamble;
+    final SessionPreambles preambles = SessionPreambles.forSession(
+      surah: surah,
+      reciter: reciter,
+      istiadhahEnabled: plan.config.playIstiadhah,
+    );
 
     final PlaybackQueue queue = queueBuilder.build(
       plan: plan,
-      includeIstiadhah: includeIstiadhah,
-      includeBismillah: includeBismillah,
+      includeIstiadhah: preambles.istiadhah,
+      includeBismillah: preambles.bismillah,
     );
     _queue = queue;
     _lastUnit = null;
@@ -115,13 +118,35 @@ class MemorizationPlayerService {
         ayah: unit.ayahNumber,
       ),
       SpacerQueueEntry() => resolver.resolveSpacer(),
-      PreambleQueueEntry(kind: PreambleKind.istiadhah) =>
-        resolver.resolveIstiadhah(reciter: reciter, surah: surah.number) ??
-            resolver.resolveSpacer(),
-      PreambleQueueEntry(kind: PreambleKind.bismillah) =>
-        resolver.resolveBismillah(reciter: reciter, surah: surah) ??
-            resolver.resolveSpacer(),
+      PreambleQueueEntry(kind: PreambleKind.istiadhah) => _requirePreamble(
+        resolver.resolveIstiadhah(reciter: reciter),
+        reciter: reciter,
+        flag: 'hasIstiadhah',
+      ),
+      PreambleQueueEntry(kind: PreambleKind.bismillah) => _requirePreamble(
+        resolver.resolveBismillah(reciter: reciter),
+        reciter: reciter,
+        flag: 'hasBismillah',
+      ),
     };
+  }
+
+  /// [SessionPreambles] only queues a preamble whose flag is set, and the
+  /// resolver returns a source for exactly those, so this is unreachable in a
+  /// well-formed catalog. It throws rather than substituting silence: a
+  /// swallowed preamble is a packaging bug that the asset-integrity test is
+  /// there to catch at build time, and hiding it would let it ship.
+  AudioSource _requirePreamble(
+    AudioSource? source, {
+    required Reciter reciter,
+    required String flag,
+  }) {
+    if (source != null) return source;
+    throw SessionConfigException(
+      'A preamble was queued for reciter "${reciter.id}" but no clip resolved. '
+      'Check that "$flag" in reciters.json matches the files under '
+      '${reciter.basePath}.',
+    );
   }
 
   Future<AyahAudioResolver> _createResolver(

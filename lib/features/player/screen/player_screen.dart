@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/widgets/reciter_avatar.dart';
 import '../../../data/models/ayah.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/plan_step.dart';
@@ -54,7 +55,21 @@ class _PlayerView extends StatelessWidget {
         .toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text(args.surah.nameAr)),
+      appBar: AppBar(
+        title: Text(args.surah.nameAr),
+        actions: <Widget>[
+          // Who is reciting, compactly. The name is in the tooltip rather than
+          // on the bar: at this size it would crowd the surah name, and during
+          // a session the surah is what the listener needs to see.
+          Padding(
+            padding: EdgeInsetsDirectional.only(end: 12.w),
+            child: Tooltip(
+              message: args.reciter.nameAr,
+              child: ReciterAvatar(reciter: args.reciter, diameter: 30),
+            ),
+          ),
+        ],
+      ),
       body: BlocBuilder<PlayerCubit, PlayerScreenState>(
         builder: (BuildContext context, PlayerScreenState state) {
           if (state.status.isLoading) {
@@ -79,6 +94,7 @@ class _PlayerView extends StatelessWidget {
                   repeatIndex: unit?.repeatIndex ?? 0,
                   totalRepeats:
                       unit?.totalRepeats ?? args.plan.config.repeatCount,
+                  connectMode: args.plan.config.connectMode,
                 ),
                 const Divider(height: 1),
                 Expanded(

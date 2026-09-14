@@ -8,7 +8,7 @@ class AppConstants {
   // --- Session defaults (CLAUDE.md / Part B, SessionConfig) ---
   static const int defaultRepeatCount = 3;
   static const int minRepeatCount = 1;
-  static const int maxRepeatCount = 20;
+  static const int maxRepeatCount = 999;
 
   static const int defaultIntraBlockPauseMs = 300;
   static const int defaultBetweenRepeatPauseMs = 800;
@@ -25,6 +25,14 @@ class AppConstants {
   // --- Layout ---
   static const double designWidth = 375;
   static const double designHeight = 812;
+
+  /// Where the home grid goes from two columns to three.
+  ///
+  /// 600dp is Material 3's compact/medium window boundary, not a number picked
+  /// to suit one device. Compared against the real window width rather than a
+  /// ScreenUtil-scaled value: the question is how much room there is, and
+  /// `.w` would answer a different one.
+  static const double tabletBreakpoint = 600;
 
   // --- Storage ---
   static const String progressBoxName = 'memorization_progress';

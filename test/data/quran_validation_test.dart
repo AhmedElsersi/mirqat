@@ -1,12 +1,12 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tahfiz/core/constants/asset_paths.dart';
-import 'package:tahfiz/core/error/exceptions.dart';
-import 'package:tahfiz/core/error/failures.dart';
-import 'package:tahfiz/data/datasources/asset_reader.dart';
-import 'package:tahfiz/data/datasources/quran_local_data_source.dart';
-import 'package:tahfiz/data/models/ayah.dart';
-import 'package:tahfiz/data/repositories/quran_repository.dart';
+import 'package:mirqat/core/constants/asset_paths.dart';
+import 'package:mirqat/core/error/exceptions.dart';
+import 'package:mirqat/core/error/failures.dart';
+import 'package:mirqat/data/datasources/asset_reader.dart';
+import 'package:mirqat/data/datasources/quran_local_data_source.dart';
+import 'package:mirqat/data/models/ayah.dart';
+import 'package:mirqat/data/repositories/quran_repository.dart';
 
 /// Serves whatever JSON a test hands it, so deliberately corrupted catalogs
 /// can be pushed through the real loaders.

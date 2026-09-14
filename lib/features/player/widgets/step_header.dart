@@ -2,10 +2,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../domain/entities/plan_step.dart';
+import '../../../domain/entities/session_config.dart';
 
 /// "Step 3 of 5 — Connecting ayahs 1-2", plus the repeat pips.
+///
+/// Reads differently under [ConnectMode.continuous], because "step 1 of 1"
+/// tells the listener nothing: the whole range is a single step there and what
+/// actually advances is the pass. So continuous leads with "Repetition 2 of 3"
+/// and names the range underneath, while the drill modes keep the step count.
 class StepHeader extends StatelessWidget {
   const StepHeader({
     required this.stepIndex,
@@ -13,6 +20,7 @@ class StepHeader extends StatelessWidget {
     required this.step,
     required this.repeatIndex,
     required this.totalRepeats,
+    required this.connectMode,
     super.key,
   });
 
@@ -21,11 +29,14 @@ class StepHeader extends StatelessWidget {
   final PlanStep? step;
   final int repeatIndex;
   final int totalRepeats;
+  final ConnectMode connectMode;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final PlanStep? current = step;
+
+    final bool isContinuous = connectMode == ConnectMode.continuous;
 
     return Padding(
       padding: EdgeInsetsDirectional.symmetric(
@@ -35,9 +46,19 @@ class StepHeader extends StatelessWidget {
       child: Column(
         children: <Widget>[
           Text(
-            LocaleKeys.playerStepHeader.tr(
-              args: <String>['${stepIndex + 1}', '$stepCount'],
-            ),
+            isContinuous
+                ? LocaleKeys.playerRepeatHeader.tr(
+                    args: <String>[
+                      repeatIndex.toLocalisedString(),
+                      totalRepeats.toLocalisedString(),
+                    ],
+                  )
+                : LocaleKeys.playerStepHeader.tr(
+                    args: <String>[
+                      (stepIndex + 1).toLocalisedString(),
+                      stepCount.toLocalisedString(),
+                    ],
+                  ),
             style: theme.textTheme.labelMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -45,16 +66,7 @@ class StepHeader extends StatelessWidget {
           SizedBox(height: 4.h),
           if (current != null)
             Text(
-              current is LearnStep
-                  ? LocaleKeys.playerLearning.tr(
-                      args: <String>['${current.ayah}'],
-                    )
-                  : LocaleKeys.playerConnecting.tr(
-                      args: <String>[
-                        '${current.fromAyah}',
-                        '${current.toAyah}',
-                      ],
-                    ),
+              _subtitle(current, isContinuous),
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
@@ -62,6 +74,34 @@ class StepHeader extends StatelessWidget {
           _RepeatPips(current: repeatIndex, total: totalRepeats),
         ],
       ),
+    );
+  }
+
+  /// What the current step is doing, in words.
+  ///
+  /// Continuous never says "connecting": nothing is being joined to anything,
+  /// the range is simply being recited. The ayah numbers go through
+  /// `toLocalisedString` so they read in the locale's own numerals — the old
+  /// connect line interpolated them raw and showed Western digits in Arabic.
+  static String _subtitle(PlanStep step, bool isContinuous) {
+    if (isContinuous) {
+      return LocaleKeys.playerRecitingRange.tr(
+        args: <String>[
+          step.fromAyah.toLocalisedString(),
+          step.toAyah.toLocalisedString(),
+        ],
+      );
+    }
+    if (step is LearnStep) {
+      return LocaleKeys.playerLearning.tr(
+        args: <String>[step.ayah.toLocalisedString()],
+      );
+    }
+    return LocaleKeys.playerConnecting.tr(
+      args: <String>[
+        step.fromAyah.toLocalisedString(),
+        step.toAyah.toLocalisedString(),
+      ],
     );
   }
 }
@@ -97,7 +137,7 @@ class _RepeatPips extends StatelessWidget {
         else
           Text(
             LocaleKeys.playerRepeatPips.tr(
-              args: <String>['$current', '$total'],
+              args: <String>[current.toLocalisedString(), total.toLocalisedString()],
             ),
             style: theme.textTheme.labelLarge,
           ),

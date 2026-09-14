@@ -5,6 +5,21 @@ class AssetPaths {
 
   static const String translations = 'assets/translations';
 
+  static const String _brand = 'assets/brand';
+
+  /// The animated splash's back plate: the sunrise vista. 1836 x 3876.
+  static const String splashScene = '$_brand/splash_scene.webp';
+
+  /// The animated splash's front plate: cave rock with the opening cut out as
+  /// real alpha. 1224 x 2584 — smaller on purpose, and the same aspect ratio
+  /// as [splashScene], which is what keeps the two aligned.
+  static const String splashCave = '$_brand/splash_cave.webp';
+
+  /// Frame 0, baked, for the native splash that precedes the Flutter one.
+  /// Not loaded by the app — `flutter_native_splash` reads it at build time —
+  /// but named here so the asset audit can see it is accounted for.
+  static const String splashFirstFrame = '$_brand/splash_first_frame.png';
+
   static const String _data = 'assets/data';
   static const String surahsCatalog = '$_data/surahs.json';
   static const String recitersCatalog = '$_data/reciters.json';
@@ -38,15 +53,19 @@ class AssetPaths {
   static String surahFile(String basePath, int surahNumber) =>
       '$basePath/${pad3(surahNumber)}.mp3';
 
-  /// Standalone bismillah clip, used only by surahs whose `bismillahMode`
-  /// is `separate_preamble`.
+  /// Standalone bismillah clip: `<basePath>/bismillah.mp3`.
+  ///
+  /// One per reciter, not one per surah. The words, the reciter and the
+  /// recording session are the same for every surah that needs it, so a
+  /// per-surah copy would be identical audio under a different name. Whether
+  /// a given session plays it is a catalog decision, not a path decision —
+  /// see `SessionPreambles`.
   static String bismillahFile(String basePath) => '$basePath/bismillah.mp3';
 
-  /// Optional isti'adhah preamble: `<basePath>/001/istiadhah.mp3`.
+  /// Standalone isti'adhah clip: `<basePath>/istiadhah.mp3`.
   ///
-  /// It is not an ayah and never enters the playback queue as one. It lives
-  /// under the surah directory because that is how the recordings are
-  /// delivered, even though the formula itself is surah-independent.
-  static String istiadhahFile(String basePath, int surahNumber) =>
-      '$basePath/${pad3(surahNumber)}/istiadhah.mp3';
+  /// Reciter-level for the same reason as the bismillah, and surah-independent
+  /// in a stronger sense: it is not part of any surah. Neither preamble is an
+  /// ayah, and neither ever enters the playback queue as one.
+  static String istiadhahFile(String basePath) => '$basePath/istiadhah.mp3';
 }

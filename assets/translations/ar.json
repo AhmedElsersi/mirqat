@@ -1,6 +1,8 @@
 {
   "app": {
-    "name": "تحفيظ"
+    "name": "اقرأ وارتق",
+    "slogan": "سمت الحافظين",
+    "subtitle": "حفظ بالتكرار والوصل — بلا إنترنت"
   },
   "common": {
     "error": "حدث خطأ",
@@ -19,7 +21,6 @@
     "not_started": "لم يبدأ بعد"
   },
   "session_setup": {
-    "title": "إعداد الجلسة",
     "range": "نطاق الآيات",
     "from": "من",
     "to": "إلى",
@@ -27,20 +28,19 @@
     "connect_mode": "طريقة الوصل",
     "connect_cumulative": "تراكمي",
     "connect_cumulative_hint": "بعد كل آية تُعاد من بداية النطاق إليها",
-    "connect_pairwise": "ثنائي",
-    "connect_pairwise_hint": "بعد كل آية تُوصل بالآية التي قبلها فقط",
     "connect_none": "بدون وصل",
     "connect_none_hint": "تكرار كل آية على حدة دون وصل",
     "final_full_pass": "مراجعة كاملة في النهاية",
     "play_istiadhah": "الاستعاذة قبل البدء",
-    "advanced": "إعدادات متقدمة",
     "intra_block_pause": "الوقفة بين الآيات",
     "between_repeat_pause": "الوقفة بين التكرارات",
     "between_steps_pause": "الوقفة بين الخطوات",
     "playback_speed": "سرعة التلاوة",
     "milliseconds": "{} مللي ثانية",
     "summary": "{} خطوات · {} تلاوة · {}",
-    "start": "ابدأ الجلسة"
+    "start": "ابدأ الجلسة",
+    "connect_continuous": "متصل",
+    "connect_continuous_hint": "تُتلى الآيات من أول النطاق إلى آخره، ثم يُعاد المقطع كاملًا"
   },
   "player": {
     "title": "الجلسة",
@@ -56,7 +56,9 @@
     "stop": "إنهاء",
     "keep_awake": "إبقاء الشاشة مضاءة",
     "timeline": "خطوات الجلسة",
-    "finished": "انتهت الجلسة"
+    "finished": "انتهت الجلسة",
+    "repeat_header": "التكرار {} من {}",
+    "reciting_range": "تلاوة الآيات {} - {}"
   },
   "progress": {
     "title": "المتابعة",
@@ -70,18 +72,36 @@
   "settings": {
     "title": "الإعدادات",
     "reciter": "القارئ",
-    "default_repeat_count": "عدد التكرارات الافتراضي",
-    "default_connect_mode": "طريقة الوصل الافتراضية",
     "theme": "المظهر",
     "theme_system": "حسب النظام",
     "theme_light": "فاتح",
     "theme_dark": "داكن",
     "arabic_font_size": "حجم الخط العربي",
-    "language": "اللغة"
+    "language": "اللغة",
+    "section_general": "عام",
+    "section_reciter": "القارئ",
+    "section_session": "إعدادات الجلسة",
+    "section_session_hint": "تُستخدم هذه القيم كبداية لكل جلسة جديدة",
+    "home_view_mode": "عرض السور",
+    "home_view_list": "قائمة",
+    "home_view_grid": "شبكة",
+    "default_pauses": "الوقفات",
+    "default_range_behaviour": "نطاق الآيات الافتراضي",
+    "range_whole_surah": "السورة كاملة",
+    "range_last_used": "آخر نطاق مستخدم"
   },
   "duration": {
     "minutes": "{} د",
     "seconds": "{} ث",
     "minutes_seconds": "{} د {} ث"
+  },
+  "reader": {
+    "session_settings": "إعدادات الجلسة",
+    "whole_surah": "السورة كاملة",
+    "selection_single": "الآية {}",
+    "reset_defaults": "إعادة تعيين",
+    "save_as_default": "حفظ كافتراضي",
+    "saved_as_default": "حُفظت كإعدادات افتراضية",
+    "tap_to_select": "اضغط على آية لتحديد بداية النطاق"
   }
 }

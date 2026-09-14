@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:tahfiz/core/constants/asset_paths.dart';
-import 'package:tahfiz/data/models/ayah_timing.dart';
-import 'package:tahfiz/data/models/reciter.dart';
-import 'package:tahfiz/data/models/surah.dart';
-import 'package:tahfiz/domain/engine/repetition_plan_builder.dart';
-import 'package:tahfiz/domain/entities/playback_unit.dart';
-import 'package:tahfiz/domain/entities/session_config.dart';
-import 'package:tahfiz/domain/entities/session_plan.dart';
-import 'package:tahfiz/services/audio/ayah_audio_resolver.dart';
-import 'package:tahfiz/services/audio/playback_queue.dart';
+import 'package:mirqat/core/constants/asset_paths.dart';
+import 'package:mirqat/data/models/ayah_timing.dart';
+import 'package:mirqat/data/models/reciter.dart';
+import 'package:mirqat/data/models/surah.dart';
+import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
+import 'package:mirqat/domain/entities/playback_unit.dart';
+import 'package:mirqat/domain/entities/session_config.dart';
+import 'package:mirqat/domain/entities/session_plan.dart';
+import 'package:mirqat/services/audio/ayah_audio_resolver.dart';
+import 'package:mirqat/services/audio/playback_queue.dart';
 
 const Reciter perAyahReciter = Reciter(
   id: 'ahmed_khalil_shaheen',
@@ -20,6 +20,7 @@ const Reciter perAyahReciter = Reciter(
   bundled: true,
   availableSurahs: <int>[1],
   hasIstiadhah: true,
+  hasBismillah: true,
 );
 
 const Reciter timingsReciter = Reciter(
@@ -31,6 +32,7 @@ const Reciter timingsReciter = Reciter(
   bundled: true,
   availableSurahs: <int>[1],
   hasIstiadhah: false,
+  hasBismillah: false,
 );
 
 const Surah fatiha = Surah(
@@ -259,32 +261,27 @@ void main() {
       );
     });
 
-    test('per_ayah_files resolves the istiadhah only when declared', () {
+    test('the istiadhah is one clip per reciter, not one per surah', () {
       final AyahAudioResolver resolver = PerAyahFilesResolver();
 
       expect(
-        uriOf(resolver.resolveIstiadhah(reciter: perAyahReciter, surah: 1)!),
-        endsWith('assets/audio/ahmed_khalil_shaheen/001/istiadhah.mp3'),
+        uriOf(resolver.resolveIstiadhah(reciter: perAyahReciter)!),
+        endsWith('assets/audio/ahmed_khalil_shaheen/istiadhah.mp3'),
       );
-      expect(
-        resolver.resolveIstiadhah(reciter: timingsReciter, surah: 1),
-        isNull,
-      );
+      expect(resolver.resolveIstiadhah(reciter: timingsReciter), isNull);
     });
 
-    test('bismillah is offered only for separate_preamble surahs', () {
+    test('the bismillah is one clip per reciter, and the resolver answers '
+        'only whether the reciter has one', () {
       final AyahAudioResolver resolver = PerAyahFilesResolver();
 
       expect(
-        resolver.resolveBismillah(reciter: perAyahReciter, surah: fatiha),
-        isNull,
-      );
-      expect(
-        uriOf(
-          resolver.resolveBismillah(reciter: perAyahReciter, surah: baqarah)!,
-        ),
+        uriOf(resolver.resolveBismillah(reciter: perAyahReciter)!),
         endsWith('assets/audio/ahmed_khalil_shaheen/bismillah.mp3'),
       );
+      // Whether a session plays it is SessionPreambles' decision, keyed on the
+      // surah's bismillahMode — the resolver is deliberately not asked.
+      expect(resolver.resolveBismillah(reciter: timingsReciter), isNull);
     });
 
     test('the spacer resolves to the sample-exact WAV', () {

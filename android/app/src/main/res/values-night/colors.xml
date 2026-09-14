@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same value as the light bucket on purpose: the splash is the cave
+         interior in both modes. Kept as an explicit override so a future
+         light-mode change cannot silently drag dark mode with it. -->
+    <color name="splash_background">#FF1C1209</color>
+</resources>

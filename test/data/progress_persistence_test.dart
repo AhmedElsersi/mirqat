@@ -3,16 +3,16 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:tahfiz/core/error/failures.dart';
-import 'package:tahfiz/data/datasources/progress_local_data_source.dart';
-import 'package:tahfiz/data/models/memorization_progress.dart';
-import 'package:tahfiz/data/repositories/progress_repository.dart';
+import 'package:mirqat/core/error/failures.dart';
+import 'package:mirqat/data/datasources/progress_local_data_source.dart';
+import 'package:mirqat/data/models/memorization_progress.dart';
+import 'package:mirqat/data/repositories/progress_repository.dart';
 
 void main() {
   late Directory storageDir;
 
   setUp(() {
-    storageDir = Directory.systemTemp.createTempSync('tahfiz_progress_test');
+    storageDir = Directory.systemTemp.createTempSync('mirqat_progress_test');
     Hive.init(storageDir.path);
   });
 

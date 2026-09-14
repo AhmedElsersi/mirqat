@@ -1,0 +1,6 @@
+/* The Arabic display name. These per-locale overrides win over
+   CFBundleDisplayName in Info.plist, so the name has to be correct here
+   too — editing only Info.plist leaves the old name on every locale that
+   has an .lproj. */
+"CFBundleDisplayName" = "اقرأ وارتق";
+"CFBundleName" = "اقرأ وارتق";

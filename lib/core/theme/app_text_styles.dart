@@ -8,32 +8,77 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class AppTextStyles {
   const AppTextStyles._();
 
+  /// Family for all UI text: IBM Plex Sans Arabic, declared in pubspec.yaml
+  /// as `IqraWartaqUI` across four weights (400/500/600/700).
+  ///
+  /// This string must match the `family:` in pubspec.yaml exactly. A mismatch
+  /// does not fail the build — Flutter silently falls back to the platform
+  /// face — so the two are renamed together or not at all.
+  static const String uiFontFamily = 'IqraWartaqUI';
+
   /// Family for Quranic text: KFGQPC Hafs Uthmanic v18, declared in
   /// pubspec.yaml. Verified to cover all 32 codepoints in the shipped text,
   /// including U+0671 alef wasla, U+06E1 Uthmani sukun, U+0670 superscript
   /// alef and U+0653 maddah.
+  ///
+  /// This constant, and [ayah] below, are the only places the family is named
+  /// in Dart. `test/core/font_enforcement_test.dart` proves it, because the
+  /// failure mode here is invisible: IBM Plex Sans Arabic *contains* the
+  /// Quranic mark repertoire, so an ayah rendered in the UI font shows no tofu
+  /// and no error — it just silently stops being the mushaf's diacritic
+  /// placement.
   static const String quranFontFamily = 'QuranUthmani';
 
-  static TextStyle get displayLarge =>
-      TextStyle(fontSize: 28.sp, fontWeight: FontWeight.w700, height: 1.3);
+  static TextStyle get displayLarge => TextStyle(
+    fontFamily: uiFontFamily,
+    fontSize: 28.sp,
+    fontWeight: FontWeight.w700,
+    height: 1.3,
+  );
 
-  static TextStyle get titleLarge =>
-      TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w600, height: 1.35);
+  static TextStyle get titleLarge => TextStyle(
+    fontFamily: uiFontFamily,
+    fontSize: 20.sp,
+    fontWeight: FontWeight.w600,
+    height: 1.35,
+  );
 
-  static TextStyle get titleMedium =>
-      TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, height: 1.4);
+  static TextStyle get titleMedium => TextStyle(
+    fontFamily: uiFontFamily,
+    fontSize: 16.sp,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  );
 
-  static TextStyle get bodyLarge =>
-      TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w400, height: 1.5);
+  static TextStyle get bodyLarge => TextStyle(
+    fontFamily: uiFontFamily,
+    fontSize: 15.sp,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
 
-  static TextStyle get bodyMedium =>
-      TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w400, height: 1.5);
+  static TextStyle get bodyMedium => TextStyle(
+    fontFamily: uiFontFamily,
+    fontSize: 13.sp,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
 
-  static TextStyle get labelSmall =>
-      TextStyle(fontSize: 11.sp, fontWeight: FontWeight.w500, height: 1.4);
+  static TextStyle get labelSmall => TextStyle(
+    fontFamily: uiFontFamily,
+    fontSize: 11.sp,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+  );
 
-  /// Ayah text. Generous line height so diacritics are never crowded, and
-  /// never a style that could clip or ellipsize (CLAUDE.md A.2 rule 7).
+  /// Ayah text. The one and only style permitted to use [quranFontFamily].
+  ///
+  /// `height: 2.0` is not decoration: Uthmani diacritics stack tall — a
+  /// superscript alef above a shadda above a letter — and clip at the default
+  /// line height. Never a style that could truncate or ellipsize
+  /// (CLAUDE.md A.2 rule 7).
+  ///
+  /// Call this from `AyahText` only. Nothing else may render Quranic text.
   static TextStyle ayah({required double fontSize}) => TextStyle(
     fontFamily: quranFontFamily,
     fontSize: fontSize.sp,

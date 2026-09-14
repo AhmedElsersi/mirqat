@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/theme/app_colors.dart';
 import '../cubit/surah_list_state.dart';
@@ -46,7 +47,7 @@ class SurahRow extends StatelessWidget {
                   SizedBox(height: 4.h),
                   Text(
                     LocaleKeys.surahListAyahCount.tr(
-                      args: <String>['${item.surah.ayahCount}'],
+                      args: <String>[item.surah.ayahCount.toLocalisedString()],
                     ),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -71,8 +72,8 @@ class SurahRow extends StatelessWidget {
                         ? LocaleKeys.surahListNotStarted.tr()
                         : LocaleKeys.surahListProgress.tr(
                             args: <String>[
-                              '${item.memorizedCount}',
-                              '${item.surah.ayahCount}',
+                              item.memorizedCount.toLocalisedString(),
+                              item.surah.ayahCount.toLocalisedString(),
                             ],
                           ),
                     style: theme.textTheme.labelSmall?.copyWith(
@@ -85,7 +86,11 @@ class SurahRow extends StatelessWidget {
             IconButton(
               onPressed: onProgressTap,
               tooltip: LocaleKeys.progressTitle.tr(),
-              icon: const Icon(Icons.grid_view_outlined),
+              // Not grid_view: that icon now means "switch the home layout to
+              // a grid" in the app bar directly above, and the same glyph
+              // doing two unrelated things on one screen is a bug waiting to
+              // be filed. The reader screen uses this same icon for progress.
+              icon: const Icon(Icons.insights_outlined),
             ),
           ],
         ),
@@ -112,7 +117,7 @@ class _SurahNumberBadge extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: Text(
-        '$number',
+        number.toLocalisedString(),
         style: theme.textTheme.titleSmall?.copyWith(
           color: theme.colorScheme.primary,
           fontWeight: FontWeight.w700,

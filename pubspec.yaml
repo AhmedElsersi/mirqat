@@ -1,4 +1,4 @@
-name: tahfiz
+name: mirqat
 description: "Offline Quran memorization (hifz) through talqeen-style audio repetition."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -56,6 +56,75 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # PROPOSED EXCEPTION to the no-new-packages rule (CLAUDE.md A.4).
+  # Build-time only: it generates the launcher rasters and contributes nothing
+  # to the runtime or to the APK. The alternative is hand-cutting fifteen sizes
+  # across two platforms and re-cutting them on every icon revision.
+  #   dart run flutter_launcher_icons
+  flutter_launcher_icons: ^0.14.4
+
+  # PROPOSED EXCEPTION to the no-new-packages rule (CLAUDE.md A.4), on the
+  # same grounds as flutter_launcher_icons above: build-time only. It writes
+  # the platform splash resources (Android drawables + styles, the iOS
+  # storyboard) and contributes nothing to the runtime or to the APK.
+  #   dart run flutter_native_splash:create
+  flutter_native_splash: ^2.4.6
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  # Generator inputs live in brand/, deliberately OUTSIDE assets/: they are
+  # read off disk at build time and emitted as platform rasters, so bundling
+  # them would add four 1024px PNGs to every APK for nothing. Only the three
+  # runtime splash plates sit under assets/brand/.
+  image_path: "brand/icon_1024.png"
+  adaptive_icon_background: "brand/icon_background_1024.png"
+  adaptive_icon_foreground: "brand/icon_foreground_1024.png"
+  adaptive_icon_monochrome: "brand/icon_monochrome_1024.png"
+  # NOT in the spec'd block, and kept on purpose after re-measuring the NEW
+  # foreground (the previous comment here described the retired medallion and
+  # its numbers no longer applied). The mihrab arch's opaque content measures
+  # 304 x 388 px on the 1024 canvas — 29.7% x 37.9%, centred, with 0.00% of it
+  # outside Android's 66dp safe circle. It is already conservatively inset, so
+  # the tool's default 16% inset would shrink it to 20.2% of the canvas, about
+  # 30% of the visible mask, and leave the mark swimming. Re-measure before
+  # changing this; do not adjust it by eye.
+  adaptive_icon_foreground_inset: 0
+  # App Store Connect rejects an iOS icon carrying an alpha channel.
+  remove_alpha_ios: true
+  # Read from android/app/build.gradle.kts -> flutter.minSdkVersion, which is
+  # 24 in this Flutter SDK (FlutterExtension.kt:26). Confirmed against the
+  # built APK's badging. Not assumed.
+  min_sdk_android: 24
+
+flutter_native_splash:
+  # This exists only to stop a white flash before Flutter's first frame, so it
+  # matches frame 0 of the Dart animation: the dark cave interior. Anything
+  # prettier here would be a second, competing splash.
+  color: "#1C1209"
+  color_dark: "#1C1209"
+  background_image: "assets/brand/splash_first_frame.png"
+  background_image_dark: "assets/brand/splash_first_frame.png"
+  # No `image:` / `image_dark:`. The previous static splash centred a logo over
+  # a colour; the animation replaces it, and a logo here would appear for an
+  # instant and then be replaced by a different composition.
+  fullscreen: false
+  # This is an offline Android/iOS app; web/ is vestigial Flutter scaffolding.
+  # Left on, the generator rewrites web/index.html and web/manifest.json, which
+  # is churn in files the product never ships.
+  web: false
+  # PLATFORM CONSTRAINT, not a choice: on Android 12+ the system splash always
+  # shows the app icon on a solid colour and ignores background_image. The
+  # sequence there is icon splash -> animated splash -> home. Matching this
+  # background to the brand green keeps the handover calm instead of cutting
+  # from vellum to a dark cave.
+  android_12:
+    color: "#06301F"
+    color_dark: "#06301F"
+    image: "brand/icon_foreground_1024.png"
+    icon_background_color: "#06301F"
+    icon_background_color_dark: "#06301F"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -67,13 +136,47 @@ flutter:
   # nested folder needs its own line. A new reciter adds one line here.
   assets:
     - assets/translations/
+    # The two animated-splash plates plus the native splash's first frame.
+    # This directory holds ONLY files the app loads at runtime — the icon
+    # sources and the editing masters live in brand/, outside assets/, so a
+    # directory declaration cannot sweep them into the bundle.
+    - assets/brand/
+    # Reciter portraits. The catalog carries each entry's imagePath, so a new
+    # reciter's photo needs no Dart change and no new line here.
+    - assets/images/reciters/
     - assets/data/
     - assets/data/ayahs/
     - assets/data/timings/ahmed_khalil_shaheen/
     - assets/audio/
+    # The reciter's own directory, holding the two preambles that serve every
+    # surah. Without this line bismillah.mp3 and istiadhah.mp3 exist on disk
+    # but never reach the bundle.
+    - assets/audio/ahmed_khalil_shaheen/
     - assets/audio/ahmed_khalil_shaheen/001/
+    - assets/audio/ahmed_khalil_shaheen/058/
+    - assets/audio/ahmed_khalil_shaheen/112/
+    - assets/audio/ahmed_khalil_shaheen/113/
+    - assets/audio/ahmed_khalil_shaheen/114/
 
   fonts:
+    # BLOCKED — uncomment the moment the four IBM Plex Sans Arabic TTFs land in
+    # assets/fonts/. They are not in the repo (see the Phase 0 report), and
+    # Flutter fails the build on a declared font asset that does not exist, so
+    # the block stays commented rather than breaking `flutter build` for
+    # everyone. Until then AppTextStyles.uiFontFamily resolves to the platform
+    # default: the app runs and looks plausible, but it is not yet in the
+    # brand's typeface.
+    # - family: IqraWartaqUI
+    #   fonts:
+    #     - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+    #       weight: 400
+    #     - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
+    #       weight: 500
+    #     - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
+    #       weight: 600
+    #     - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
+    #       weight: 700
+
     # KFGQPC Hafs is the exact companion to the v18 text in assets/data/ayahs,
     # so diacritic positioning is as its designers intended.
     # assets/fonts/AmiriQuran.ttf (SIL OFL 1.1) is the fallback if the KFGQPC

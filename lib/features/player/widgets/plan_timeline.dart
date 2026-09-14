@@ -2,7 +2,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/plan_step.dart';
 
 /// Collapsible list of every step, with the finished ones checked off.
@@ -21,7 +23,7 @@ class PlanTimeline extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
 
     return Theme(
-      data: theme.copyWith(dividerColor: Colors.transparent),
+      data: theme.copyWith(dividerColor: AppColors.transparent),
       child: ExpansionTile(
         title: Text(
           LocaleKeys.playerTimeline.tr(),
@@ -56,7 +58,7 @@ class PlanTimeline extends StatelessWidget {
                   title: Text(
                     step is LearnStep
                         ? LocaleKeys.playerLearning.tr(
-                            args: <String>['${step.ayah}'],
+                            args: <String>[step.ayah.toLocalisedString()],
                           )
                         : LocaleKeys.playerConnecting.tr(
                             args: <String>[

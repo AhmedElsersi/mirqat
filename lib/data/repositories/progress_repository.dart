@@ -30,6 +30,14 @@ abstract class ProgressRepository {
   });
 
   Future<Either<Failure, Unit>> clearSurah(int surahNumber, int ayahCount);
+
+  /// Emits whenever any progress record is written, by anyone.
+  ///
+  /// Deliberately `void` rather than the changed record: every listener here
+  /// shows an aggregate (a count, a bar), so knowing *that* something changed
+  /// is enough and carrying the record would invite listeners to patch their
+  /// state from it instead of re-reading.
+  Stream<void> get changes;
 }
 
 class ProgressRepositoryImpl implements ProgressRepository {
@@ -69,6 +77,9 @@ class ProgressRepositoryImpl implements ProgressRepository {
   @override
   Future<Either<Failure, Unit>> clearSurah(int surahNumber, int ayahCount) =>
       _guardUnit(() => _local.clearSurah(surahNumber, ayahCount));
+
+  @override
+  Stream<void> get changes => _local.watchChanges();
 
   Future<Either<Failure, T>> _guard<T>(Future<T> Function() body) async {
     try {

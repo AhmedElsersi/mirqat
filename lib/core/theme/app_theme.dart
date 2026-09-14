@@ -15,7 +15,9 @@ class AppTheme {
     outline: AppColors.lightOutline,
     textPrimary: AppColors.lightTextPrimary,
     textSecondary: AppColors.lightTextSecondary,
-    onPrimary: AppColors.lightSurface,
+    onPrimary: AppColors.vellum,
+    error: AppColors.error,
+    onError: AppColors.vellum,
   );
 
   static ThemeData get dark => _build(
@@ -27,7 +29,9 @@ class AppTheme {
     outline: AppColors.darkOutline,
     textPrimary: AppColors.darkTextPrimary,
     textSecondary: AppColors.darkTextSecondary,
-    onPrimary: AppColors.darkBackground,
+    onPrimary: AppColors.inkDeep,
+    error: AppColors.errorDark,
+    onError: AppColors.inkDeep,
   );
 
   static ThemeData _build({
@@ -40,15 +44,19 @@ class AppTheme {
     required Color textPrimary,
     required Color textSecondary,
     required Color onPrimary,
+    required Color error,
+    required Color onError,
   }) {
     final colorScheme = ColorScheme(
       brightness: brightness,
       primary: primary,
       onPrimary: onPrimary,
       secondary: AppColors.accent,
-      onSecondary: AppColors.lightTextPrimary,
-      error: AppColors.error,
-      onError: AppColors.lightSurface,
+      // Gold is an accent, never a text colour on a light surface; ink on gold
+      // measures 6.64:1, which is the only direction that pairing works.
+      onSecondary: AppColors.ink,
+      error: error,
+      onError: onError,
       surface: surface,
       onSurface: textPrimary,
       surfaceContainerHighest: surfaceVariant,

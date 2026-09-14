@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.ams" "\0"
-            VALUE "FileDescription", "tahfiz" "\0"
+            VALUE "CompanyName", "Mirqat" "\0"
+            VALUE "FileDescription", "Mirqat" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "tahfiz" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.ams. All rights reserved." "\0"
-            VALUE "OriginalFilename", "tahfiz.exe" "\0"
-            VALUE "ProductName", "tahfiz" "\0"
+            VALUE "InternalName", "Mirqat" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Mirqat. All rights reserved." "\0"
+            VALUE "OriginalFilename", "mirqat.exe" "\0"
+            VALUE "ProductName", "Mirqat" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

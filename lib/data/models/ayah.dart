@@ -5,10 +5,10 @@ import '../../core/extensions/arabic_text_extensions.dart';
 
 /// One ayah, loaded verbatim from `assets/data/ayahs/<surah>.json`.
 ///
-/// The only transformation applied to [text] is Unicode NFC normalization, so
-/// that two canonically-equivalent encodings of the same ayah compare equal.
-/// Nothing here rewrites, re-diacritizes or repairs scripture
-/// (CLAUDE.md A.2 rule 1).
+/// The only transformations applied to [text] are Unicode NFC normalization
+/// and the removal of U+0640 tatweel — both level encoding variance between
+/// editions of identical text. Nothing here rewrites, re-diacritizes or
+/// repairs scripture (CLAUDE.md A.2 rule 1).
 class Ayah extends Equatable {
   const Ayah({
     required this.surahNumber,
@@ -19,7 +19,7 @@ class Ayah extends Equatable {
   final int surahNumber;
   final int number;
 
-  /// NFC-normalised Uthmani text.
+  /// Uthmani text in canonical form: tatweel-free and NFC-normalised.
   final String text;
 
   factory Ayah.fromJson(
@@ -47,7 +47,7 @@ class Ayah extends Equatable {
     return Ayah(
       surahNumber: surahNumber,
       number: number,
-      text: rawText.toArabicNfc(),
+      text: rawText.toCanonicalQuranicText(),
     );
   }
 

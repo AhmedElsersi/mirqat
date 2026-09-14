@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Deliberately the Arabic wordmark, not "Iqra Wartaq": the mark does
+         not change with the device language (owner decision D1). -->
+    <string name="app_name">اقرأ وارتق</string>
+</resources>

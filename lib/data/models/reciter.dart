@@ -40,6 +40,8 @@ class Reciter extends Equatable {
     required this.bundled,
     required this.availableSurahs,
     required this.hasIstiadhah,
+    required this.hasBismillah,
+    this.imagePath,
   });
 
   final String id;
@@ -54,9 +56,26 @@ class Reciter extends Equatable {
 
   final List<int> availableSurahs;
 
-  /// Whether this reciter has a standalone isti'adhah clip. It is a preamble,
-  /// never an ayah, and must not enter the playback queue as one.
+  /// Whether this reciter has a standalone isti'adhah clip, at
+  /// `<basePath>/istiadhah.mp3`. It is a preamble, never an ayah, and must not
+  /// enter the playback queue as one.
   final bool hasIstiadhah;
+
+  /// Whether this reciter has a standalone bismillah clip, at
+  /// `<basePath>/bismillah.mp3`.
+  ///
+  /// Both preambles are surah-independent — same words, same reciter, same
+  /// session — so one file each covers every surah. A reciter may supply
+  /// either, both, or neither; the two flags are deliberately symmetric.
+  final bool hasBismillah;
+
+  /// Asset path of the reciter's photograph, or null when there is none.
+  ///
+  /// Nullable on purpose: a reciter may be catalogued long before a usable,
+  /// licensable portrait exists, and the UI must render the same either way.
+  /// The path comes from the catalog so a photo is dropped in as data —
+  /// nothing in Dart knows a reciter's file name (CLAUDE.md A.2 rule 2).
+  final String? imagePath;
 
   bool hasSurah(int surahNumber) => availableSurahs.contains(surahNumber);
 
@@ -94,6 +113,13 @@ class Reciter extends Equatable {
       bundled: json['bundled'] as bool? ?? true,
       availableSurahs: List<int>.unmodifiable(availableSurahs),
       hasIstiadhah: json['hasIstiadhah'] as bool? ?? false,
+      hasBismillah: json['hasBismillah'] as bool? ?? false,
+      // Absent and explicitly null mean the same thing: no photo. An empty
+      // string does too, rather than becoming a path that can never load.
+      imagePath: switch (json['imagePath']) {
+        final String path when path.isNotEmpty => path,
+        _ => null,
+      },
     );
   }
 
@@ -122,5 +148,7 @@ class Reciter extends Equatable {
     bundled,
     availableSurahs,
     hasIstiadhah,
+    hasBismillah,
+    imagePath,
   ];
 }

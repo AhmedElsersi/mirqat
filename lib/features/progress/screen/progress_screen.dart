@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/di/injection.dart';
+import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/theme/app_colors.dart';
@@ -49,8 +50,8 @@ class _ProgressView extends StatelessWidget {
                 child: Text(
                   LocaleKeys.surahListProgress.tr(
                     args: <String>[
-                      '${state.memorizedCount}',
-                      '${state.surah!.ayahCount}',
+                      state.memorizedCount.toLocalisedString(),
+                      state.surah!.ayahCount.toLocalisedString(),
                     ],
                   ),
                   style: Theme.of(context).textTheme.titleMedium,
@@ -119,7 +120,7 @@ class _AyahTile extends StatelessWidget {
             children: <Widget>[
               Text(
                 LocaleKeys.commonAyahNumber.tr(
-                  args: <String>['${record.ayahNumber}'],
+                  args: <String>[record.ayahNumber.toLocalisedString()],
                 ),
                 style: theme.textTheme.titleSmall,
               ),
@@ -133,7 +134,7 @@ class _AyahTile extends StatelessWidget {
                 SizedBox(height: 2.h),
                 Text(
                   LocaleKeys.progressRepeats.tr(
-                    args: <String>['${record.cumulativeRepeats}'],
+                    args: <String>[record.cumulativeRepeats.toLocalisedString()],
                   ),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,

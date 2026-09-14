@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher label is the Arabic wordmark on every locale, not a
+         translated string: a wordmark is the brand's name, not a word to
+         localise. values-ar/ repeats it so an Arabic-locale device resolves
+         it from its own bucket rather than falling back to the default, and
+         values-en/ repeats it so an English device does not get a different
+         name. Change all three together or not at all. -->
+    <string name="app_name">اقرأ وارتق</string>
+</resources>

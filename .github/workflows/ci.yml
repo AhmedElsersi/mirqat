@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned explicitly rather than "stable": pubspec.yaml requires
+      # `sdk: ^3.12.0`, and this Flutter release is the one known to ship a
+      # Dart new enough for that. Bump together with the same pin in
+      # release.yml whenever this changes.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.0"
+          channel: "stable"
+
+      - run: flutter pub get
+
+      - run: flutter analyze --fatal-infos --fatal-warnings
+
+      - run: flutter test

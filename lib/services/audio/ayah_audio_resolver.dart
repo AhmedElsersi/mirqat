@@ -4,7 +4,6 @@ import '../../core/constants/asset_paths.dart';
 import '../../core/error/exceptions.dart';
 import '../../data/models/ayah_timing.dart';
 import '../../data/models/reciter.dart';
-import '../../data/models/surah.dart';
 
 /// Turns an ayah number into something the player can play.
 ///
@@ -18,37 +17,40 @@ abstract class AyahAudioResolver {
     required int ayah,
   });
 
-  /// The isti'adhah preamble, or null when this reciter has none. It is not an
-  /// ayah and never enters the queue as a `PlaybackUnit`.
-  AudioSource? resolveIstiadhah({required Reciter reciter, required int surah});
+  /// The isti'adhah preamble, or null when this reciter has none.
+  ///
+  /// Takes only a reciter: there is nothing surah-dependent left to pass. It
+  /// is not an ayah and never enters the queue as a `PlaybackUnit`.
+  AudioSource? resolveIstiadhah({required Reciter reciter});
 
-  /// The standalone bismillah clip, for surahs whose `bismillahMode` is
-  /// `separate_preamble`. Null for every other mode.
-  AudioSource? resolveBismillah({
-    required Reciter reciter,
-    required Surah surah,
-  });
+  /// The standalone bismillah clip, or null when this reciter has none.
+  ///
+  /// Answers only "does this reciter have the clip". Whether a given session
+  /// *plays* it is a separate decision that belongs to the catalog's
+  /// `bismillahMode` — see `SessionPreambles`.
+  AudioSource? resolveBismillah({required Reciter reciter});
 
   /// The silence spacer used to build gaps between units.
   AudioSource resolveSpacer();
 }
 
-/// Shared preamble and spacer handling — identical in both audio modes,
-/// because preambles ship as their own files either way.
+/// Shared preamble and spacer handling — identical in both audio modes.
+///
+/// Both preambles ship as their own reciter-level files whichever way the
+/// ayahs are laid out, so there is no per-mode override and no fallback chain.
+/// A `single_file_with_timings` reciter who ships no standalone clips declares
+/// `hasIstiadhah`/`hasBismillah` false; the preamble windows in the timings
+/// files stay unused, as documented there.
 mixin _PreambleResolution on AyahAudioResolver {
   @override
-  AudioSource? resolveIstiadhah({
-    required Reciter reciter,
-    required int surah,
-  }) => reciter.hasIstiadhah
-      ? AudioSource.asset(AssetPaths.istiadhahFile(reciter.basePath, surah))
+  AudioSource? resolveIstiadhah({required Reciter reciter}) =>
+      reciter.hasIstiadhah
+      ? AudioSource.asset(AssetPaths.istiadhahFile(reciter.basePath))
       : null;
 
   @override
-  AudioSource? resolveBismillah({
-    required Reciter reciter,
-    required Surah surah,
-  }) => surah.needsBismillahPreamble
+  AudioSource? resolveBismillah({required Reciter reciter}) =>
+      reciter.hasBismillah
       ? AudioSource.asset(AssetPaths.bismillahFile(reciter.basePath))
       : null;
 
@@ -86,27 +88,6 @@ class TimingsAudioResolver extends AyahAudioResolver with _PreambleResolution {
       throw CatalogValidationException(
         AssetPaths.timingsForSurah(reciter.id, surah),
         'No timing for ayah $surah:$ayah, so it cannot be played.',
-      );
-    }
-    return ClippingAudioSource(
-      child: AudioSource.asset(AssetPaths.surahFile(reciter.basePath, surah)),
-      start: timing.start,
-      end: timing.end,
-    );
-  }
-
-  /// The isti'adhah is a separate clip even here — the timings file's own
-  /// window into the full recording is kept only for switching modes.
-  @override
-  AudioSource? resolveIstiadhah({
-    required Reciter reciter,
-    required int surah,
-  }) {
-    if (!reciter.hasIstiadhah) return null;
-    final AyahTiming? timing = _timings.istiadhah;
-    if (timing == null) {
-      return AudioSource.asset(
-        AssetPaths.istiadhahFile(reciter.basePath, surah),
       );
     }
     return ClippingAudioSource(

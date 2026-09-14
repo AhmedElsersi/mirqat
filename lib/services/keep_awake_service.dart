@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 /// the idle timer.
 class KeepAwakeService {
   const KeepAwakeService([
-    this._channel = const MethodChannel('com.ams.tahfiz/keep_awake'),
+    this._channel = const MethodChannel('com.mirqat.app/keep_awake'),
   ]);
 
   final MethodChannel _channel;

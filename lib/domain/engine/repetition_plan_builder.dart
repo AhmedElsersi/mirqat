@@ -81,6 +81,14 @@ class RepetitionPlanBuilder {
     return null;
   }
 
+  /// For [ConnectMode.continuous] the whole range is one block:
+  ///
+  /// ```
+  /// ConnectStep(startAyah, endAyah)   // repeated repeatCount times
+  /// ```
+  ///
+  /// For the drill modes it is the talqeen loop:
+  ///
   /// ```
   /// for i in startAyah..endAyah:
   ///     LearnStep(i)
@@ -94,6 +102,22 @@ class RepetitionPlanBuilder {
     final int n = config.repeatCount;
     final List<PlanStep> steps = <PlanStep>[];
 
+    // Continuous is a different shape, not another branch of the loop below:
+    // the range is recited straight through and the whole pass repeats, so
+    // there are no per-ayah drill steps to emit. One step, and `flatten` turns
+    // its `repeats` into the repeated passes.
+    if (config.connectMode == ConnectMode.continuous) {
+      steps.add(
+        ConnectStep(from: config.startAyah, to: config.endAyah, repeats: n),
+      );
+      if (config.finalFullPass && config.endAyah > config.startAyah) {
+        steps.add(
+          ConnectStep(from: config.startAyah, to: config.endAyah, repeats: n),
+        );
+      }
+      return List<PlanStep>.unmodifiable(steps);
+    }
+
     for (int i = config.startAyah; i <= config.endAyah; i++) {
       steps.add(LearnStep(ayah: i, repeats: n));
 
@@ -102,9 +126,10 @@ class RepetitionPlanBuilder {
       switch (config.connectMode) {
         case ConnectMode.cumulative:
           steps.add(ConnectStep(from: config.startAyah, to: i, repeats: n));
-        case ConnectMode.pairwise:
-          steps.add(ConnectStep(from: i - 1, to: i, repeats: n));
         case ConnectMode.none:
+          break;
+        case ConnectMode.continuous:
+          // Unreachable: handled above, before the loop.
           break;
       }
     }

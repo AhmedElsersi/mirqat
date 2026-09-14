@@ -31,6 +31,23 @@ extension ArabicTextNormalization on String {
   /// Whether this string is already in NFC — cheaper to read at a call site
   /// than `s == s.toArabicNfc()`.
   bool get isArabicNfc => this == toArabicNfc();
+
+  /// This string with every U+0640 ARABIC TATWEEL removed.
+  ///
+  /// Tatweel is a justification stretch: it carries no sound, no letter and no
+  /// diacritic, and two editions of the same ayah can differ by nothing else.
+  /// Leaving it in breaks equality, search and any text-keyed lookup between
+  /// them while looking identical on screen.
+  ///
+  /// Removing it is not a repair of scripture — nothing is added, replaced or
+  /// re-diacritized, and no shipped file contains one (the asset audit rejects
+  /// any that does). This exists so a future edition carrying tatweel is
+  /// levelled on read rather than silently comparing unequal forever.
+  String withoutTatweel() => replaceAll('\u0640', '');
+
+  /// The canonical form the app compares and stores: tatweel dropped first, so
+  /// a mark it was separating can compose, then NFC.
+  String toCanonicalQuranicText() => withoutTatweel().toArabicNfc();
 }
 
 /// Canonical combining class, defaulting to 0 outside the generated tables.

@@ -1,0 +1,27 @@
+{
+  "surah": 113,
+  "script": "uthmani",
+  "source": "KFGQPC Hafs Unicode text v18 (King Fahd Glorious Quran Printing Complex, qurancomplex.gov.sa), normalised to Unicode NFC. Cross-checked against the quranenc.com Uthmani edition and the developer-supplied text.",
+  "ayahs": [
+    {
+      "number": 1,
+      "text": "قُلۡ أَعُوذُ بِرَبِّ ٱلۡفَلَقِ"
+    },
+    {
+      "number": 2,
+      "text": "مِن شَرِّ مَا خَلَقَ"
+    },
+    {
+      "number": 3,
+      "text": "وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ"
+    },
+    {
+      "number": 4,
+      "text": "وَمِن شَرِّ ٱلنَّفَّٰثَٰتِ فِي ٱلۡعُقَدِ"
+    },
+    {
+      "number": 5,
+      "text": "وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ"
+    }
+  ]
+}

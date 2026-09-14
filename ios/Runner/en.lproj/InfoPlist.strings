@@ -1,0 +1,4 @@
+/* Deliberately the Arabic wordmark, not a transliteration: the mark does
+   not change with the device language (owner decision D1). */
+"CFBundleDisplayName" = "اقرأ وارتق";
+"CFBundleName" = "اقرأ وارتق";

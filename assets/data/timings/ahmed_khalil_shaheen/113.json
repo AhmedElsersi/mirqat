@@ -1,0 +1,36 @@
+{
+  "surah": 113,
+  "reciter": "ahmed_khalil_shaheen",
+  "_note": "Offsets into the ORIGINAL full-surah mp3. Only needed if you switch audioMode to single_file_with_timings. The recording opens with the bismillah, which is NOT ayah 1 for this surah (bismillahMode: separate_preamble).",
+  "bismillah": {
+    "startMs": 130,
+    "endMs": 4480
+  },
+  "ayahs": [
+    {
+      "number": 1,
+      "startMs": 4850,
+      "endMs": 8400
+    },
+    {
+      "number": 2,
+      "startMs": 8600,
+      "endMs": 11550
+    },
+    {
+      "number": 3,
+      "startMs": 11740,
+      "endMs": 16480
+    },
+    {
+      "number": 4,
+      "startMs": 16750,
+      "endMs": 22310
+    },
+    {
+      "number": 5,
+      "startMs": 22620,
+      "endMs": 27000
+    }
+  ]
+}

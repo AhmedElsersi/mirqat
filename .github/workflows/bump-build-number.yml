@@ -1,0 +1,59 @@
+name: Bump build number
+
+# Auto-increments pubspec.yaml's +N on every push to main, so main always
+# carries a versionCode higher than whatever was last uploaded to Play.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  # Two merges landing close together must not both read the same +N and
+  # both try to write N+1 — serialize on main itself.
+  group: bump-build-number-main
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check whether pubspec.yaml's version was already changed by hand
+        id: guard
+        run: |
+          # If the merge that triggered this run already touched the version
+          # line itself (e.g. a manual 1.0.0 -> 1.1.0 marketing bump), whoever
+          # did that has already chosen the build number for this merge — an
+          # automatic bump on top would be a second, unwanted change.
+          if git diff HEAD^ HEAD -- pubspec.yaml | grep -q '^\+version:'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump build number
+        if: steps.guard.outputs.skip == 'false'
+        id: bump
+        run: tool/bump_build_number.sh
+
+      - name: Commit
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          git commit -m "chore: build number ${{ steps.bump.outputs.previous }} -> ${{ steps.bump.outputs.version }}"
+          # NOTE: a push authenticated with the default GITHUB_TOKEN does not
+          # trigger other workflow runs (GitHub's loop-prevention rule) — so
+          # this is safe from a bump-triggers-bump loop, but it also means
+          # ci.yml does NOT re-run against this bump commit. That's accepted
+          # here since the bump only touches versionCode, not app code.
+          # If branch protection on main requires status checks or blocks
+          # direct pushes, this job needs an exemption (e.g. via a PAT with
+          # bypass rights, or excluding github-actions[bot] from the rule).
+          git push

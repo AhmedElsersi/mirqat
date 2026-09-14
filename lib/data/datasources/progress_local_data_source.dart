@@ -40,6 +40,14 @@ abstract class ProgressLocalDataSource {
   });
 
   Future<void> clearSurah(int surahNumber, int ayahCount);
+
+  /// Fires once per record written, for screens that show a progress summary
+  /// they did not write themselves.
+  ///
+  /// The home list is the case that matters: it is still mounted underneath
+  /// the progress screen and the player, so it never rebuilds on its own when
+  /// either of them marks an ayah.
+  Stream<void> watchChanges();
 }
 
 class ProgressLocalDataSourceImpl implements ProgressLocalDataSource {
@@ -159,6 +167,9 @@ class ProgressLocalDataSourceImpl implements ProgressLocalDataSource {
       );
     }
   }
+
+  @override
+  Stream<void> watchChanges() => _requireBox.watch();
 
   MemorizationProgress _read(
     Map<dynamic, dynamic> stored,

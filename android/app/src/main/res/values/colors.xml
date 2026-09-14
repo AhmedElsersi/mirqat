@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cave dark. Tints the status and navigation bars behind the native
+         splash, so it must track flutter_native_splash's `color:` /
+         `color_dark:` in pubspec.yaml — both are #1C1209, frame 0 of the
+         animated splash. A mismatch here is what makes the handover from
+         the native splash to the Flutter one visibly seam.
+
+         `ic_launcher_background` is deliberately gone: the adaptive icon
+         background is now an image layer (@drawable/ic_launcher_background),
+         so the colour token it used to need is orphaned. -->
+    <color name="splash_background">#FF1C1209</color>
+</resources>

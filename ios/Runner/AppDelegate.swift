@@ -4,7 +4,7 @@ import UIKit
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   /// Matches the channel name in MainActivity.kt and KeepAwakeService.
-  private static let keepAwakeChannel = "com.ams.tahfiz/keep_awake"
+  private static let keepAwakeChannel = "com.mirqat.app/keep_awake"
 
   override func application(
     _ application: UIApplication,
@@ -21,7 +21,7 @@ import UIKit
     // keeping the approved dependency list untouched.
     let channel = FlutterMethodChannel(
       name: AppDelegate.keepAwakeChannel,
-      binaryMessenger: engineBridge.applicationMessenger
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
     )
     channel.setMethodCallHandler { call, result in
       switch call.method {
