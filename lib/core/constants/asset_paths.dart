@@ -24,6 +24,11 @@ class AssetPaths {
   static const String surahsCatalog = '$_data/surahs.json';
   static const String recitersCatalog = '$_data/reciters.json';
 
+  /// The bundled mushaf database — surah/ayah facts, page layout and
+  /// word-by-word text. Copied out to a versioned file on first run by
+  /// `QuranDatabase` rather than opened straight from the bundle.
+  static const String quranDatabase = '$_data/quran.db';
+
   /// The WAV, not the MP3. MP3 cannot encode exactly 400 ms — encoder delay
   /// and frame padding leave the shipped MP3 at 391.7 ms, and that error
   /// accumulates across every gap in a session. The WAV is sample-exact at

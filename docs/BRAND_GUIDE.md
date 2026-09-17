@@ -114,7 +114,7 @@ the opposite of the register this app needs.
 |---|---|---|
 | Arabic UI | **IBM Plex Sans Arabic** | Open source, real weight range, excellent screen rendering |
 | Latin UI | **IBM Plex Sans** | Designed as a companion — one family across both scripts |
-| Quran text | **KFGQPC Hafs Uthmanic v18** | The mushaf font from the asset bundle |
+| Quran text | **UthmanicHafs V22** | The companion font of `quran.db`'s script export |
 | Wordmark | Amiri Regular (outlined) | Logo only |
 
 **The one non-negotiable rule:** the mushaf font is never used for UI, and the UI

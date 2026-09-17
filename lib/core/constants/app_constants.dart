@@ -37,4 +37,12 @@ class AppConstants {
   // --- Storage ---
   static const String progressBoxName = 'memorization_progress';
   static const String settingsBoxName = 'settings';
+
+  /// Schema version of `assets/data/quran.db` (its own `meta.schema_version`
+  /// row, kept in step with `tool/build_quran_data.py`). `QuranDatabase`
+  /// copies the bundled file to `quran_v<version>.db` on first run and
+  /// deletes any other `quran_v*.db` it finds, so bumping this is what makes
+  /// an app update replace a stale copy instead of opening it read-only
+  /// forever.
+  static const int quranDatabaseSchemaVersion = 2;
 }

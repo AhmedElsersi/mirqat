@@ -51,6 +51,26 @@ class Ayah extends Equatable {
     );
   }
 
+  /// Built from a row of `quran.db`'s `ayahs` table. Same validation and the
+  /// same canonicalization as [Ayah.fromJson] — the source asset changes,
+  /// the rules for what a valid ayah looks like do not.
+  factory Ayah.fromDbRow(Map<String, Object?> row) {
+    final int surahNumber = row['surah']! as int;
+    final int number = row['ayah']! as int;
+    final Object? rawText = row['text'];
+    if (rawText is! String || rawText.trim().isEmpty) {
+      throw CatalogValidationException(
+        'quran.db',
+        'Ayah $surahNumber:$number has missing or empty text.',
+      );
+    }
+    return Ayah(
+      surahNumber: surahNumber,
+      number: number,
+      text: rawText.toCanonicalQuranicText(),
+    );
+  }
+
   @override
   List<Object?> get props => <Object?>[surahNumber, number, text];
 }

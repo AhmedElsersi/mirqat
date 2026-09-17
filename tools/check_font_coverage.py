@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
-"""Checks that the bundled Quran fonts have a glyph for every codepoint in the
-shipped ayah text. A missing glyph renders as a tofu box in scripture, so this
-should be run whenever a surah is added.
+"""Checks that the bundled Quran font has a glyph for every codepoint in the
+text it renders. A missing glyph renders as a tofu box in scripture, so this
+should be run whenever quran.db is rebuilt.
 
     python3 tools/check_font_coverage.py
 
+The font is checked against its own text only — quran.db's ayahs and words,
+the text the reader renders — never against another source's encoding.
+
 Exits non-zero if any codepoint is uncovered.
 """
-import glob
-import json
+import sqlite3
 import struct
 import sys
 import unicodedata
 
+TEXT_DB = "assets/data/quran.db"
 FONTS = [
-    "assets/fonts/KFGQPCHafs-Uthmanic-v18.ttf",
-    "assets/fonts/AmiriQuran.ttf",
+    "assets/fonts/UthmanicHafs_V22.ttf",
 ]
 
 
@@ -73,13 +75,13 @@ def cmap_codepoints(path: str) -> set[int]:
 
 def main() -> int:
     needed: set[int] = set()
-    for path in sorted(glob.glob("assets/data/ayahs/*.json")):
-        doc = json.load(open(path, encoding="utf-8"))
-        for ayah in doc["ayahs"]:
-            needed |= {ord(c) for c in ayah["text"] if c != " "}
+    db = sqlite3.connect(TEXT_DB)
+    for (text,) in db.execute("SELECT text FROM ayahs UNION ALL SELECT text FROM words"):
+        needed |= {ord(c) for c in text if c != " "}
+    db.close()
 
     if not needed:
-        print("no ayah text found under assets/data/ayahs/", file=sys.stderr)
+        print(f"no ayah text found in {TEXT_DB}", file=sys.stderr)
         return 1
 
     failed = False

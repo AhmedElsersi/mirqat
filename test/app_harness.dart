@@ -13,12 +13,15 @@ import 'package:mirqat/core/di/injection.dart';
 import 'package:mirqat/core/error/exceptions.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/data/datasources/asset_reader.dart';
+import 'package:mirqat/data/datasources/quran_database.dart';
+import 'package:mirqat/data/datasources/quran_local_data_source.dart';
 import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/core/router/app_router.dart';
 import 'package:mirqat/features/splash/screen/splash_screen.dart';
 import 'package:mirqat/main.dart';
 import 'package:mirqat/services/audio/ayah_duration_service.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Real clip lengths for Ahmed Khalil Shaheen's Al-Fatiha, so the session
 /// summary is exercised with the same numbers the app would measure.
@@ -94,9 +97,18 @@ class AppHarness {
 
   static Directory? _storageDir;
   static bool _localizationReady = false;
+  static bool _sqfliteFfiReady = false;
 
   static Future<AppHarness> start() async {
     TestWidgetsFlutterBinding.ensureInitialized();
+
+    // `sqflite` is a platform-channel plugin with no implementation under
+    // `flutter test`; QuranDatabase is overridden below to open through this
+    // in-process engine instead, same reasoning as every other override here.
+    if (!_sqfliteFfiReady) {
+      sqfliteFfiInit();
+      _sqfliteFfiReady = true;
+    }
 
     // easy_localization persists the chosen locale through shared_preferences,
     // which has no plugin implementation under `flutter test`. The binding
@@ -132,6 +144,29 @@ class AppHarness {
 
     sl.unregister<AssetReader>();
     sl.registerLazySingleton<AssetReader>(FileAssetReader.new);
+
+    // quran.db is opened through sqflite, which has no plugin implementation
+    // under `flutter test`. Two more constraints, same family as the
+    // AssetReader swap above: the no-isolate ffi factory, because a reply from
+    // a background isolate never arrives inside the fake-async zone
+    // `testWidgets` runs in; and opening here, in `setUp`'s real zone, because
+    // the first open copies the asset out with real file I/O.
+    final QuranDatabase quranDatabase = QuranDatabase(
+      factory: databaseFactoryFfiNoIsolate,
+      resolveStorageDirectory: () async => _storageDir!,
+    );
+    await quranDatabase.open();
+    sl.unregister<QuranDatabase>();
+    sl.registerLazySingleton<QuranDatabase>(() => quranDatabase);
+
+    // A sqflite query still does not reliably complete when a screen first
+    // loads inside pure fake-async pumps (the splash hand-off has no runAsync
+    // around it). The catalog source caches both lists, so reading them here,
+    // in the real zone, leaves every later read an already-completed future.
+    final QuranLocalDataSource catalog = sl<QuranLocalDataSource>();
+    for (final Surah surah in await catalog.getSurahs()) {
+      await catalog.getAyahs(surah.number);
+    }
 
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.progressBoxName).clear();
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();

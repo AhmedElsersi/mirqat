@@ -15,7 +15,8 @@ here and appending to the JSON catalog — no Dart changes
 | `audio/ahmed_khalil_shaheen/001/001.mp3 … 007.mp3` | One clip per ayah. |
 | `audio/ahmed_khalil_shaheen/001/istiadhah.mp3` | The isti'adhah. **Not an ayah** — see below. |
 | `audio/silence_400ms.wav` | Gap spacer. |
-| `fonts/KFGQPCHafs-Uthmanic-v18.ttf` | Bundled Quran font (`QuranUthmani`). |
+| `fonts/UthmanicHafs_V22.ttf` | Bundled Quran font (`QuranUthmani`), the companion of `data/quran.db`'s text. |
+| `fonts/KFGQPCHafs-Uthmanic-v18.ttf` | Unbundled. Companion of the legacy `data/ayahs/*.json` text, which the reader no longer renders. |
 | `fonts/AmiriQuran.ttf` | Unbundled fallback, SIL OFL 1.1. |
 | `translations/{ar,en}.json` | UI strings. |
 

@@ -3,9 +3,13 @@ import 'package:get_it/get_it.dart';
 import '../../data/datasources/asset_reader.dart';
 import '../../data/datasources/bundle_asset_reader.dart';
 import '../../data/datasources/progress_local_data_source.dart';
+import '../../data/datasources/quran_database.dart';
+import '../../data/datasources/quran_db_local_data_source.dart';
 import '../../data/datasources/quran_local_data_source.dart';
+import '../../data/datasources/quran_pages_local_data_source.dart';
 import '../../data/datasources/settings_local_data_source.dart';
 import '../../data/repositories/progress_repository.dart';
+import '../../data/repositories/quran_pages_repository.dart';
 import '../../data/repositories/quran_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
@@ -30,8 +34,23 @@ final GetIt sl = GetIt.instance;
 Future<void> configureDependencies() async {
   // --- Data sources ---
   sl.registerLazySingleton<AssetReader>(BundleAssetReader.new);
-  sl.registerLazySingleton<QuranLocalDataSource>(
+  sl.registerLazySingleton<QuranDatabase>(QuranDatabase.new);
+
+  // The JSON-per-surah loader is kept registered under its concrete type —
+  // not the QuranLocalDataSource interface — so it stays reachable for the
+  // quran.db/surahs.json cross-check comparison test. QuranRepository itself
+  // is wired to the database-backed implementation below.
+  sl.registerLazySingleton<QuranLocalDataSourceImpl>(
     () => QuranLocalDataSourceImpl(sl<AssetReader>()),
+  );
+  sl.registerLazySingleton<QuranLocalDataSource>(
+    () => QuranDbLocalDataSource(
+      database: sl<QuranDatabase>(),
+      legacyJsonSource: sl<QuranLocalDataSourceImpl>(),
+    ),
+  );
+  sl.registerLazySingleton<QuranPagesLocalDataSource>(
+    () => QuranPagesLocalDataSourceImpl(sl<QuranDatabase>()),
   );
 
   // The boxes have to be open before anything reads them, so these two are
@@ -47,6 +66,9 @@ Future<void> configureDependencies() async {
   // --- Repositories ---
   sl.registerLazySingleton<QuranRepository>(
     () => QuranRepositoryImpl(sl<QuranLocalDataSource>()),
+  );
+  sl.registerLazySingleton<QuranPagesRepository>(
+    () => QuranPagesRepositoryImpl(sl<QuranPagesLocalDataSource>()),
   );
   sl.registerLazySingleton<ProgressRepository>(
     () => ProgressRepositoryImpl(sl<ProgressLocalDataSource>()),

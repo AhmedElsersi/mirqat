@@ -16,10 +16,11 @@ class AppTextStyles {
   /// face — so the two are renamed together or not at all.
   static const String uiFontFamily = 'IqraWartaqUI';
 
-  /// Family for Quranic text: KFGQPC Hafs Uthmanic v18, declared in
-  /// pubspec.yaml. Verified to cover all 32 codepoints in the shipped text,
-  /// including U+0671 alef wasla, U+06E1 Uthmani sukun, U+0670 superscript
-  /// alef and U+0653 maddah.
+  /// Family for Quranic text: UthmanicHafs V22, declared in pubspec.yaml — the
+  /// font that ships with the script export `quran.db` is built from. Verified
+  /// by `tools/check_font_coverage.py` to cover all 81 codepoints in quran.db's
+  /// ayah and word text, including U+0671 alef wasla, U+06E1 Uthmani sukun,
+  /// U+0670 superscript alef, U+0653 maddah and the ayah-number digits.
   ///
   /// This constant, and [ayah] below, are the only places the family is named
   /// in Dart. `test/core/font_enforcement_test.dart` proves it, because the

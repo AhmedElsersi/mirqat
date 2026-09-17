@@ -44,6 +44,9 @@ dependencies:
   hive_ce_flutter: ^2.3.4
   dartz: ^0.10.1
   equatable: ^2.1.0
+  sqflite: ^2.3.0
+  path_provider: ^2.1.0
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +72,16 @@ dev_dependencies:
   # storyboard) and contributes nothing to the runtime or to the APK.
   #   dart run flutter_native_splash:create
   flutter_native_splash: ^2.4.6
+
+  # PROPOSED EXCEPTION to the no-new-packages rule (CLAUDE.md A.4): test-only.
+  # `sqflite` itself is a platform-channel plugin with no implementation
+  # under `flutter test` (no device, no native code), so QuranDatabase and
+  # anything built on it — the whole QuranRepository/QuranPagesRepository
+  # chain — needs an in-process sqlite engine to run in tests at all. This is
+  # the same role `sqflite_common_ffi` plays for every Flutter app that ships
+  # sqflite and wants that code covered by `flutter test`. Never imported by
+  # anything under lib/.
+  sqflite_common_ffi: ^2.3.3
 
 flutter_launcher_icons:
   android: true
@@ -145,6 +158,7 @@ flutter:
     # reciter's photo needs no Dart change and no new line here.
     - assets/images/reciters/
     - assets/data/
+    - assets/data/quran.db
     - assets/data/ayahs/
     - assets/data/timings/ahmed_khalil_shaheen/
     - assets/audio/
@@ -177,10 +191,11 @@ flutter:
     #     - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
     #       weight: 700
 
-    # KFGQPC Hafs is the exact companion to the v18 text in assets/data/ayahs,
-    # so diacritic positioning is as its designers intended.
-    # assets/fonts/AmiriQuran.ttf (SIL OFL 1.1) is the fallback if the KFGQPC
-    # terms do not cover distribution; swap the asset line below to use it.
+    # UthmanicHafs V22 ships with the QUL script export that assets/data/quran.db
+    # is built from, so it is that text's own font. Each text stays with its
+    # own font: the v18 font belongs to the legacy assets/data/ayahs JSON, which
+    # encodes marks differently (open tanween U+08F0..U+08F2) and is no longer
+    # rendered. Copied byte-for-byte from data/sources/; never modified.
     - family: QuranUthmani
       fonts:
-        - asset: assets/fonts/KFGQPCHafs-Uthmanic-v18.ttf
+        - asset: assets/fonts/UthmanicHafs_V22.ttf
