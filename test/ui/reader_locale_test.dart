@@ -11,16 +11,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
+import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/features/reader/widgets/session_drawer.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_tile.dart';
 
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
 import '../app_harness.dart';
-
-
+import '../quran_db_fixtures.dart';
 
 void main() {
   late AppHarness harness;
+  late List<Surah> catalog;
+
+  setUpAll(() async {
+    final Database db = await RepoQuranDatabase().open();
+    catalog = (await db.query(
+      'surahs',
+      orderBy: 'id',
+    )).map(Surah.fromDbRow).toList();
+  });
 
   setUp(() async => harness = await AppHarness.start());
   tearDown(() async => harness.stop());
@@ -75,10 +86,13 @@ void main() {
       ) async {
         await harness.pumpApp(tester, locale: locale);
 
-        // The last catalog row. Al-Fatiha counts the bismillah as ayah 1 and
-        // gets no header; the later surahs recite it unnumbered and do. Chosen
-        // by position in the catalog, never by surah number.
-        await AppHarness.tapAndSettle(tester, find.byType(SurahRow).last);
+        // The first catalog surah that recites the bismillah unnumbered.
+        // Al-Fatiha counts it as ayah 1 and gets no header. Chosen by mode,
+        // never by surah number.
+        final Surah separate = catalog.firstWhere(
+          (Surah s) => s.bismillahMode == BismillahMode.separatePreamble,
+        );
+        await AppHarness.tapAndSettle(tester, find.text(separate.nameAr));
         expect(tester.takeException(), isNull);
 
         // Two AyahText widgets: the unnumbered header, and the flowing surah.

@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/core/constants/asset_paths.dart';
 import 'package:mirqat/data/datasources/asset_reader.dart';
 import 'package:mirqat/data/datasources/bundle_asset_reader.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
@@ -9,14 +11,16 @@ import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
 
 import '../tools/asset_checks.dart';
+import 'quran_db_fixtures.dart';
 
 /// Checks 1–22 of the asset audit, run against the bundle the app would ship.
 ///
 /// The audit that produced these was a one-off; this is the same checker
 /// (`tools/asset_checks.dart`) wired to the real loader, so it re-runs on every
-/// `flutter test`. It iterates `surahs.json`: **the next surah added is checked
-/// with no new test code**, which is the entire point. A hardcoded list of
-/// surah numbers anywhere in this file would defeat it.
+/// `flutter test`. It iterates `quran.db` and `reciters.json`: **the next
+/// recording added is checked with no new test code**, which is the entire
+/// point. A hardcoded list of surah numbers anywhere in this file would defeat
+/// it.
 ///
 /// Existence is probed against the working tree, not the built bundle:
 /// `flutter test` syncs `build/unit_test_assets` on add and edit but never
@@ -26,8 +30,8 @@ import '../tools/asset_checks.dart';
 /// a reciter-level `bismillah.mp3` sat unreachable in the tree while looking
 /// perfectly present.
 ///
-/// JSON still goes through the real loader over the real bundle, so a loader
-/// bug fails here rather than hiding behind a direct file read.
+/// Reciter JSON still goes through the real loader over the real bundle, so a
+/// loader bug fails here rather than hiding behind a direct file read.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -37,7 +41,7 @@ void main() {
 
   setUp(() {
     reader = BundleAssetReader();
-    loader = QuranLocalDataSourceImpl(reader);
+    loader = QuranLocalDataSourceImpl(reader, RepoQuranDatabase());
     probe = RepoAssetProbe(Directory.current.path);
   });
 
@@ -45,7 +49,6 @@ void main() {
     final List<CheckResult> results = await runAssetChecks(
       loader: loader,
       probe: probe,
-      readRaw: reader.loadString,
     );
 
     expect(
@@ -81,39 +84,47 @@ void main() {
   });
 
   group('the audit is load-bearing, not decorative', () {
-    test('a catalog entry with no assets behind it fails rather than '
-        'crashing at runtime', () async {
-      // A fake surah 99 with no ayah file, no audio and no timings — the shape
-      // a half-finished bundle takes.
+    test('a reciter declaring a surah with no audio behind it fails rather '
+        'than crashing at runtime', () async {
+      // The last surah in the mushaf the reciter does not already claim — by
+      // position, never by number — added to availableSurahs with no clips.
+      final List<Reciter> reciters = await loader.getReciters();
+      final Reciter reciter = reciters.first;
+      final int unrecorded = (await loader.getSurahs())
+          .map((Surah s) => s.number)
+          .lastWhere((int n) => !reciter.hasSurah(n));
+
+      final List<dynamic> catalog =
+          jsonDecode(await reader.loadString(AssetPaths.recitersCatalog))
+              as List<dynamic>;
+      final Map<String, dynamic> entry = catalog.first as Map<String, dynamic>;
+      entry['availableSurahs'] = <int>[
+        ...(entry['availableSurahs'] as List<dynamic>).cast<int>(),
+        unrecorded,
+      ];
+
       final QuranLocalDataSource fake = QuranLocalDataSourceImpl(
         _PatchedReader(reader, <String, String>{
-          'assets/data/surahs.json': '''
-[
-  {"number": 1, "nameAr": "الفاتحة", "nameEn": "Al-Fatiha", "ayahCount": 7,
-   "revelationPlace": "makkah", "bismillahMode": "counted_as_ayah_1"},
-  {"number": 99, "nameAr": "س", "nameEn": "Fake", "ayahCount": 3,
-   "revelationPlace": "makkah", "bismillahMode": "separate_preamble"}
-]''',
+          AssetPaths.recitersCatalog: jsonEncode(catalog),
         }),
+        RepoQuranDatabase(),
       );
 
-      final List<CheckResult> results = await runAssetChecks(
-        loader: fake,
-        probe: probe,
-        readRaw: reader.loadString,
+      final List<CheckResult> caused = await _failuresCausedBy(
+        loader: loader,
+        baseline: probe,
+        altered: probe,
+        alteredLoader: fake,
       );
-
-      final List<CheckResult> failures =
-          results.where((CheckResult r) => !r.passed).toList();
       expect(
-        failures,
+        caused,
         isNotEmpty,
-        reason: 'a surah with no assets behind it must not pass the audit',
+        reason: 'a declared surah with no audio must not pass the audit',
       );
       expect(
-        failures.map((CheckResult r) => r.subject).join(' '),
-        contains('99'),
-        reason: 'the failure must name the surah that is missing its assets',
+        caused.map((CheckResult r) => r.subject).join(' '),
+        contains('surah $unrecorded'),
+        reason: 'the failure must name the surah that is missing its audio',
       );
     });
 
@@ -121,7 +132,6 @@ void main() {
       const String hidden = 'assets/audio/ahmed_khalil_shaheen/001/003.mp3';
       final List<CheckResult> caused = await _failuresCausedBy(
         loader: loader,
-        reader: reader,
         baseline: probe,
         altered: _HidingProbe(probe, hidden),
       );
@@ -142,7 +152,6 @@ void main() {
         'directory — fails', () async {
       final List<CheckResult> caused = await _failuresCausedBy(
         loader: loader,
-        reader: reader,
         baseline: probe,
         altered: _AddingProbe(
           probe,
@@ -324,9 +333,13 @@ class _HidingProbe implements AssetProbe {
   }
 
   @override
-  Future<List<int>> head(String path, int count) =>
-      path == _hidden ? Future<List<int>>.value(const <int>[])
-          : _inner.head(path, count);
+  Future<List<String>> childrenDirsOf(String directory) =>
+      _inner.childrenDirsOf(directory);
+
+  @override
+  Future<List<int>> head(String path, int count) => path == _hidden
+      ? Future<List<int>>.value(const <int>[])
+      : _inner.head(path, count);
 }
 
 /// A probe with one extra asset, to prove a regression is caught.
@@ -350,6 +363,10 @@ class _AddingProbe implements AssetProbe {
     }
     return all;
   }
+
+  @override
+  Future<List<String>> childrenDirsOf(String directory) =>
+      _inner.childrenDirsOf(directory);
 
   @override
   Future<List<int>> head(String path, int count) => path == _extra
@@ -384,7 +401,8 @@ String _bySubject(List<CheckResult> failures) {
       .join('\n');
 }
 
-/// Failures that [altered] causes and [baseline] does not.
+/// Failures that [altered] (and [alteredLoader], when given) causes and the
+/// baseline does not.
 ///
 /// A delta, not an absolute count: these are negative controls, and they must
 /// report on the change they injected rather than on the state of the repo
@@ -392,9 +410,9 @@ String _bySubject(List<CheckResult> failures) {
 /// here as a second, misleading failure.
 Future<List<CheckResult>> _failuresCausedBy({
   required QuranLocalDataSource loader,
-  required AssetReader reader,
   required AssetProbe baseline,
   required AssetProbe altered,
+  QuranLocalDataSource? alteredLoader,
 }) async {
   String key(CheckResult r) => '${r.number}|${r.subject}';
 
@@ -402,16 +420,14 @@ Future<List<CheckResult>> _failuresCausedBy({
     for (final CheckResult r in await runAssetChecks(
       loader: loader,
       probe: baseline,
-      readRaw: reader.loadString,
     ))
       if (!r.passed) key(r),
   };
 
   return <CheckResult>[
     for (final CheckResult r in await runAssetChecks(
-      loader: loader,
+      loader: alteredLoader ?? loader,
       probe: altered,
-      readRaw: reader.loadString,
     ))
       if (!r.passed && !before.contains(key(r))) r,
   ];

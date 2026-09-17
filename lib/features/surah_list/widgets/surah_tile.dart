@@ -6,6 +6,7 @@ import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/theme/app_colors.dart';
 import '../cubit/surah_list_state.dart';
+import 'reading_only_marker.dart';
 
 /// The grid form of a surah: the same data as [SurahRow], laid out as a card.
 ///
@@ -62,6 +63,10 @@ class SurahTile extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              if (item.readingOnly) ...<Widget>[
+                SizedBox(height: 2.h),
+                const ReadingOnlyMarker(),
+              ],
               SizedBox(height: 2.h),
               Text(
                 item.isUntouched

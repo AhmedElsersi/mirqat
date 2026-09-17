@@ -21,7 +21,6 @@ class AssetPaths {
   static const String splashFirstFrame = '$_brand/splash_first_frame.png';
 
   static const String _data = 'assets/data';
-  static const String surahsCatalog = '$_data/surahs.json';
   static const String recitersCatalog = '$_data/reciters.json';
 
   /// The bundled mushaf database — surah/ayah facts, page layout and
@@ -38,10 +37,6 @@ class AssetPaths {
   /// Zero-pads a surah or ayah number to the 3-digit form used by every
   /// file name in the asset tree (`1` -> `001`).
   static String pad3(int number) => number.toString().padLeft(3, '0');
-
-  /// Ayah text file for a surah: `assets/data/ayahs/001.json`.
-  static String ayahsForSurah(int surahNumber) =>
-      '$_data/ayahs/${pad3(surahNumber)}.json';
 
   /// Timings file for a `single_file_with_timings` reciter:
   /// `assets/data/timings/<reciterId>/001.json`.

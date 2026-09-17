@@ -1,9 +1,14 @@
 /// The asset audit, once, so the test suite and the pre-commit CLI cannot
 /// drift apart.
 ///
-/// Everything here is driven off `surahs.json` and `reciters.json`. There is no
-/// list of surah numbers in this file and there must never be one: the point is
-/// that the next surah added is checked with no new code.
+/// Everything here is driven off `quran.db` and `reciters.json`. There is no
+/// list of surah numbers in this file and there must never be one: the next
+/// reciter or recording added is checked with no new code.
+///
+/// Text is checked for every surah, because every surah is listed and
+/// readable. Audio is checked only for what a reciter declares in
+/// `availableSurahs`, plus any surah directory actually present on disk —
+/// never by scanning all 114 surahs for clips nobody claims to have.
 ///
 /// Two entry points share it — `test/assets_integrity_test.dart`, which probes
 /// the built asset bundle, and `tools/verify_assets.dart`, which probes the
@@ -13,7 +18,6 @@ library;
 import 'dart:io';
 
 import 'package:mirqat/core/constants/asset_paths.dart';
-import 'package:mirqat/core/extensions/arabic_text_extensions.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
 import 'package:mirqat/data/models/ayah.dart';
 import 'package:mirqat/data/models/ayah_timing.dart';
@@ -62,23 +66,30 @@ abstract class AssetProbe {
   /// the directory does not exist.
   Future<List<String>> childrenOf(String directory);
 
+  /// Immediate subdirectories of [directory], names only, unordered. Empty
+  /// when the directory does not exist.
+  Future<List<String>> childrenDirsOf(String directory);
+
   /// First [count] bytes, for header sniffing. Empty when unreadable.
   Future<List<int>> head(String path, int count);
 }
 
-/// Runs checks 1–22 against whatever [loader] and [probe] point at.
+/// Runs the audit against whatever [loader] and [probe] point at.
 ///
-/// Text checks (4–6) deliberately re-read the raw JSON rather than trusting
-/// the loader's output: the loader normalizes on read, so asking it whether
-/// the file was normalized would always say yes.
+/// Checks 4, 5 and 7 (NFC, tatweel and BOM in the raw per-surah JSON) are
+/// retired with that JSON: `quran.db` is a published edition that is neither
+/// NFC-ordered nor tatweel-free, it is never edited, and the loader levels
+/// both on read.
 Future<List<CheckResult>> runAssetChecks({
   required QuranLocalDataSource loader,
   required AssetProbe probe,
-  required Future<String> Function(String path) readRaw,
 }) async {
   final List<CheckResult> out = <CheckResult>[];
 
   final List<Surah> surahs = await loader.getSurahs();
+  final Map<int, Surah> byNumber = <int, Surah>{
+    for (final Surah s in surahs) s.number: s,
+  };
   final List<Reciter> reciters = await loader.getReciters();
 
   // ---- 10: catalog shape -------------------------------------------------
@@ -86,24 +97,21 @@ Future<List<CheckResult>> runAssetChecks({
   final List<int> sorted = List<int>.of(numbers)..sort();
   out.add(
     numbers.toSet().length == numbers.length && _sameOrder(numbers, sorted)
-        ? const CheckResult.pass(10, 'surahs.json')
+        ? const CheckResult.pass(10, 'quran.db')
         : CheckResult.fail(
             10,
-            'surahs.json',
+            'quran.db',
             'surah numbers must be unique and ascending, got $numbers',
           ),
   );
 
-  // ---- 1–9: text integrity, per surah ------------------------------------
+  // ---- 1–3, 6, 8, 9: text integrity, every surah -------------------------
   for (final Surah surah in surahs) {
     final String subject = 'surah ${surah.number} (${surah.nameEn})';
-    final String path = AssetPaths.ayahsForSurah(surah.number);
 
-    String raw;
     List<Ayah> ayahs;
     try {
-      raw = await readRaw(path);
-      // Checks 1, 2 and 3 are enforced by the loader itself — a bad file
+      // Checks 1, 2 and 3 are enforced by the loader itself — a bad surah
       // throws rather than returning — so driving them through it means a
       // loosened validator fails here too.
       ayahs = await loader.getAyahs(surah.number);
@@ -111,30 +119,11 @@ Future<List<CheckResult>> runAssetChecks({
       out.add(CheckResult.pass(2, subject));
       out.add(CheckResult.pass(3, subject));
     } on Object catch (e) {
-      out.add(CheckResult.fail(1, subject, '$path did not load: $e'));
+      out.add(CheckResult.fail(1, subject, 'did not load from quran.db: $e'));
       continue;
     }
 
-    out.add(
-      raw.startsWith('﻿')
-          ? CheckResult.fail(7, subject, '$path begins with a UTF-8 BOM')
-          : CheckResult.pass(7, subject),
-    );
-
-    // 4, 5, 6 read the shipped bytes, not the loaded text.
-    final List<String> shipped = _rawAyahTexts(raw);
-    if (shipped.length != ayahs.length) {
-      out.add(
-        CheckResult.fail(
-          4,
-          subject,
-          'read ${shipped.length} raw texts but the loader returned '
-          '${ayahs.length}; the file shape changed under the checker',
-        ),
-      );
-    } else {
-      out.addAll(_textChecks(subject, ayahs, shipped));
-    }
+    out.add(_digitCheck(subject, ayahs));
 
     // 8 and 9 are enum parses the loader already made; reaching here means
     // both were one of the accepted values.
@@ -142,11 +131,24 @@ Future<List<CheckResult>> runAssetChecks({
     out.add(CheckResult.pass(9, subject));
   }
 
-  // ---- 11–18: audio wiring ------------------------------------------------
+  // ---- 11–18: audio wiring, declared surahs only -------------------------
   for (final Reciter reciter in reciters) {
-    for (final Surah surah in surahs) {
-      final String subject = '${reciter.id} surah ${surah.number}';
-      final bool declared = reciter.hasSurah(surah.number);
+    final Set<int> declared = reciter.availableSurahs.toSet();
+    final List<int> incomplete = <int>[];
+
+    for (final int number in reciter.availableSurahs) {
+      final String subject = '${reciter.id} surah $number';
+      final Surah? surah = byNumber[number];
+      if (surah == null) {
+        out.add(
+          CheckResult.fail(
+            11,
+            subject,
+            'availableSurahs lists surah $number, which is not in quran.db',
+          ),
+        );
+        continue;
+      }
 
       final List<String> missing = <String>[];
       final List<String> unreadable = <String>[];
@@ -163,53 +165,25 @@ Future<List<CheckResult>> runAssetChecks({
         final String? why = _mp3Problem(await probe.head(clip, 16));
         if (why != null) unreadable.add('ayah $ayah -> $clip: $why');
       }
+      if (missing.isNotEmpty) incomplete.add(number);
 
-      if (declared) {
-        out.add(
-          missing.isEmpty
-              ? CheckResult.pass(11, subject)
-              : CheckResult.fail(
-                  11,
-                  subject,
-                  'surah ${surah.number} declares ${surah.ayahCount} ayahs but '
-                  'these clips are absent: ${missing.join('; ')}',
-                ),
-        );
-        out.add(
-          unreadable.isEmpty
-              ? CheckResult.pass(13, subject)
-              : CheckResult.fail(13, subject, unreadable.join('; ')),
-        );
-      }
-
-      // 12: nothing numbered past the end of the surah.
-      final List<String> strays = <String>[];
-      for (final String name in await probe.childrenOf(
-        '${reciter.basePath}/${AssetPaths.pad3(surah.number)}',
-      )) {
-        final RegExpMatch? m = RegExp(r'^(\d{3})\.mp3$').firstMatch(name);
-        if (m == null) {
-          strays.add('$name (not an ayah clip)');
-          continue;
-        }
-        final int n = int.parse(m.group(1)!);
-        if (n > surah.ayahCount || n < 1) {
-          strays.add('$name (outside 1..${surah.ayahCount})');
-        }
-      }
       out.add(
-        strays.isEmpty
-            ? CheckResult.pass(12, subject)
+        missing.isEmpty
+            ? CheckResult.pass(11, subject)
             : CheckResult.fail(
-                12,
+                11,
                 subject,
-                'surah directory holds ayahs only, but found: '
-                '${strays.join(', ')}. The catalog says ${surah.ayahCount} '
-                'ayahs',
+                'surah ${surah.number} has ${surah.ayahCount} ayahs but these '
+                'clips are absent: ${missing.join('; ')}',
               ),
       );
+      out.add(
+        unreadable.isEmpty
+            ? CheckResult.pass(13, subject)
+            : CheckResult.fail(13, subject, unreadable.join('; ')),
+      );
 
-      // 17: a separate_preamble surah must have a bismillah to play.
+      // 17: a separate-preamble surah must have a bismillah to play.
       if (surah.bismillahMode == BismillahMode.separatePreamble) {
         final String clip = AssetPaths.bismillahFile(reciter.basePath);
         if (!reciter.hasBismillah) {
@@ -217,7 +191,7 @@ Future<List<CheckResult>> runAssetChecks({
             CheckResult.fail(
               17,
               subject,
-              'bismillahMode is separate_preamble but reciter '
+              'the bismillah is a separate preamble but reciter '
               '"${reciter.id}" declares hasBismillah false, so ayah 1 would '
               'begin with no bismillah',
             ),
@@ -236,27 +210,7 @@ Future<List<CheckResult>> runAssetChecks({
       }
     }
 
-    // 14 / 15: the catalog and the audio tree must agree in both directions.
-    final Set<int> declared = reciter.availableSurahs.toSet();
-    final List<int> incomplete = <int>[];
-    final List<int> reachableButUnlisted = <int>[];
-    for (final Surah surah in surahs) {
-      bool complete = true;
-      for (int ayah = 1; ayah <= surah.ayahCount; ayah++) {
-        if (!await probe.exists(
-          AssetPaths.perAyahFile(reciter.basePath, surah.number, ayah),
-        )) {
-          complete = false;
-          break;
-        }
-      }
-      if (declared.contains(surah.number) && !complete) {
-        incomplete.add(surah.number);
-      }
-      if (!declared.contains(surah.number) && complete) {
-        reachableButUnlisted.add(surah.number);
-      }
-    }
+    // 14: everything declared is playable end to end.
     out.add(
       incomplete.isEmpty
           ? CheckResult.pass(14, reciter.id)
@@ -267,6 +221,66 @@ Future<List<CheckResult>> runAssetChecks({
               'directory — a session on them would fail mid-play',
             ),
     );
+
+    // 12 and 15 look at the surah directories that are actually on disk.
+    final List<int> reachableButUnlisted = <int>[];
+    for (final String dirName in await probe.childrenDirsOf(reciter.basePath)) {
+      if (!RegExp(r'^\d{3}$').hasMatch(dirName)) continue;
+      final int number = int.parse(dirName);
+      final String dir = '${reciter.basePath}/$dirName';
+      final String subject = '${reciter.id} surah $number';
+      final Surah? surah = byNumber[number];
+      if (surah == null) {
+        out.add(
+          CheckResult.fail(12, subject, '$dir is not a surah in quran.db'),
+        );
+        continue;
+      }
+
+      // 12: nothing but ayah clips, and nothing numbered past the end.
+      final List<String> strays = <String>[];
+      for (final String name in await probe.childrenOf(dir)) {
+        if (name == 'bismillah.mp3' || name == 'istiadhah.mp3') {
+          strays.add(
+            '$dir/$name (a per-surah preamble; both preambles are one per '
+            'reciter, at ${reciter.basePath}/$name)',
+          );
+          continue;
+        }
+        final RegExpMatch? m = RegExp(r'^(\d{3})\.mp3$').firstMatch(name);
+        if (m == null) {
+          strays.add('$name (not an ayah clip)');
+          continue;
+        }
+        final int n = int.parse(m.group(1)!);
+        if (n > surah.ayahCount || n < 1) {
+          strays.add('$name (outside 1..${surah.ayahCount})');
+        }
+      }
+      out.add(
+        strays.isEmpty
+            ? CheckResult.pass(12, subject)
+            : CheckResult.fail(
+                12,
+                subject,
+                'surah directory holds ayahs only, but found: '
+                '${strays.join(', ')}. quran.db says ${surah.ayahCount} ayahs',
+              ),
+      );
+
+      if (!declared.contains(number)) {
+        bool complete = true;
+        for (int ayah = 1; ayah <= surah.ayahCount; ayah++) {
+          if (!await probe.exists(
+            AssetPaths.perAyahFile(reciter.basePath, number, ayah),
+          )) {
+            complete = false;
+            break;
+          }
+        }
+        if (complete) reachableButUnlisted.add(number);
+      }
+    }
     out.add(
       reachableButUnlisted.isEmpty
           ? CheckResult.pass(15, reciter.id)
@@ -274,7 +288,8 @@ Future<List<CheckResult>> runAssetChecks({
               15,
               reciter.id,
               'surah(s) $reachableButUnlisted have complete audio but are '
-              'absent from availableSurahs, so no session can ever reach them',
+              'absent from availableSurahs, so they show as reading-only and '
+              'no session can reach them',
             ),
     );
 
@@ -291,24 +306,6 @@ Future<List<CheckResult>> runAssetChecks({
               ),
       );
     }
-
-    // Preambles are reciter-level now; a copy under a surah directory is a
-    // leftover that check 12 reports as a stray, and this names it directly.
-    for (final Surah surah in surahs) {
-      final String dir = '${reciter.basePath}/${AssetPaths.pad3(surah.number)}';
-      for (final String name in <String>['bismillah.mp3', 'istiadhah.mp3']) {
-        if (await probe.exists('$dir/$name')) {
-          out.add(
-            CheckResult.fail(
-              12,
-              '${reciter.id} surah ${surah.number}',
-              '$dir/$name is a per-surah preamble; both preambles are one per '
-              'reciter, at ${reciter.basePath}/$name',
-            ),
-          );
-        }
-      }
-    }
   }
 
   // ---- 16: the spacer -----------------------------------------------------
@@ -323,33 +320,31 @@ Future<List<CheckResult>> runAssetChecks({
           ),
   );
 
-  // ---- 19–22: timings -----------------------------------------------------
+  // ---- 19–22: timings, declared surahs only -------------------------------
   for (final Reciter reciter in reciters) {
-    for (final Surah surah in surahs) {
-      final String path = AssetPaths.timingsForSurah(
-        reciter.id,
-        surah.number,
-      );
+    for (final int number in reciter.availableSurahs) {
+      if (!byNumber.containsKey(number)) continue; // Reported by 11.
+      final String path = AssetPaths.timingsForSurah(reciter.id, number);
       if (!await probe.exists(path)) continue; // Optional in per_ayah mode.
 
-      final String subject = 'timings ${reciter.id}/${surah.number}';
+      final String subject = 'timings ${reciter.id}/$number';
       SurahTimings timings;
       try {
         timings = await loader.getTimings(
           reciterId: reciter.id,
-          surahNumber: surah.number,
+          surahNumber: number,
         );
         out.add(CheckResult.pass(19, subject));
       } on Object catch (e) {
         out.add(CheckResult.fail(19, subject, '$path did not load: $e'));
         continue;
       }
-
       final List<int> ordered = timings.ayahs.keys.toList()..sort();
       final List<String> inverted = <String>[];
       for (final int n in ordered) {
         final AyahTiming t = timings.ayahs[n]!;
         if (t.startMs >= t.endMs) {
+
           inverted.add('ayah $n: ${t.startMs}ms..${t.endMs}ms');
         }
       }
@@ -411,110 +406,24 @@ bool _sameOrder(List<int> a, List<int> b) {
   return true;
 }
 
-/// The `text` values exactly as the file holds them, before the loader
-/// normalizes anything.
-List<String> _rawAyahTexts(String rawJson) {
-  final RegExp entry = RegExp(r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"');
-  return <String>[
-    for (final RegExpMatch m in entry.allMatches(rawJson)) _unescape(m.group(1)!),
-  ];
-}
-
-String _unescape(String s) {
-  final StringBuffer b = StringBuffer();
-  for (int i = 0; i < s.length; i++) {
-    if (s[i] != r'\') {
-      b.write(s[i]);
-      continue;
-    }
-    final String next = s[i + 1];
-    if (next == 'u') {
-      b.writeCharCode(int.parse(s.substring(i + 2, i + 6), radix: 16));
-      i += 5;
-    } else {
-      b.write(
-        const <String, String>{
-          'n': '\n',
-          't': '\t',
-          'r': '\r',
-          'b': '\b',
-          'f': '\f',
-          '"': '"',
-          r'\': r'\',
-          '/': '/',
-        }[next] ??
-            next,
-      );
-      i += 1;
-    }
-  }
-  return b.toString();
-}
-
-/// Checks 4, 5 and 6 — the silent ones. All three compare shipped bytes, and
-/// all three report the first offending codepoint rather than the ayah.
-List<CheckResult> _textChecks(
-  String subject,
-  List<Ayah> ayahs,
-  List<String> shipped,
-) {
-  final List<CheckResult> out = <CheckResult>[];
-  String? nfc;
-  String? tatweel;
-  String? digits;
-
-  for (int i = 0; i < shipped.length; i++) {
-    final String text = shipped[i];
-    final int number = ayahs[i].number;
-
-    if (nfc == null && text != text.toArabicNfc()) {
-      nfc =
-          'ayah $number is not in NFC: first difference at '
-          '${_describeAt(text, _firstDifference(text, text.toArabicNfc()))}';
-    }
-    if (tatweel == null) {
-      final int at = text.indexOf('ـ');
-      if (at >= 0) {
-        tatweel = 'ayah $number carries ${_describeAt(text, at)}';
-      }
-    }
-    if (digits == null) {
-      for (int j = 0; j < text.length; j++) {
-        final int cp = text.codeUnitAt(j);
-        if (cp >= 0x0660 && cp <= 0x0669) {
-          digits =
-              'ayah $number carries ${_describeAt(text, j)} — an ayah-number '
-              'marker that was not stripped from the source edition';
-          break;
-        }
+/// Check 6: no ayah-number marker survives in ayah text. Markers are their
+/// own rows in `quran.db`'s words table and must never leak into an ayah.
+CheckResult _digitCheck(String subject, List<Ayah> ayahs) {
+  for (final Ayah ayah in ayahs) {
+    final String text = ayah.text;
+    for (int j = 0; j < text.length; j++) {
+      final int cp = text.codeUnitAt(j);
+      if (cp >= 0x0660 && cp <= 0x0669) {
+        return CheckResult.fail(
+          6,
+          subject,
+          'ayah ${ayah.number} carries ${_describeAt(text, j)} — an '
+          'ayah-number marker inside the ayah text',
+        );
       }
     }
   }
-
-  out.add(
-    nfc == null
-        ? CheckResult.pass(4, subject)
-        : CheckResult.fail(4, subject, nfc),
-  );
-  out.add(
-    tatweel == null
-        ? CheckResult.pass(5, subject)
-        : CheckResult.fail(5, subject, tatweel),
-  );
-  out.add(
-    digits == null
-        ? CheckResult.pass(6, subject)
-        : CheckResult.fail(6, subject, digits),
-  );
-  return out;
-}
-
-int _firstDifference(String a, String b) {
-  final int n = a.length < b.length ? a.length : b.length;
-  for (int i = 0; i < n; i++) {
-    if (a[i] != b[i]) return i;
-  }
-  return n;
+  return CheckResult.pass(6, subject);
 }
 
 /// `U+0640 (offset 12)` — enough to locate the character, and deliberately no
@@ -700,6 +609,17 @@ class RepoAssetProbe implements AssetProbe {
       for (final FileSystemEntity e in dir.listSync())
         if (e is File && !e.uri.pathSegments.last.startsWith('.'))
           e.uri.pathSegments.last,
+    ];
+  }
+
+  @override
+  Future<List<String>> childrenDirsOf(String directory) async {
+    final Directory dir = Directory('$repoRoot/$directory');
+    if (!dir.existsSync()) return const <String>[];
+    return <String>[
+      for (final FileSystemEntity e in dir.listSync())
+        if (e is Directory)
+          e.uri.pathSegments.lastWhere((String s) => s.isNotEmpty),
     ];
   }
 

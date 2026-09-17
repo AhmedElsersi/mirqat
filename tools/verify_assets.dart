@@ -1,7 +1,10 @@
 import 'dart:io';
 
+import 'package:mirqat/core/constants/asset_paths.dart';
 import 'package:mirqat/data/datasources/asset_reader.dart';
+import 'package:mirqat/data/datasources/quran_database_opener.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'asset_checks.dart';
 
@@ -11,8 +14,9 @@ import 'asset_checks.dart';
 ///
 /// Same checks as `test/assets_integrity_test.dart`, same implementation
 /// (`asset_checks.dart`), down to the probe and the pubspec pass — the only
-/// difference is that this one reads the catalog JSON off disk instead of
-/// through the asset bundle, so it runs on a tree that has never been built.
+/// difference is that this one reads the catalog off disk — `quran.db` opened
+/// in place, read-only, through the ffi sqlite engine — instead of through the
+/// asset bundle, so it runs on a tree that has never been built.
 ///
 /// Exits 0 when everything passes, 1 otherwise.
 Future<void> main(List<String> args) async {
@@ -24,15 +28,18 @@ Future<void> main(List<String> args) async {
     exit(2);
   }
 
+  sqfliteFfiInit();
   final AssetReader reader = _FileAssetReader(root);
-  final QuranLocalDataSource loader = QuranLocalDataSourceImpl(reader);
+  final QuranLocalDataSource loader = QuranLocalDataSourceImpl(
+    reader,
+    _RepoDatabase('${root.path}/${AssetPaths.quranDatabase}'),
+  );
 
   List<CheckResult> results;
   try {
     results = await runAssetChecks(
       loader: loader,
       probe: RepoAssetProbe(root.path),
-      readRaw: reader.loadString,
     );
   } on Object catch (e) {
     stderr.writeln('The catalog itself did not load, so nothing could be '
@@ -75,4 +82,19 @@ class _FileAssetReader implements AssetReader {
     if (!file.existsSync()) throw assetMissing(path, 'no such file');
     return file.readAsString();
   }
+}
+
+/// The repo's own `quran.db`, opened where it lies. Read-only: the audit must
+/// never be the thing that changes the file it audits.
+class _RepoDatabase implements QuranDatabaseOpener {
+  _RepoDatabase(this._path);
+
+  final String _path;
+  Future<Database>? _opening;
+
+  @override
+  Future<Database> open() => _opening ??= databaseFactoryFfi.openDatabase(
+    _path,
+    options: OpenDatabaseOptions(readOnly: true),
+  );
 }

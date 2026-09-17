@@ -6,6 +6,7 @@ import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/theme/app_colors.dart';
 import '../cubit/surah_list_state.dart';
+import 'reading_only_marker.dart';
 
 class SurahRow extends StatelessWidget {
   const SurahRow({
@@ -45,13 +46,22 @@ class SurahRow extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 4.h),
-                  Text(
-                    LocaleKeys.surahListAyahCount.tr(
-                      args: <String>[item.surah.ayahCount.toLocalisedString()],
-                    ),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                  Wrap(
+                    spacing: 12.w,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        LocaleKeys.surahListAyahCount.tr(
+                          args: <String>[
+                            item.surah.ayahCount.toLocalisedString(),
+                          ],
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (item.readingOnly) const ReadingOnlyMarker(),
+                    ],
                   ),
                   SizedBox(height: 8.h),
                   ClipRRect(

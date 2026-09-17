@@ -18,7 +18,8 @@
     "empty": "No surahs in the catalog",
     "ayah_count": "{} ayahs",
     "progress": "{} of {} memorized",
-    "not_started": "Not started"
+    "not_started": "Not started",
+    "reading_only": "Reading only"
   },
   "session_setup": {
     "range": "Ayah range",
@@ -102,6 +103,9 @@
     "reset_defaults": "Reset",
     "save_as_default": "Save as default",
     "saved_as_default": "Saved as your defaults",
-    "tap_to_select": "Tap an ayah to set the start of the range"
+    "tap_to_select": "Tap an ayah to set the start of the range",
+    "no_audio": "No reciter has recorded Surah {} yet, so a memorization session cannot start. You can still read it.",
+    "reciter_lacks_surah": "{} has no recording of Surah {}.",
+    "switch_reciter": "Switch to {}"
   }
 }

@@ -11,6 +11,7 @@ import '../../../data/repositories/settings_repository.dart';
 import '../../../domain/engine/repetition_plan_builder.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../domain/entities/session_plan.dart';
+import '../../../services/audio/audio_availability.dart';
 import '../../../services/audio/ayah_duration_service.dart';
 import 'reader_state.dart';
 
@@ -24,16 +25,19 @@ class ReaderCubit extends Cubit<ReaderState> {
   ReaderCubit({
     required QuranRepository quranRepository,
     required SettingsRepository settingsRepository,
+    required AudioAvailability audioAvailability,
     required AyahDurationService durationService,
     required RepetitionPlanBuilder planBuilder,
   }) : _quran = quranRepository,
        _settings = settingsRepository,
+       _audio = audioAvailability,
        _durations = durationService,
        _builder = planBuilder,
        super(const ReaderState());
 
   final QuranRepository _quran;
   final SettingsRepository _settings;
+  final AudioAvailability _audio;
   final AyahDurationService _durations;
   final RepetitionPlanBuilder _builder;
 
@@ -54,30 +58,33 @@ class ReaderCubit extends Cubit<ReaderState> {
     }, (List<Reciter> r) => r);
     if (reciters == null) return;
 
-    final List<Reciter> withSurah = reciters
-        .where((Reciter r) => r.hasSurah(surahNumber))
-        .toList();
-    if (withSurah.isEmpty) {
-      emit(
-        state.copyWith(
-          status: LoadStatus.failure,
-          errorMessage:
-              'No reciter in the catalog has audio for surah $surahNumber.',
-        ),
-      );
-      return;
-    }
+    final availableResult = await _audio.recitersFor(surah);
+    final List<Reciter>? available = availableResult.fold((Failure f) {
+      emit(state.copyWith(status: LoadStatus.failure, errorMessage: f.message));
+      return null;
+    }, (List<Reciter> r) => r);
+    if (available == null) return;
 
     final AppSettings settings = (await _settings.read()).getOrElse(
       () => const AppSettings(),
     );
 
-    // The chosen reciter, or the first that has this surah when the choice is
-    // unset or no longer covers it.
-    final Reciter reciter = withSurah.firstWhere(
-      (Reciter r) => r.id == settings.reciterId,
-      orElse: () => withSurah.first,
-    );
+    // Reading never depends on audio, so the text loads either way. Whether a
+    // session can start is decided here, before anyone presses play:
+    //  * nobody has this surah            -> blocked, and said so;
+    //  * the chosen reciter lacks it but
+    //    someone else has it              -> blocked, with a switch offered;
+    //  * otherwise the chosen reciter, or the first available when none is
+    //    chosen (or the choice is no longer in the catalog).
+    final Reciter? chosen = reciters
+        .where((Reciter r) => r.id == settings.reciterId)
+        .firstOrNull;
+    final SessionBlock? block = available.isEmpty
+        ? SessionBlock.noAudio
+        : (chosen != null && !chosen.hasSurah(surahNumber))
+        ? SessionBlock.reciterLacksSurah
+        : null;
+    final Reciter? reciter = block == null ? (chosen ?? available.first) : null;
 
     final ayahsResult = await _quran.getAyahs(surahNumber);
     final List<Ayah>? ayahs = ayahsResult.fold((Failure f) {
@@ -90,12 +97,17 @@ class ReaderCubit extends Cubit<ReaderState> {
         ? await _loadBismillahText()
         : null;
 
-    final Map<int, Duration> durations;
-    try {
-      durations = await _durations.durationsFor(reciter: reciter, surah: surah);
-    } catch (e) {
-      emit(state.copyWith(status: LoadStatus.failure, errorMessage: '$e'));
-      return;
+    Map<int, Duration> durations = const <int, Duration>{};
+    if (reciter != null) {
+      try {
+        durations = await _durations.durationsFor(
+          reciter: reciter,
+          surah: surah,
+        );
+      } catch (e) {
+        emit(state.copyWith(status: LoadStatus.failure, errorMessage: '$e'));
+        return;
+      }
     }
 
     // A remembered range only applies while it still fits the surah — a
@@ -121,6 +133,9 @@ class ReaderCubit extends Cubit<ReaderState> {
           status: LoadStatus.ready,
           surah: surah,
           reciter: reciter,
+          availableReciters: available,
+          chosenReciter: chosen,
+          sessionBlock: block,
           ayahs: ayahs,
           bismillahText: bismillahText,
           ayahDurations: durations,
@@ -129,6 +144,36 @@ class ReaderCubit extends Cubit<ReaderState> {
           selectionPhase: rememberedFits
               ? SelectionPhase.ranged
               : SelectionPhase.wholeSurah,
+        ),
+      ),
+    );
+  }
+
+  /// Takes up the switch offered when the chosen reciter lacks this surah.
+  ///
+  /// For this screen only: the reciter chosen in settings stays as it is, so
+  /// every other surah keeps playing in the voice the reader picked.
+  Future<void> switchReciter(Reciter reciter) async {
+    final Surah? surah = state.surah;
+    if (surah == null || !reciter.hasSurah(surah.number)) return;
+
+    final Map<int, Duration> durations;
+    try {
+      durations = await _durations.durationsFor(reciter: reciter, surah: surah);
+    } catch (e) {
+      if (!isClosed) {
+        emit(state.copyWith(status: LoadStatus.failure, errorMessage: '$e'));
+      }
+      return;
+    }
+    if (isClosed) return;
+
+    emit(
+      _withPlan(
+        state.copyWith(
+          reciter: reciter,
+          ayahDurations: durations,
+          clearSessionBlock: true,
         ),
       ),
     );
@@ -391,11 +436,13 @@ class ReaderCubit extends Cubit<ReaderState> {
         .build(config, surahAyahCount: surah.ayahCount)
         .fold(
           (Failure failure) => next.copyWith(configError: failure.message),
+          // No reciter means no measured clips, so there is nothing honest to
+          // estimate from: the plan still exists, the duration does not.
           (SessionPlan plan) => next.copyWith(
             plan: plan,
-            estimatedDuration: plan.estimatedDuration(
-              ayahDurations: next.ayahDurations,
-            ),
+            estimatedDuration: next.reciter == null
+                ? null
+                : plan.estimatedDuration(ayahDurations: next.ayahDurations),
           ),
         );
   }

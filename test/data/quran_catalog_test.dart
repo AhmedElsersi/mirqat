@@ -10,6 +10,8 @@ import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/core/extensions/arabic_text_extensions.dart';
 
+import '../quran_db_fixtures.dart';
+
 /// Exercises the loaders against the assets that actually ship, so a file that
 /// is missing, undeclared in pubspec.yaml, or out of step with the catalog
 /// fails here rather than at playback time.
@@ -18,7 +20,12 @@ void main() {
 
   late QuranLocalDataSource source;
 
-  setUp(() => source = QuranLocalDataSourceImpl(BundleAssetReader()));
+  setUp(
+    () => source = QuranLocalDataSourceImpl(
+      BundleAssetReader(),
+      RepoQuranDatabase(),
+    ),
+  );
 
   group('surah catalog', () {
     test('loads every entry the catalog holds, in ascending order', () async {

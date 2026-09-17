@@ -6,6 +6,7 @@ Dart's hand-rolled NFC against Python's reference implementation.
 """
 import json
 import random
+import sqlite3
 import unicodedata
 
 random.seed(20260907)
@@ -47,11 +48,15 @@ def main() -> None:
               "آأ", "لَّ"]:
         add(s)
 
-    # The shipped ayah text, in both NFC and NFD.
-    doc = json.load(open("assets/data/ayahs/001.json", encoding="utf-8"))
-    for ayah in doc["ayahs"]:
-        add(ayah["text"])
-        add(unicodedata.normalize("NFD", ayah["text"]))
+    # The shipped text of the first surah, as stored and in NFD.
+    db = sqlite3.connect("assets/data/quran.db")
+    first = db.execute("SELECT MIN(id) FROM surahs").fetchone()[0]
+    for (text,) in db.execute(
+        "SELECT text FROM ayahs WHERE surah = ? ORDER BY ayah", (first,)
+    ):
+        add(text)
+        add(unicodedata.normalize("NFD", text))
+    db.close()
 
     with open(OUT, "w", encoding="utf-8") as fh:
         json.dump(cases, fh, ensure_ascii=False, indent=0)

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:sqflite_common/sqlite_api.dart';
+
 import '../../core/constants/asset_paths.dart';
 import '../../core/error/exceptions.dart';
 import '../models/ayah.dart';
@@ -8,14 +10,19 @@ import '../models/reciter.dart';
 import '../models/surah.dart';
 import 'asset_reader.dart';
 import 'ayah_sequence_validator.dart';
+import 'quran_database_opener.dart';
 
-/// Loads the JSON catalog — the single source of truth for surahs, ayah text,
-/// reciters and timings.
+/// Loads the catalog: every surah and its ayah text from `quran.db`, reciters
+/// and timings from the JSON under `assets/data/`.
 ///
-/// Every load is validated against the catalog and fails loudly on any
-/// disagreement. Nothing is padded, trimmed or repaired
-/// (CLAUDE.md A.2 rule 1).
+/// The surah list is the whole mushaf. It knows nothing about audio — whether
+/// a reciter has a surah is `AudioAvailability`'s question, never a filter
+/// here, because reading does not depend on audio.
+///
+/// Every load is validated and fails loudly on any disagreement. Nothing is
+/// padded, trimmed or repaired (CLAUDE.md A.2 rule 1).
 abstract class QuranLocalDataSource {
+  /// Every surah in `quran.db`, ordered by number.
   Future<List<Surah>> getSurahs();
 
   Future<Surah> getSurah(int surahNumber);
@@ -34,11 +41,13 @@ abstract class QuranLocalDataSource {
 }
 
 class QuranLocalDataSourceImpl implements QuranLocalDataSource {
-  QuranLocalDataSourceImpl(this._assets);
+  QuranLocalDataSourceImpl(this._assets, this._database);
 
   final AssetReader _assets;
+  final QuranDatabaseOpener _database;
 
   List<Surah>? _surahs;
+  Map<int, Surah>? _surahsByNumber;
   List<Reciter>? _reciters;
   final Map<int, List<Ayah>> _ayahsBySurah = <int, List<Ayah>>{};
   final Map<String, SurahTimings> _timings = <String, SurahTimings>{};
@@ -48,46 +57,33 @@ class QuranLocalDataSourceImpl implements QuranLocalDataSource {
     final List<Surah>? cached = _surahs;
     if (cached != null) return cached;
 
-    const String path = AssetPaths.surahsCatalog;
-    final List<dynamic> raw = _decodeList(await _assets.loadString(path), path);
-
-    final List<Surah> surahs = <Surah>[];
-    final Set<int> seen = <int>{};
-    for (final Object? entry in raw) {
-      if (entry is! Map<String, dynamic>) {
-        throw CatalogValidationException(
-          path,
-          'Surah catalog contains a non-object entry: $entry.',
-        );
-      }
-      final Surah surah = Surah.fromJson(entry, path);
-      if (!seen.add(surah.number)) {
-        throw CatalogValidationException(
-          path,
-          'Surah catalog lists surah ${surah.number} more than once.',
-        );
-      }
-      surahs.add(surah);
-    }
+    final Database db = await _database.open();
+    final List<Surah> surahs = (await db.query(
+      'surahs',
+      orderBy: 'id',
+    )).map(Surah.fromDbRow).toList();
 
     if (surahs.isEmpty) {
-      throw CatalogValidationException(path, 'Surah catalog is empty.');
+      throw const CatalogValidationException(
+        AssetPaths.quranDatabase,
+        'quran.db holds no surahs.',
+      );
     }
 
-    surahs.sort((Surah a, Surah b) => a.number.compareTo(b.number));
+    _surahsByNumber = <int, Surah>{
+      for (final Surah surah in surahs) surah.number: surah,
+    };
     return _surahs = List<Surah>.unmodifiable(surahs);
   }
 
   @override
   Future<Surah> getSurah(int surahNumber) async {
-    final List<Surah> surahs = await getSurahs();
-    for (final Surah surah in surahs) {
-      if (surah.number == surahNumber) return surah;
-    }
+    await getSurahs();
+    final Surah? surah = _surahsByNumber![surahNumber];
+    if (surah != null) return surah;
     throw CatalogValidationException(
-      AssetPaths.surahsCatalog,
-      'Surah $surahNumber is not in the catalog. Available: '
-      '${surahs.map((Surah s) => s.number).join(', ')}.',
+      AssetPaths.quranDatabase,
+      'Surah $surahNumber is not in quran.db.',
     );
   }
 
@@ -97,43 +93,15 @@ class QuranLocalDataSourceImpl implements QuranLocalDataSource {
     if (cached != null) return cached;
 
     final Surah surah = await getSurah(surahNumber);
-    final String path = AssetPaths.ayahsForSurah(surahNumber);
-    final Map<String, dynamic> doc = _decodeObject(
-      await _assets.loadString(path),
-      path,
-    );
+    final Database db = await _database.open();
+    final List<Ayah> ayahs = (await db.query(
+      'ayahs',
+      where: 'surah = ?',
+      whereArgs: <int>[surahNumber],
+      orderBy: 'ayah',
+    )).map(Ayah.fromDbRow).toList();
 
-    final Object? declaredSurah = doc['surah'];
-    if (declaredSurah != surahNumber) {
-      throw CatalogValidationException(
-        path,
-        'Ayah file declares surah $declaredSurah but was loaded for surah '
-        '$surahNumber.',
-      );
-    }
-
-    final Object? rawAyahs = doc['ayahs'];
-    if (rawAyahs is! List) {
-      throw CatalogValidationException(
-        path,
-        'Ayah file for surah $surahNumber is missing an "ayahs" list.',
-      );
-    }
-
-    final List<Ayah> ayahs = <Ayah>[];
-    for (final Object? entry in rawAyahs) {
-      if (entry is! Map<String, dynamic>) {
-        throw CatalogValidationException(
-          path,
-          'Ayah file for surah $surahNumber has a non-object entry in "ayahs".',
-        );
-      }
-      ayahs.add(
-        Ayah.fromJson(entry, surahNumber: surahNumber, assetPath: path),
-      );
-    }
-
-    validateAyahSequence(ayahs, surah: surah, path: path);
+    validateAyahSequence(ayahs, surah: surah, path: AssetPaths.quranDatabase);
 
     return _ayahsBySurah[surahNumber] = List<Ayah>.unmodifiable(ayahs);
   }

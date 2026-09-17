@@ -4,7 +4,6 @@ import '../../data/datasources/asset_reader.dart';
 import '../../data/datasources/bundle_asset_reader.dart';
 import '../../data/datasources/progress_local_data_source.dart';
 import '../../data/datasources/quran_database.dart';
-import '../../data/datasources/quran_db_local_data_source.dart';
 import '../../data/datasources/quran_local_data_source.dart';
 import '../../data/datasources/quran_pages_local_data_source.dart';
 import '../../data/datasources/settings_local_data_source.dart';
@@ -18,6 +17,7 @@ import '../../features/progress/cubit/progress_cubit.dart';
 import '../../features/reader/cubit/reader_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
+import '../../services/audio/audio_availability.dart';
 import '../../services/audio/ayah_duration_service.dart';
 import '../../services/audio/memorization_player_service.dart';
 import '../../services/keep_awake_service.dart';
@@ -35,18 +35,10 @@ Future<void> configureDependencies() async {
   // --- Data sources ---
   sl.registerLazySingleton<AssetReader>(BundleAssetReader.new);
   sl.registerLazySingleton<QuranDatabase>(QuranDatabase.new);
-
-  // The JSON-per-surah loader is kept registered under its concrete type —
-  // not the QuranLocalDataSource interface — so it stays reachable for the
-  // quran.db/surahs.json cross-check comparison test. QuranRepository itself
-  // is wired to the database-backed implementation below.
-  sl.registerLazySingleton<QuranLocalDataSourceImpl>(
-    () => QuranLocalDataSourceImpl(sl<AssetReader>()),
-  );
   sl.registerLazySingleton<QuranLocalDataSource>(
-    () => QuranDbLocalDataSource(
-      database: sl<QuranDatabase>(),
-      legacyJsonSource: sl<QuranLocalDataSourceImpl>(),
+    () => QuranLocalDataSourceImpl(
+      sl<AssetReader>(),
+      sl<QuranDatabase>(),
     ),
   );
   sl.registerLazySingleton<QuranPagesLocalDataSource>(
@@ -82,6 +74,9 @@ Future<void> configureDependencies() async {
 
   // --- Services ---
   sl.registerLazySingleton<KeepAwakeService>(KeepAwakeService.new);
+  sl.registerLazySingleton<AudioAvailability>(
+    () => AudioAvailability(quranRepository: sl<QuranRepository>()),
+  );
   sl.registerLazySingleton<AyahDurationService>(
     () => AyahDurationService(quranRepository: sl<QuranRepository>()),
   );
@@ -94,12 +89,14 @@ Future<void> configureDependencies() async {
     () => SurahListCubit(
       quranRepository: sl<QuranRepository>(),
       progressRepository: sl<ProgressRepository>(),
+      audioAvailability: sl<AudioAvailability>(),
     ),
   );
   sl.registerFactory<ReaderCubit>(
     () => ReaderCubit(
       quranRepository: sl<QuranRepository>(),
       settingsRepository: sl<SettingsRepository>(),
+      audioAvailability: sl<AudioAvailability>(),
       durationService: sl<AyahDurationService>(),
       planBuilder: sl<RepetitionPlanBuilder>(),
     ),

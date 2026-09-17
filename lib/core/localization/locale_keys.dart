@@ -48,11 +48,14 @@ class LocaleKeys {
   static const String progressTitle = 'progress.title';
   static const String progressUnmarkMemorized = 'progress.unmark_memorized';
 
+  static const String readerNoAudio = 'reader.no_audio';
+  static const String readerReciterLacksSurah = 'reader.reciter_lacks_surah';
   static const String readerResetDefaults = 'reader.reset_defaults';
   static const String readerSaveAsDefault = 'reader.save_as_default';
   static const String readerSavedAsDefault = 'reader.saved_as_default';
   static const String readerSelectionSingle = 'reader.selection_single';
   static const String readerSessionSettings = 'reader.session_settings';
+  static const String readerSwitchReciter = 'reader.switch_reciter';
   static const String readerTapToSelect = 'reader.tap_to_select';
   static const String readerWholeSurah = 'reader.whole_surah';
 
@@ -101,5 +104,6 @@ class LocaleKeys {
   static const String surahListEmpty = 'surah_list.empty';
   static const String surahListNotStarted = 'surah_list.not_started';
   static const String surahListProgress = 'surah_list.progress';
+  static const String surahListReadingOnly = 'surah_list.reading_only';
   static const String surahListTitle = 'surah_list.title';
 }

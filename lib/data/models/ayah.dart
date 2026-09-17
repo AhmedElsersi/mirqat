@@ -3,11 +3,10 @@ import 'package:equatable/equatable.dart';
 import '../../core/error/exceptions.dart';
 import '../../core/extensions/arabic_text_extensions.dart';
 
-/// One ayah, loaded verbatim from `assets/data/ayahs/<surah>.json`.
+/// One ayah, loaded verbatim from `quran.db`.
 ///
 /// The only transformations applied to [text] are Unicode NFC normalization
-/// and the removal of U+0640 tatweel — both level encoding variance between
-/// editions of identical text. Nothing here rewrites, re-diacritizes or
+/// and the removal of U+0640 tatweel. Nothing here rewrites, re-diacritizes or
 /// repairs scripture (CLAUDE.md A.2 rule 1).
 class Ayah extends Equatable {
   const Ayah({
@@ -22,38 +21,8 @@ class Ayah extends Equatable {
   /// Uthmani text in canonical form: tatweel-free and NFC-normalised.
   final String text;
 
-  factory Ayah.fromJson(
-    Map<String, dynamic> json, {
-    required int surahNumber,
-    required String assetPath,
-  }) {
-    final int? number = json['number'] as int?;
-    if (number == null || number < 1) {
-      throw CatalogValidationException(
-        assetPath,
-        'Ayah entry has a missing or non-positive "number": ${json['number']}.',
-      );
-    }
-
-    final Object? rawText = json['text'];
-    if (rawText is! String || rawText.trim().isEmpty) {
-      throw CatalogValidationException(
-        assetPath,
-        'Ayah $surahNumber:$number has missing or empty "text". '
-        'Supply the verbatim text; it is never generated.',
-      );
-    }
-
-    return Ayah(
-      surahNumber: surahNumber,
-      number: number,
-      text: rawText.toCanonicalQuranicText(),
-    );
-  }
-
-  /// Built from a row of `quran.db`'s `ayahs` table. Same validation and the
-  /// same canonicalization as [Ayah.fromJson] — the source asset changes,
-  /// the rules for what a valid ayah looks like do not.
+  /// Built from a row of `quran.db`'s `ayahs` table. Empty text is rejected,
+  /// never filled.
   factory Ayah.fromDbRow(Map<String, Object?> row) {
     final int surahNumber = row['surah']! as int;
     final int number = row['ayah']! as int;
@@ -61,7 +30,8 @@ class Ayah extends Equatable {
     if (rawText is! String || rawText.trim().isEmpty) {
       throw CatalogValidationException(
         'quran.db',
-        'Ayah $surahNumber:$number has missing or empty text.',
+        'Ayah $surahNumber:$number has missing or empty text. Supply the '
+        'verbatim text; it is never generated.',
       );
     }
     return Ayah(

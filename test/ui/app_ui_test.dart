@@ -7,15 +7,42 @@ import 'package:mirqat/core/constants/asset_paths.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
 import 'package:mirqat/core/widgets/session_controls.dart';
+import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/features/reader/screen/reader_screen.dart';
 import 'package:mirqat/features/reader/widgets/session_drawer.dart';
+import 'package:mirqat/features/surah_list/widgets/reading_only_marker.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_tile.dart';
 
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
 import '../app_harness.dart';
+import '../quran_db_fixtures.dart';
 
 void main() {
   late AppHarness harness;
+  late List<Surah> catalog;
+
+  late Set<int> recordedSurahs;
+  late Map<String, dynamic> arabic;
+
+  setUpAll(() async {
+    recordedSurahs = <int>{
+      for (final dynamic r
+          in jsonDecode(File(AssetPaths.recitersCatalog).readAsStringSync())
+              as List<dynamic>)
+        ...((r as Map<String, dynamic>)['availableSurahs'] as List<dynamic>)
+            .cast<int>(),
+    };
+    arabic =
+        jsonDecode(File('assets/translations/ar.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final Database db = await RepoQuranDatabase().open();
+    catalog = (await db.query(
+      'surahs',
+      orderBy: 'id',
+    )).map(Surah.fromDbRow).toList();
+  });
 
   setUp(() async => harness = await AppHarness.start());
   tearDown(() async => harness.stop());
@@ -76,15 +103,23 @@ void main() {
   });
 
   group('surah list', () {
-    testWidgets('shows exactly the catalog, with no placeholder rows', (
+    testWidgets('lists every surah in the catalog, with no placeholder rows', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
 
-      // One row per catalog entry, counted off the catalog rather than a
-      // number typed here — adding a surah must not need this test edited.
-      expect(find.byType(SurahRow), findsNWidgets(_catalogSize()));
-      expect(find.text('الفاتحة'), findsOneWidget);
+      // The list is lazy, so rows are counted off its declared length rather
+      // than the handful built on screen — and that length off quran.db, not
+      // a number typed here.
+      expect(_itemCount(tester, ListView), catalog.length);
+      expect(find.text(catalog.first.nameAr), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text(catalog.last.nameAr),
+        600,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text(catalog.last.nameAr), findsOneWidget);
     });
 
     testWidgets('the app-bar toggle switches to a grid and persists', (
@@ -92,7 +127,7 @@ void main() {
     ) async {
       await harness.pumpApp(tester);
 
-      expect(find.byType(SurahRow), findsNWidgets(_catalogSize()));
+      expect(_itemCount(tester, ListView), catalog.length);
       expect(find.byType(SurahTile), findsNothing);
 
       await AppHarness.tapAndSettle(
@@ -100,19 +135,19 @@ void main() {
         find.byIcon(Icons.grid_view_outlined),
       );
 
-      expect(find.byType(SurahTile), findsNWidgets(_catalogSize()));
+      expect(_itemCount(tester, GridView), catalog.length);
       expect(find.byType(SurahRow), findsNothing);
 
       // Restarting proves the choice was written, not just held in memory.
       await harness.pumpApp(tester);
-      expect(find.byType(SurahTile), findsNWidgets(_catalogSize()));
+      expect(_itemCount(tester, GridView), catalog.length);
 
       // And back again.
       await AppHarness.tapAndSettle(
         tester,
         find.byIcon(Icons.view_list_outlined),
       );
-      expect(find.byType(SurahRow), findsNWidgets(_catalogSize()));
+      expect(_itemCount(tester, ListView), catalog.length);
     });
 
     testWidgets('a grid tile opens the same reader as a row', (
@@ -128,9 +163,85 @@ void main() {
 
       expect(find.byType(ReaderScreen), findsOneWidget);
     });
+    testWidgets('marks a surah no reciter has recorded as reading only, and '
+        'only that', (WidgetTester tester) async {
+      await harness.pumpApp(tester);
+
+      final Surah recorded = catalog.firstWhere(
+        (Surah s) => recordedSurahs.contains(s.number),
+      );
+      final Surah unrecorded = catalog.firstWhere(
+        (Surah s) => !recordedSurahs.contains(s.number),
+      );
+
+      Finder markerIn(Surah surah) => find.descendant(
+        of: find.ancestor(
+          of: find.text(surah.nameAr),
+          matching: find.byType(SurahRow),
+        ),
+        matching: find.byType(ReadingOnlyMarker),
+      );
+
+      await tester.scrollUntilVisible(
+        find.text(unrecorded.nameAr),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(markerIn(unrecorded), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.text(recorded.nameAr),
+        -300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(markerIn(recorded), findsNothing);
+    });
   });
 
   group('reader', () {
+    testWidgets('a surah nobody has recorded is readable, with the session '
+        'blocked and the reason shown up front', (WidgetTester tester) async {
+      await harness.pumpApp(tester);
+      final Surah unrecorded = catalog.firstWhere(
+        (Surah s) => !recordedSurahs.contains(s.number),
+      );
+
+      await tester.scrollUntilVisible(
+        find.text(unrecorded.nameAr),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await AppHarness.tapAndSettle(tester, find.text(unrecorded.nameAr));
+
+      expect(find.byType(ReaderScreen), findsOneWidget);
+      expect(find.byType(AyahText), findsWidgets, reason: 'it is readable');
+      expect(
+        find.text(
+          arabic['reader']['no_audio'].replaceFirst('{}', unrecorded.nameAr),
+        ),
+        findsOneWidget,
+      );
+
+      final ButtonStyleButton play = tester.widget<ButtonStyleButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.play_arrow),
+          matching: find.byWidgetPredicate(
+            (Widget w) => w is ButtonStyleButton,
+          ),
+        ),
+      );
+      expect(play.onPressed, isNull, reason: 'no session can start');
+    });
+
+    testWidgets('a recorded surah shows no block notice', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      await openReader(tester);
+
+      expect(find.byIcon(Icons.info_outline), findsNothing);
+    });
+
     testWidgets('tapping a surah lands on the text, with no dialog', (
       WidgetTester tester,
     ) async {
@@ -287,8 +398,6 @@ void main() {
   });
 }
 
-/// How many surahs `assets/data/surahs.json` declares.
-int _catalogSize() =>
-    (jsonDecode(File(AssetPaths.surahsCatalog).readAsStringSync())
-            as List<dynamic>)
-        .length;
+/// The declared length of the home list or grid.
+int? _itemCount(WidgetTester tester, Type scrollView) =>
+    (tester.widget(find.byType(scrollView)) as ScrollView).semanticChildCount;

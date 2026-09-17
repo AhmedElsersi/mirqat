@@ -45,6 +45,11 @@ dependencies:
   dartz: ^0.10.1
   equatable: ^2.1.0
   sqflite: ^2.3.0
+  # PROPOSED EXCEPTION to the no-new-packages rule (CLAUDE.md A.4): not new
+  # code — sqflite's own pure-Dart API, already in the build through sqflite.
+  # Named directly so the catalog loader can use `Database` without importing
+  # Flutter, which keeps `dart run tools/verify_assets.dart` working.
+  sqflite_common: ^2.5.13
   path_provider: ^2.1.0
   path: ^1.9.0
 
@@ -159,7 +164,6 @@ flutter:
     - assets/images/reciters/
     - assets/data/
     - assets/data/quran.db
-    - assets/data/ayahs/
     - assets/data/timings/ahmed_khalil_shaheen/
     - assets/audio/
     # The reciter's own directory, holding the two preambles that serve every
@@ -192,10 +196,8 @@ flutter:
     #       weight: 700
 
     # UthmanicHafs V22 ships with the QUL script export that assets/data/quran.db
-    # is built from, so it is that text's own font. Each text stays with its
-    # own font: the v18 font belongs to the legacy assets/data/ayahs JSON, which
-    # encodes marks differently (open tanween U+08F0..U+08F2) and is no longer
-    # rendered. Copied byte-for-byte from data/sources/; never modified.
+    # is built from, so it is that text's own font — a text stays with its own
+    # font. Copied byte-for-byte from data/sources/; never modified.
     - family: QuranUthmani
       fonts:
         - asset: assets/fonts/UthmanicHafs_V22.ttf

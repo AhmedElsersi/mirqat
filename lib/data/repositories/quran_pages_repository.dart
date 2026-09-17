@@ -7,10 +7,7 @@ import '../models/ayah.dart';
 import '../models/mushaf_line.dart';
 import '../models/word.dart';
 
-/// Page/line/word access over `quran.db` — new in this layer, and separate
-/// from [QuranRepository] on purpose: that repository's surah list is scoped
-/// to whatever `surahs.json` currently ships audio for, while every surah in
-/// the mushaf is reachable through here.
+/// Page/line/word access over `quran.db`.
 abstract class QuranPagesRepository {
   Future<Either<Failure, List<Ayah>>> ayahsForPage(int page);
 

@@ -9,11 +9,16 @@ class SurahListItem extends Equatable {
     required this.surah,
     required this.memorizedCount,
     required this.inProgressCount,
+    this.readingOnly = false,
   });
 
   final Surah surah;
   final int memorizedCount;
   final int inProgressCount;
+
+  /// No reciter has audio for this surah: it can be read but not memorized
+  /// by session. Shown as a quiet marker, never by hiding or disabling the row.
+  final bool readingOnly;
 
   bool get isUntouched => memorizedCount == 0 && inProgressCount == 0;
 
@@ -21,7 +26,12 @@ class SurahListItem extends Equatable {
       surah.ayahCount == 0 ? 0 : memorizedCount / surah.ayahCount;
 
   @override
-  List<Object?> get props => <Object?>[surah, memorizedCount, inProgressCount];
+  List<Object?> get props => <Object?>[
+    surah,
+    memorizedCount,
+    inProgressCount,
+    readingOnly,
+  ];
 }
 
 class SurahListState extends Equatable {

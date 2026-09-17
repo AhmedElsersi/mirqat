@@ -72,7 +72,7 @@ void main() {
     WidgetTester tester,
   ) async {
     // Declared, present, and not a decodable image.
-    const String path = 'assets/data/surahs.json';
+    const String path = 'assets/data/reciters.json';
     await tester.pumpWidget(
       host(ReciterAvatar(reciter: reciterWith(path), diameter: 48)),
     );

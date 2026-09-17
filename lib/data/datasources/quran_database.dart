@@ -10,6 +10,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/asset_paths.dart';
 import '../../core/error/exceptions.dart';
 import 'asset_reader.dart' show assetMissing;
+import 'quran_database_opener.dart';
 
 /// Opens the bundled mushaf database (`assets/data/quran.db`) — surah/ayah
 /// facts, page layout and word-by-word text.
@@ -21,7 +22,7 @@ import 'asset_reader.dart' show assetMissing;
 /// read-only. Nothing is ever written back into it — download/progress state
 /// lives in Hive, never here (CLAUDE.md A.2 rule 6, applied to data as well
 /// as audio).
-class QuranDatabase {
+class QuranDatabase implements QuranDatabaseOpener {
   QuranDatabase({DatabaseFactory? factory, Future<Directory> Function()? resolveStorageDirectory})
     : _factory = factory ?? databaseFactory,
       _resolveStorageDirectory =
@@ -38,6 +39,7 @@ class QuranDatabase {
   /// The open, read-only database. Safe to call repeatedly — the copy and
   /// the open both happen once, and every later call returns the same
   /// instance.
+  @override
   Future<Database> open() => _opening ??= _open();
 
   Future<Database> _open() async {

@@ -9,6 +9,8 @@ import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
+import '../../../data/models/reciter.dart';
+import '../../../data/models/surah.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../player/player_args.dart';
 import '../../settings/cubit/settings_cubit.dart';
@@ -148,8 +150,82 @@ class _ReaderBody extends StatelessWidget {
           ),
         ),
         const Divider(height: 1),
+        if (state.sessionBlock != null) ...<Widget>[
+          _SessionBlockNotice(state: state),
+          const Divider(height: 1),
+        ],
         _BottomBar(state: state, onOpenDrawer: onOpenDrawer),
       ],
+    );
+  }
+}
+
+/// Why the play button is disabled, said before anyone presses it.
+///
+/// Distinct from the player's own "no audio" failure, which means a file that
+/// should exist does not. This is a surah nobody has recorded, or one the
+/// chosen reciter has not — and for the second, a switch to someone who has.
+class _SessionBlockNotice extends StatelessWidget {
+  const _SessionBlockNotice({required this.state});
+
+  final ReaderState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Surah surah = state.surah!;
+    final bool arabic = context.locale.languageCode == 'ar';
+    String reciterName(Reciter r) => arabic ? r.nameAr : r.nameEn;
+    final String surahName = arabic ? surah.nameAr : surah.nameEn;
+
+    final String message = switch (state.sessionBlock!) {
+      SessionBlock.noAudio => LocaleKeys.readerNoAudio.tr(
+        args: <String>[surahName],
+      ),
+      SessionBlock.reciterLacksSurah => LocaleKeys.readerReciterLacksSurah.tr(
+        args: <String>[reciterName(state.chosenReciter!), surahName],
+      ),
+    };
+
+    return Padding(
+      padding: EdgeInsetsDirectional.symmetric(
+        horizontal: 16.w,
+        vertical: 10.h,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(
+                Icons.info_outline,
+                size: 18.sp,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              SizedBox(width: 8.w),
+              Expanded(child: Text(message, style: theme.textTheme.bodySmall)),
+            ],
+          ),
+          if (state.sessionBlock == SessionBlock.reciterLacksSurah)
+            Wrap(
+              spacing: 8.w,
+              children: <Widget>[
+                for (final Reciter reciter in state.availableReciters)
+                  TextButton(
+                    onPressed: () =>
+                        context.read<ReaderCubit>().switchReciter(reciter),
+                    child: Text(
+                      LocaleKeys.readerSwitchReciter.tr(
+                        args: <String>[reciterName(reciter)],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

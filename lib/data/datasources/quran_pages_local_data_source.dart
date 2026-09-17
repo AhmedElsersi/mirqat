@@ -1,19 +1,13 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../core/constants/asset_paths.dart';
 import '../../core/error/exceptions.dart';
 import '../models/ayah.dart';
 import '../models/mushaf_line.dart';
 import '../models/word.dart';
-import 'quran_database.dart';
+import 'quran_database_opener.dart';
 
-/// The mushaf page/line/word queries `quran.db` exists for, independent of
-/// the surah-scoped catalog `QuranRepository` serves.
-///
-/// Unlike `QuranRepository` — whose surah list is scoped to whatever
-/// `surahs.json` currently ships audio for — every method here works for any
-/// of the 114 surahs `quran.db` carries, since none of it depends on audio
-/// being available.
+/// The mushaf page/line/word queries over `quran.db`.
 abstract class QuranPagesLocalDataSource {
   /// The ayahs that start, continue or end on [page], in ayah order. An ayah
   /// that spans a page boundary appears in full on every page it touches.
@@ -28,16 +22,14 @@ abstract class QuranPagesLocalDataSource {
   /// The page [surahNumber]:[ayahNumber] is printed on.
   Future<int> pageForAyah(int surahNumber, int ayahNumber);
 
-  /// How many ayahs [surahNumber] has, read straight from `quran.db` — valid
-  /// for any of the 114 surahs, not just the ones `surahs.json` currently
-  /// scopes into the app.
+  /// How many ayahs [surahNumber] has, read straight from `quran.db`.
   Future<int> ayahCount(int surahNumber);
 }
 
 class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   QuranPagesLocalDataSourceImpl(this._database);
 
-  final QuranDatabase _database;
+  final QuranDatabaseOpener _database;
 
   @override
   Future<List<Ayah>> ayahsForPage(int page) async {

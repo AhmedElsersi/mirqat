@@ -31,7 +31,7 @@ class SessionDrawer extends StatelessWidget {
     final SessionConfig? config = state.config;
     final Surah? surah = state.surah;
     final Reciter? reciter = state.reciter;
-    if (config == null || surah == null || reciter == null) {
+    if (config == null || surah == null) {
       return const Drawer(child: SizedBox.shrink());
     }
 
@@ -67,8 +67,12 @@ class SessionDrawer extends StatelessWidget {
               child: ListView(
                 padding: EdgeInsetsDirectional.all(16.r),
                 children: <Widget>[
-                  _ReciterLine(reciter: reciter),
-                  SizedBox(height: 20.h),
+                  // No reciter while a session is blocked; the notice above
+                  // the play button says why.
+                  if (reciter != null) ...<Widget>[
+                    _ReciterLine(reciter: reciter),
+                    SizedBox(height: 20.h),
+                  ],
                   SetupSection(
                     label: LocaleKeys.sessionSetupRange.tr(),
                     child: Row(
@@ -115,7 +119,7 @@ class SessionDrawer extends StatelessWidget {
                     value: config.finalFullPass,
                     onChanged: cubit.setFinalFullPass,
                   ),
-                  if (reciter.hasIstiadhah)
+                  if (reciter?.hasIstiadhah ?? false)
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsetsDirectional.zero,
                       title: Text(LocaleKeys.sessionSetupPlayIstiadhah.tr()),
@@ -191,14 +195,14 @@ class _DrawerFooter extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             )
-          else if (state.plan != null)
+          else if (state.plan != null && state.estimatedDuration != null)
             // Step and recitation counts come from the built plan, and the
             // duration from real clip lengths — never an estimate from an
             // average ayah.
             SessionSummary(
               stepCount: state.plan!.stepCount,
               unitCount: state.plan!.unitCount,
-              duration: (state.estimatedDuration ?? Duration.zero).localized,
+              duration: state.estimatedDuration!.localized,
             ),
           SizedBox(height: 12.h),
           Row(

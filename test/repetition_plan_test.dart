@@ -12,19 +12,22 @@ import 'package:mirqat/domain/entities/session_config.dart';
 import 'package:mirqat/domain/entities/session_plan.dart';
 import 'package:mirqat/services/audio/playback_queue.dart';
 import 'package:mirqat/services/audio/session_preambles.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'quran_db_fixtures.dart';
 
 /// Checks 31–35 of the audit: what a built session actually contains.
 ///
-/// Catalog-driven, like the asset integrity suite — every surah in
-/// `surahs.json` is exercised, so a surah added tomorrow is covered by this
-/// file unchanged. The one hardcoded surah here is a *synthetic* `none`
-/// fixture, because no shipped surah is At-Tawbah yet and the branch would
-/// otherwise go untested until the day it shipped.
+/// Catalog-driven, like the asset integrity suite — every surah the reciter
+/// has recorded is exercised, so a recording added tomorrow is covered by this
+/// file unchanged. The `none` branch uses the catalog's own no-bismillah surah,
+/// found by its mode rather than its number; no reciter has recorded it yet,
+/// but a queue can be built without the audio files.
 ///
 /// The stake: a preamble that leaks into the queue as an ayah makes every
 /// repeat count wrong, and the app then teaches the error by repetition.
-void main() {
-  final List<Surah> catalog = _catalog();
+Future<void> main() async {
+  final List<Surah> catalog = await _catalog();
   final Reciter reciter = _reciters().first;
 
   const RepetitionPlanBuilder plans = RepetitionPlanBuilder();
@@ -39,7 +42,9 @@ void main() {
     );
   });
 
-  for (final Surah surah in catalog) {
+  for (final Surah surah in catalog.where(
+    (Surah s) => reciter.hasSurah(s.number),
+  )) {
     final String label = 'surah ${surah.number} (${surah.nameEn})';
 
     SessionPlan planFor({int repeats = 3}) => plans.buildOrThrow(
@@ -224,20 +229,20 @@ void main() {
     });
   }
 
-  group('bismillahMode: none (synthetic — no shipped surah is At-Tawbah)', () {
-    final Surah tawbahShaped = Surah.fromJson(<String, dynamic>{
-      'number': 9,
-      'nameAr': '-',
-      'nameEn': 'none-mode fixture',
-      'ayahCount': 4,
-      'revelationPlace': 'madinah',
-      'bismillahMode': 'none',
-    }, 'synthetic');
+  group('bismillahMode: none', () {
+    final Surah tawbahShaped = catalog.firstWhere(
+      (Surah s) => s.bismillahMode == BismillahMode.none,
+    );
+    final int end = tawbahShaped.ayahCount < 4 ? tawbahShaped.ayahCount : 4;
 
     test('no bismillah unit, with or without the istiʿadhah', () {
       final SessionPlan plan = plans.buildOrThrow(
-        const SessionConfig(surahNumber: 9, startAyah: 1, endAyah: 4),
-        surahAyahCount: 4,
+        SessionConfig(
+          surahNumber: tawbahShaped.number,
+          startAyah: 1,
+          endAyah: end,
+        ),
+        surahAyahCount: tawbahShaped.ayahCount,
       );
 
       for (final bool istiadhah in <bool>[true, false]) {
@@ -330,14 +335,15 @@ List<int> _indicesOf(PlaybackQueue queue, PreambleKind kind) => <int>[
       i,
 ];
 
-/// Reads the shipped catalog off disk. No Flutter binding, so the engine stays
-/// testable as the pure Dart it is.
-List<Surah> _catalog() => <Surah>[
-  for (final dynamic entry
-      in jsonDecode(File(AssetPaths.surahsCatalog).readAsStringSync())
-          as List<dynamic>)
-    Surah.fromJson(entry as Map<String, dynamic>, AssetPaths.surahsCatalog),
-];
+/// Reads the shipped catalog straight out of `quran.db`. No Flutter binding,
+/// so the engine stays testable as the pure Dart it is.
+Future<List<Surah>> _catalog() async {
+  final Database db = await RepoQuranDatabase().open();
+  return (await db.query(
+    'surahs',
+    orderBy: 'id',
+  )).map(Surah.fromDbRow).toList();
+}
 
 List<Reciter> _reciters() => <Reciter>[
   for (final dynamic entry

@@ -21,11 +21,26 @@ enum SelectionPhase {
   ranged,
 }
 
+/// Why a memorization session cannot start on this surah. Decided when the
+/// surah loads, so the reader says so up front instead of the player failing
+/// later.
+enum SessionBlock {
+  /// No reciter has audio for this surah. It can still be read.
+  noAudio,
+
+  /// The chosen reciter has no audio for this surah, but
+  /// [ReaderState.availableReciters] do — offered as a switch.
+  reciterLacksSurah,
+}
+
 class ReaderState extends Equatable {
   const ReaderState({
     this.status = LoadStatus.initial,
     this.surah,
     this.reciter,
+    this.availableReciters = const <Reciter>[],
+    this.chosenReciter,
+    this.sessionBlock,
     this.ayahs = const <Ayah>[],
     this.bismillahText,
     this.ayahDurations = const <int, Duration>{},
@@ -41,7 +56,18 @@ class ReaderState extends Equatable {
 
   final LoadStatus status;
   final Surah? surah;
+
+  /// The reciter a session would play. Null whenever [sessionBlock] is set.
   final Reciter? reciter;
+
+  /// Every reciter with audio for this surah, in catalog order.
+  final List<Reciter> availableReciters;
+
+  /// The reciter chosen in settings, kept when it lacks this surah so the
+  /// message can name who is missing it.
+  final Reciter? chosenReciter;
+
+  final SessionBlock? sessionBlock;
 
   /// Every ayah of the surah, in order — the reading area shows all of them
   /// whatever the selection is.
@@ -82,7 +108,11 @@ class ReaderState extends Equatable {
   /// a row are two separate confirmations.
   final DateTime? defaultsSavedAt;
 
-  bool get canStart => plan != null && configError == null;
+  bool get canStart =>
+      sessionBlock == null &&
+      reciter != null &&
+      plan != null &&
+      configError == null;
 
   bool get isWholeSurahSelected => selectionPhase == SelectionPhase.wholeSurah;
 
@@ -107,6 +137,10 @@ class ReaderState extends Equatable {
     LoadStatus? status,
     Surah? surah,
     Reciter? reciter,
+    List<Reciter>? availableReciters,
+    Reciter? chosenReciter,
+    SessionBlock? sessionBlock,
+    bool clearSessionBlock = false,
     List<Ayah>? ayahs,
     String? bismillahText,
     Map<int, Duration>? ayahDurations,
@@ -122,6 +156,11 @@ class ReaderState extends Equatable {
     status: status ?? this.status,
     surah: surah ?? this.surah,
     reciter: reciter ?? this.reciter,
+    availableReciters: availableReciters ?? this.availableReciters,
+    chosenReciter: chosenReciter ?? this.chosenReciter,
+    sessionBlock: clearSessionBlock
+        ? null
+        : (sessionBlock ?? this.sessionBlock),
     ayahs: ayahs ?? this.ayahs,
     bismillahText: bismillahText ?? this.bismillahText,
     ayahDurations: ayahDurations ?? this.ayahDurations,
@@ -144,6 +183,9 @@ class ReaderState extends Equatable {
     status,
     surah,
     reciter,
+    availableReciters,
+    chosenReciter,
+    sessionBlock,
     ayahs,
     bismillahText,
     ayahDurations,

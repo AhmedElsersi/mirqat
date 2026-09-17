@@ -5,13 +5,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/error/failures.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/memorization_progress.dart';
+import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
+import '../../../services/audio/audio_availability.dart';
 import 'surah_list_state.dart';
 
-/// Lists whatever is in the catalog — no placeholders for surahs that are not
-/// (CLAUDE.md / Part B, Phase 4).
+/// Lists every surah in the catalog. A surah no reciter has recorded is still
+/// listed, in its place, marked reading-only.
 ///
 /// Each row carries a memorization count, and this screen does not own that
 /// number: the progress screen and the player both write it while the home
@@ -24,8 +26,10 @@ class SurahListCubit extends Cubit<SurahListState> {
   SurahListCubit({
     required QuranRepository quranRepository,
     required ProgressRepository progressRepository,
+    required AudioAvailability audioAvailability,
   }) : _quran = quranRepository,
        _progress = progressRepository,
+       _audio = audioAvailability,
        super(const SurahListState()) {
     _watchProgress();
   }
@@ -39,6 +43,7 @@ class SurahListCubit extends Cubit<SurahListState> {
 
   final QuranRepository _quran;
   final ProgressRepository _progress;
+  final AudioAvailability _audio;
 
   StreamSubscription<void>? _changes;
   Timer? _coalesce;
@@ -79,6 +84,11 @@ class SurahListCubit extends Cubit<SurahListState> {
         final List<SurahListItem> items = <SurahListItem>[];
 
         for (final Surah surah in surahs) {
+          // A failed lookup claims nothing: no marker rather than a wrong one.
+          final bool readingOnly = (await _audio.recitersFor(
+            surah,
+          )).fold((Failure _) => false, (List<Reciter> r) => r.isEmpty);
+
           final progress = await _progress.getSurah(
             surah.number,
             surah.ayahCount,
@@ -92,6 +102,7 @@ class SurahListCubit extends Cubit<SurahListState> {
                 surah: surah,
                 memorizedCount: 0,
                 inProgressCount: 0,
+                readingOnly: readingOnly,
               ),
               (List<MemorizationProgress> records) => SurahListItem(
                 surah: surah,
@@ -107,6 +118,7 @@ class SurahListCubit extends Cubit<SurahListState> {
                           p.status == MemorizationStatus.inProgress,
                     )
                     .length,
+                readingOnly: readingOnly,
               ),
             ),
           );

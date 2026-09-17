@@ -161,12 +161,10 @@ class AppHarness {
 
     // A sqflite query still does not reliably complete when a screen first
     // loads inside pure fake-async pumps (the splash hand-off has no runAsync
-    // around it). The catalog source caches both lists, so reading them here,
-    // in the real zone, leaves every later read an already-completed future.
-    final QuranLocalDataSource catalog = sl<QuranLocalDataSource>();
-    for (final Surah surah in await catalog.getSurahs()) {
-      await catalog.getAyahs(surah.number);
-    }
+    // around it). The catalog source caches every surah and its ayahs, so
+    // reading them all here, in the real zone, leaves every later read an
+    // already-completed future — whichever surah a test opens.
+    await _warmCatalog(sl<QuranLocalDataSource>());
 
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.progressBoxName).clear();
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
@@ -175,6 +173,13 @@ class AppHarness {
   }
 
   Future<void> stop() async => sl.reset();
+
+  static Future<void> _warmCatalog(QuranLocalDataSource catalog) async {
+    await catalog.getReciters();
+    for (final Surah surah in await catalog.getSurahs()) {
+      await catalog.getAyahs(surah.number);
+    }
+  }
 
   /// Call from `tearDownAll`.
   static Future<void> disposeAll() async {
@@ -232,8 +237,8 @@ class AppHarness {
       await tester.pump();
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
-    await tester.pump();                          // the `go` is processed
-    await tester.pump(AppRouter.splashFadeOut);   // the 300 ms dissolve
+    await tester.pump(); // the `go` is processed
+    await tester.pump(AppRouter.splashFadeOut); // the 300 ms dissolve
     await tester.pump();
   }
 

@@ -3,32 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/constants/asset_paths.dart';
 import 'package:mirqat/core/error/exceptions.dart';
 import 'package:mirqat/core/error/failures.dart';
-import 'package:mirqat/data/datasources/asset_reader.dart';
+import 'package:mirqat/data/datasources/ayah_sequence_validator.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
 import 'package:mirqat/data/models/ayah.dart';
+import 'package:mirqat/data/models/reciter.dart';
+import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/data/repositories/quran_repository.dart';
 
-/// Serves whatever JSON a test hands it, so deliberately corrupted catalogs
-/// can be pushed through the real loaders.
-class FakeAssetReader implements AssetReader {
-  FakeAssetReader(this.files);
-
-  final Map<String, String> files;
-
-  @override
-  Future<String> loadString(String path) async {
-    final String? content = files[path];
-    if (content == null) {
-      throw AssetNotFoundException(path, 'Fixture has no asset at "$path".');
-    }
-    return content;
-  }
-}
-
-const String _goodSurahs = '''
-[{"number":1,"nameAr":"الفاتحة","nameEn":"Al-Fatiha","ayahCount":3,
-  "revelationPlace":"makkah","bismillahMode":"counted_as_ayah_1"}]
-''';
+import '../quran_db_fixtures.dart';
 
 const String _goodReciters = '''
 [{"id":"r","nameAr":"ق","nameEn":"R","audioMode":"per_ayah_files",
@@ -36,21 +18,28 @@ const String _goodReciters = '''
   "hasIstiadhah":false}]
 ''';
 
-String _ayahFile(String ayahsJson, {int surah = 1}) =>
-    '{"surah":$surah,"script":"uthmani","source":"fixture","ayahs":$ayahsJson}';
+const SurahDbRow _goodSurah = SurahDbRow(
+  id: 1,
+  ayahCount: 3,
+  basmalaMode: 'first_ayah',
+);
+
+List<AyahDbRow> _ayahs(List<String> texts, {List<int>? numbers}) => <AyahDbRow>[
+  for (int i = 0; i < texts.length; i++)
+    AyahDbRow(1, numbers == null ? i + 1 : numbers[i], texts[i]),
+];
 
 QuranLocalDataSource _sourceWith({
-  String surahs = _goodSurahs,
-  String? ayahs,
-  String reciters = _goodReciters,
+  SurahDbRow surah = _goodSurah,
+  List<AyahDbRow> ayahs = const <AyahDbRow>[],
+  String? reciters = _goodReciters,
   String? timings,
 }) => QuranLocalDataSourceImpl(
   FakeAssetReader(<String, String>{
-    AssetPaths.surahsCatalog: surahs,
-    AssetPaths.recitersCatalog: reciters,
-    AssetPaths.ayahsForSurah(1): ?ayahs,
+    AssetPaths.recitersCatalog: ?reciters,
     AssetPaths.timingsForSurah('r', 1): ?timings,
   }),
+  FixtureQuranDatabase(surahs: <SurahDbRow>[surah], ayahs: ayahs),
 );
 
 Future<String> _messageFrom(Future<void> Function() body) async {
@@ -64,43 +53,31 @@ Future<String> _messageFrom(Future<void> Function() body) async {
 
 void main() {
   group('ayah sequence validation', () {
-    test(
-      'rejects a file holding fewer ayahs than the catalog declares',
-      () async {
-        final QuranLocalDataSource source = _sourceWith(
-          ayahs: _ayahFile('[{"number":1,"text":"ب"},{"number":2,"text":"ب"}]'),
-        );
+    test('rejects a surah holding fewer ayahs than its row declares', () async {
+      final QuranLocalDataSource source = _sourceWith(
+        ayahs: _ayahs(<String>['ب', 'ب']),
+      );
 
-        expect(
-          await _messageFrom(() => source.getAyahs(1)),
-          allOf(contains('missing ayah 3'), contains('contiguous 1..3')),
-        );
-      },
-    );
+      expect(
+        await _messageFrom(() => source.getAyahs(1)),
+        allOf(contains('missing ayah 3'), contains('contiguous 1..3')),
+      );
+    });
 
-    test(
-      'rejects a file holding more ayahs than the catalog declares',
-      () async {
-        final QuranLocalDataSource source = _sourceWith(
-          ayahs: _ayahFile(
-            '[{"number":1,"text":"ب"},{"number":2,"text":"ب"},'
-            '{"number":3,"text":"ب"},{"number":4,"text":"ب"}]',
-          ),
-        );
+    test('rejects a surah holding more ayahs than its row declares', () async {
+      final QuranLocalDataSource source = _sourceWith(
+        ayahs: _ayahs(<String>['ب', 'ب', 'ب', 'ب']),
+      );
 
-        expect(
-          await _messageFrom(() => source.getAyahs(1)),
-          allOf(contains('ayah 4'), contains('beyond the ayahCount of 3')),
-        );
-      },
-    );
+      expect(
+        await _messageFrom(() => source.getAyahs(1)),
+        allOf(contains('ayah 4'), contains('beyond the ayahCount of 3')),
+      );
+    });
 
     test('rejects a duplicated ayah number', () async {
       final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile(
-          '[{"number":1,"text":"ب"},{"number":2,"text":"ب"},'
-          '{"number":2,"text":"ب"}]',
-        ),
+        ayahs: _ayahs(<String>['ب', 'ب', 'ب'], numbers: <int>[1, 2, 2]),
       );
 
       expect(
@@ -111,7 +88,7 @@ void main() {
 
     test('rejects a gap in the sequence', () async {
       final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile('[{"number":1,"text":"ب"},{"number":3,"text":"ب"}]'),
+        ayahs: _ayahs(<String>['ب', 'ب'], numbers: <int>[1, 3]),
       );
 
       expect(
@@ -120,31 +97,45 @@ void main() {
       );
     });
 
-    test('rejects ayahs listed out of order', () async {
-      final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile(
-          '[{"number":1,"text":"ب"},{"number":3,"text":"ب"},'
-          '{"number":2,"text":"ب"}]',
-        ),
+    test('rejects ayahs out of order', () {
+      // The loader asks the database for ayah order, so this is exercised
+      // on the validator directly — it is the net if that query ever changes.
+      const Surah surah = Surah(
+        number: 1,
+        nameAr: 'س',
+        nameEn: 'Fixture',
+        ayahCount: 3,
+        revelationPlace: RevelationPlace.makkah,
+        bismillahMode: BismillahMode.countedAsAyah1,
       );
-
       expect(
-        await _messageFrom(() => source.getAyahs(1)),
-        allOf(contains('out of order'), contains('position 2')),
+        () => validateAyahSequence(
+          <Ayah>[
+            const Ayah(surahNumber: 1, number: 1, text: 'ب'),
+            const Ayah(surahNumber: 1, number: 3, text: 'ب'),
+            const Ayah(surahNumber: 1, number: 2, text: 'ب'),
+          ],
+          surah: surah,
+          path: 'fixture',
+        ),
+        throwsA(
+          isA<CatalogValidationException>().having(
+            (CatalogValidationException e) => e.message,
+            'message',
+            allOf(contains('out of order'), contains('position 2')),
+          ),
+        ),
       );
     });
 
     test('rejects empty ayah text rather than filling the gap', () async {
       final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile(
-          '[{"number":1,"text":"ب"},{"number":2,"text":"  "},'
-          '{"number":3,"text":"ب"}]',
-        ),
+        ayahs: _ayahs(<String>['ب', '  ', 'ب']),
       );
 
       expect(
         await _messageFrom(() => source.getAyahs(1)),
-        allOf(contains('empty "text"'), contains('never generated')),
+        allOf(contains('empty text'), contains('never generated')),
       );
     });
 
@@ -152,10 +143,7 @@ void main() {
       // A Latin combining acute (U+0301) would be silently mis-ordered by the
       // Arabic-scoped normalizer, so it is refused instead.
       final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile(
-          '[{"number":1,"text":"ب"},{"number":2,"text":"b\\u0301"},'
-          '{"number":3,"text":"ب"}]',
-        ),
+        ayahs: _ayahs(<String>['ب', 'b\u0301', 'ب']),
       );
 
       expect(
@@ -164,44 +152,63 @@ void main() {
       );
     });
 
-    test('rejects an ayah file whose surah number disagrees', () async {
-      final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile('[]', surah: 2),
-      );
-
-      expect(
-        await _messageFrom(() => source.getAyahs(1)),
-        contains('declares surah 2 but was loaded for surah 1'),
-      );
-    });
-
     test('accepts NFD input and normalises it to NFC', () async {
-      // Same ayah, alef + maddah written as U+0627 U+0653 instead of U+0622.
+      // Alef + maddah written as U+0627 U+0653 instead of U+0622.
       final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahFile(
-          '[{"number":1,"text":"\\u0627\\u0653"},{"number":2,"text":"ب"},'
-          '{"number":3,"text":"ب"}]',
-        ),
+        ayahs: _ayahs(<String>['\u0627\u0653', 'ب', 'ب']),
       );
 
       final List<Ayah> ayahs = await source.getAyahs(1);
-      expect(ayahs.first.text, 'آ');
+      expect(ayahs.first.text, '\u0622');
       expect(ayahs.first.text.codeUnits, hasLength(1));
     });
   });
 
   group('catalog validation', () {
-    test('rejects an unknown bismillahMode', () async {
+    test('rejects an unknown basmala_mode', () async {
       final QuranLocalDataSource source = _sourceWith(
-        surahs: _goodSurahs.replaceAll('counted_as_ayah_1', 'sometimes'),
+        surah: const SurahDbRow(id: 1, ayahCount: 3, basmalaMode: 'sometimes'),
       );
 
       expect(
         await _messageFrom(() => source.getSurahs()),
         allOf(
-          contains('Unknown bismillahMode "sometimes"'),
-          contains('separate_preamble'),
+          contains('Unknown basmala_mode "sometimes"'),
+          contains('separate'),
         ),
+      );
+    });
+
+    test('rejects a surah with no revelation place', () async {
+      final QuranLocalDataSource source = _sourceWith(
+        surah: const SurahDbRow(id: 1, ayahCount: 3, revelation: null),
+      );
+
+      expect(
+        await _messageFrom(() => source.getSurahs()),
+        contains('no revelation place'),
+      );
+    });
+
+    test('maps every basmala_mode onto its BismillahMode', () async {
+      final QuranLocalDataSource source = QuranLocalDataSourceImpl(
+        FakeAssetReader(const <String, String>{}),
+        FixtureQuranDatabase(
+          surahs: const <SurahDbRow>[
+            SurahDbRow(id: 1, ayahCount: 1, basmalaMode: 'first_ayah'),
+            SurahDbRow(id: 2, ayahCount: 1, basmalaMode: 'separate'),
+            SurahDbRow(id: 3, ayahCount: 1, basmalaMode: 'none'),
+          ],
+        ),
+      );
+
+      expect(
+        (await source.getSurahs()).map((Surah s) => s.bismillahMode),
+        <BismillahMode>[
+          BismillahMode.countedAsAyah1,
+          BismillahMode.separatePreamble,
+          BismillahMode.none,
+        ],
       );
     });
 
@@ -219,24 +226,11 @@ void main() {
       );
     });
 
-    test('rejects a duplicated surah number', () async {
-      final QuranLocalDataSource source = _sourceWith(
-        surahs:
-            '[${_goodSurahs.substring(1, _goodSurahs.length - 2)},'
-            '${_goodSurahs.substring(1, _goodSurahs.length - 2)}]',
-      );
+    test('rejects malformed reciter JSON', () async {
+      final QuranLocalDataSource source = _sourceWith(reciters: '[{');
 
       expect(
-        await _messageFrom(() => source.getSurahs()),
-        contains('lists surah 1 more than once'),
-      );
-    });
-
-    test('rejects malformed JSON', () async {
-      final QuranLocalDataSource source = _sourceWith(surahs: '[{');
-
-      expect(
-        await _messageFrom(() => source.getSurahs()),
+        await _messageFrom(() => source.getReciters()),
         contains('Invalid JSON'),
       );
     });
@@ -273,9 +267,7 @@ void main() {
 
   group('repository', () {
     test('maps a validation failure onto the Left side', () async {
-      final QuranRepository repository = QuranRepositoryImpl(
-        _sourceWith(ayahs: _ayahFile('[]')),
-      );
+      final QuranRepository repository = QuranRepositoryImpl(_sourceWith());
 
       final Either<Failure, List<Ayah>> result = await repository.getAyahs(1);
 
@@ -287,9 +279,12 @@ void main() {
     });
 
     test('maps a missing asset onto AssetNotFoundFailure', () async {
-      final QuranRepository repository = QuranRepositoryImpl(_sourceWith());
+      final QuranRepository repository = QuranRepositoryImpl(
+        _sourceWith(reciters: null),
+      );
 
-      final Either<Failure, List<Ayah>> result = await repository.getAyahs(1);
+      final Either<Failure, List<Reciter>> result = await repository
+          .getReciters();
 
       expect(result.isLeft(), isTrue);
       result.fold(
@@ -300,12 +295,7 @@ void main() {
 
     test('rejects an ayah range beyond the surah', () async {
       final QuranRepository repository = QuranRepositoryImpl(
-        _sourceWith(
-          ayahs: _ayahFile(
-            '[{"number":1,"text":"ب"},{"number":2,"text":"ب"},'
-            '{"number":3,"text":"ب"}]',
-          ),
-        ),
+        _sourceWith(ayahs: _ayahs(<String>['ب', 'ب', 'ب'])),
       );
 
       final Either<Failure, List<Ayah>> result = await repository.getAyahRange(
@@ -323,12 +313,7 @@ void main() {
 
     test('rejects an inverted ayah range', () async {
       final QuranRepository repository = QuranRepositoryImpl(
-        _sourceWith(
-          ayahs: _ayahFile(
-            '[{"number":1,"text":"ب"},{"number":2,"text":"ب"},'
-            '{"number":3,"text":"ب"}]',
-          ),
-        ),
+        _sourceWith(ayahs: _ayahs(<String>['ب', 'ب', 'ب'])),
       );
 
       final Either<Failure, List<Ayah>> result = await repository.getAyahRange(
@@ -346,12 +331,7 @@ void main() {
 
     test('returns the requested slice on the Right side', () async {
       final QuranRepository repository = QuranRepositoryImpl(
-        _sourceWith(
-          ayahs: _ayahFile(
-            '[{"number":1,"text":"ب"},{"number":2,"text":"ت"},'
-            '{"number":3,"text":"ث"}]',
-          ),
-        ),
+        _sourceWith(ayahs: _ayahs(<String>['ب', 'ت', 'ث'])),
       );
 
       final Either<Failure, List<Ayah>> result = await repository.getAyahRange(
