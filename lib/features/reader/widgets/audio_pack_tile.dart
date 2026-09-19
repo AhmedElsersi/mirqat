@@ -48,8 +48,7 @@ class _AudioPackTileState extends State<AudioPackTile> {
     }
   }
 
-  void _watch() =>
-      _cubit.watch(reciter: widget.reciter, surah: widget.surah);
+  void _watch() => _cubit.watch(reciter: widget.reciter, surah: widget.surah);
 
   @override
   void dispose() {
@@ -120,7 +119,8 @@ class _Body extends StatelessWidget {
               // Indeterminate until the platform reports a real fraction, and
               // indeterminate again while hashing and unzipping, which have
               // no percentage to report.
-              value: download.status == PackStatus.downloading &&
+              value:
+                  download.status == PackStatus.downloading &&
                       download.progress > 0
                   ? download.progress
                   : null,
@@ -157,21 +157,24 @@ class _Body extends StatelessWidget {
     return switch (state.download.status) {
       PackStatus.queued => LocaleKeys.downloadsQueued.tr(),
       PackStatus.downloading => LocaleKeys.downloadsDownloading.tr(
-        args: <String>[(state.download.progress * 100)
-            .clamp(0, 100)
-            .round()
-            .toLocalisedString()],
+        args: <String>[
+          (state.download.progress * 100)
+              .clamp(0, 100)
+              .round()
+              .toLocalisedString(),
+        ],
       ),
       PackStatus.verifying => LocaleKeys.downloadsVerifying.tr(),
       PackStatus.installing => LocaleKeys.downloadsInstalling.tr(),
       PackStatus.failed => LocaleKeys.downloadsFailed.tr(),
       PackStatus.cancelled when !state.isInstalled =>
         LocaleKeys.downloadsCancelled.tr(),
-      _ => state.isInstalled
-          ? LocaleKeys.downloadsOnDevice.tr(
-              args: <String>[_megabytes(state.installed!.bytes)],
-            )
-          : LocaleKeys.downloadsStreaming.tr(),
+      _ =>
+        state.isInstalled
+            ? LocaleKeys.downloadsOnDevice.tr(
+                args: <String>[_megabytes(state.installed!.bytes)],
+              )
+            : LocaleKeys.downloadsStreaming.tr(),
     };
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/widgets/ayah_text.dart';
+import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/word.dart';
 import '../cubit/mushaf_page.dart';
 
@@ -71,28 +72,32 @@ class _MushafPageViewState extends State<MushafPageView> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsetsDirectional.symmetric(horizontal: 14.w, vertical: 6.h),
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints box) {
-          final int slots = math.max(
-            widget.linesPerFullPage,
-            widget.page.lines.length,
-          );
-          final double pitch = box.maxHeight / slots;
-          final double fontSize = _fontSizeFor(box.maxWidth, pitch);
+      // A narrow margin of bare page outside the frame, so the ornament is
+      // seen whole rather than running into the edge of the glass.
+      padding: EdgeInsetsDirectional.symmetric(horizontal: 6.w, vertical: 4.h),
+      child: IslamicFrame(
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints box) {
+            final int slots = math.max(
+              widget.linesPerFullPage,
+              widget.page.lines.length,
+            );
+            final double pitch = box.maxHeight / slots;
+            final double fontSize = _fontSizeFor(box.maxWidth, pitch);
 
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              for (final PageLine line in widget.page.lines)
-                SizedBox(
-                  height: pitch,
-                  width: box.maxWidth,
-                  child: _line(context, line, fontSize),
-                ),
-            ],
-          );
-        },
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                for (final PageLine line in widget.page.lines)
+                  SizedBox(
+                    height: pitch,
+                    width: box.maxWidth,
+                    child: _line(context, line, fontSize),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -176,29 +181,11 @@ class _SurahHeader extends StatelessWidget {
   final double fontSize;
 
   @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsetsDirectional.symmetric(vertical: fontSize * 0.12),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withValues(alpha: 0.06),
-          border: Border.all(color: theme.colorScheme.primary, width: 1.2),
-          borderRadius: BorderRadius.circular(fontSize * 0.3),
-        ),
-        child: Center(
-          child: Text(
-            name,
-            textScaler: TextScaler.noScaling,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: fontSize * 0.62,
-              height: 1.0,
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsetsDirectional.symmetric(vertical: fontSize * 0.1),
+    child: LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) =>
+          SurahCartouche(name: name, height: box.maxHeight),
+    ),
+  );
 }

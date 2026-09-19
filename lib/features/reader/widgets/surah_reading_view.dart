@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/widgets/ayah_text.dart';
+import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/ayah.dart';
 import '../../../data/models/surah.dart';
 
@@ -50,35 +51,48 @@ class SurahReadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool anySelected = ayahs.any((Ayah a) => isSelected(a.number));
 
-    return SingleChildScrollView(
-      controller: scrollController,
-      padding: EdgeInsetsDirectional.symmetric(horizontal: 20.w, vertical: 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          if (surah.needsBismillahPreamble && bismillahText != null)
-            _BismillahHeader(text: bismillahText!, fontSize: fontSize),
-          AyahText.flowing(
-            fontSize: fontSize,
-            ayahs: <FlowingAyah>[
-              for (final Ayah ayah in ayahs)
-                FlowingAyah(
-                  number: ayah.number,
-                  // Byte-for-byte from quran.db (CLAUDE.md A.2 rule 1).
-                  text: ayah.text,
-                  selected: isSelected(ayah.number),
-                  // With nothing selected the whole surah is in play, so every
-                  // ayah reads at full strength. Once a range exists, the rest
-                  // of the page steps back rather than disappearing.
-                  emphasis: !anySelected || isSelected(ayah.number)
-                      ? AyahEmphasis.current
-                      : AyahEmphasis.context,
-                  onTap: () => onAyahTap(ayah.number),
-                ),
+    // The frame stays put and the text scrolls inside it, the way a page
+    // stays put and the eye moves down it. A frame around the whole scrolled
+    // column would be a border nobody ever sees the bottom of.
+    return Padding(
+      padding: EdgeInsetsDirectional.symmetric(horizontal: 6.w, vertical: 4.h),
+      child: IslamicFrame(
+        child: SingleChildScrollView(
+          controller: scrollController,
+          padding: EdgeInsetsDirectional.symmetric(
+            horizontal: 6.w,
+            vertical: 4.h,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              SurahCartouche(name: surah.nameAr, height: 44.h),
+              SizedBox(height: 6.h),
+              if (surah.needsBismillahPreamble && bismillahText != null)
+                _BismillahHeader(text: bismillahText!, fontSize: fontSize),
+              AyahText.flowing(
+                fontSize: fontSize,
+                ayahs: <FlowingAyah>[
+                  for (final Ayah ayah in ayahs)
+                    FlowingAyah(
+                      number: ayah.number,
+                      // Byte-for-byte from quran.db (CLAUDE.md A.2 rule 1).
+                      text: ayah.text,
+                      selected: isSelected(ayah.number),
+                      // With nothing selected the whole surah is in play, so every
+                      // ayah reads at full strength. Once a range exists, the rest
+                      // of the page steps back rather than disappearing.
+                      emphasis: !anySelected || isSelected(ayah.number)
+                          ? AyahEmphasis.current
+                          : AyahEmphasis.context,
+                      onTap: () => onAyahTap(ayah.number),
+                    ),
+                ],
+              ),
+              SizedBox(height: 24.h),
             ],
           ),
-          SizedBox(height: 24.h),
-        ],
+        ),
       ),
     );
   }

@@ -68,7 +68,7 @@ workflow. Each stage ends with screenshots for the owner's approval.
 | # | stage | status |
 |---|---|---|
 | 1 | Colours | done, approved (Quran text stays dark green) — `ui/1-colours` |
-| 2 | Frames: mushaf page, one-surah view, surah-name cartouche | |
+| 2 | Frames: mushaf page, one-surah view, surah-name cartouche | done — `ui/2-frames`, awaiting the owner's look |
 | 3 | Home: ajzaa tab, view mode in Settings, history, last position | |
 | 4 | Reading + session merged; cross-surah sessions; player screen removed | |
 | 5 | Settings cards, Session settings page, About / Goal / Developer / How to use, onboarding | |
