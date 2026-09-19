@@ -24,6 +24,28 @@ extension LocalisedDigits on num {
 /// so `NumberFormat('ar')` yields `3`, not `٣`. Arabic-Indic digits — along
 /// with ٫ and ٬ as separators — live under `ar_EG`, which is also the launch
 /// market. Any Arabic locale therefore formats through it.
+/// Text that intl has already formatted — a time, a date — in the locale's
+/// own digits.
+///
+/// `DateFormat` cannot be trusted with this: which digits it writes depends on
+/// which date-symbol table was loaded first, and the one Flutter's
+/// localizations load has no native zero for Arabic, so a time comes out as
+/// 12:59 on a screen that says ٢٢ everywhere else. `NumberFormat`'s symbols
+/// are intl's own, so the zero is taken from there.
+extension LocalisedDigitsInText on String {
+  String withLocalisedDigits() {
+    final int zero = NumberFormat.decimalPattern(
+      _numberLocale,
+    ).symbols.ZERO_DIGIT.codeUnitAt(0);
+    const int latinZero = 0x30;
+    if (zero == latinZero) return this;
+    return replaceAllMapped(
+      RegExp('[0-9]'),
+      (Match m) => String.fromCharCode(zero + m[0]!.codeUnitAt(0) - latinZero),
+    );
+  }
+}
+
 String get _numberLocale {
   final String locale = Intl.defaultLocale ?? 'en';
   return locale.startsWith('ar') ? 'ar_EG' : locale;

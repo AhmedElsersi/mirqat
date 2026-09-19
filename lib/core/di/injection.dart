@@ -8,13 +8,16 @@ import '../../data/datasources/progress_local_data_source.dart';
 import '../../data/datasources/quran_database.dart';
 import '../../data/datasources/quran_local_data_source.dart';
 import '../../data/datasources/quran_pages_local_data_source.dart';
+import '../../data/datasources/reading_history_local_data_source.dart';
 import '../../data/datasources/settings_local_data_source.dart';
 import '../../data/repositories/downloads_repository.dart';
 import '../../data/repositories/progress_repository.dart';
 import '../../data/repositories/quran_pages_repository.dart';
 import '../../data/repositories/quran_repository.dart';
+import '../../data/repositories/reading_history_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
+import '../../features/home/cubit/home_index_cubit.dart';
 import '../../features/mushaf/cubit/mushaf_cubit.dart';
 import '../../features/player/cubit/player_cubit.dart';
 import '../../features/progress/cubit/progress_cubit.dart';
@@ -55,7 +58,7 @@ Future<void> configureDependencies() async {
     () => QuranPagesLocalDataSourceImpl(sl<QuranDatabase>()),
   );
 
-  // The boxes have to be open before anything reads them, so these two are
+  // The boxes have to be open before anything reads them, so these three are
   // constructed eagerly rather than lazily.
   final ProgressLocalDataSourceImpl progress = ProgressLocalDataSourceImpl();
   await progress.open();
@@ -64,6 +67,14 @@ Future<void> configureDependencies() async {
   final SettingsLocalDataSourceImpl settings = SettingsLocalDataSourceImpl();
   await settings.open();
   sl.registerLazySingleton<SettingsLocalDataSource>(() => settings);
+
+  final ReadingHistoryLocalDataSourceImpl history =
+      ReadingHistoryLocalDataSourceImpl();
+  await history.open();
+  sl.registerLazySingleton<ReadingHistoryLocalDataSource>(() => history);
+  sl.registerLazySingleton<ReadingHistoryRepository>(
+    () => ReadingHistoryRepositoryImpl(sl<ReadingHistoryLocalDataSource>()),
+  );
 
   // Its own database, and lazily: unlike the Hive boxes it opens itself on
   // first use, so nothing here touches sqflite before a test has had the
@@ -157,6 +168,13 @@ Future<void> configureDependencies() async {
       audioAvailability: sl<AudioAvailability>(),
     ),
   );
+  sl.registerFactory<HomeIndexCubit>(
+    () => HomeIndexCubit(
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+      historyRepository: sl<ReadingHistoryRepository>(),
+    ),
+  );
   sl.registerFactory<ReaderCubit>(
     () => ReaderCubit(
       quranRepository: sl<QuranRepository>(),
@@ -174,6 +192,7 @@ Future<void> configureDependencies() async {
     () => MushafCubit(
       pagesRepository: sl<QuranPagesRepository>(),
       quranRepository: sl<QuranRepository>(),
+      historyRepository: sl<ReadingHistoryRepository>(),
     ),
   );
   sl.registerFactory<PlayerCubit>(

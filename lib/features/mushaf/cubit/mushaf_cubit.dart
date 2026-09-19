@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failures.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/page_info.dart';
+import '../../../data/models/reading_position.dart';
 import '../../../data/models/mushaf_line.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
 import '../../../data/repositories/quran_pages_repository.dart';
+import '../../../data/repositories/reading_history_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import 'mushaf_page.dart';
 import 'mushaf_state.dart';
@@ -25,12 +29,21 @@ class MushafCubit extends Cubit<MushafState> {
   MushafCubit({
     required QuranPagesRepository pagesRepository,
     required QuranRepository quranRepository,
+    ReadingHistoryRepository? historyRepository,
   }) : _pages = pagesRepository,
        _quran = quranRepository,
+       _history = historyRepository,
        super(const MushafState());
 
   final QuranPagesRepository _pages;
   final QuranRepository _quran;
+
+  /// Optional, so the many tests that only turn pages need no storage.
+  final ReadingHistoryRepository? _history;
+
+  /// Whether this screen has written its history entry yet. The first write
+  /// of a visit adds an entry; every later one moves that same entry along.
+  bool _visitRecorded = false;
 
   Map<int, Surah> _surahs = const <int, Surah>{};
   List<Word> _basmalaWords = const <Word>[];
@@ -69,6 +82,8 @@ class MushafCubit extends Cubit<MushafState> {
       );
       await ensurePage(start);
       _warmNeighbours(start);
+      // Not awaited: opening the mushaf does not wait on a bookmark.
+      unawaited(recordPosition());
     } on _Failed catch (e) {
       if (!isClosed) {
         emit(
@@ -207,8 +222,41 @@ class MushafCubit extends Cubit<MushafState> {
   void onPageChanged(int page) {
     if (page == state.currentPage) return;
     emit(state.copyWith(currentPage: page));
-    ensurePage(page);
+    ensurePage(page).then((_) => recordPosition());
     _warmNeighbours(page);
+  }
+
+  /// Remembers the page being read, so the app can open on it next time and
+  /// the history can lead back to it. Called on every page turn, when the
+  /// screen is left, and when the app goes to the background — "before he
+  /// closes the app" is not a moment an app is told about, so the position is
+  /// simply never more than one page turn out of date.
+  ///
+  /// The ayah is the first one with a word on the page. A failure to write is
+  /// dropped: nobody should be shown an error for a bookmark.
+  Future<void> recordPosition() async {
+    final ReadingHistoryRepository? history = _history;
+    final MushafPage? page = state.pages[state.currentPage];
+    if (history == null || page == null) return;
+
+    final Word? first = page.lines
+        .whereType<AyahLine>()
+        .expand((AyahLine l) => l.words)
+        .where((Word w) => !w.isMarker)
+        .firstOrNull;
+    final int? surah = first?.surahNumber ?? page.surah?.number;
+    if (surah == null) return;
+
+    await history.record(
+      ReadingPosition(
+        surahNumber: surah,
+        ayahNumber: first?.ayahNumber ?? 1,
+        page: page.number,
+        at: DateTime.now(),
+      ),
+      sameVisit: _visitRecorded,
+    );
+    _visitRecorded = true;
   }
 
   void _warmNeighbours(int page) {

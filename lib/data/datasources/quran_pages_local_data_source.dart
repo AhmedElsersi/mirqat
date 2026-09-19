@@ -2,6 +2,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../core/constants/asset_paths.dart';
 import '../../core/error/exceptions.dart';
+import '../models/juz_info.dart';
 import '../models/page_info.dart';
 import '../models/ayah.dart';
 import '../models/mushaf_line.dart';
@@ -31,6 +32,9 @@ abstract class QuranPagesLocalDataSource {
   /// The surah, juz and hizb the page opens in, or null for a page with no
   /// words on it.
   Future<PageInfo?> pageInfo(int page);
+
+  /// Every juz and where it begins, in order.
+  Future<List<JuzInfo>> juzList();
 
   Future<int> pageCount();
 
@@ -147,6 +151,31 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
       juz: row['juz']! as int,
       hizb: row['hizb']! as int,
     );
+  }
+
+  /// Thirty rows out of a read-only database: read once, kept for good.
+  Future<List<JuzInfo>>? _juzList;
+
+  @override
+  Future<List<JuzInfo>> juzList() => _juzList ??= _readJuzList();
+
+  Future<List<JuzInfo>> _readJuzList() async {
+    final Database db = await _database.open();
+    // The first ayah of each juz is the one with the lowest id in it.
+    final List<Map<String, Object?>> rows = await db.rawQuery(
+      'SELECT a.juz AS juz, a.surah AS surah, a.ayah AS ayah, a.page AS page '
+      'FROM ayahs a JOIN (SELECT juz, MIN(id) AS first FROM ayahs GROUP BY juz) '
+      'f ON f.first = a.id ORDER BY a.juz',
+    );
+    return <JuzInfo>[
+      for (final Map<String, Object?> row in rows)
+        JuzInfo(
+          number: row['juz']! as int,
+          surahNumber: row['surah']! as int,
+          ayahNumber: row['ayah']! as int,
+          page: row['page']! as int,
+        ),
+    ];
   }
 
   @override

@@ -233,23 +233,45 @@ class _HomeViewControl extends StatelessWidget {
   Widget build(BuildContext context) {
     return SetupSection(
       label: LocaleKeys.settingsHomeViewMode.tr(),
-      child: SegmentedButton<HomeViewMode>(
-        segments: <ButtonSegment<HomeViewMode>>[
-          ButtonSegment<HomeViewMode>(
-            value: HomeViewMode.list,
-            icon: const Icon(Icons.view_list_outlined),
-            label: Text(LocaleKeys.settingsHomeViewList.tr()),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SegmentedButton<HomeViewMode>(
+            segments: <ButtonSegment<HomeViewMode>>[
+              ButtonSegment<HomeViewMode>(
+                value: HomeViewMode.list,
+                icon: const Icon(Icons.view_list_outlined),
+                label: Text(LocaleKeys.settingsHomeViewList.tr()),
+              ),
+              ButtonSegment<HomeViewMode>(
+                value: HomeViewMode.grid,
+                icon: const Icon(Icons.grid_view_outlined),
+                label: Text(LocaleKeys.settingsHomeViewGrid.tr()),
+              ),
+              ButtonSegment<HomeViewMode>(
+                value: HomeViewMode.mushaf,
+                icon: const Icon(Icons.auto_stories_outlined),
+                label: Text(LocaleKeys.settingsHomeViewMushaf.tr()),
+              ),
+            ],
+            selected: <HomeViewMode>{settings.homeViewMode},
+            showSelectedIcon: false,
+            onSelectionChanged: (Set<HomeViewMode> s) =>
+                cubit.setHomeViewMode(s.first),
           ),
-          ButtonSegment<HomeViewMode>(
-            value: HomeViewMode.grid,
-            icon: const Icon(Icons.grid_view_outlined),
-            label: Text(LocaleKeys.settingsHomeViewGrid.tr()),
-          ),
+          // Said only when it applies: this option changes how the app
+          // *opens*, which a segmented button alone does not convey.
+          if (settings.homeViewMode == HomeViewMode.mushaf)
+            Padding(
+              padding: EdgeInsetsDirectional.only(top: 8.h),
+              child: Text(
+                LocaleKeys.settingsHomeViewMushafHint.tr(),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
         ],
-        selected: <HomeViewMode>{settings.homeViewMode},
-        showSelectedIcon: false,
-        onSelectionChanged: (Set<HomeViewMode> s) =>
-            cubit.setHomeViewMode(s.first),
       ),
     );
   }

@@ -73,14 +73,18 @@ lib/
     models/          Surah, Ayah, Word, MushafLine, Reciter, MemorizationProgress, ...
     datasources/     QuranDatabase, QuranLocalDataSource, QuranPagesLocalDataSource,
                      ProgressLocalDataSource, SettingsLocalDataSource,
-                     DownloadsDatabase, DownloadsLocalDataSource
+                     DownloadsDatabase, DownloadsLocalDataSource,
+                     ReadingHistoryLocalDataSource
     repositories/    QuranRepository, QuranPagesRepository, ProgressRepository,
-                     SettingsRepository, DownloadsRepository
+                     SettingsRepository, DownloadsRepository,
+                     ReadingHistoryRepository
   domain/
     entities/        PlanStep, PlaybackUnit, SessionPlan, SessionConfig
     engine/          RepetitionPlanBuilder  (pure Dart, zero Flutter imports)
   features/
-    surah_list/      cubit + screen + widgets
+    surah_list/      cubit + screen + widgets   (the home: surahs | ajzaa tabs)
+    home/            cubit + widgets            (ajzaa index, last place read)
+    history/         screen                     (the last twenty places read)
     reader/          cubit + screen + widgets   (per-surah reading + session setup)
     mushaf/          cubit + screen + widgets   (page-by-page mushaf)
     player/          cubit + screen + widgets

@@ -25,7 +25,11 @@ class MushafScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MushafCubit>(
-      create: (_) => sl<MushafCubit>()..init(initialAyah: args.initialAyah),
+      create: (_) => sl<MushafCubit>()
+        ..init(
+          initialAyah: args.initialAyah,
+          initialPage: args.initialPage ?? 1,
+        ),
       child: const MushafView(),
     );
   }
@@ -39,7 +43,7 @@ class MushafView extends StatefulWidget {
   State<MushafView> createState() => _MushafViewState();
 }
 
-class _MushafViewState extends State<MushafView> {
+class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
   /// The furthest [MushafCubit.goToAyah] animates rather than jumps.
   static const int _animatedPageSpan = 2;
 
@@ -53,7 +57,23 @@ class _MushafViewState extends State<MushafView> {
   void _toggleChrome() => setState(() => _chrome = !_chrome);
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// Going to the background is the last thing an app is reliably told before
+  /// it may be closed, so that is when the page is written down once more.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused && mounted) {
+      context.read<MushafCubit>().recordPosition();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
   }

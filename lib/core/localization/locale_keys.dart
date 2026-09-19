@@ -173,4 +173,24 @@ class LocaleKeys {
   static const String surahListProgress = 'surah_list.progress';
   static const String surahListReadingOnly = 'surah_list.reading_only';
   static const String surahListTitle = 'surah_list.title';
+
+  static const String homeTabSurahs = 'home.tab_surahs';
+  static const String homeTabAjzaa = 'home.tab_ajzaa';
+  static const String homeJuzName = 'home.juz_name';
+  static const String homeJuzStarts = 'home.juz_starts';
+  static const String homePage = 'home.page';
+  static const String homeContinueReading = 'home.continue_reading';
+  static const String homePlace = 'home.place';
+  static const String homeHistory = 'home.history';
+
+  static const String historyTitle = 'history.title';
+  static const String historyEmpty = 'history.empty';
+  static const String historyClear = 'history.clear';
+  static const String historyClearConfirm = 'history.clear_confirm';
+  static const String historyToday = 'history.today';
+  static const String historyYesterday = 'history.yesterday';
+
+  static const String settingsHomeViewMushaf = 'settings.home_view_mushaf';
+  static const String settingsHomeViewMushafHint =
+      'settings.home_view_mushaf_hint';
 }

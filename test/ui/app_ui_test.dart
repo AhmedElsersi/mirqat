@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/core/constants/asset_paths.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
@@ -128,12 +129,12 @@ void main() {
       await tester.scrollUntilVisible(
         find.text(catalog.last.nameAr),
         600,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: AppHarness.homeScrollable(ListView),
       );
       expect(find.text(catalog.last.nameAr), findsOneWidget);
     });
 
-    testWidgets('the app-bar toggle switches to a grid and persists', (
+    testWidgets('the chosen view switches to a grid and persists', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
@@ -141,10 +142,7 @@ void main() {
       expect(_itemCount(tester, ListView), catalog.length);
       expect(find.byType(SurahTile), findsNothing);
 
-      await AppHarness.tapAndSettle(
-        tester,
-        find.byIcon(Icons.grid_view_outlined),
-      );
+      await AppHarness.setHomeView(tester, HomeViewMode.grid);
 
       expect(_itemCount(tester, GridView), catalog.length);
       expect(find.byType(SurahRow), findsNothing);
@@ -154,10 +152,7 @@ void main() {
       expect(_itemCount(tester, GridView), catalog.length);
 
       // And back again.
-      await AppHarness.tapAndSettle(
-        tester,
-        find.byIcon(Icons.view_list_outlined),
-      );
+      await AppHarness.setHomeView(tester, HomeViewMode.list);
       expect(_itemCount(tester, ListView), catalog.length);
     });
 
@@ -165,10 +160,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
-      await AppHarness.tapAndSettle(
-        tester,
-        find.byIcon(Icons.grid_view_outlined),
-      );
+      await AppHarness.setHomeView(tester, HomeViewMode.grid);
 
       await AppHarness.tapAndSettle(tester, find.byType(SurahTile).first);
 
@@ -196,14 +188,14 @@ void main() {
       await tester.scrollUntilVisible(
         find.text(unrecorded.nameAr),
         300,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: AppHarness.homeScrollable(ListView),
       );
       expect(markerIn(unrecorded), findsOneWidget);
 
       await tester.scrollUntilVisible(
         find.text(recorded.nameAr),
         -300,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: AppHarness.homeScrollable(ListView),
       );
       expect(markerIn(recorded), findsNothing);
     });
@@ -220,7 +212,7 @@ void main() {
       await tester.scrollUntilVisible(
         find.text(unrecorded.nameAr),
         300,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: AppHarness.homeScrollable(ListView),
       );
       await AppHarness.tapAndSettle(tester, find.text(unrecorded.nameAr));
 
@@ -384,10 +376,7 @@ void main() {
       await harness.pumpApp(tester);
       expect(tester.takeException(), isNull);
 
-      await AppHarness.tapAndSettle(
-        tester,
-        find.byIcon(Icons.grid_view_outlined),
-      );
+      await AppHarness.setHomeView(tester, HomeViewMode.grid);
       expect(tester.takeException(), isNull);
 
       await AppHarness.tapAndSettle(tester, find.byType(SurahTile).first);
@@ -415,10 +404,7 @@ void main() {
       expect(tester.takeException(), isNull);
 
       await harness.pumpApp(tester);
-      await AppHarness.tapAndSettle(
-        tester,
-        find.byIcon(Icons.grid_view_outlined),
-      );
+      await AppHarness.setHomeView(tester, HomeViewMode.grid);
       expect(tester.takeException(), isNull);
     });
   });

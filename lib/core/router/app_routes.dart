@@ -25,6 +25,9 @@ class AppRoutes {
   static const String mushafPath = '/mushaf';
   static const String mushafName = 'mushaf';
 
+  static const String historyPath = '/history';
+  static const String historyName = 'history';
+
   static const String settingsPath = '/settings';
   static const String settingsName = 'settings';
 

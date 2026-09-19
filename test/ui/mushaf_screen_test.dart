@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
 import 'package:mirqat/core/widgets/islamic_frame.dart';
+import 'package:mirqat/features/home/widgets/juz_widgets.dart';
 import 'package:mirqat/features/mushaf/cubit/mushaf_cubit.dart';
 import 'package:mirqat/features/mushaf/cubit/mushaf_page.dart';
 import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
@@ -42,8 +43,11 @@ void main() {
     Locale locale = AppLocalization.arabic,
   }) async {
     await harness.pumpApp(tester, locale: locale);
+    // The mushaf is reached the way a reader reaches it: the ajzaa tab, then
+    // the first juz, which begins on page 1.
+    await AppHarness.swipeToAjzaa(tester);
     await tester.runAsync(() async {
-      await tester.tap(find.byIcon(Icons.auto_stories_outlined));
+      await tester.tap(find.byType(JuzRow).first);
       await tester.pump();
       await tester.pump();
     });

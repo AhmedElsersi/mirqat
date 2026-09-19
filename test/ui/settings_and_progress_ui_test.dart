@@ -7,6 +7,7 @@ import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/features/settings/screen/downloads_screen.dart';
 import 'package:mirqat/features/settings/screen/settings_screen.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
+import 'package:mirqat/features/surah_list/widgets/surah_tile.dart';
 
 import '../app_harness.dart';
 
@@ -150,12 +151,12 @@ void main() {
       await harness.pumpApp(tester);
       await openSettings(tester);
 
-      // Same stored value as the app-bar toggle, so switching here shows up
-      // there.
+      // Settings is the only place this is chosen now; the home screen just
+      // follows it.
       await AppHarness.tapAndSettle(tester, find.text('شبكة'));
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
 
-      expect(find.byIcon(Icons.view_list_outlined), findsOneWidget);
+      expect(find.byType(SurahTile), findsWidgets);
       expect(find.byType(SurahRow), findsNothing);
     });
 

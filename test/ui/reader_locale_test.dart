@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
 import 'package:mirqat/data/models/surah.dart';
@@ -59,17 +60,11 @@ void main() {
         );
         expect(tester.takeException(), isNull);
 
-        await AppHarness.tapAndSettle(
-          tester,
-          find.byIcon(Icons.grid_view_outlined),
-        );
+        await AppHarness.setHomeView(tester, HomeViewMode.grid);
         expect(find.byType(SurahTile), findsWidgets);
         expect(tester.takeException(), isNull);
 
-        await AppHarness.tapAndSettle(
-          tester,
-          find.byIcon(Icons.view_list_outlined),
-        );
+        await AppHarness.setHomeView(tester, HomeViewMode.list);
         await AppHarness.tapAndSettle(tester, find.byType(SurahRow).first);
         expect(tester.takeException(), isNull);
 

@@ -4,6 +4,11 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mirqat/data/models/app_settings.dart';
+import 'package:mirqat/features/home/widgets/juz_widgets.dart';
+import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
+import 'package:mirqat/features/surah_list/screen/surah_list_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -18,6 +23,10 @@ import 'package:mirqat/data/datasources/asset_reader.dart';
 import 'package:mirqat/data/datasources/downloads_database.dart';
 import 'package:mirqat/data/datasources/quran_database.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
+import 'package:mirqat/data/datasources/quran_pages_local_data_source.dart';
+import 'package:mirqat/data/repositories/reading_history_repository.dart';
+import 'package:mirqat/data/models/reading_position.dart';
+import 'package:mirqat/data/datasources/reading_history_local_data_source.dart';
 import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/core/router/app_router.dart';
@@ -223,6 +232,23 @@ class AppHarness {
     // reading them all here, in the real zone, leaves every later read an
     // already-completed future — whichever surah a test opens.
     await _warmCatalog(sl<QuranLocalDataSource>());
+    // The same reason, for the home screen's ajzaa tab: the juz list is cached
+    // by its data source, so reading it once here makes it a completed future
+    // for every HomeIndexCubit a test creates.
+    await sl<QuranPagesLocalDataSource>().juzList();
+
+    // Reading history is written on every page turn, and a page turn in a
+    // widget test happens under the fake clock, where a real disk write never
+    // completes — and an unfinished Hive write keeps the box's lock, so the
+    // *next* test's setup would wait on it for ever. Memory has no lock.
+    sl.unregister<ReadingHistoryRepository>();
+    sl.unregister<ReadingHistoryLocalDataSource>();
+    sl.registerLazySingleton<ReadingHistoryLocalDataSource>(
+      InMemoryReadingHistory.new,
+    );
+    sl.registerLazySingleton<ReadingHistoryRepository>(
+      () => ReadingHistoryRepositoryImpl(sl<ReadingHistoryLocalDataSource>()),
+    );
 
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.progressBoxName).clear();
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
@@ -256,6 +282,7 @@ class AppHarness {
   Future<void> pumpApp(
     WidgetTester tester, {
     Locale locale = AppLocalization.arabic,
+    bool settleAfter = true,
     bool skipSplash = true,
   }) async {
     await tester.pumpWidget(const SizedBox.shrink());
@@ -272,7 +299,9 @@ class AppHarness {
       return;
     }
     await dismissSplash(tester);
-    await settle(tester);
+    // Skipped by a test whose launch lands on a screen that never goes idle
+    // under the fake clock — the mushaf, whose page load is real I/O.
+    if (settleAfter) await settle(tester);
   }
 
   /// Taps through the launch animation and waits for the home screen.
@@ -314,6 +343,54 @@ class AppHarness {
     await settle(tester);
   }
 
+  /// Chooses how the home screen is drawn, the way the Settings screen does:
+  /// through the live [SettingsCubit]. The home bar used to carry a toggle for
+  /// this; it is a setting now, and tests that only need "the grid" should not
+  /// have to walk through Settings to get it.
+  static Future<void> setHomeView(
+    WidgetTester tester,
+    HomeViewMode mode,
+  ) async {
+    final SettingsCubit cubit = BlocProvider.of<SettingsCubit>(
+      tester.element(find.byType(SurahListScreen)),
+    );
+    await tester.runAsync(() async {
+      await cubit.setHomeViewMode(mode);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await settle(tester);
+  }
+
+  /// Swipes from the surahs tab to the ajzaa tab.
+  ///
+  /// A swipe, not a tap on the tab's label: under the test clock a tapped tab
+  /// ends its animation with the new page in place but not answering hit
+  /// tests, so the next tap on a row goes nowhere. On a device both work — a
+  /// juz opens from either — and the swipe is the gesture the screen was asked
+  /// to support anyway. The page reads right to left in Arabic, so the second
+  /// tab is to the *right*; the other direction is tried for a left-to-right
+  /// locale.
+  static Future<void> swipeToAjzaa(WidgetTester tester) async {
+    // Most of the pager's own width: a fixed distance is a full swipe on a
+    // phone and less than half of one on a tablet, where it snaps back.
+    final double reach = tester.getSize(find.byType(TabBarView)).width * 0.8;
+    for (final double dx in <double>[reach, -reach]) {
+      await tester.drag(find.byType(TabBarView), Offset(dx, 0));
+      await settle(tester);
+      // A row or a card, whichever the view setting draws.
+      if (tester.any(find.byType(JuzRow)) || tester.any(find.byType(JuzTile))) {
+        return;
+      }
+    }
+  }
+
+  /// The home list's own vertical scrollable. Not `find.byType(Scrollable)
+  /// .first`: the two tabs sit in a horizontal pager, which is a Scrollable
+  /// too and comes first in the tree.
+  static Finder homeScrollable(Type list) => find
+      .descendant(of: find.byType(list), matching: find.byType(Scrollable))
+      .first;
+
   /// Waits out a screen's load.
   ///
   /// `pumpAndSettle` never returns while a CircularProgressIndicator is on
@@ -340,4 +417,20 @@ class AppHarness {
     assetLoader: const FileTranslationLoader(),
     child: const IqraWartaqApp(),
   );
+}
+
+/// Reading history held in a list, for widget tests. See where it is
+/// registered for why the real, Hive-backed one cannot be used under them.
+class InMemoryReadingHistory implements ReadingHistoryLocalDataSource {
+  List<ReadingPosition> _positions = const <ReadingPosition>[];
+
+  @override
+  Future<void> open() async {}
+
+  @override
+  Future<List<ReadingPosition>> read() async => _positions;
+
+  @override
+  Future<void> write(List<ReadingPosition> positions) async =>
+      _positions = List<ReadingPosition>.unmodifiable(positions);
 }

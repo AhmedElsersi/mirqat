@@ -24,7 +24,11 @@ enum AppThemeMode {
 /// How the home screen lays the catalog out.
 enum HomeViewMode {
   list('list'),
-  grid('grid');
+  grid('grid'),
+
+  /// The real mushaf, page after page. The app opens straight onto the last
+  /// page read; the surah and ajzaa lists become the index behind it.
+  mushaf('mushaf');
 
   const HomeViewMode(this.storageValue);
 

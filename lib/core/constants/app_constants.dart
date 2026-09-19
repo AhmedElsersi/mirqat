@@ -37,6 +37,7 @@ class AppConstants {
   // --- Storage ---
   static const String progressBoxName = 'memorization_progress';
   static const String settingsBoxName = 'settings';
+  static const String readingHistoryBoxName = 'reading_history';
 
   // Download state is NOT here: it lives in its own writable `downloads.db`
   // (see DownloadsDatabase), not in a Hive box and never in `quran.db`, which

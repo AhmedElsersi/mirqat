@@ -81,7 +81,7 @@ workflow. Each stage ends with screenshots for the owner's approval.
 | 1 | Colours | done, approved (Quran text stays dark green) — `ui/1-colours` |
 | 2 | Frames: mushaf page, one-surah view, surah-name cartouche | done — `ui/2-frames` |
 | 2b | Thicker frame, scrolling page, labels in the borders, no app bar, tap-to-show bar | done — `ui/2b-frame-thicker`, awaiting the owner's look |
-| 3 | Home: ajzaa tab, view mode in Settings, history, last position | |
+| 3 | Home: ajzaa tab, view mode in Settings, history, last position | done — `ui/3-home`, awaiting the owner's look. A juz opens the mushaf at its first page; "one juz at a time" as its own view is stage 4 |
 | 4 | Reading + session merged; cross-surah sessions; player screen removed | |
 | 5 | Settings cards, Session settings page, About / Goal / Developer / How to use, onboarding | |
 | 6 | `app.json`, version + update dialog, admin editor | |

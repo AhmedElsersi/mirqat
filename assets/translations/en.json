@@ -102,7 +102,9 @@
     "audio_quality_high": "High — 128 kbps",
     "audio_quality_hint": "Used for downloads and streaming, where the reciter offers it",
     "wifi_only": "Download over Wi-Fi only",
-    "wifi_only_hint": "A single surah is tens of megabytes"
+    "wifi_only_hint": "A single surah is tens of megabytes",
+    "home_view_mushaf": "Mushaf",
+    "home_view_mushaf_hint": "The app opens straight onto the last page you read, and the surah and ajzaa lists become the index."
   },
   "duration": {
     "minutes": "{} min",
@@ -160,5 +162,23 @@
     "retry_failed": "Retry failed downloads ({})",
     "failed_row": "Download failed",
     "deleted_reciter": "Removed {}"
+  },
+  "home": {
+    "tab_surahs": "Surahs",
+    "tab_ajzaa": "Ajzaa",
+    "juz_name": "Juz {}",
+    "juz_starts": "Starts at Surah {} · Ayah {}",
+    "page": "Page {}",
+    "continue_reading": "Continue reading",
+    "place": "Surah {} · Ayah {} · Page {}",
+    "history": "Reading history"
+  },
+  "history": {
+    "title": "Reading history",
+    "empty": "Nothing read yet. The last places you read will appear here.",
+    "clear": "Clear history",
+    "clear_confirm": "Clear the whole reading history?",
+    "today": "Today",
+    "yesterday": "Yesterday"
   }
 }

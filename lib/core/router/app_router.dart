@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/history/screen/history_screen.dart';
 import '../../features/mushaf/mushaf_args.dart';
 import '../../features/mushaf/screen/mushaf_screen.dart';
 import '../../features/player/player_args.dart';
@@ -87,6 +88,12 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) => MushafScreen(
           args: state.extra as MushafArgs? ?? const MushafArgs(),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.historyPath,
+        name: AppRoutes.historyName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const HistoryScreen(),
       ),
       GoRoute(
         path: AppRoutes.settingsPath,
