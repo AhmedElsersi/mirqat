@@ -2,3 +2,7 @@
    not change with the device language (owner decision D1). */
 "CFBundleDisplayName" = "اقرأ وارتق";
 "CFBundleName" = "اقرأ وارتق";
+
+/* Never shown — see ar.lproj/InfoPlist.strings for why these exist. */
+"NSPhotoLibraryAddUsageDescription" = "This app does not use your photo library.";
+"NSPhotoLibraryUsageDescription" = "This app does not use your photo library.";

@@ -1,18 +1,23 @@
 package com.mirqat.app
 
 import android.view.WindowManager
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 /**
  * Hosts the keep-screen-awake channel.
  *
+ * Extends audio_service's activity rather than FlutterActivity so that the
+ * activity and the media-playback service share one FlutterEngine: the lock
+ * screen's pause button has to reach the same Dart isolate the session is
+ * running in.
+ *
  * A memorization session is long and mostly hands-off, so the screen must not
  * dim mid-recitation. This is a window flag rather than a package, keeping the
  * approved dependency list untouched (CLAUDE.md A.4).
  */
-class MainActivity : FlutterActivity() {
+class MainActivity : AudioServiceActivity() {
     private companion object {
         const val CHANNEL = "com.mirqat.app/keep_awake"
     }

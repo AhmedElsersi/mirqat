@@ -4,3 +4,10 @@
    has an .lproj. */
 "CFBundleDisplayName" = "اقرأ وارتق";
 "CFBundleName" = "اقرأ وارتق";
+
+/* Never shown. The download library the app includes can save to Photos, and
+   Apple's upload scan requires a purpose string for any binary that references
+   the Photos classes — even though this app never calls that part of it, and
+   the permission request itself is compiled out (see the Podfile). */
+"NSPhotoLibraryAddUsageDescription" = "لا يستخدم التطبيق مكتبة الصور.";
+"NSPhotoLibraryUsageDescription" = "لا يستخدم التطبيق مكتبة الصور.";

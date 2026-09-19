@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The CDN is HTTPS and stays HTTPS: this file does not open the app to
+  cleartext traffic in general.
+
+  It exists for one address. `LockCachingAudioSource` — the only source in
+  just_audio that caches a stream while it plays, which is what stops a
+  memorization session re-downloading the same ayah twenty times — serves the
+  audio to ExoPlayer through a proxy on 127.0.0.1, over plain HTTP. Android 9
+  and later refuse cleartext by default, so a surah that was not downloaded
+  first failed to play at all:
+
+      CleartextNotPermittedException: Cleartext HTTP traffic to 127.0.0.1 not
+      permitted
+
+  Permitting localhost alone leaves every real request encrypted; the traffic
+  this allows never leaves the device.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

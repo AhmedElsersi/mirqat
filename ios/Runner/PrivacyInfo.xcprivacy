@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The app's own privacy manifest, speaking for the Runner target only.
+	     It matches CLAUDE.md A.2 rule 3: no accounts, no analytics, no
+	     tracking, nothing collected.
+
+	     No accessed-API entries: the Runner's own code calls none of Apple's
+	     "required reason" APIs (setting isExcludedFromBackup is not one).
+	     File access from Dart happens inside Flutter.framework, and each
+	     plugin's calls inside its own framework — each ships its own manifest,
+	     which is where Apple wants those declared. -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array/>
+</dict>
+</plist>

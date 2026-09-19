@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto Backup on Android 11 and below.
+
+     Downloaded recitations are re-downloadable, and Auto Backup stops at 25 MB:
+     past that it does not trim, it fails, and takes the memorization progress
+     down with it. So the audio is left out and everything that cannot be
+     fetched again is kept. iOS says the same thing with its do-not-back-up
+     flag (CLAUDE.md A.5). -->
+<full-backup-content>
+    <exclude domain="file" path="audio/" />
+    <exclude domain="file" path="images/" />
+</full-backup-content>
