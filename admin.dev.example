@@ -1,0 +1,14 @@
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY=
+R2_SECRET_KEY=
+R2_BUCKET=
+R2_ENDPOINT=
+R2_PUBLIC_BASE=
+AUDIO_BITRATE=64
+
+# Optional — lets the admin tool publish manifest.json to the Pages site
+# itself, so a new reciter or surah needs no app release. A fine-grained token
+# with Contents: read and write on this repo only.
+GITHUB_TOKEN=
+GITHUB_REPO=ahmedelsersi/iqra-cdn
+GITHUB_MANIFEST_PATH=manifest.json

@@ -1,0 +1,133 @@
+# The admin tool
+
+A macOS-only workbench that turns one whole-surah recording into one clip per
+ayah and publishes it to the CDN. It never ships in the phone app.
+
+## Start it
+
+```
+./run_admin.sh
+```
+
+It reads the R2 keys from `admin.env` (gitignored) and needs `ffmpeg` on the
+PATH (`brew install ffmpeg`). With a key missing it refuses to start and says
+which. Add `GITHUB_TOKEN` and `GITHUB_REPO` to `admin.env` and it also pushes
+`manifest.json` for you; without them it writes `build/manifest.json` and tells
+you to publish it yourself.
+
+## Publishing a surah
+
+1. **Reciter** — pick one, or **Add reciter…** (id, Arabic and English name,
+   optional riwayah and portrait). A reciter added here appears in the app with
+   no new release.
+2. **Surah** — all 114, straight from `quran.db`.
+3. **Choose recording…** — the whole-surah mp3.
+4. **What the recording holds:**
+   - **Audio has basmala** — on by default. Untick it when the file starts at
+     ayah 1. No `000` clip is made and the manifest records `hasBasmala: false`.
+     Only applies to surahs whose basmala is separate from ayah 1.
+   - **Audio has isti'adhah** — off by default. Tick it when the file opens with
+     the isti'adhah: it is cut off and never published.
+5. **Split.**
+6. Read the result (below), fix what is marked, then **Publish to R2**.
+
+## What Split does
+
+1. Finds the pauses in the recording with ffmpeg, from strict to lenient, and
+   stops at the first setting where no stretch of the recording is left without
+   a pause and there are comfortably more pauses than cuts needed.
+2. Works out how long each ayah *should* take from its text in `quran.db`:
+   letters, plus extra for held vowels and for the opening letters
+   (`الٓمٓ`, `كٓهيعٓصٓ`), which are recited as names.
+3. Chooses, among the pauses, the set of cuts that makes every segment the right
+   length for its own words. Every cut lands in a real pause; none is invented.
+4. Checks each clip against its text and marks the ones that do not fit.
+
+The **Silence threshold** and **Minimum silence** fields only steer the first,
+plain split; the alignment picks its own settings. **Align to text** re-runs
+step 3 after you have edited segments.
+
+## Reading the result
+
+- The header shows segments found against segments expected, e.g.
+  `4 segments · expected 4 (basmala + 3 ayahs)`.
+- Under it: **Every clip fits its text**, or **N clips do not fit their text**.
+- Each row shows the file name it will get, the ayah text, the start and end
+  times and the length. A row in red with *length does not fit the text* is
+  under 45% or over 2.2x of what its words call for — almost always a cut in the
+  wrong place, or two ayahs recited in one breath.
+- Per row, four actions:
+  - **Play** — plays that segment straight from the recording (press again to
+    stop). Nothing is encoded to listen, so an edit is heard at once.
+  - **Edit start and end** — see below.
+  - **Split at the quietest point** — cuts the segment in two at a pause.
+  - **Drop this segment**.
+
+## Fixing a cut by ear
+
+**Edit start and end** opens a small editor for one segment:
+
+- **Start** and **End** can be typed — `mm:ss.mmm`, or plain seconds — and
+  applied with Enter, or nudged by **−0.5 −0.1 +0.1 +0.5** seconds.
+- Under each field is a checkbox, **ticked by default**:
+  - *Ticked* — **Also moves the end of the segment before** / **the start of
+    the segment after**. The two segments stay joined, so there is never a gap
+    or an overlap to tidy up. Use it when the cut between two ayahs is simply
+    in the wrong place.
+  - *Unticked* — **Only this segment**. The neighbour stays where it is, and
+    whatever is left between the two is **cut out and goes into no clip**. Use
+    it for something that belongs to neither ayah: a cough, a repeated phrase,
+    an isti'adhah before the basmala. The editor and the list both show how
+    many seconds are being cut out.
+- An unjoined edge can leave a gap but never an overlap — it stops at its
+  neighbour, because two clips sharing the same second would each recite words
+  that belong to one of them. To go *past* a neighbour, tick the box again. No
+  edit can squeeze a segment under 0.2 s.
+- **Align to text** re-cuts everything from the pauses, so it discards hand
+  edits, gaps included.
+- Four things to listen to: **First 3 s** (does it begin on the ayah's first
+  word?), **Last 3 s** (does it end on its last?), **Across the end** (three
+  seconds either side of the cut — how a boundary a word early or late actually
+  sounds) and **Whole segment**.
+- Under the fields it says whether the clip now fits its text, and the list
+  behind re-checks as you go.
+
+This is the edit that does not need a pause. Where a reciter runs the basmala
+into ayah 1, or one ayah into the next, the splitter has nothing to find and
+the row is marked red: open it, listen **across the end**, nudge until the cut
+falls between the two ayahs, then publish with the overwrite box ticked. To
+drop a preamble from the front of the first segment, move its **Start**.
+
+## Publishing
+
+- A count that does not match is blocked until you type an **override reason**,
+  which is written to the log next to the upload.
+- A surah that is already published is refused unless you tick **Overwrite
+  paths that already hold audio**. A surah's clips always have the same names,
+  so overwriting replaces it whole — nothing is deleted and nothing is left
+  behind. Bump the reciter's `version` in the manifest afterwards so phones
+  re-download their packs.
+- It exports every clip, uploads them, builds and uploads the pack, and merges
+  the surah into the manifest.
+
+## Many surahs at once — the command line
+
+The same cutting service, without the screen:
+
+```
+dart run tool/publish_surah.dart --align --export-only --source-dir <dir> 24 39
+python3 tool/audit_audio.py --dir build/recut 24 39        # must say CLEAN
+dart run tool/publish_surah.dart --recut --replace --publish-from build/recut 24 39
+python3 tool/audit_audio.py --live 24 39                   # confirm on the CDN
+```
+
+`--no-basmala` and `--has-istiadhah` are the two checkboxes. `--publish-from`
+uploads the files that were audited rather than cutting again, and refuses a
+surah that is not clean.
+
+## What it cannot do
+
+- **It does not judge the recitation**, only lengths: a clip can be the right
+  length and still start a syllable late. The red rows tell you where to
+  listen; your ear decides.
+- **It never deletes from the bucket.** A wrong cut is replaced in place.

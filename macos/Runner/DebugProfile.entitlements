@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The macOS target exists for ONE reason: lib/main_admin.dart, the internal
+  audio admin tool. Mirqat itself ships to iOS and Android; nothing here
+  reaches a user.
+
+  The App Sandbox is off because the tool shells out to the system `ffmpeg`
+  (ffmpeg_kit_flutter was archived in 2026, so a bundled library is not an
+  option) and a sandboxed process cannot execute a binary outside its own
+  bundle. `network.client` is what lets it upload to R2.
+
+  If macOS ever becomes a product rather than a workbench, this file has to be
+  reconsidered from scratch — do not simply keep these settings.
+-->
 <plist version="1.0">
 <dict>
 	<key>com.apple.security.app-sandbox</key>
-	<true/>
+	<false/>
 	<key>com.apple.security.cs.allow-jit</key>
 	<true/>
 	<key>com.apple.security.network.server</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
 </dict>
 </plist>
