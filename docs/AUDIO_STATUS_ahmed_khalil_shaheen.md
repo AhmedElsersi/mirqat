@@ -3,7 +3,7 @@
 Where every surah of this reciter stands. Updated whenever a surah is re-cut,
 reviewed or withdrawn; the goal is for everything to sit under **Clean**.
 
-Last updated: 2026-09-19 — manifest version 3; surah 24 hand-cut and clean
+Last updated: 2026-09-19 — manifest version 4; all 114 surahs clean
 
 ## How a surah is judged
 
@@ -21,25 +21,18 @@ To re-check everything:  `python3 tool/audit_audio.py --live`
 
 | state | surahs |
 |---|---|
-| Clean and live | 112 |
-| Needs a hand cut in the admin tool | 2 |
+| Clean and live | 114 |
+| Needs a hand cut in the admin tool | 0 |
 | **Total** | **114** |
 
-## Clean and live (112)
+## Clean and live (114)
 
-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 108, 109, 110, 111, 112, 113, 114
+All of them, 1 to 114.
 
-## Needs a hand cut (2)
-
-The recording has no pause where the cut belongs, so no pause-based method finds it.
-Open the surah in the admin tool and press Split: the rows that do not fit their text
-are marked. Use **Edit start and end** on a marked row, listen **across the end**, and
-nudge the boundary until it falls between the two ayahs (see `docs/ADMIN_TOOL.md`,
-"Fixing a cut by ear"). Publish with **Overwrite paths that already hold audio** ticked,
-then bump the reciter's `version` in the manifest.
-
-- **18 الكهف** — ayah 85 is 12.4s against ~3.4s. A replacement recording was tried and is worse — «ثم أتبع سببا» is recited straight into the ayah after it at 84, 89 and 92 — so the original cut stays live.
-- **107 الماعون** — ayah 4 is 1.15s against ~4.5s. In the replacement recording ayah 6 is 1.64s and ayah 7 is 7.33s: 6 runs into 7 with no pause.
+Most were cut by the splitter alone. Three had no pause where a cut belonged — the
+recording runs one ayah, or the basmala, straight into the next — and were finished by ear
+in the admin tool with the play buttons and the boundary editor: **24** (the basmala), **18**
+(ayah 85) and **107** (ayah 4).
 
 ## How a fix goes live
 
@@ -66,3 +59,6 @@ then bump the reciter's `version` in the manifest.
 - 2026-09-19 — all 114 audited live: **111 clean**, 3 need a hand cut (18, 24, 107).
 - 2026-09-19 — surah 24's basmala cut by hand in the admin tool (play + boundary editor),
   published over the old clips, audited live: clean. Manifest version 2 -> 3. **112 clean.**
+- 2026-09-19 — surahs 18 and 107 cut by hand in the admin tool and published over the old
+  clips; the admin pushed the manifest itself. Audited live: clean. Manifest version 3 -> 4.
+  **All 114 clean.**
