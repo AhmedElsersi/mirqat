@@ -32,14 +32,10 @@ class Ayah extends Equatable {
       throw CatalogValidationException(
         'quran.db',
         'Ayah $surahNumber:$number has missing or empty text. Supply the '
-        'verbatim text; it is never generated.',
+            'verbatim text; it is never generated.',
       );
     }
-    return Ayah(
-      surahNumber: surahNumber,
-      number: number,
-      text: rawText,
-    );
+    return Ayah(surahNumber: surahNumber, number: number, text: rawText);
   }
 
   @override

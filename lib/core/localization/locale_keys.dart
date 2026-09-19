@@ -52,7 +52,12 @@ class LocaleKeys {
   static const String mushafComingSoon = 'mushaf.coming_soon';
   static const String mushafMemorize = 'mushaf.memorize';
   static const String mushafOpen = 'mushaf.open';
+  static const String mushafBack = 'mushaf.back';
+  static const String mushafHintLongPress = 'mushaf.hint_long_press';
+  static const String mushafHizbLabel = 'mushaf.hizb_label';
+  static const String mushafJuzLabel = 'mushaf.juz_label';
   static const String mushafPage = 'mushaf.page';
+  static const String mushafSurahLabel = 'mushaf.surah_label';
   static const String mushafPlayFromHere = 'mushaf.play_from_here';
   static const String mushafTitle = 'mushaf.title';
   static const String mushafViewInMushaf = 'mushaf.view_in_mushaf';

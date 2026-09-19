@@ -10,10 +10,14 @@ extension DurationFormatting on Duration {
     final int seconds = inSeconds - minutes * 60;
 
     if (minutes == 0) {
-      return LocaleKeys.durationSeconds.tr(args: <String>[seconds.toLocalisedString()]);
+      return LocaleKeys.durationSeconds.tr(
+        args: <String>[seconds.toLocalisedString()],
+      );
     }
     if (seconds == 0) {
-      return LocaleKeys.durationMinutes.tr(args: <String>[minutes.toLocalisedString()]);
+      return LocaleKeys.durationMinutes.tr(
+        args: <String>[minutes.toLocalisedString()],
+      );
     }
     return LocaleKeys.durationMinutesSeconds.tr(
       args: <String>[minutes.toLocalisedString(), seconds.toLocalisedString()],

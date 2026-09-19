@@ -23,10 +23,12 @@ import 'quran_database_opener.dart';
 /// lives in Hive, never here (CLAUDE.md A.2 rule 6, applied to data as well
 /// as audio).
 class QuranDatabase implements QuranDatabaseOpener {
-  QuranDatabase({DatabaseFactory? factory, Future<Directory> Function()? resolveStorageDirectory})
-    : _factory = factory ?? databaseFactory,
-      _resolveStorageDirectory =
-          resolveStorageDirectory ?? getApplicationSupportDirectory;
+  QuranDatabase({
+    DatabaseFactory? factory,
+    Future<Directory> Function()? resolveStorageDirectory,
+  }) : _factory = factory ?? databaseFactory,
+       _resolveStorageDirectory =
+           resolveStorageDirectory ?? getApplicationSupportDirectory;
 
   final DatabaseFactory _factory;
   final Future<Directory> Function() _resolveStorageDirectory;
@@ -95,7 +97,10 @@ class QuranDatabase implements QuranDatabaseOpener {
     }
   }
 
-  Future<void> _deleteOlderVersions(Directory dir, {required String keep}) async {
+  Future<void> _deleteOlderVersions(
+    Directory dir, {
+    required String keep,
+  }) async {
     if (!dir.existsSync()) return;
     await for (final FileSystemEntity entity in dir.list()) {
       if (entity is! File) continue;

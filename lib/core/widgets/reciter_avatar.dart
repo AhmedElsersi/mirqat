@@ -25,7 +25,11 @@ import '../di/injection.dart';
 /// and is there on first run; the cached one is what lets a reciter be added
 /// to the manifest without shipping an app version.
 class ReciterAvatar extends StatelessWidget {
-  const ReciterAvatar({required this.reciter, required this.diameter, super.key});
+  const ReciterAvatar({
+    required this.reciter,
+    required this.diameter,
+    super.key,
+  });
 
   final Reciter reciter;
 
@@ -50,8 +54,9 @@ class ReciterAvatar extends StatelessWidget {
                 // A portrait is not information a screen reader needs read
                 // aloud: the name it sits beside already carries it.
                 excludeFromSemantics: true,
-                errorBuilder: (BuildContext context, Object error, StackTrace? _) =>
-                    _Fallback(reciter: reciter, size: size),
+                errorBuilder:
+                    (BuildContext context, Object error, StackTrace? _) =>
+                        _Fallback(reciter: reciter, size: size),
               )
             : _RemotePortrait(reciter: reciter, size: size),
       ),

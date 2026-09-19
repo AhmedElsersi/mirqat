@@ -11,7 +11,6 @@ import '../../core/constants/cdn.dart';
 import '../../data/datasources/asset_reader.dart';
 import '../../data/models/audio_manifest.dart';
 
-
 /// The audio manifest, from the best source available.
 ///
 /// [load] answers straight away from the disk cache, or the bundled copy when

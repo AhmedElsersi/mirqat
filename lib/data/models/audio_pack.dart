@@ -156,12 +156,10 @@ class PackDownload extends Equatable {
     this.message,
   });
 
-  const PackDownload.idle({
-    required this.reciterId,
-    required this.surahNumber,
-  }) : status = PackStatus.idle,
-       progress = 0,
-       message = null;
+  const PackDownload.idle({required this.reciterId, required this.surahNumber})
+    : status = PackStatus.idle,
+      progress = 0,
+      message = null;
 
   final String reciterId;
   final int surahNumber;

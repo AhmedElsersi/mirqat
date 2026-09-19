@@ -46,11 +46,10 @@ class DownloadsRepositoryImpl implements DownloadsRepository {
   ) => _guard(() async => optionOf(await _local.get(reciterId, surahNumber)));
 
   @override
-  Future<Either<Failure, Unit>> record(InstalledPack pack) =>
-      _guard(() async {
-        await _local.record(pack);
-        return unit;
-      });
+  Future<Either<Failure, Unit>> record(InstalledPack pack) => _guard(() async {
+    await _local.record(pack);
+    return unit;
+  });
 
   @override
   Future<Either<Failure, Unit>> forget(String reciterId, int surahNumber) =>

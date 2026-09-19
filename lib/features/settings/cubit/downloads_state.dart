@@ -42,19 +42,17 @@ class DownloadsState extends Equatable {
   final String? errorMessage;
 
   /// What every saved surah costs together, in bytes.
-  int get totalBytes => saved.fold<int>(
-    0,
-    (int sum, SavedRecitation s) => sum + s.pack.bytes,
-  );
+  int get totalBytes =>
+      saved.fold<int>(0, (int sum, SavedRecitation s) => sum + s.pack.bytes);
 
   /// Saved surahs grouped by reciter, in list order.
   Map<String, List<SavedRecitation>> get byReciter {
     final Map<String, List<SavedRecitation>> grouped =
         <String, List<SavedRecitation>>{};
     for (final SavedRecitation item in saved) {
-      grouped.putIfAbsent(item.pack.reciterId, () => <SavedRecitation>[]).add(
-        item,
-      );
+      grouped
+          .putIfAbsent(item.pack.reciterId, () => <SavedRecitation>[])
+          .add(item);
     }
     return grouped;
   }

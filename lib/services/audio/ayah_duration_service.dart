@@ -92,7 +92,7 @@ class AyahDurationService {
         throw AssetNotFoundException(
           '${reciter.basePath}/${surah.number}:$ayah',
           'Could not read the length of ${surah.number}:$ayah for reciter '
-          '"${reciter.id}", so the session summary cannot be computed.',
+              '"${reciter.id}", so the session summary cannot be computed.',
         );
       }
       durations[ayah] = duration;

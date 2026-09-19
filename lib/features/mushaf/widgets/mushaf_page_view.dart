@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/localization/locale_keys.dart';
+import '../../../core/extensions/number_extensions.dart';
 import '../../../core/widgets/ayah_text.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/word.dart';
@@ -24,7 +27,8 @@ class MushafPageView extends StatefulWidget {
     required this.linesPerFullPage,
     required this.highlighted,
     required this.selected,
-    required this.onWordTap,
+    required this.onWordLongPress,
+    this.onTap,
     super.key,
   });
 
@@ -32,7 +36,14 @@ class MushafPageView extends StatefulWidget {
   final int linesPerFullPage;
   final AyahRef? highlighted;
   final AyahRef? selected;
-  final ValueChanged<Word> onWordTap;
+
+  /// A long press on a word, which is how an ayah is chosen. Not a tap: a
+  /// tap anywhere on the page belongs to [onTap], and one gesture cannot mean
+  /// both "show me the controls" and "act on this ayah".
+  final ValueChanged<Word> onWordLongPress;
+
+  /// A tap anywhere on the page, words included.
+  final VoidCallback? onTap;
 
   @override
   State<MushafPageView> createState() => _MushafPageViewState();
@@ -74,36 +85,82 @@ class _MushafPageViewState extends State<MushafPageView> {
     return Padding(
       // A narrow margin of bare page outside the frame, so the ornament is
       // seen whole rather than running into the edge of the glass.
-      padding: EdgeInsetsDirectional.symmetric(horizontal: 6.w, vertical: 4.h),
-      child: IslamicFrame(
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints box) {
-            final int slots = math.max(
-              widget.linesPerFullPage,
-              widget.page.lines.length,
-            );
-            final double pitch = box.maxHeight / slots;
-            final double fontSize = _fontSizeFor(box.maxWidth, pitch);
-
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                for (final PageLine line in widget.page.lines)
-                  SizedBox(
-                    height: pitch,
-                    width: box.maxWidth,
-                    child: _line(context, line, fontSize),
+      padding: EdgeInsetsDirectional.symmetric(horizontal: 4.w, vertical: 3.h),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints box) {
+          final MushafPage p = widget.page;
+          final FrameLabels labels = FrameLabels(
+            topStart: p.surah == null
+                ? null
+                : LocaleKeys.mushafSurahLabel.tr(
+                    args: <String>[p.surah!.nameAr],
                   ),
-              ],
-            );
-          },
-        ),
+            topEnd: p.juz == null
+                ? null
+                : LocaleKeys.mushafJuzLabel.tr(
+                    args: <String>[p.juz!.toLocalisedString()],
+                  ),
+            bottom: p.number.toLocalisedString(),
+            side: p.hizb == null
+                ? null
+                : LocaleKeys.mushafHizbLabel.tr(
+                    args: <String>[p.hizb!.toLocalisedString()],
+                  ),
+          );
+          final EdgeInsets insets = IslamicFrame.insetsFor(
+            box.maxWidth,
+            labelled: true,
+          );
+          final double width = box.maxWidth - insets.horizontal;
+          final double room = box.maxHeight - insets.vertical;
+
+          final int slots = math.max(
+            widget.linesPerFullPage,
+            widget.page.lines.length,
+          );
+
+          // The width alone decides the size of the text: a line is as large
+          // as it can be and still fit across the page. The height never
+          // squeezes it. Where the page is taller than the glass — a short
+          // phone, a tablet on its side, a thick frame — the page scrolls,
+          // frame and all, the way a printed page larger than the window
+          // would. Where there is room to spare, the lines spread to fill it.
+          final double fontSize = _fontSizeFor(width);
+          final double pitch = math.max(room / slots, fontSize * _lineHeight);
+
+          final Widget page = IslamicFrame(
+            labels: labels,
+            child: SizedBox(
+              width: width,
+              height: pitch * slots,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  for (final PageLine line in widget.page.lines)
+                    SizedBox(
+                      height: pitch,
+                      width: width,
+                      child: _line(context, line, fontSize),
+                    ),
+                ],
+              ),
+            ),
+          );
+
+          final bool fits = pitch * slots <= room + 0.5;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            child: fits ? page : SingleChildScrollView(child: page),
+          );
+        },
       ),
     );
   }
 
-  double _fontSizeFor(double width, double pitch) {
-    double size = pitch / _lineHeight;
+  /// The largest size at which every line of this page fits across [width].
+  double _fontSizeFor(double width) {
+    double size = double.infinity;
     for (final PageLine line in widget.page.lines) {
       final List<Word> words = switch (line) {
         AyahLine(:final List<Word> words) => words,
@@ -116,6 +173,8 @@ class _MushafPageViewState extends State<MushafPageView> {
           _minGapEm * (words.length - 1);
       size = math.min(size, width / ems);
     }
+    // A page with no text lines at all has nothing to measure against.
+    if (!size.isFinite) size = width / 18;
     return size * _safety;
   }
 
@@ -156,11 +215,22 @@ class _MushafPageViewState extends State<MushafPageView> {
           ? AyahText.word(text: w.text, fontSize: fontSize, isMarker: true)
           : GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => widget.onWordTap(w),
-              child: AyahText.word(
-                text: w.text,
-                fontSize: fontSize,
-                tint: _tintFor(w),
+              onTap: widget.onTap,
+              onLongPress: () => widget.onWordLongPress(w),
+              // As tall as the line, not as the letters: the strip between
+              // two lines of text belongs to the word above or below it, or a
+              // long press that lands a few pixels off a word silently turns
+              // into a tap on the page.
+              child: SizedBox(
+                height: double.infinity,
+                child: Center(
+                  widthFactor: 1,
+                  child: AyahText.word(
+                    text: w.text,
+                    fontSize: fontSize,
+                    tint: _tintFor(w),
+                  ),
+                ),
               ),
             ),
   ];

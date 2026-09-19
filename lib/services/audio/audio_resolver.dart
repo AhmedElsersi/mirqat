@@ -49,7 +49,6 @@ class AudioResolver {
   /// bitrate does anyway.
   final SettingsRepository? _settings;
 
-
   /// Everything one session needs to know about where its audio is.
   ///
   /// Throws [SessionConfigException] when a bundled `single_file_with_timings`

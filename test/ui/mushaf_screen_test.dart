@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
+import 'package:mirqat/core/widgets/islamic_frame.dart';
 import 'package:mirqat/features/mushaf/cubit/mushaf_cubit.dart';
 import 'package:mirqat/features/mushaf/cubit/mushaf_page.dart';
 import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
@@ -277,26 +278,66 @@ void main() {
   });
 
   group('taps', () {
-    testWidgets('a word opens its ayah; a marker opens nothing', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('a long press on a word opens its ayah; on a marker, '
+        'nothing', (WidgetTester tester) async {
       await openMushaf(tester);
       final List<AyahText> words = renderedWords(tester, 1);
 
-      await tester.tap(
+      await tester.longPress(
         find.byWidget(words.firstWhere((AyahText w) => w.isMarker)),
+        warnIfMissed: false,
       );
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(AyahActionsSheet), findsNothing);
 
       // The first word on Al-Fatiha's page is its ayah 1 — the basmala,
-      // counted as that ayah — and selects like any other word.
-      await tester.tap(find.byWidget(words.first));
+      // counted as that ayah — and selects like any other word. Looked up
+      // afresh: the press on the marker fell through to the page, which
+      // rebuilt, and a widget captured before that is no longer in the tree.
+      await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
       await tester.pump(const Duration(milliseconds: 400));
       final AyahActionsSheet sheet = tester.widget(
         find.byType(AyahActionsSheet),
       );
       expect(sheet.ayah, const AyahRef(1, 1));
+    });
+
+    testWidgets('a tap shows the reading bar, a second tap puts it away, and '
+        'neither opens an ayah', (WidgetTester tester) async {
+      // A tap belongs to the page, a long press to the ayah: one gesture
+      // cannot mean both "show me the controls" and "act on this ayah".
+      await openMushaf(tester);
+      final List<AyahText> words = renderedWords(tester, 1);
+
+      bool barShown() =>
+          tester.widget<AnimatedSlide>(find.byType(AnimatedSlide)).offset ==
+          Offset.zero;
+
+      expect(barShown(), isFalse, reason: 'the screen opens on the page');
+
+      await tester.tap(find.byWidget(words.first));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(barShown(), isTrue);
+      expect(find.byType(AyahActionsSheet), findsNothing);
+
+      await tester.tap(find.byWidget(renderedWords(tester, 1).first));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(barShown(), isFalse);
+    });
+
+    testWidgets('there is no app bar: the borders of the page say where it '
+        'is', (WidgetTester tester) async {
+      await openMushaf(tester);
+      expect(find.byType(AppBar), findsNothing);
+
+      final FrameLabels labels = tester
+          .widget<IslamicFrame>(find.byType(IslamicFrame).first)
+          .labels!;
+      // Page 1 is Al-Fatiha, in the first juz and the first hizb.
+      expect(labels.topStart, contains('الفاتحة'));
+      expect(labels.topEnd, isNotNull);
+      expect(labels.bottom, isNotNull);
+      expect(labels.side, isNotNull);
     });
 
     testWidgets('a separate basmala line selects nothing', (
@@ -325,7 +366,7 @@ void main() {
       final AyahText basmalaWord = renderedWords(tester, page).first;
       expect(basmalaWordCount, greaterThan(0));
 
-      await tester.tap(find.byWidget(basmalaWord), warnIfMissed: false);
+      await tester.longPress(find.byWidget(basmalaWord), warnIfMissed: false);
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(AyahActionsSheet), findsNothing);
       expect(cubit.state.selected, isNull);

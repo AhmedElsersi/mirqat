@@ -314,5 +314,4 @@ class _AyahTextState extends State<AyahText> {
         ? FontWeight.w600
         : FontWeight.w400,
   );
-
 }

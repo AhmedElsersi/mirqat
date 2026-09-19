@@ -129,7 +129,12 @@
     "ayah_reference": "Surah {} · Ayah {}",
     "play_from_here": "Listen from this ayah",
     "memorize": "Start a memorization session",
-    "coming_soon": "Coming soon"
+    "coming_soon": "Coming soon",
+    "surah_label": "Surah {}",
+    "juz_label": "Juz {}",
+    "hizb_label": "Hizb {}",
+    "back": "Back",
+    "hint_long_press": "Long-press an ayah for its options"
   },
   "downloads": {
     "section": "Offline audio",

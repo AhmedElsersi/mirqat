@@ -55,16 +55,16 @@ class Reciter extends Equatable {
     Set<int>? surahs,
     String? imageUrl,
   }) => Reciter(
-        id: manifest.id,
-        nameAr: manifest.nameAr,
-        nameEn: manifest.nameEn,
-        audioMode: AudioMode.perAyahFiles,
-        basePath: '',
-        bundled: false,
-        availableSurahs: const <int>[],
-        hasIstiadhah: false,
-        hasBismillah: false,
-      ).withRemote(manifest, surahs: surahs, imageUrl: imageUrl);
+    id: manifest.id,
+    nameAr: manifest.nameAr,
+    nameEn: manifest.nameEn,
+    audioMode: AudioMode.perAyahFiles,
+    basePath: '',
+    bundled: false,
+    availableSurahs: const <int>[],
+    hasIstiadhah: false,
+    hasBismillah: false,
+  ).withRemote(manifest, surahs: surahs, imageUrl: imageUrl);
 
   final String id;
   final String nameAr;

@@ -393,9 +393,8 @@ class ReaderCubit extends Cubit<ReaderState> {
     if (isClosed) return;
     result.fold(
       (Failure f) => emit(state.copyWith(errorMessage: f.message)),
-      (_) => emit(
-        state.copyWith(defaults: next, defaultsSavedAt: DateTime.now()),
-      ),
+      (_) =>
+          emit(state.copyWith(defaults: next, defaultsSavedAt: DateTime.now())),
     );
   }
 
@@ -426,9 +425,8 @@ class ReaderCubit extends Cubit<ReaderState> {
     _apply(change(config), phase: state.selectionPhase);
   }
 
-  void _apply(SessionConfig config, {required SelectionPhase phase}) => emit(
-    _withPlan(state.copyWith(config: config, selectionPhase: phase)),
-  );
+  void _apply(SessionConfig config, {required SelectionPhase phase}) =>
+      emit(_withPlan(state.copyWith(config: config, selectionPhase: phase)));
 
   /// Rebuilds the plan and the duration estimate for the state's config.
   ReaderState _withPlan(ReaderState next) {

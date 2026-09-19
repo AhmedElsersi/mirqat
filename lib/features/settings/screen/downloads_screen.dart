@@ -104,9 +104,7 @@ class _ReciterGroup extends StatelessWidget {
           children: <Widget>[
             if (hasStale)
               TextButton.icon(
-                onPressed: busy
-                    ? null
-                    : () => cubit.redownloadStale(reciterId),
+                onPressed: busy ? null : () => cubit.redownloadStale(reciterId),
                 icon: const Icon(Icons.refresh),
                 label: Text(LocaleKeys.downloadsRedownloadReciter.tr()),
               ),
@@ -155,13 +153,9 @@ class _FailedGroup extends StatelessWidget {
         for (final SavedRecitation saved in items)
           ListTile(
             contentPadding: EdgeInsetsDirectional.zero,
-            leading: Icon(
-              Icons.error_outline,
-              color: theme.colorScheme.error,
-            ),
+            leading: Icon(Icons.error_outline, color: theme.colorScheme.error),
             title: Text(
-              saved.surah?.nameAr ??
-                  saved.pack.surahNumber.toLocalisedString(),
+              saved.surah?.nameAr ?? saved.pack.surahNumber.toLocalisedString(),
             ),
             subtitle: Text(saved.reciter?.nameAr ?? saved.pack.reciterId),
             trailing: IconButton(
@@ -262,9 +256,7 @@ class _Total extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            LocaleKeys.downloadsSavedTotal.tr(
-              args: <String>[megabytes(bytes)],
-            ),
+            LocaleKeys.downloadsSavedTotal.tr(args: <String>[megabytes(bytes)]),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

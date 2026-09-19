@@ -122,8 +122,7 @@ class _ReaderViewState extends State<_ReaderView> {
               state: state,
               fontSize: ayahFontSize,
               scrollController: _scrollController,
-              onOpenDrawer: () =>
-                  _scaffoldKey.currentState?.openEndDrawer(),
+              onOpenDrawer: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
           },
         );

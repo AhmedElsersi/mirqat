@@ -140,11 +140,13 @@ class _ProgressRing extends StatelessWidget {
               AppColors.statusMemorized,
             ),
           ),
-          if (fraction ==1)
-          Center(
-            child:Icon(Icons.check_circle_outline_rounded,
-            color: AppColors.statusMemorized,),
-          ),
+          if (fraction == 1)
+            Center(
+              child: Icon(
+                Icons.check_circle_outline_rounded,
+                color: AppColors.statusMemorized,
+              ),
+            ),
         ],
       ),
     );

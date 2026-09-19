@@ -100,9 +100,7 @@ class DownloadsLocalDataSourceImpl implements DownloadsLocalDataSource {
         whereArgs: <Object?>[reciterId, surahNumber],
       );
     } on DatabaseException catch (e) {
-      throw StorageException(
-        'Could not forget "$reciterId:$surahNumber": $e',
-      );
+      throw StorageException('Could not forget "$reciterId:$surahNumber": $e');
     }
     _announce();
   }
@@ -122,10 +120,7 @@ class DownloadsLocalDataSourceImpl implements DownloadsLocalDataSource {
   }
 
   @override
-  Future<int> markReciterStale(
-    String reciterId,
-    String manifestVersion,
-  ) async {
+  Future<int> markReciterStale(String reciterId, String manifestVersion) async {
     final int changed = await (await _db).update(
       _table,
       <String, Object?>{

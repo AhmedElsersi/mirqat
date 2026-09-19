@@ -16,53 +16,211 @@ import '../theme/app_colors.dart';
 /// It only ever surrounds Quranic text and never overlaps it
 /// (A.2 rule 7): the child is laid out strictly inside the inner rule.
 class IslamicFrame extends StatelessWidget {
-  const IslamicFrame({required this.child, this.band, super.key});
+  const IslamicFrame({required this.child, this.band, this.labels, super.key});
 
   final Widget child;
 
-  /// Width of the ornamented band. Defaults to a fraction of the frame's own
-  /// width, held between 9 and 16 logical pixels: thick enough for the
-  /// lozenges to read, thin enough that the text barely shrinks for it.
+  /// Width of the ornamented band at the sides. Defaults to a fraction of the
+  /// frame's own width, held between 18 and 30 logical pixels: wide enough for
+  /// the woven lattice and its guard stripes to read as illumination rather
+  /// than as a rule. It was half this at first, to spare the text; the owner
+  /// asked for the ornament to have presence, and a page that no longer fits
+  /// simply scrolls, as a printed page larger than the glass would.
   final double? band;
 
-  /// The band for a frame [width] wide.
-  static double bandFor(double width) => (width * 0.03).clamp(9.0, 16.0);
+  /// What the borders say about the page — surah and juz along the top, the
+  /// page number at the foot, the hizb in the right-hand border — the way a
+  /// printed mushaf writes them in its margins. With labels the top and
+  /// bottom bands are taller than the sides, so that the words in them can be
+  /// read rather than merely present.
+  final FrameLabels? labels;
+
+  /// The side band for a frame [width] wide.
+  static double bandFor(double width) => (width * 0.055).clamp(18.0, 30.0);
+
+  /// The top and bottom band: the side band, or taller when it carries words.
+  static double crossBandFor(double band, {required bool labelled}) =>
+      labelled ? band * 1.4 : band;
+
+  /// From the frame's outer edge to where its child begins: the band, then a
+  /// breath of bare page before the first letter. Public so that a page can
+  /// work out how much room its text really has.
+  static EdgeInsets insetsFor(
+    double width, {
+    double? band,
+    bool labelled = false,
+  }) {
+    final double b = band ?? bandFor(width);
+    final double breath = b * 0.45;
+    return EdgeInsets.symmetric(
+      horizontal: b + breath,
+      vertical: crossBandFor(b, labelled: labelled) + breath,
+    );
+  }
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (BuildContext context, BoxConstraints box) {
       final double b = band ?? bandFor(box.maxWidth);
-      return CustomPaint(
-        painter: _FramePainter(band: b),
-        child: Padding(
-          // The band, then a breath of page before the first letter.
-          padding: EdgeInsets.all(b + b * 0.55),
-          child: child,
-        ),
+      final FrameLabels? l = labels;
+      final bool labelled = l != null && !l.isEmpty;
+      final double cross = crossBandFor(b, labelled: labelled);
+
+      return Stack(
+        children: <Widget>[
+          CustomPaint(
+            painter: _FramePainter(band: b, crossBand: cross),
+            child: Padding(
+              padding: insetsFor(box.maxWidth, band: b, labelled: labelled),
+              child: child,
+            ),
+          ),
+          // The labels sit on the band and nowhere else: never over the page,
+          // and so never over a word of it (CLAUDE.md A.2 rule 7).
+          if (labelled) ...<Widget>[
+            Positioned(
+              top: 0,
+              left: b * 1.6,
+              right: b * 1.6,
+              height: cross,
+              // A mushaf page reads right to left whatever the interface
+              // language, so the surah is on the right and the juz on the left.
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    _Plaque(text: l.topStart, height: cross * 0.74),
+                    _Plaque(text: l.topEnd, height: cross * 0.74),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: b * 1.6,
+              right: b * 1.6,
+              height: cross,
+              child: Center(
+                child: _Plaque(text: l.bottom, height: cross * 0.74),
+              ),
+            ),
+            Positioned(
+              top: cross * 1.4,
+              bottom: cross * 1.4,
+              right: 0,
+              width: b,
+              child: Center(
+                child: RotatedBox(
+                  quarterTurns: 1,
+                  child: _Plaque(text: l.side, height: b * 0.8),
+                ),
+              ),
+            ),
+          ],
+        ],
       );
     },
   );
 }
 
-class _FramePainter extends CustomPainter {
-  const _FramePainter({required this.band});
+/// The words a frame carries in its borders. Any of them may be absent; an
+/// absent one leaves the weave unbroken there.
+class FrameLabels {
+  const FrameLabels({this.topStart, this.topEnd, this.bottom, this.side});
 
+  /// Top border, on the side a page begins — the surah.
+  final String? topStart;
+
+  /// Top border, far side — the juz.
+  final String? topEnd;
+
+  /// Bottom border, centred — the page number.
+  final String? bottom;
+
+  /// The right-hand border, turned to run along it — the hizb.
+  final String? side;
+
+  bool get isEmpty =>
+      topStart == null && topEnd == null && bottom == null && side == null;
+}
+
+/// A small gold-ruled panel set into the band, interrupting the weave.
+class _Plaque extends StatelessWidget {
+  const _Plaque({required this.text, required this.height});
+
+  final String? text;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final String? label = text;
+    if (label == null || label.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      height: height,
+      padding: EdgeInsets.symmetric(horizontal: height * 0.55),
+      decoration: ShapeDecoration(
+        color: AppColors.forest,
+        shape: StadiumBorder(
+          side: BorderSide(
+            color: AppColors.gold,
+            width: math.max(1.0, height * 0.06),
+          ),
+        ),
+      ),
+      // Sized to its words. `alignment:` on the Container itself would make
+      // it swell to whatever room it is offered — the whole length of the
+      // border, for the two plaques that are not inside a Row.
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label,
+          maxLines: 1,
+          softWrap: false,
+          textScaler: TextScaler.noScaling,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            fontSize: height * 0.56,
+            height: 1.0,
+            color: AppColors.cream,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FramePainter extends CustomPainter {
+  const _FramePainter({required this.band, required this.crossBand});
+
+  /// The band at the sides.
   final double band;
+
+  /// The band along the top and bottom — taller when it carries labels.
+  final double crossBand;
 
   @override
   void paint(Canvas canvas, Size size) {
     final Rect outer = Offset.zero & size;
-    final Rect inner = outer.deflate(band);
-    final double rule = math.max(1.0, band * 0.11);
+    final Rect inner = Rect.fromLTRB(
+      band,
+      crossBand,
+      size.width - band,
+      size.height - crossBand,
+    );
+    final double rule = math.max(1.2, band * 0.075);
+    final double hair = math.max(0.8, rule * 0.55);
 
     final Paint ground = Paint()..color = AppColors.forest;
     final Paint gold = Paint()
       ..color = AppColors.gold
       ..isAntiAlias = true;
-    final Paint goldLine = Paint()
+    Paint line(double width) => Paint()
       ..color = AppColors.gold
       ..style = PaintingStyle.stroke
-      ..strokeWidth = rule
+      ..strokeWidth = width
+      ..strokeJoin = StrokeJoin.miter
       ..isAntiAlias = true;
 
     // The band itself.
@@ -74,70 +232,99 @@ class _FramePainter extends CustomPainter {
       ground,
     );
 
-    // Gold rules on both edges of the band, and a hairline just inside it —
-    // the double line is what makes a border read as illumination rather
-    // than as a box.
+    // Across its width the band reads: gold rule, guard stripe, hairline,
+    // the woven zone, hairline, guard stripe, gold rule. The two hairlines
+    // fence the lattice in, and that fencing is most of what separates an
+    // illuminated border from a patterned one.
+    final double guard = band * 0.2;
     canvas
-      ..drawRect(outer.deflate(rule / 2), goldLine)
-      ..drawRect(inner.inflate(rule / 2), goldLine)
-      ..drawRect(
-        inner.deflate(band * 0.28),
-        goldLine..strokeWidth = math.max(0.75, rule * 0.6),
-      );
+      ..drawRect(outer.deflate(rule / 2), line(rule))
+      ..drawRect(inner.inflate(rule / 2), line(rule))
+      ..drawRect(outer.deflate(guard), line(hair))
+      ..drawRect(inner.inflate(guard), line(hair))
+      // And one more, just inside the band, on the page itself.
+      ..drawRect(inner.deflate(band * 0.16), line(hair));
 
-    // Lozenges along each side, between the corner squares. The count is
-    // chosen so they divide the side exactly: a pattern that ends on half a
-    // lozenge is the first thing the eye finds.
-    final double half = band * 0.27;
-    final double dot = band * 0.07;
+    // The woven zone: two zigzags, one the mirror of the other, so that they
+    // cross and recross into a chain of lozenges with a gold seed in each.
+    // The cell count is whatever divides the side exactly — a weave that ends
+    // on half a lozenge is the first thing the eye finds.
+    final double seed = math.max(1.0, band * 0.055);
 
-    void run(Offset from, Offset to) {
-      final double length = (to - from).distance;
-      final int cells = math.max(1, (length / (band * 1.7)).round());
-      final Offset step = (to - from) / cells.toDouble();
+    // [thickness] is the band being woven along: the zone is what is left of
+    // it between the guard stripes.
+    void weave(Offset from, Offset to, double thickness) {
+      final double reach = thickness / 2 - guard - hair;
+      final Offset along = to - from;
+      final double length = along.distance;
+      final int cells = math.max(1, (length / (reach * 2.6)).round());
+      final Offset step = along / cells.toDouble();
+      final Offset across = Offset(-along.dy, along.dx) / length * reach;
+
+      final Path over = Path()..moveTo((from + across).dx, (from + across).dy);
+      final Path under = Path()..moveTo((from - across).dx, (from - across).dy);
       for (int i = 0; i < cells; i++) {
-        final Offset c = from + step * (i + 0.5);
-        canvas.drawPath(
-          Path()
-            ..moveTo(c.dx, c.dy - half)
-            ..lineTo(c.dx + half, c.dy)
-            ..lineTo(c.dx, c.dy + half)
-            ..lineTo(c.dx - half, c.dy)
-            ..close(),
-          gold,
-        );
-        if (i > 0) canvas.drawCircle(from + step * i.toDouble(), dot, gold);
+        final Offset mid = from + step * (i + 0.5);
+        final Offset end = from + step * (i + 1.0);
+        over
+          ..lineTo((mid - across).dx, (mid - across).dy)
+          ..lineTo((end + across).dx, (end + across).dy);
+        under
+          ..lineTo((mid + across).dx, (mid + across).dy)
+          ..lineTo((end - across).dx, (end - across).dy);
+        // A seed where the strands part widest, a smaller one where they cross.
+        canvas.drawCircle(from + step * i.toDouble(), seed, gold);
+        canvas.drawCircle(mid, seed * 0.6, gold);
       }
+      canvas.drawCircle(to, seed, gold);
+      canvas
+        ..drawPath(over, line(hair * 1.25))
+        ..drawPath(under, line(hair * 1.25));
     }
 
-    final double m = band / 2;
-    run(Offset(band, m), Offset(size.width - band, m));
-    run(
-      Offset(band, size.height - m),
-      Offset(size.width - band, size.height - m),
+    final double mx = band / 2;
+    final double my = crossBand / 2;
+    weave(Offset(band, my), Offset(size.width - band, my), crossBand);
+    weave(
+      Offset(band, size.height - my),
+      Offset(size.width - band, size.height - my),
+      crossBand,
     );
-    run(Offset(m, band), Offset(m, size.height - band));
-    run(
-      Offset(size.width - m, band),
-      Offset(size.width - m, size.height - band),
+    weave(Offset(mx, crossBand), Offset(mx, size.height - crossBand), band);
+    weave(
+      Offset(size.width - mx, crossBand),
+      Offset(size.width - mx, size.height - crossBand),
+      band,
     );
 
-    // An eight-pointed star in each corner: two squares, one turned an
-    // eighth. The oldest figure in Islamic geometric ornament, and the one
-    // that marks a quarter of a hizb in the margin of every mushaf.
+    // Corner pieces: a gold-ruled cell holding an eight-pointed star — two
+    // squares, one turned an eighth. The oldest figure in Islamic geometric
+    // ornament, and the one that marks a quarter of a hizb in the margin of
+    // every mushaf.
+    final double star = math.min(band, crossBand) * 0.36;
     for (final Offset c in <Offset>[
-      Offset(m, m),
-      Offset(size.width - m, m),
-      Offset(m, size.height - m),
-      Offset(size.width - m, size.height - m),
+      Offset(mx, my),
+      Offset(size.width - mx, my),
+      Offset(mx, size.height - my),
+      Offset(size.width - mx, size.height - my),
     ]) {
-      paintEightPointStar(canvas, c, band * 0.40, gold);
-      canvas.drawCircle(c, band * 0.11, ground);
+      final Rect cell = Rect.fromCenter(
+        center: c,
+        width: band,
+        height: crossBand,
+      );
+      canvas
+        ..drawRect(cell, ground)
+        ..drawRect(cell.deflate(rule / 2), line(rule));
+      paintEightPointStar(canvas, c, star, gold);
+      paintEightPointStar(canvas, c, star - rule * 1.5, ground);
+      paintEightPointStar(canvas, c, star * 0.42, gold);
     }
   }
 
   @override
-  bool shouldRepaint(_FramePainter old) => old.band != band;
+  bool shouldRepaint(_FramePainter old) =>
+      old.band != band || old.crossBand != crossBand;
 }
 
 /// Two overlapping squares about [centre], the second turned 45°.
@@ -232,11 +419,13 @@ class _CartouchePainter extends CustomPainter {
         goldLine..strokeWidth = math.max(0.75, rule * 0.6),
       );
 
+    // A touch smaller than the panel is tall, so the points clear whatever
+    // the cartouche sits against instead of touching it.
     for (final double x in <double>[h * 0.5, size.width - h * 0.5]) {
       final Offset c = Offset(x, h / 2);
-      paintEightPointStar(canvas, c, h * 0.5, gold);
-      paintEightPointStar(canvas, c, h * 0.5 - rule * 1.6, ground);
-      paintEightPointStar(canvas, c, h * 0.2, gold);
+      paintEightPointStar(canvas, c, h * 0.46, gold);
+      paintEightPointStar(canvas, c, h * 0.46 - rule * 1.6, ground);
+      paintEightPointStar(canvas, c, h * 0.18, gold);
     }
   }
 

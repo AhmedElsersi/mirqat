@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
 import '../datasources/quran_pages_local_data_source.dart';
+import '../models/page_info.dart';
 import '../models/ayah.dart';
 import '../models/mushaf_line.dart';
 import '../models/word.dart';
@@ -10,6 +11,8 @@ import '../models/word.dart';
 /// Page/line/word access over `quran.db`.
 abstract class QuranPagesRepository {
   Future<Either<Failure, List<Ayah>>> ayahsForPage(int page);
+
+  Future<Either<Failure, PageInfo?>> pageInfo(int page);
 
   Future<Either<Failure, List<MushafLine>>> linesForPage(int page);
 
@@ -39,6 +42,10 @@ class QuranPagesRepositoryImpl implements QuranPagesRepository {
   @override
   Future<Either<Failure, List<Ayah>>> ayahsForPage(int page) =>
       _guard(() => _local.ayahsForPage(page));
+
+  @override
+  Future<Either<Failure, PageInfo?>> pageInfo(int page) =>
+      _guard(() => _local.pageInfo(page));
 
   @override
   Future<Either<Failure, List<MushafLine>>> linesForPage(int page) =>

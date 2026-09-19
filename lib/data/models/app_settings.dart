@@ -220,9 +220,8 @@ class AppSettings extends Equatable {
   );
 
   /// Records [range] as the last one used for [surahNumber].
-  AppSettings rememberRange(int surahNumber, AyahRange range) => copyWith(
-    lastRanges: <int, AyahRange>{...lastRanges, surahNumber: range},
-  );
+  AppSettings rememberRange(int surahNumber, AyahRange range) =>
+      copyWith(lastRanges: <int, AyahRange>{...lastRanges, surahNumber: range});
 
   Map<String, dynamic> toMap() => <String, dynamic>{
     'reciterId': reciterId,

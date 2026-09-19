@@ -49,10 +49,7 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<AssetReader>(BundleAssetReader.new);
   sl.registerLazySingleton<QuranDatabase>(QuranDatabase.new);
   sl.registerLazySingleton<QuranLocalDataSource>(
-    () => QuranLocalDataSourceImpl(
-      sl<AssetReader>(),
-      sl<QuranDatabase>(),
-    ),
+    () => QuranLocalDataSourceImpl(sl<AssetReader>(), sl<QuranDatabase>()),
   );
   sl.registerLazySingleton<QuranPagesLocalDataSource>(
     () => QuranPagesLocalDataSourceImpl(sl<QuranDatabase>()),

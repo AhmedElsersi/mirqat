@@ -129,7 +129,12 @@
     "ayah_reference": "سورة {} · الآية {}",
     "play_from_here": "الاستماع من هذه الآية",
     "memorize": "بدء جلسة حفظ",
-    "coming_soon": "قريبًا"
+    "coming_soon": "قريبًا",
+    "surah_label": "سورة {}",
+    "juz_label": "الجزء {}",
+    "hizb_label": "الحزب {}",
+    "back": "رجوع",
+    "hint_long_press": "اضغط مطولًا على آية لخياراتها"
   },
   "downloads": {
     "section": "الصوت دون إنترنت",

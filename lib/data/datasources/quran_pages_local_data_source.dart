@@ -2,6 +2,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../core/constants/asset_paths.dart';
 import '../../core/error/exceptions.dart';
+import '../models/page_info.dart';
 import '../models/ayah.dart';
 import '../models/mushaf_line.dart';
 import '../models/word.dart';
@@ -27,6 +28,10 @@ abstract class QuranPagesLocalDataSource {
   Future<List<Word>> wordsForAyah(int surahNumber, int ayahNumber);
 
   /// How many pages the layout has.
+  /// The surah, juz and hizb the page opens in, or null for a page with no
+  /// words on it.
+  Future<PageInfo?> pageInfo(int page);
+
   Future<int> pageCount();
 
   /// The most lines any page holds — the height a full page is laid out for.
@@ -125,10 +130,29 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   }
 
   @override
+  Future<PageInfo?> pageInfo(int page) async {
+    final Database db = await _database.open();
+    // The first word on the page, not the first ayah to *start* on it: a page
+    // usually opens in the middle of an ayah that began on the one before.
+    final List<Map<String, Object?>> rows = await db.rawQuery(
+      'SELECT a.surah AS surah, a.juz AS juz, a.hizb AS hizb '
+      'FROM words w JOIN ayahs a ON a.surah = w.surah AND a.ayah = w.ayah '
+      'WHERE w.page = ? ORDER BY w.id LIMIT 1',
+      <Object>[page],
+    );
+    if (rows.isEmpty) return null;
+    final Map<String, Object?> row = rows.single;
+    return PageInfo(
+      surahNumber: row['surah']! as int,
+      juz: row['juz']! as int,
+      hizb: row['hizb']! as int,
+    );
+  }
+
+  @override
   Future<int> pageCount() async {
     final Database db = await _database.open();
-    return (await db.rawQuery('SELECT MAX(page) AS n FROM lines'))
-            .single['n']!
+    return (await db.rawQuery('SELECT MAX(page) AS n FROM lines')).single['n']!
         as int;
   }
 
@@ -136,9 +160,9 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   Future<int> linesPerFullPage() async {
     final Database db = await _database.open();
     return (await db.rawQuery(
-              'SELECT MAX(c) AS n FROM '
-              '(SELECT COUNT(*) AS c FROM lines GROUP BY page)',
-            )).single['n']!
+          'SELECT MAX(c) AS n FROM '
+          '(SELECT COUNT(*) AS c FROM lines GROUP BY page)',
+        )).single['n']!
         as int;
   }
 

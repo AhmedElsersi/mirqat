@@ -61,11 +61,24 @@ class AyahLine extends PageLine {
 }
 
 class MushafPage extends Equatable {
-  const MushafPage({required this.number, required this.lines});
+  const MushafPage({
+    required this.number,
+    required this.lines,
+    this.surah,
+    this.juz,
+    this.hizb,
+  });
 
   final int number;
   final List<PageLine> lines;
 
+  /// The surah, juz and hizb the page opens in — what the frame writes in its
+  /// borders. Null when the catalog could not say; the border then simply
+  /// carries no label there.
+  final Surah? surah;
+  final int? juz;
+  final int? hizb;
+
   @override
-  List<Object?> get props => <Object?>[number, lines];
+  List<Object?> get props => <Object?>[number, lines, surah, juz, hizb];
 }

@@ -45,6 +45,13 @@ class _MushafViewState extends State<MushafView> {
 
   PageController? _controller;
 
+  /// Whether the bottom bar is showing. It starts hidden: the screen opens on
+  /// the page, whole, the way a book opens — and a tap anywhere brings the
+  /// controls up, and another puts them away.
+  bool _chrome = false;
+
+  void _toggleChrome() => setState(() => _chrome = !_chrome);
+
   @override
   void dispose() {
     _controller?.dispose();
@@ -82,31 +89,33 @@ class _MushafViewState extends State<MushafView> {
           a.errorMessage != b.errorMessage,
       builder: (BuildContext context, MushafState state) {
         return Scaffold(
-          appBar: AppBar(title: Text(LocaleKeys.mushafTitle.tr())),
-          body: switch (state.status) {
-            LoadStatus.initial || LoadStatus.loading => const Center(
-              child: CircularProgressIndicator(),
-            ),
-            LoadStatus.failure => ErrorView(message: state.errorMessage ?? ''),
-            LoadStatus.ready => Column(
-              children: <Widget>[
-                Expanded(child: _pages(context, state)),
-                // Above the system gesture bar, not underneath it.
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: EdgeInsetsDirectional.only(top: 4.h, bottom: 8.h),
-                    child: Text(
-                      LocaleKeys.mushafPage.tr(
-                        args: <String>[state.currentPage.toLocalisedString()],
-                      ),
-                      style: Theme.of(context).textTheme.labelMedium,
+          // No app bar. What it used to say — which surah, which juz, which
+          // page — is written in the borders of the page itself now, and its
+          // one action, going back, is in the bar a tap brings up.
+          body: SafeArea(
+            child: switch (state.status) {
+              LoadStatus.initial || LoadStatus.loading => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              LoadStatus.failure => ErrorView(
+                message: state.errorMessage ?? '',
+              ),
+              LoadStatus.ready => Stack(
+                children: <Widget>[
+                  Positioned.fill(child: _pages(context, state)),
+                  PositionedDirectional(
+                    start: 0,
+                    end: 0,
+                    bottom: 0,
+                    child: _ReadingBar(
+                      visible: _chrome,
+                      page: state.currentPage,
                     ),
                   ),
-                ),
-              ],
-            ),
-          },
+                ],
+              ),
+            },
+          ),
         );
       },
     );
@@ -127,7 +136,7 @@ class _MushafViewState extends State<MushafView> {
         onPageChanged: (int index) => cubit.onPageChanged(index + 1),
         itemBuilder: (BuildContext context, int index) => Directionality(
           textDirection: TextDirection.rtl,
-          child: _PageSlot(pageNumber: index + 1),
+          child: _PageSlot(pageNumber: index + 1, onTap: _toggleChrome),
         ),
       ),
     );
@@ -135,9 +144,12 @@ class _MushafViewState extends State<MushafView> {
 }
 
 class _PageSlot extends StatelessWidget {
-  const _PageSlot({required this.pageNumber});
+  const _PageSlot({required this.pageNumber, required this.onTap});
 
   final int pageNumber;
+
+  /// A tap anywhere on the page: shows or hides the reading bar.
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +182,8 @@ class _PageSlot extends StatelessWidget {
           linesPerFullPage: state.linesPerFullPage,
           highlighted: state.highlighted,
           selected: state.selected,
-          onWordTap: (Word word) => _openAyah(context, cubit, word),
+          onTap: onTap,
+          onWordLongPress: (Word word) => _openAyah(context, cubit, word),
         );
       },
     );
@@ -194,5 +207,73 @@ class _PageSlot extends StatelessWidget {
       ),
     );
     if (!cubit.isClosed) cubit.clearSelection();
+  }
+}
+
+/// The bar a tap brings up from the foot of the page, and a second tap puts
+/// away. It slides rather than appears, and while it is away it takes no
+/// taps, so the page beneath it is never dead to the touch.
+class _ReadingBar extends StatelessWidget {
+  const _ReadingBar({required this.visible, required this.page});
+
+  final bool visible;
+  final int page;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedSlide(
+        offset: visible ? Offset.zero : const Offset(0, 1.2),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        child: AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: const Duration(milliseconds: 180),
+          child: Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(12.w, 0, 12.w, 10.h),
+            child: Material(
+              elevation: 6,
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(18.r),
+              child: Padding(
+                padding: EdgeInsetsDirectional.symmetric(
+                  horizontal: 6.w,
+                  vertical: 4.h,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    IconButton(
+                      tooltip: LocaleKeys.mushafBack.tr(),
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const BackButtonIcon(),
+                    ),
+                    Expanded(
+                      child: Text(
+                        LocaleKeys.mushafHintLongPress.tr(),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsetsDirectional.only(end: 12.w),
+                      child: Text(
+                        LocaleKeys.mushafPage.tr(
+                          args: <String>[page.toLocalisedString()],
+                        ),
+                        style: theme.textTheme.labelLarge,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

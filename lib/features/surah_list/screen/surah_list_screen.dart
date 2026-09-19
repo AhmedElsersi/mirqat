@@ -190,22 +190,18 @@ class _SurahGrid extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (BuildContext context, int index) {
         final SurahListItem item = items[index];
-        return SurahTile(
-          item: item,
-          onTap: () => _openReader(context, item),
-        );
+        return SurahTile(item: item, onTap: () => _openReader(context, item));
       },
     );
   }
 }
 
-void _openReader(BuildContext context, SurahListItem item) =>
-    context.pushNamed(
-      AppRoutes.readerName,
-      pathParameters: <String, String>{
-        AppRoutes.surahNumberParam: '${item.surah.number}',
-      },
-    );
+void _openReader(BuildContext context, SurahListItem item) => context.pushNamed(
+  AppRoutes.readerName,
+  pathParameters: <String, String>{
+    AppRoutes.surahNumberParam: '${item.surah.number}',
+  },
+);
 
 void _openProgress(BuildContext context, SurahListItem item) =>
     context.pushNamed(

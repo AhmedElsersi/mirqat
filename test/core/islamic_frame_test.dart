@@ -42,14 +42,25 @@ void main() {
       expect(child.bottom, lessThan(frame.bottom - band));
     });
 
-    test('the band stays thin enough to leave the page to the text', () {
-      // A phone and a tablet: the band grows with the page, but only so far.
-      expect(IslamicFrame.bandFor(200), 9);
-      expect(IslamicFrame.bandFor(400), 12);
-      expect(IslamicFrame.bandFor(1200), 16);
+    test('the band has presence, and still leaves the page to the text', () {
+      // Wide enough for the woven lattice and its guard stripes to read; the
+      // owner asked for that after seeing a band half this width. It grows
+      // with the page, but only so far.
+      expect(IslamicFrame.bandFor(200), 18);
+      expect(IslamicFrame.bandFor(400), 22);
+      expect(IslamicFrame.bandFor(1200), 30);
       for (final double width in <double>[320, 360, 412, 768, 1024]) {
-        final double taken = 2 * IslamicFrame.bandFor(width) * 1.55;
-        expect(taken / width, lessThan(0.12), reason: 'at $width wide');
+        final double taken = IslamicFrame.insetsFor(width).horizontal;
+        expect(taken / width, lessThan(0.18), reason: 'at $width wide');
+      }
+    });
+
+    test('the text starts clear of the band, not against it', () {
+      for (final double width in <double>[320, 412, 1024]) {
+        expect(
+          IslamicFrame.insetsFor(width).left,
+          greaterThan(IslamicFrame.bandFor(width) * 1.3),
+        );
       }
     });
 

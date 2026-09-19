@@ -130,9 +130,10 @@ class AudioStorage {
     );
     try {
       await audio.create(recursive: true);
-      await _backupChannel.invokeMethod<void>('excludeFromBackup', <String, String>{
-        'path': audio.path,
-      });
+      await _backupChannel.invokeMethod<void>(
+        'excludeFromBackup',
+        <String, String>{'path': audio.path},
+      );
     } on Object {
       // A device that refuses the flag still plays audio; the cost is an
       // iCloud backup larger than it should be, not a broken session.

@@ -24,6 +24,17 @@ workflow. Each stage ends with screenshots for the owner's approval.
   stays as it is.
 - The Islamic frame and the surah-name cartouche are drawn in code — no image
   assets, no SVG package — on the real mushaf pages and the one-surah view.
+- After seeing the first, thin frame the owner asked for more presence: the
+  band is 18-30 px with a woven lattice, guard stripes and ruled corner cells.
+  A page's text size comes from its **width alone**; a page too tall for the
+  screen **scrolls**, frame and all, rather than shrinking.
+- The page carries its own furniture in the borders, like a printed mushaf:
+  **surah and juz** along the top, the **page number** at the foot, the
+  **hizb** in the right-hand border. The mushaf screen therefore has **no app
+  bar**.
+- **A tap** anywhere shows a bar at the foot of the page, and a second tap puts
+  it away; **a long press** on an ayah opens its actions. (A tap used to open
+  the ayah; one gesture cannot mean both.)
 
 **Home and reading**
 - Home has two tabs, surahs and ajzaa, switched by tap or swipe.
@@ -68,7 +79,8 @@ workflow. Each stage ends with screenshots for the owner's approval.
 | # | stage | status |
 |---|---|---|
 | 1 | Colours | done, approved (Quran text stays dark green) — `ui/1-colours` |
-| 2 | Frames: mushaf page, one-surah view, surah-name cartouche | done — `ui/2-frames`, awaiting the owner's look |
+| 2 | Frames: mushaf page, one-surah view, surah-name cartouche | done — `ui/2-frames` |
+| 2b | Thicker frame, scrolling page, labels in the borders, no app bar, tap-to-show bar | done — `ui/2b-frame-thicker`, awaiting the owner's look |
 | 3 | Home: ajzaa tab, view mode in Settings, history, last position | |
 | 4 | Reading + session merged; cross-surah sessions; player screen removed | |
 | 5 | Settings cards, Session settings page, About / Goal / Developer / How to use, onboarding | |

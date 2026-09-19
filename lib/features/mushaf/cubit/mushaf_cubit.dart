@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failures.dart';
 import '../../../core/state/load_status.dart';
+import '../../../data/models/page_info.dart';
 import '../../../data/models/mushaf_line.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
@@ -149,9 +150,14 @@ class MushafCubit extends Cubit<MushafState> {
                 w.id: w,
             };
 
+      final PageInfo? info = await _unwrap(_pages.pageInfo(page));
+
       return Right<Failure, MushafPage>(
         MushafPage(
           number: page,
+          surah: info == null ? null : _surahs[info.surahNumber],
+          juz: info?.juz,
+          hizb: info?.hizb,
           lines: <PageLine>[
             for (final MushafLine line in lines) _lineFrom(line, byId),
           ],

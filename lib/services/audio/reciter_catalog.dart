@@ -110,21 +110,16 @@ class ReciterCatalog {
       // would leave every surah blocked with no way to tell why.
       if (surahs.isEmpty) continue;
       merged.add(
-        Reciter.remoteOnly(
-          entry,
-          surahs: surahs,
-          imageUrl: portraitOf(entry),
-        ),
+        Reciter.remoteOnly(entry, surahs: surahs, imageUrl: portraitOf(entry)),
       );
     }
     return List<Reciter>.unmodifiable(merged);
   }
 
-  Set<int> _playable(ManifestReciter entry, Map<int, int> ayahCounts) =>
-      <int>{
-        for (final ManifestSurah surah in entry.surahs)
-          if (ayahCounts[surah.number] == surah.ayahs) surah.number,
-      };
+  Set<int> _playable(ManifestReciter entry, Map<int, int> ayahCounts) => <int>{
+    for (final ManifestSurah surah in entry.surahs)
+      if (ayahCounts[surah.number] == surah.ayahs) surah.number,
+  };
 
   Future<void> dispose() => _changes.cancel();
 }

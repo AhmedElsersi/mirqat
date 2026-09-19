@@ -67,7 +67,10 @@ class AudioPackService {
 
   /// What a download is doing right now — [PackStatus.idle] when nothing has
   /// been asked for.
-  PackDownload stateFor({required String reciterId, required int surahNumber}) =>
+  PackDownload stateFor({
+    required String reciterId,
+    required int surahNumber,
+  }) =>
       _state[InstalledPack.keyFor(reciterId, surahNumber)] ??
       PackDownload.idle(reciterId: reciterId, surahNumber: surahNumber);
 
@@ -294,11 +297,10 @@ class AudioPackService {
 
     final AppSettings settings = await _readSettings();
     // The quality the user asked for, where this reciter publishes it.
-    final PackVariant variant =
-        remote.variantFor(
-          surahNumber,
-          preferredBitrate: settings.audioQuality.bitrate,
-        )!;
+    final PackVariant variant = remote.variantFor(
+      surahNumber,
+      preferredBitrate: settings.audioQuality.bitrate,
+    )!;
 
     // `load` is what guarantees a manifest has been read at all; without it
     // `current` can still be the empty one and the pack url would come out
@@ -481,8 +483,7 @@ class AudioPackService {
     // `separate` surahs carry their basmala as ayah 000, so they hold one
     // file more than they have ayahs.
     final bool expectsBasmala =
-        hasBasmala ??
-        (surah?.bismillahMode == BismillahMode.separatePreamble);
+        hasBasmala ?? (surah?.bismillahMode == BismillahMode.separatePreamble);
     final int expected = ayahCount + (expectsBasmala ? 1 : 0);
 
     if (written.length == expected) return;
@@ -574,9 +575,13 @@ class AudioPackService {
     String? message,
   }) {
     final String key = InstalledPack.keyFor(reciterId, surahNumber);
-    final PackDownload next = (_state[key] ??
-            PackDownload.idle(reciterId: reciterId, surahNumber: surahNumber))
-        .copyWith(status: status, progress: progress, message: message);
+    final PackDownload next =
+        (_state[key] ??
+                PackDownload.idle(
+                  reciterId: reciterId,
+                  surahNumber: surahNumber,
+                ))
+            .copyWith(status: status, progress: progress, message: message);
     if (next == _state[key]) return;
     _state[key] = next;
     if (!_changes.isClosed) _changes.add(next);

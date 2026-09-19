@@ -134,7 +134,9 @@ class _AyahTile extends StatelessWidget {
                 SizedBox(height: 2.h),
                 Text(
                   LocaleKeys.progressRepeats.tr(
-                    args: <String>[record.cumulativeRepeats.toLocalisedString()],
+                    args: <String>[
+                      record.cumulativeRepeats.toLocalisedString(),
+                    ],
                   ),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
