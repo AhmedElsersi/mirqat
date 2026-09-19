@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 
+import '../../../core/error/exceptions.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../domain/entities/playback_unit.dart';
@@ -37,7 +39,16 @@ class PlayerCubit extends Cubit<PlayerScreenState> {
 
   Future<void> start(PlayerArgs args) async {
     _args = args;
-    emit(state.copyWith(status: LoadStatus.loading));
+    // Retry calls this again on the same cubit, so the previous attempt's
+    // subscriptions have to go first or a second stream would double-count
+    // every repeat.
+    await _unitSub?.cancel();
+    await _stateSub?.cancel();
+    _unitSub = null;
+    _stateSub = null;
+    emit(
+      PlayerScreenState(status: LoadStatus.loading, keepAwake: state.keepAwake),
+    );
 
     try {
       await _player.load(
@@ -46,7 +57,7 @@ class PlayerCubit extends Cubit<PlayerScreenState> {
         surah: args.surah,
       );
     } catch (e) {
-      emit(state.copyWith(status: LoadStatus.failure, errorMessage: '$e'));
+      _fail(e);
       return;
     }
 
@@ -59,16 +70,57 @@ class PlayerCubit extends Cubit<PlayerScreenState> {
       emit(state.copyWith(currentUnit: unit));
     });
 
-    _stateSub = _player.playerStateStream.listen((ja.PlayerState playerState) {
-      final bool finished =
-          playerState.processingState == ja.ProcessingState.completed;
-      emit(state.copyWith(playing: playerState.playing, finished: finished));
-      if (finished) unawaited(_recordProgress());
-    });
+    _stateSub = _player.playerStateStream.listen(
+      (ja.PlayerState playerState) {
+        final bool finished =
+            playerState.processingState == ja.ProcessingState.completed;
+        emit(state.copyWith(playing: playerState.playing, finished: finished));
+        if (finished) unawaited(_recordProgress());
+      },
+      // A connection lost mid-session surfaces here rather than at load. What
+      // was recited up to that point is still worth keeping.
+      onError: (Object error) {
+        unawaited(_recordProgress());
+        _fail(error);
+      },
+    );
 
     emit(state.copyWith(status: LoadStatus.ready));
-    await _player.play();
+
+    // The first clip is opened here, so an unreachable source raises on this
+    // call rather than on load.
+    try {
+      await _player.play();
+    } catch (e) {
+      _fail(e);
+    }
   }
+
+  /// Ends the session in a failure the listener can read.
+  void _fail(Object error) => emit(
+    state.copyWith(
+      status: LoadStatus.failure,
+      failure: classifyFailure(error, streamsAnyAyah: _player.streamsAnyAyah),
+      errorMessage: '$error',
+    ),
+  );
+
+  /// Which sentence the listener gets.
+  ///
+  /// The exception itself only ever says *that* a source would not open —
+  /// `PlayerException` carries a platform code, not a cause — so what
+  /// separates the two cases is the queue: if every clip was already on the
+  /// device, the network is not what went missing, and telling someone to
+  /// check their connection would send them after the wrong thing.
+  @visibleForTesting
+  static PlayerFailure classifyFailure(
+    Object error, {
+    required bool streamsAnyAyah,
+  }) => switch (error) {
+    SessionConfigException() => PlayerFailure.configuration,
+    _ when streamsAnyAyah => PlayerFailure.audioUnreachable,
+    _ => PlayerFailure.unknown,
+  };
 
   Future<void> togglePlayPause() =>
       state.playing ? _player.pause() : _player.play();
@@ -116,7 +168,9 @@ class PlayerCubit extends Cubit<PlayerScreenState> {
     await _stateSub?.cancel();
     await _recordProgress();
     await _keepAwake.setEnabled(false);
-    await _player.stop();
+    // Not just stop(): leaving the screen ends the session, and the lock
+    // screen should stop offering to resume it.
+    await _player.endSession();
     return super.close();
   }
 }

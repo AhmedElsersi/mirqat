@@ -59,7 +59,10 @@
     "timeline": "Session steps",
     "finished": "Session finished",
     "repeat_header": "Repetition {} of {}",
-    "reciting_range": "Reciting ayahs {} - {}"
+    "reciting_range": "Reciting ayahs {} - {}",
+    "error_offline": "The audio could not be reached. Check your connection, or download the surah to listen offline.",
+    "error_config": "This recitation could not be prepared. Try another reciter.",
+    "error_unknown": "The session could not be played."
   },
   "progress": {
     "title": "Progress",
@@ -89,7 +92,17 @@
     "default_pauses": "Pauses",
     "default_range_behaviour": "Default ayah range",
     "range_whole_surah": "Whole surah",
-    "range_last_used": "Last used"
+    "range_last_used": "Last used",
+    "section_storage": "Storage",
+    "saved_recitations": "Saved recitations",
+    "saved_recitations_hint": "Surahs available without the internet",
+    "audio_quality": "Audio quality",
+    "audio_quality_low": "Low — 32 kbps",
+    "audio_quality_standard": "Standard — 64 kbps",
+    "audio_quality_high": "High — 128 kbps",
+    "audio_quality_hint": "Used for downloads and streaming, where the reciter offers it",
+    "wifi_only": "Download over Wi-Fi only",
+    "wifi_only_hint": "A single surah is tens of megabytes"
   },
   "duration": {
     "minutes": "{} min",
@@ -107,5 +120,40 @@
     "no_audio": "No reciter has recorded Surah {} yet, so a memorization session cannot start. You can still read it.",
     "reciter_lacks_surah": "{} has no recording of Surah {}.",
     "switch_reciter": "Switch to {}"
+  },
+  "mushaf": {
+    "title": "Mushaf",
+    "open": "Open the mushaf",
+    "view_in_mushaf": "View in the mushaf",
+    "page": "Page {}",
+    "ayah_reference": "Surah {} · Ayah {}",
+    "play_from_here": "Listen from this ayah",
+    "memorize": "Start a memorization session",
+    "coming_soon": "Coming soon"
+  },
+  "downloads": {
+    "section": "Offline audio",
+    "bundled": "Included in the app",
+    "streaming": "Streamed over the internet",
+    "on_device": "Saved on this device ({} MB)",
+    "download": "Download for offline listening",
+    "queued": "Waiting…",
+    "downloading": "Downloading… {}%",
+    "verifying": "Verifying…",
+    "installing": "Installing…",
+    "failed": "The download failed. Audio still streams.",
+    "cancelled": "Download cancelled.",
+    "delete": "Remove from this device",
+    "saved_title": "Saved recitations",
+    "saved_empty": "Nothing is saved on this device. Surahs stream when they are needed, and any surah can be downloaded from the session settings.",
+    "saved_total": "Total: {} MB",
+    "size_mb": "{} MB",
+    "bitrate": "{} kbps",
+    "stale": "Out of date — a newer recording was published",
+    "redownload_reciter": "Re-download this reciter",
+    "delete_reciter": "Remove all of this reciter",
+    "retry_failed": "Retry failed downloads ({})",
+    "failed_row": "Download failed",
+    "deleted_reciter": "Removed {}"
   }
 }

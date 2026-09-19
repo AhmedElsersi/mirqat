@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/mushaf/mushaf_args.dart';
+import '../../features/mushaf/screen/mushaf_screen.dart';
 import '../../features/player/player_args.dart';
 import '../../features/player/screen/player_screen.dart';
 import '../../features/progress/screen/progress_screen.dart';
 import '../../features/reader/screen/reader_screen.dart';
+import '../../features/settings/screen/downloads_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/splash/screen/splash_screen.dart';
 import '../../features/surah_list/screen/surah_list_screen.dart';
@@ -79,10 +82,25 @@ class AppRouter {
             PlayerScreen(args: state.extra! as PlayerArgs),
       ),
       GoRoute(
+        path: AppRoutes.mushafPath,
+        name: AppRoutes.mushafName,
+        builder: (BuildContext context, GoRouterState state) => MushafScreen(
+          args: state.extra as MushafArgs? ?? const MushafArgs(),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.settingsPath,
         name: AppRoutes.settingsName,
         builder: (BuildContext context, GoRouterState state) =>
             const SettingsScreen(),
+        routes: <RouteBase>[
+          GoRoute(
+            path: AppRoutes.downloadsPath,
+            name: AppRoutes.downloadsName,
+            builder: (BuildContext context, GoRouterState state) =>
+                const DownloadsScreen(),
+          ),
+        ],
       ),
     ],
   );

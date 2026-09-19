@@ -262,10 +262,17 @@ void main() {
       // three-repeat learn steps would produce, and those are a different
       // session entirely.
       expect(plan.steps.map(describe), <String>['CONNECT 1-3 x3']);
-      expect(
-        plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(),
-        <int>[1, 2, 3, 1, 2, 3, 1, 2, 3],
-      );
+      expect(plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(), <int>[
+        1,
+        2,
+        3,
+        1,
+        2,
+        3,
+        1,
+        2,
+        3,
+      ]);
       expect(plan.unitCount, 9);
     });
 
@@ -281,10 +288,11 @@ void main() {
       );
 
       expect(plan.steps.map(describe), <String>['CONNECT 4-4 x3']);
-      expect(
-        plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(),
-        <int>[4, 4, 4],
-      );
+      expect(plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(), <int>[
+        4,
+        4,
+        4,
+      ]);
     });
 
     test('a two-ayah range alternates', () {
@@ -298,10 +306,14 @@ void main() {
         ),
       );
 
-      expect(
-        plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(),
-        <int>[2, 3, 2, 3, 2, 3],
-      );
+      expect(plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(), <int>[
+        2,
+        3,
+        2,
+        3,
+        2,
+        3,
+      ]);
     });
 
     test('repeatCount 1 is a single pass', () {
@@ -316,10 +328,11 @@ void main() {
       );
 
       expect(plan.steps.map(describe), <String>['CONNECT 1-3 x1']);
-      expect(
-        plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(),
-        <int>[1, 2, 3],
-      );
+      expect(plan.units.map((PlaybackUnit u) => u.ayahNumber).toList(), <int>[
+        1,
+        2,
+        3,
+      ]);
     });
 
     test('emits no per-ayah learn steps at all', () {

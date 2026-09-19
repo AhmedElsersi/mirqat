@@ -17,7 +17,9 @@ Map<String, String> _strings(String path) {
 
   void walk(Object? node, String prefix) {
     if (node is Map<String, dynamic>) {
-      node.forEach((String k, Object? v) => walk(v, prefix.isEmpty ? k : '$prefix.$k'));
+      node.forEach(
+        (String k, Object? v) => walk(v, prefix.isEmpty ? k : '$prefix.$k'),
+      );
     } else if (node is String) {
       out[prefix] = node;
     }
@@ -41,7 +43,8 @@ void main() {
           expect(
             found,
             isEmpty,
-            reason: '$key contains '
+            reason:
+                '$key contains '
                 '${found.map((int r) => 'U+${r.toRadixString(16).toUpperCase()}').join(', ')}',
           );
         });
@@ -61,7 +64,11 @@ void main() {
 
     for (final File f in <File>[...sources, ...(_localeFiles.map(File.new))]) {
       final String text = f.readAsStringSync().toLowerCase();
-      for (final String banned in <String>['streak', 'انقطعت', 'consecutiveday']) {
+      for (final String banned in <String>[
+        'streak',
+        'انقطعت',
+        'consecutiveday',
+      ]) {
         expect(
           text.contains(banned),
           isFalse,

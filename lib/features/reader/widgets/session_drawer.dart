@@ -13,6 +13,7 @@ import '../../../data/models/surah.dart';
 import '../../../domain/entities/session_config.dart';
 import '../cubit/reader_cubit.dart';
 import '../cubit/reader_state.dart';
+import 'audio_pack_tile.dart';
 
 /// Per-session overrides, as a trailing-edge drawer beside the text.
 ///
@@ -72,6 +73,7 @@ class SessionDrawer extends StatelessWidget {
                   if (reciter != null) ...<Widget>[
                     _ReciterLine(reciter: reciter),
                     SizedBox(height: 20.h),
+                    AudioPackTile(reciter: reciter, surah: surah),
                   ],
                   SetupSection(
                     label: LocaleKeys.sessionSetupRange.tr(),

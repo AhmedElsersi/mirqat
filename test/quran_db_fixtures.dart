@@ -1,11 +1,18 @@
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mirqat/core/constants/asset_paths.dart';
 import 'package:mirqat/core/error/exceptions.dart';
 import 'package:mirqat/data/datasources/asset_reader.dart';
+import 'package:mirqat/data/datasources/downloads_database.dart';
+import 'package:mirqat/data/datasources/downloads_local_data_source.dart';
 import 'package:mirqat/data/datasources/quran_database_opener.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
 import 'package:mirqat/data/repositories/quran_repository.dart';
+import 'package:mirqat/data/repositories/downloads_repository.dart';
+import 'package:mirqat/services/audio/manifest_service.dart';
+import 'package:mirqat/services/audio/reciter_catalog.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 bool _ffiReady = false;
@@ -147,16 +154,93 @@ const List<SurahDbRow> threeSurahs = <SurahDbRow>[
   SurahDbRow(id: 3, ayahCount: 3),
 ];
 
-QuranRepository fixtureRepository({String reciters = twoReciters}) =>
-    QuranRepositoryImpl(
-      QuranLocalDataSourceImpl(
-        FakeAssetReader(<String, String>{AssetPaths.recitersCatalog: reciters}),
-        FixtureQuranDatabase(
-          surahs: threeSurahs,
-          ayahs: <AyahDbRow>[
-            for (final SurahDbRow s in threeSurahs)
-              for (int a = 1; a <= s.ayahCount; a++) AyahDbRow(s.id, a, 'ب'),
-          ],
-        ),
-      ),
-    );
+/// The repository over the shipped `quran.db`, for tests that need the real
+/// 114 surahs rather than the three-surah fixture.
+QuranRepository repositoryOverRealDatabase() => QuranRepositoryImpl(
+  QuranLocalDataSourceImpl(
+    FakeAssetReader(<String, String>{AssetPaths.recitersCatalog: twoReciters}),
+    RepoQuranDatabase(),
+  ),
+);
+
+QuranRepository fixtureRepository({
+  String reciters = twoReciters,
+  Map<String, String> extraAssets = const <String, String>{},
+}) => QuranRepositoryImpl(
+  QuranLocalDataSourceImpl(
+    FakeAssetReader(<String, String>{
+      AssetPaths.recitersCatalog: reciters,
+      ...extraAssets,
+    }),
+    FixtureQuranDatabase(
+      surahs: threeSurahs,
+      ayahs: <AyahDbRow>[
+        for (final SurahDbRow s in threeSurahs)
+          for (int a = 1; a <= s.ayahCount; a++) AyahDbRow(s.id, a, 'ب'),
+      ],
+    ),
+  ),
+);
+
+/// A manifest with no reciters in it — the bundled one's shape, and the
+/// default for tests that only care about the bundled catalog.
+const String emptyManifest = '''
+{"schemaVersion":1,"baseUrl":"https://example.invalid/cdn/","mirrors":[],
+ "reciters":[]}
+''';
+
+/// A [ManifestService] with no cache directory: reading one is a failure the
+/// service already treats as "nothing cached", so it falls straight through to
+/// the bundled manifest. A test that exercises the cache passes its own
+/// [cacheDirectory] instead.
+Future<Directory> _noManifestCache() =>
+    throw UnsupportedError('This fixture has no manifest cache directory.');
+
+/// A [ManifestService] that never reaches the network: it serves [bundled] as
+/// the bundled manifest, and its default client answers every fetch with 404.
+ManifestService fixtureManifestService({
+  String bundled = emptyManifest,
+  http.Client? client,
+  Future<Directory> Function()? cacheDirectory,
+}) => ManifestService(
+  FakeAssetReader(<String, String>{AssetPaths.bundledManifest: bundled}),
+  client:
+      client ?? MockClient((http.Request _) async => http.Response('', 404)),
+  storageDirectory: cacheDirectory ?? _noManifestCache,
+  url: 'https://example.invalid/cdn/manifest.json',
+);
+
+/// The merged catalog over the fixture repository and an offline manifest
+/// service.
+ReciterCatalog fixtureCatalog({
+  String reciters = twoReciters,
+  String manifest = emptyManifest,
+  QuranRepository? repository,
+}) => ReciterCatalog(
+  quranRepository: repository ?? fixtureRepository(reciters: reciters),
+  manifestService: fixtureManifestService(bundled: manifest),
+);
+
+/// `downloads.db` in [directory], opened through the in-process sqlite engine.
+///
+/// The real one goes through `sqflite`, a platform-channel plugin with no
+/// implementation under `flutter test` — same reasoning as every other ffi
+/// swap here.
+Future<DownloadsLocalDataSourceImpl> openFixtureDownloads(
+  Directory directory,
+) async {
+  _ensureFfi();
+  final DownloadsLocalDataSourceImpl source = DownloadsLocalDataSourceImpl(
+    DownloadsDatabase(
+      databaseFactoryOverride: databaseFactoryFfi,
+      resolveStorageDirectory: () async => directory,
+    ),
+  );
+  await source.open();
+  return source;
+}
+
+/// The downloads repository over a throwaway `downloads.db`.
+Future<DownloadsRepository> fixtureDownloadsRepository(
+  Directory directory,
+) async => DownloadsRepositoryImpl(await openFixtureDownloads(directory));

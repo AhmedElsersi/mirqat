@@ -52,6 +52,11 @@ dependencies:
   sqflite_common: ^2.5.13
   path_provider: ^2.1.0
   path: ^1.9.0
+  background_downloader: ^8.5.0
+  archive: ^4.0.7
+  crypto: ^3.0.3
+  http: ^1.2.0
+  audio_service: ^0.18.19
 
 dev_dependencies:
   flutter_test:
@@ -159,22 +164,22 @@ flutter:
     # sources and the editing masters live in brand/, outside assets/, so a
     # directory declaration cannot sweep them into the bundle.
     - assets/brand/
-    # Reciter portraits. The catalog carries each entry's imagePath, so a new
-    # reciter's photo needs no Dart change and no new line here.
-    - assets/images/reciters/
+    # No reciter portraits ship: a reciter is added through the manifest, and
+    # a reciter the app has never heard of has no bundled photo to fall back
+    # on. Portraits come from the CDN and are cached on the device the first
+    # time they are shown (ReciterImageCache).
     - assets/data/
     - assets/data/quran.db
-    - assets/data/timings/ahmed_khalil_shaheen/
     - assets/audio/
     # The reciter's own directory, holding the two preambles that serve every
     # surah. Without this line bismillah.mp3 and istiadhah.mp3 exist on disk
     # but never reach the bundle.
+    #
+    # No surah audio ships any more: 11 MB of per-ayah clips and their timings
+    # moved to the CDN, where the app streams them or downloads them as packs.
+    # What stays is 137 KB of preambles, so a session can still open with the
+    # isti'adhah and the basmala before a single byte is fetched.
     - assets/audio/ahmed_khalil_shaheen/
-    - assets/audio/ahmed_khalil_shaheen/001/
-    - assets/audio/ahmed_khalil_shaheen/058/
-    - assets/audio/ahmed_khalil_shaheen/112/
-    - assets/audio/ahmed_khalil_shaheen/113/
-    - assets/audio/ahmed_khalil_shaheen/114/
 
   fonts:
     # BLOCKED — uncomment the moment the four IBM Plex Sans Arabic TTFs land in

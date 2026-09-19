@@ -38,6 +38,11 @@ class AppConstants {
   static const String progressBoxName = 'memorization_progress';
   static const String settingsBoxName = 'settings';
 
+  // Download state is NOT here: it lives in its own writable `downloads.db`
+  // (see DownloadsDatabase), not in a Hive box and never in `quran.db`, which
+  // ships read-only and is replaced wholesale on a schema bump
+  // (CLAUDE.md A.2 rule 6).
+
   /// Schema version of `assets/data/quran.db` (its own `meta.schema_version`
   /// row, kept in step with `tool/build_quran_data.py`). `QuranDatabase`
   /// copies the bundled file to `quran_v<version>.db` on first run and

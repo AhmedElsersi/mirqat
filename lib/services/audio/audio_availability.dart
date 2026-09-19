@@ -3,7 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../core/error/failures.dart';
 import '../../data/models/reciter.dart';
 import '../../data/models/surah.dart';
-import '../../data/repositories/quran_repository.dart';
+import 'reciter_catalog.dart';
 
 /// Which reciters have audio for a surah.
 ///
@@ -11,15 +11,15 @@ import '../../data/repositories/quran_repository.dart';
 /// readable whether or not anyone has recorded it, and the catalog knows
 /// nothing about audio.
 class AudioAvailability {
-  const AudioAvailability({required QuranRepository quranRepository})
-    : _quran = quranRepository;
+  const AudioAvailability({required ReciterCatalog reciterCatalog})
+    : _reciters = reciterCatalog;
 
-  final QuranRepository _quran;
+  final ReciterCatalog _reciters;
 
-  /// The reciters whose `availableSurahs` include [surah], in catalog order.
-  /// Empty when nobody has it.
+  /// The reciters who have [surah] — bundled or from the manifest — in catalog
+  /// order. Empty when nobody has it.
   Future<Either<Failure, List<Reciter>>> recitersFor(Surah surah) async =>
-      (await _quran.getReciters()).map(
+      (await _reciters.reciters()).map(
         (List<Reciter> reciters) => List<Reciter>.unmodifiable(
           reciters.where((Reciter r) => r.hasSurah(surah.number)),
         ),

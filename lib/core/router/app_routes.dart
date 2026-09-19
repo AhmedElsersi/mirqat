@@ -21,8 +21,17 @@ class AppRoutes {
   static const String progressPath = '/surah/:surahNumber/progress';
   static const String progressName = 'progress';
 
+  /// The page-by-page mushaf. Optional `MushafArgs` in `state.extra`.
+  static const String mushafPath = '/mushaf';
+  static const String mushafName = 'mushaf';
+
   static const String settingsPath = '/settings';
   static const String settingsName = 'settings';
+
+  /// The saved-recitations list. A child of settings, so the back button
+  /// returns there rather than to the home screen.
+  static const String downloadsPath = 'downloads';
+  static const String downloadsName = 'downloads';
 
   /// Path parameter shared by the surah-scoped routes.
   static const String surahNumberParam = 'surahNumber';

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:mirqat/core/constants/asset_paths.dart';
 import 'package:mirqat/data/models/ayah_timing.dart';
 import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
@@ -251,7 +250,7 @@ void main() {
     });
   });
 
-  group('AyahAudioResolver', () {
+  group('AyahAudioResolver — the bundled arm', () {
     test('per_ayah_files resolves to the zero-padded asset path', () {
       final AyahAudioResolver resolver = PerAyahFilesResolver();
 
@@ -261,35 +260,8 @@ void main() {
       );
     });
 
-    test('the istiadhah is one clip per reciter, not one per surah', () {
-      final AyahAudioResolver resolver = PerAyahFilesResolver();
-
-      expect(
-        uriOf(resolver.resolveIstiadhah(reciter: perAyahReciter)!),
-        endsWith('assets/audio/ahmed_khalil_shaheen/istiadhah.mp3'),
-      );
-      expect(resolver.resolveIstiadhah(reciter: timingsReciter), isNull);
-    });
-
-    test('the bismillah is one clip per reciter, and the resolver answers '
-        'only whether the reciter has one', () {
-      final AyahAudioResolver resolver = PerAyahFilesResolver();
-
-      expect(
-        uriOf(resolver.resolveBismillah(reciter: perAyahReciter)!),
-        endsWith('assets/audio/ahmed_khalil_shaheen/bismillah.mp3'),
-      );
-      // Whether a session plays it is SessionPreambles' decision, keyed on the
-      // surah's bismillahMode — the resolver is deliberately not asked.
-      expect(resolver.resolveBismillah(reciter: timingsReciter), isNull);
-    });
-
-    test('the spacer resolves to the sample-exact WAV', () {
-      expect(
-        uriOf(PerAyahFilesResolver().resolveSpacer()),
-        endsWith(AssetPaths.silenceSpacer),
-      );
-    });
+    // The preambles and the spacer are not a layout decision and no longer
+    // live on this class — see test/services/audio_resolver_test.dart.
 
     test('single_file_with_timings clips one file per ayah', () {
       final AyahAudioResolver resolver = TimingsAudioResolver(

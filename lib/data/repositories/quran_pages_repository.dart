@@ -15,6 +15,17 @@ abstract class QuranPagesRepository {
 
   Future<Either<Failure, List<Word>>> wordsForLine(int page, int line);
 
+  Future<Either<Failure, List<Word>>> wordsInRange(int firstId, int lastId);
+
+  Future<Either<Failure, List<Word>>> wordsForAyah(
+    int surahNumber,
+    int ayahNumber,
+  );
+
+  Future<Either<Failure, int>> pageCount();
+
+  Future<Either<Failure, int>> linesPerFullPage();
+
   Future<Either<Failure, int>> pageForAyah(int surahNumber, int ayahNumber);
 
   Future<Either<Failure, int>> ayahCount(int surahNumber);
@@ -36,6 +47,23 @@ class QuranPagesRepositoryImpl implements QuranPagesRepository {
   @override
   Future<Either<Failure, List<Word>>> wordsForLine(int page, int line) =>
       _guard(() => _local.wordsForLine(page, line));
+
+  @override
+  Future<Either<Failure, List<Word>>> wordsInRange(int firstId, int lastId) =>
+      _guard(() => _local.wordsInRange(firstId, lastId));
+
+  @override
+  Future<Either<Failure, List<Word>>> wordsForAyah(
+    int surahNumber,
+    int ayahNumber,
+  ) => _guard(() => _local.wordsForAyah(surahNumber, ayahNumber));
+
+  @override
+  Future<Either<Failure, int>> pageCount() => _guard(_local.pageCount);
+
+  @override
+  Future<Either<Failure, int>> linesPerFullPage() =>
+      _guard(_local.linesPerFullPage);
 
   @override
   Future<Either<Failure, int>> pageForAyah(int surahNumber, int ayahNumber) =>

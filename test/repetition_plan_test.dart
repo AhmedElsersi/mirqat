@@ -60,8 +60,9 @@ Future<void> main() async {
     group(label, () {
       test('31 a plan at repeat 3 holds exactly ayahCount distinct ayahs', () {
         final SessionPlan plan = planFor();
-        final Set<int> distinct =
-            plan.units.map((PlaybackUnit u) => u.ayahNumber).toSet();
+        final Set<int> distinct = plan.units
+            .map((PlaybackUnit u) => u.ayahNumber)
+            .toSet();
 
         expect(
           distinct.length,
@@ -99,8 +100,9 @@ Future<void> main() async {
         }
 
         // The ayah count the progress UI shows must exclude the preambles.
-        final int ayahEntries =
-            queue.entries.whereType<AyahQueueEntry>().length;
+        final int ayahEntries = queue.entries
+            .whereType<AyahQueueEntry>()
+            .length;
         expect(
           ayahEntries,
           planFor().units.length,
@@ -330,8 +332,9 @@ PlaybackQueue _queue(
 
 List<int> _indicesOf(PlaybackQueue queue, PreambleKind kind) => <int>[
   for (int i = 0; i < queue.entries.length; i++)
-    if (queue.entries[i] case PreambleQueueEntry(kind: final PreambleKind k)
-        when k == kind)
+    if (queue.entries[i] case PreambleQueueEntry(
+      kind: final PreambleKind k,
+    ) when k == kind)
       i,
 ];
 

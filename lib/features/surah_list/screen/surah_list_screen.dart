@@ -61,6 +61,11 @@ class _SurahListViewState extends State<_SurahListView> {
       appBar: AppBar(
         title: Text(LocaleKeys.appName.tr()),
         actions: <Widget>[
+          IconButton(
+            onPressed: () => context.pushNamed(AppRoutes.mushafName),
+            tooltip: LocaleKeys.mushafOpen.tr(),
+            icon: const Icon(Icons.auto_stories_outlined),
+          ),
           _ViewModeToggle(mode: viewMode),
           IconButton(
             onPressed: () => context.pushNamed(AppRoutes.settingsName),

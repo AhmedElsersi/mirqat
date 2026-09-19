@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
+import '../services/audio/memorization_player_service.dart';
+import '../services/audio/session_media_controls.dart';
+import '../services/reciter_image_cache.dart';
 import 'di/injection.dart';
 
 /// The app's one-time startup work, as a future the splash can wait on.
@@ -25,6 +28,14 @@ class AppBootstrap {
   static Future<void> _run() async {
     await Hive.initFlutter();
     await configureDependencies();
+    // Here rather than inside configureDependencies: registering with the
+    // system's media session is a platform call, and dependency registration
+    // has to stay runnable under `flutter test`. Tests replace this whole
+    // future, so they never reach it.
+    await SessionMediaControls.start(
+      playerService: sl<MemorizationPlayerService>(),
+      imageCache: sl<ReciterImageCache>(),
+    );
   }
 
   /// Stands in for the real startup when the harness has already done it.

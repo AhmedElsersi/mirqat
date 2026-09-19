@@ -76,7 +76,10 @@ class _PlayerView extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.status.isFailure) {
-            return ErrorView(message: state.errorMessage ?? '');
+            return ErrorView(
+              message: _failureMessage(state.failure),
+              onRetry: () => context.read<PlayerCubit>().start(args),
+            );
           }
 
           final PlayerCubit cubit = context.read<PlayerCubit>();
@@ -143,4 +146,13 @@ class _PlayerView extends StatelessWidget {
       ),
     );
   }
+
+  /// What the listener is told. The offline line is the one that actually
+  /// gets read: a surah nobody downloaded, opened on a train.
+  static String _failureMessage(PlayerFailure? failure) =>
+      switch (failure ?? PlayerFailure.unknown) {
+        PlayerFailure.audioUnreachable => LocaleKeys.playerErrorOffline.tr(),
+        PlayerFailure.configuration => LocaleKeys.playerErrorConfig.tr(),
+        PlayerFailure.unknown => LocaleKeys.playerErrorUnknown.tr(),
+      };
 }

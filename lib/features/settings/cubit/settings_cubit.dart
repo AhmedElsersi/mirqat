@@ -9,6 +9,7 @@ import '../../../data/models/surah.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
 import '../../../domain/entities/session_config.dart';
+import '../../../services/audio/reciter_catalog.dart';
 import 'settings_state.dart';
 
 /// Owns the persisted settings. Held app-wide rather than per-screen, because
@@ -17,12 +18,15 @@ class SettingsCubit extends Cubit<SettingsState> {
   SettingsCubit({
     required SettingsRepository settingsRepository,
     required QuranRepository quranRepository,
+    required ReciterCatalog reciterCatalog,
   }) : _settings = settingsRepository,
        _quran = quranRepository,
+       _reciters = reciterCatalog,
        super(const SettingsState());
 
   final SettingsRepository _settings;
   final QuranRepository _quran;
+  final ReciterCatalog _reciters;
 
   Future<void> load() async {
     emit(state.copyWith(status: LoadStatus.loading));
@@ -32,7 +36,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       () => const AppSettings(),
     );
 
-    final recitersResult = await _quran.getReciters();
+    final recitersResult = await _reciters.reciters();
     recitersResult.fold(
       (Failure f) => emit(
         state.copyWith(
@@ -75,6 +79,14 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> setReciter(String reciterId) =>
       _save(state.settings.copyWith(reciterId: reciterId));
+
+  /// The bitrate downloads and streams ask for. Nothing already on the device
+  /// is re-fetched or discarded: this is a preference for what happens next.
+  Future<void> setAudioQuality(AudioQuality quality) =>
+      _save(state.settings.copyWith(audioQuality: quality));
+
+  Future<void> setDownloadOverWifiOnly(bool value) =>
+      _save(state.settings.copyWith(downloadOverWifiOnly: value));
 
   Future<void> setDefaultRepeatCount(int value) => _save(
     state.settings.copyWith(

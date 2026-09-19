@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/widgets/reciter_avatar.dart';
 import 'package:mirqat/core/widgets/session_controls.dart';
 import 'package:mirqat/features/progress/screen/progress_screen.dart';
+import 'package:mirqat/data/models/app_settings.dart';
+import 'package:mirqat/features/settings/screen/downloads_screen.dart';
 import 'package:mirqat/features/settings/screen/settings_screen.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 
@@ -50,6 +52,73 @@ void main() {
       expect(find.text('أحمد خليل شاهين'), findsOneWidget);
       // With the reciter's photo beside the name.
       expect(find.byType(ReciterAvatar), findsOneWidget);
+    });
+
+    testWidgets('opens the saved-recitations list, which starts empty', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+      await reveal(tester, find.text('التسجيلات المحفوظة'));
+
+      await AppHarness.tapAndSettle(
+        tester,
+        find.text('التسجيلات المحفوظة').last,
+      );
+
+      expect(find.byType(DownloadsScreen), findsOneWidget);
+      // A fresh install has downloaded nothing: the screen says so and
+      // explains where a download comes from, rather than showing an empty
+      // list.
+      expect(find.textContaining('لا توجد تسجيلات محفوظة'), findsOneWidget);
+      expect(find.byIcon(Icons.delete_outline), findsNothing);
+    });
+
+    testWidgets('the storage group offers a quality and a Wi-Fi-only rule', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+      await reveal(tester, find.text('جودة الصوت'));
+
+      // Three qualities, standard chosen on a fresh install.
+      expect(find.byType(RadioListTile<AudioQuality>), findsNWidgets(3));
+      final RadioGroup<AudioQuality> group = tester
+          .widget<RadioGroup<AudioQuality>>(
+            find.byType(RadioGroup<AudioQuality>),
+          );
+      expect(group.groupValue, AudioQuality.standard);
+
+      // And the metered-data guard is on by default.
+      await reveal(tester, find.text('التنزيل عبر الواي فاي فقط'));
+      final SwitchListTile wifi = tester.widget<SwitchListTile>(
+        find.ancestor(
+          of: find.text('التنزيل عبر الواي فاي فقط'),
+          matching: find.byType(SwitchListTile),
+        ),
+      );
+      expect(wifi.value, isTrue);
+    });
+
+    testWidgets('choosing a quality persists it', (WidgetTester tester) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+      await reveal(tester, find.text('عالية — ١٢٨ ك.ب/ث'));
+
+      await AppHarness.tapAndSettle(tester, find.text('عالية — ١٢٨ ك.ب/ث'));
+
+      // Read back through a fresh app, which is what a restart does.
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+      await reveal(tester, find.text('جودة الصوت'));
+      expect(
+        tester
+            .widget<RadioGroup<AudioQuality>>(
+              find.byType(RadioGroup<AudioQuality>),
+            )
+            .groupValue,
+        AudioQuality.high,
+      );
     });
 
     testWidgets('the session group is collapsed on first open', (

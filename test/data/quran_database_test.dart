@@ -59,21 +59,18 @@ void main() {
     );
   });
 
-  test(
-    'page 1 line 1 is the surah_name line for surah 1',
-    () async {
-      final Database db = await quranDatabase.open();
-      final List<Map<String, Object?>> rows = await db.query(
-        'lines',
-        where: 'page = ? AND line = ?',
-        whereArgs: <int>[1, 1],
-      );
+  test('page 1 line 1 is the surah_name line for surah 1', () async {
+    final Database db = await quranDatabase.open();
+    final List<Map<String, Object?>> rows = await db.query(
+      'lines',
+      where: 'page = ? AND line = ?',
+      whereArgs: <int>[1, 1],
+    );
 
-      expect(rows, hasLength(1));
-      expect(rows.single['line_type'], 'surah_name');
-      expect(rows.single['surah_number'], 1);
-    },
-  );
+    expect(rows, hasLength(1));
+    expect(rows.single['line_type'], 'surah_name');
+    expect(rows.single['surah_number'], 1);
+  });
 
   test('the bundled schema_version matches the app constant', () async {
     // A schema change without a bump leaves every installed quran_v<n>.db in
@@ -87,9 +84,12 @@ void main() {
     expect(rows.single['value'], '${AppConstants.quranDatabaseSchemaVersion}');
   });
 
-  test('reopening returns the same database instance without re-copying', () async {
-    final Database first = await quranDatabase.open();
-    final Database second = await quranDatabase.open();
-    expect(identical(first, second), isTrue);
-  });
+  test(
+    'reopening returns the same database instance without re-copying',
+    () async {
+      final Database first = await quranDatabase.open();
+      final Database second = await quranDatabase.open();
+      expect(identical(first, second), isTrue);
+    },
+  );
 }

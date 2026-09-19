@@ -15,6 +15,17 @@ enum AyahEmphasis {
   context,
 }
 
+/// How a word on a mushaf page is tinted, for [AyahText.word].
+enum WordTint {
+  none,
+
+  /// The ayah being recited or pointed at from elsewhere.
+  highlighted,
+
+  /// The ayah the reader tapped.
+  selected,
+}
+
 /// One ayah inside a flowing block, for [AyahText.flowing].
 class FlowingAyah {
   const FlowingAyah({
@@ -27,7 +38,7 @@ class FlowingAyah {
 
   final int number;
 
-  /// Verbatim ayah text, loaded from the JSON assets.
+  /// Verbatim ayah text, byte-for-byte from `quran.db`.
   final String text;
 
   final AyahEmphasis emphasis;
@@ -51,11 +62,12 @@ class FlowingAyah {
 /// `test/core/font_enforcement_test.dart` that fails if a second renderer
 /// appears.
 ///
-/// Two constructors, one family:
+/// Three constructors, one family:
 ///
 ///  * the default one renders a single ayah;
 ///  * [AyahText.flowing] renders a whole surah as one justified block, ayahs
-///    running together with numbered end-markers the way a mushaf reads.
+///    running together with numbered end-markers the way a mushaf reads;
+///  * [AyahText.word] renders one word of a mushaf page line.
 ///
 /// [AyahEmphasis] and [FlowingAyah.selected] vary colour and weight only.
 /// Neither can reach the family or the size.
@@ -66,7 +78,26 @@ class AyahText extends StatefulWidget {
     this.emphasis = AyahEmphasis.current,
     this.textAlign = TextAlign.justify,
     super.key,
-  }) : ayahs = null;
+  }) : ayahs = null,
+       _word = false,
+       isMarker = false,
+       tint = WordTint.none;
+
+  /// One word of a mushaf page line, byte-for-byte from quran.db.
+  ///
+  /// [fontSize] is exact logical pixels, computed by the page to fit; system
+  /// text scaling is not applied, since a mushaf page must never scroll.
+  /// [isMarker] draws the ayah-number medallion in the accent colour.
+  const AyahText.word({
+    required this.text,
+    required this.fontSize,
+    this.isMarker = false,
+    this.tint = WordTint.none,
+    super.key,
+  }) : ayahs = null,
+       _word = true,
+       emphasis = AyahEmphasis.current,
+       textAlign = TextAlign.center;
 
   /// A whole surah as one continuous, justified block.
   ///
@@ -81,9 +112,12 @@ class AyahText extends StatefulWidget {
     this.textAlign = TextAlign.justify,
     super.key,
   }) : text = '',
-       emphasis = AyahEmphasis.current;
+       emphasis = AyahEmphasis.current,
+       _word = false,
+       isMarker = false,
+       tint = WordTint.none;
 
-  /// Verbatim ayah text, loaded from the JSON assets. Never generated, never
+  /// Verbatim ayah text, byte-for-byte from `quran.db`. Never generated, never
   /// normalised, never trimmed (CLAUDE.md A.2 rule 1).
   final String text;
 
@@ -97,6 +131,33 @@ class AyahText extends StatefulWidget {
   final AyahEmphasis emphasis;
 
   final TextAlign textAlign;
+
+  final bool _word;
+
+  /// [AyahText.word] only.
+  final bool isMarker;
+
+  /// [AyahText.word] only.
+  final WordTint tint;
+
+  /// Width of [text] as [AyahText.word] draws it at [fontSize].
+  static double mushafWordWidth(String text, {required double fontSize}) =>
+      _mushafPainter(text, fontSize).width;
+
+  /// Natural line height of the mushaf face at [fontSize], tall marks
+  /// included.
+  static double mushafLineHeight({required double fontSize}) =>
+      _mushafPainter(' ', fontSize).preferredLineHeight;
+
+  static TextPainter _mushafPainter(String text, double fontSize) =>
+      TextPainter(
+        text: TextSpan(
+          text: text,
+          style: AppTextStyles.mushafWord(fontSize: fontSize),
+        ),
+        textDirection: TextDirection.rtl,
+        textScaler: TextScaler.noScaling,
+      )..layout();
 
   /// The ayah number, in Arabic-Indic digits and nothing else.
   ///
@@ -175,6 +236,26 @@ class _AyahTextState extends State<AyahText> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+
+    if (widget._word) {
+      return Text(
+        widget.text,
+        textDirection: TextDirection.rtl,
+        textScaler: TextScaler.noScaling,
+        // One word never wraps. No maxLines: that would clip, and scripture
+        // is never truncated (CLAUDE.md A.2 rule 7).
+        softWrap: false,
+        style: AppTextStyles.mushafWord(fontSize: widget.fontSize).copyWith(
+          color: widget.isMarker ? colors.primary : colors.onSurface,
+          backgroundColor: switch (widget.tint) {
+            WordTint.none => null,
+            WordTint.highlighted => colors.primary.withValues(alpha: 0.14),
+            WordTint.selected => colors.primary.withValues(alpha: 0.26),
+          },
+        ),
+      );
+    }
+
     final TextStyle base = AppTextStyles.ayah(fontSize: widget.fontSize);
     final List<FlowingAyah>? flow = widget.ayahs;
 
@@ -202,7 +283,7 @@ class _AyahTextState extends State<AyahText> {
               recognizer: _recognizerFor(ayah),
             ),
             // The end-of-ayah medallion, numbered. Presentation, not
-            // scripture: the JSON carries no markers, and the number is set in
+            // scripture: the ayah text carries no markers, and the number is set in
             // Arabic-Indic digits regardless of UI locale because it is part
             // of the mushaf page, not part of the interface.
             TextSpan(

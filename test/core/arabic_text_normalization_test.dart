@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mirqat/core/extensions/arabic_text_extensions.dart';
 
-/// The normalizer is hand-rolled (Dart ships no NFC, and `unorm_dart` is not
+import '../text_comparison.dart';
+
+/// The test-only comparison normalizer is hand-rolled (Dart ships no NFC, and `unorm_dart` is not
 /// an approved package), so it is checked against Python's `unicodedata`
 /// output rather than against hand-written expectations.
 /// Regenerate the fixture with `python3 tools/gen_nfc_cases.py`.

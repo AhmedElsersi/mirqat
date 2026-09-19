@@ -9,6 +9,7 @@ import 'package:mirqat/core/widgets/ayah_text.dart';
 import 'package:mirqat/core/widgets/session_controls.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/features/reader/screen/reader_screen.dart';
+import 'package:mirqat/features/reader/widgets/audio_pack_tile.dart';
 import 'package:mirqat/features/reader/widgets/session_drawer.dart';
 import 'package:mirqat/features/surah_list/widgets/reading_only_marker.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
@@ -27,12 +28,22 @@ void main() {
   late Map<String, dynamic> arabic;
 
   setUpAll(() async {
+    // What the app treats as recorded is the *merged* catalog: surahs that
+    // ship in the bundle, plus surahs the manifest offers. Since the audio
+    // moved to the CDN the first set is empty and the second is everything, so
+    // reading only `reciters.json` here would call every surah unrecorded.
     recordedSurahs = <int>{
       for (final dynamic r
           in jsonDecode(File(AssetPaths.recitersCatalog).readAsStringSync())
               as List<dynamic>)
         ...((r as Map<String, dynamic>)['availableSurahs'] as List<dynamic>)
             .cast<int>(),
+      for (final dynamic r
+          in (jsonDecode(testManifest) as Map<String, dynamic>)['reciters']
+              as List<dynamic>)
+        for (final dynamic s
+            in (r as Map<String, dynamic>)['surahs'] as List<dynamic>)
+          (s as Map<String, dynamic>)['n'] as int,
     };
     arabic =
         jsonDecode(File('assets/translations/ar.json').readAsStringSync())
@@ -274,6 +285,21 @@ void main() {
       expect(summary.stepCount, 1);
       expect(summary.unitCount, 21);
       expect(summary.duration, isNotEmpty);
+    });
+
+    testWidgets('the drawer offers to download a surah that streams', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      await openReader(tester);
+      await openDrawer(tester);
+
+      expect(find.byType(AudioPackTile), findsOneWidget);
+      // No surah audio ships any more: Al-Fatiha comes from the manifest, so
+      // the line says where it comes from and offers to keep it.
+      expect(find.text('يُبَثّ عبر الإنترنت'), findsOneWidget);
+      expect(find.byIcon(Icons.download_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.delete_outline), findsNothing);
     });
 
     testWidgets('the drawer summary tracks the repeat count live', (

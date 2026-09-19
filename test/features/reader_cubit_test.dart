@@ -12,6 +12,7 @@ import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
 import 'package:mirqat/features/reader/cubit/reader_cubit.dart';
 import 'package:mirqat/features/reader/cubit/reader_state.dart';
 import 'package:mirqat/services/audio/audio_availability.dart';
+import 'package:mirqat/services/audio/reciter_catalog.dart';
 import 'package:mirqat/services/audio/ayah_duration_service.dart';
 
 import '../quran_db_fixtures.dart';
@@ -24,13 +25,23 @@ void main() {
 
   setUp(() => quran = fixtureRepository());
 
-  Future<ReaderCubit> open(int surahNumber, {String? reciterId}) async {
+  Future<ReaderCubit> open(
+    int surahNumber, {
+    String? reciterId,
+    bool measurable = true,
+  }) async {
     settings = _Settings(AppSettings(reciterId: reciterId));
+    final ReciterCatalog catalog = ReciterCatalog(
+      quranRepository: quran,
+      manifestService: fixtureManifestService(),
+    );
+    addTearDown(catalog.dispose);
     final ReaderCubit cubit = ReaderCubit(
       quranRepository: quran,
       settingsRepository: settings,
-      audioAvailability: AudioAvailability(quranRepository: quran),
-      durationService: _Durations(),
+      reciterCatalog: catalog,
+      audioAvailability: AudioAvailability(reciterCatalog: catalog),
+      durationService: _Durations(measurable: measurable),
       planBuilder: const RepetitionPlanBuilder(),
     );
     addTearDown(cubit.close);
@@ -48,6 +59,25 @@ void main() {
       expect(state.reciter, isNull);
       expect(state.availableReciters, isEmpty);
       expect(state.canStart, isFalse);
+      expect(state.estimatedDuration, isNull);
+    });
+  });
+
+  group('a surah whose clips are not on the device', () {
+    test('reads and starts, with no duration rather than an error', () async {
+      // Streamed audio is not measured up front, so the summary has no
+      // duration to show — but the session is still ready to start.
+      final ReaderState state = (await open(
+        1,
+        reciterId: 'a',
+        measurable: false,
+      )).state;
+
+      expect(state.status, LoadStatus.ready);
+      expect(state.sessionBlock, isNull);
+      expect(state.reciter?.id, 'a');
+      expect(state.canStart, isTrue);
+      expect(state.plan, isNotNull);
       expect(state.estimatedDuration, isNull);
     });
   });
@@ -133,6 +163,12 @@ class _Settings implements SettingsRepository {
 
 /// One second per ayah — the reader only needs a measurement to exist.
 class _Durations implements AyahDurationService {
+  _Durations({this.measurable = true});
+
+  /// False stands in for a surah whose clips are not on the device: the real
+  /// service leaves those unmeasured rather than streaming them to time them.
+  final bool measurable;
+
   @override
   AudioPlayer? probe;
 
@@ -140,9 +176,12 @@ class _Durations implements AyahDurationService {
   Future<Map<int, Duration>> durationsFor({
     required Reciter reciter,
     required Surah surah,
-  }) async => <int, Duration>{
-    for (int a = 1; a <= surah.ayahCount; a++) a: const Duration(seconds: 1),
-  };
+  }) async => measurable
+      ? <int, Duration>{
+          for (int a = 1; a <= surah.ayahCount; a++)
+            a: const Duration(seconds: 1),
+        }
+      : const <int, Duration>{};
 
   @override
   Future<void> dispose() async {}

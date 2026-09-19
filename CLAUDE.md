@@ -1,24 +1,55 @@
 # GLOBAL PROJECT CONTRACT
 
-> This file is permanent project law. It is Part A of the Milestone 1 build prompt,
-> reproduced verbatim. Any change to it is a product decision, not a refactor.
+> This file is permanent project law. Any change to it is a product decision, not a
+> refactor. It started as Part A of the Milestone 1 build prompt; it now records the
+> app as it is — online and offline, every surah readable, audio from bundled assets,
+> downloads or streaming.
 
 ## A.1 Product definition
 
-An offline Quran memorization (hifz) app built around **talqeen-style spaced repetition of audio**: the app plays one ayah N times, then the next ayah N times, then joins them and plays the pair N times, and continues that pattern until the selected range is memorized.
+A Quran memorization (hifz) app built around **talqeen-style spaced repetition of audio**:
+the app plays one ayah N times, then the next ayah N times, then joins them and plays the
+pair N times, and continues that pattern until the selected range is memorized.
 
-Milestone 1 ships **Surat Al-Fatiha only**, with **one reciter: Ahmed Khalil Shaheen**, fully offline.
-Every later surah and every later reciter must be addable **without writing a single line of new Dart code**.
+- **Reading** works for all 114 surahs, fully offline, from the bundled `quran.db` — as a
+  mushaf page view and as a per-surah reading view.
+- **Audio** works online and offline. A surah's recitation comes, in order of preference,
+  from bundled assets, from a downloaded pack, or streamed from the CDN. A surah that no
+  reciter has recorded yet is still fully readable; only memorization sessions need audio.
+- Every later surah recording and every later reciter must be addable **without writing
+  a single line of new Dart code** — assets, a manifest entry, or both.
 
 ## A.2 Non-negotiable rules
 
-1. **Quranic text is never generated.** The agent must never type, complete, autocorrect, "fix", normalize, or re-diacritize Quranic text from memory. Ayah text is loaded verbatim from the JSON asset files supplied by the developer. If a text asset is missing or looks malformed, **STOP and report** — do not fill the gap.
-2. **No surah-specific or reciter-specific code.** No `if (surah == 1)`, no hardcoded ayah counts, no hardcoded reciter IDs, no switch on surah number anywhere outside the JSON catalog. Surahs and reciters are pure data.
-3. **Offline only.** Zero network calls in Milestone 1. Do **not** add the `INTERNET` permission to `AndroidManifest.xml`. No Firebase, no analytics, no crash reporting, no remote config.
-4. **Arabic-first, RTL-first.** Default locale is `ar`. `EdgeInsetsDirectional` everywhere — never raw `EdgeInsets` with left/right assumptions. Layout, icons, sliders, and progress indicators must be RTL-correct.
-5. **No new packages** beyond the approved list in A.4. If a requirement seems to need one, raise it as a numbered blocker instead of adding it.
-6. **Audio assets are read-only.** Never trim, re-encode, normalize, or programmatically modify recitation audio files.
-7. **Respectful presentation.** Ayah text is never truncated, ellipsized, marquee'd, or overlaid with promotional UI. No ads anywhere in the app.
+1. **Quranic text is never generated, and never altered.** Ayah text comes from
+   `quran.db` and reaches the renderer **byte-for-byte**: no tatweel stripping, no mark
+   reordering, no Unicode normalization form conversion, no whitespace "fixing", nothing.
+   In this text a tatweel (U+0640) is often the carrier a hamza or small yeh sits on;
+   removing it reattaches the mark to another letter, which is a change to the mushaf.
+   Stripping or normalization exists **only** in test comparison helpers
+   (`skeletonForComparison()` in `test/text_comparison.dart`) and is never called from a
+   widget, repository, or loader. If text is missing or looks malformed, **STOP and
+   report** — do not fill the gap. If marks render oddly, the answer is a font change,
+   never a text change.
+2. **No surah-specific or reciter-specific code.** No `if (surah == 1)`, no hardcoded ayah
+   counts, no hardcoded reciter IDs, no switch on surah number anywhere. Surahs come from
+   `quran.db`, reciters from `reciters.json` and the audio manifest; both are pure data.
+3. **Network: public HTTPS GETs only.** The app may fetch the audio manifest, ayah audio
+   and audio packs from the CDN, and nothing else. No backend, no accounts, no Firebase,
+   no analytics, no crash reporting, no remote config. Every network failure degrades
+   quietly to what is available offline — never an error dialog for a failed fetch.
+   Knowing whether a file is local or remote lives in exactly one place: `AudioResolver`.
+4. **Arabic-first, RTL-first.** Default locale is `ar`. `EdgeInsetsDirectional`
+   everywhere — never raw `EdgeInsets` with left/right assumptions. Layout, icons,
+   sliders, and progress indicators must be RTL-correct. The mushaf turns pages the way a
+   printed mushaf does, whatever the UI locale.
+5. **No new packages** beyond the approved list in A.4. If a requirement seems to need
+   one, raise it as a numbered blocker instead of adding it.
+6. **Audio is read-only.** Never trim, re-encode, normalize, or programmatically modify
+   recitation audio files. `quran.db` ships read-only and is replaced wholesale when its
+   schema version changes; download and progress state never go into it.
+7. **Respectful presentation.** Ayah text is never truncated, ellipsized, marquee'd, or
+   overlaid with promotional UI. No ads anywhere in the app.
 
 ## A.3 Architecture
 
@@ -26,37 +57,60 @@ Clean-architecture-lite, feature-scoped:
 
 ```
 lib/
+  main.dart          the app
+  main_admin.dart    the macOS-only admin tool (see A.7)
+  admin/             config, services, cubit, screen — reachable from
+                     main_admin.dart and from nothing else
   core/
     theme/           AppColors, AppTextStyles, AppTheme
     router/          GoRouter config + route names
     di/              GetIt registrations
-    localization/    ar.json, en.json keys
+    localization/    locale keys (ar.json, en.json under assets/translations)
     constants/       AppConstants, AssetPaths
     extensions/
+    widgets/         AyahText — the only widget allowed to render Quranic text
   data/
-    models/          Surah, Ayah, Reciter, MemorizationProgress
-    datasources/     QuranLocalDataSource, ProgressLocalDataSource
-    repositories/    QuranRepository, ProgressRepository
+    models/          Surah, Ayah, Word, MushafLine, Reciter, MemorizationProgress, ...
+    datasources/     QuranDatabase, QuranLocalDataSource, QuranPagesLocalDataSource,
+                     ProgressLocalDataSource, SettingsLocalDataSource,
+                     DownloadsDatabase, DownloadsLocalDataSource
+    repositories/    QuranRepository, QuranPagesRepository, ProgressRepository,
+                     SettingsRepository, DownloadsRepository
   domain/
     entities/        PlanStep, PlaybackUnit, SessionPlan, SessionConfig
     engine/          RepetitionPlanBuilder  (pure Dart, zero Flutter imports)
   features/
     surah_list/      cubit + screen + widgets
-    session_setup/   cubit + screen + widgets
+    reader/          cubit + screen + widgets   (per-surah reading + session setup)
+    mushaf/          cubit + screen + widgets   (page-by-page mushaf)
     player/          cubit + screen + widgets
     progress/        cubit + screen + widgets
     settings/        cubit + screen + widgets
   services/
-    audio/           AyahAudioResolver, MemorizationPlayerService
+    audio/           AudioResolver, AudioStorage, ManifestService, ReciterCatalog,
+                     AudioAvailability, AyahDurationService, AudioPackService,
+                     PackFetcher, MemorizationPlayerService, SessionPreambles,
+                     PlaybackQueue, SessionMediaControls
 ```
 
 - **State management:** `flutter_bloc`, Cubit-per-screen. No global god-cubit.
-- **DI:** `GetIt` — `lazySingleton` for repositories, data sources and services; `factory` for cubits.
+- **DI:** `GetIt` — `lazySingleton` for repositories, data sources and services; `factory`
+  for cubits.
 - **Routing:** `GoRouter`, typed args via `state.extra`.
-- **Sizing:** `flutter_screenutil` (`.w / .h / .r / .sp`) for all dimensions.
+- **Sizing:** `flutter_screenutil` (`.w / .h / .r / .sp`) for all dimensions. Mushaf pages
+  compute their own font size to fit and are the one exception.
 - **Colors:** `Theme.of(context)` / `AppColors` tokens only — no raw `Colors.*` literals.
-- **Strings:** `easy_localization`, both `ar.json` and `en.json` populated with accurate Arabic. No hardcoded user-facing strings.
+- **Strings:** `easy_localization`, both `ar.json` and `en.json` populated with accurate
+  Arabic. No hardcoded user-facing strings.
 - **Errors:** repository methods return `Either<Failure, T>` (`dartz`).
+- **Lock-screen controls** are `SessionMediaControls`, an `audio_service` handler that
+  owns no audio: it mirrors `MemorizationPlayerService` outward (surah, reciter, ayah
+  number, portrait) and passes play, pause and the step skips back in. It is started from
+  `AppBootstrap`, not from dependency registration, which stays free of platform calls so
+  tests can run it. It shows **names only, never ayah text** — a lock screen truncates what
+  it is given, and A.2 rule 7 forbids that.
+- **The repetition engine** (`domain/engine`, `domain/entities`) does not change for audio
+  work; audio sources are looked up around it, never inside it.
 
 ## A.4 Approved package list
 
@@ -67,45 +121,48 @@ lib/
 | Routing | `go_router` | |
 | Sizing | `flutter_screenutil` | |
 | i18n | `easy_localization` | |
-| Audio | `just_audio` | Milestone 1 uses local assets only |
-| Local storage | `hive_ce` + `hive_ce_flutter` | **Not** the original `hive` — it is unmaintained; `hive_ce` is the maintained community fork |
+| Audio | `just_audio` | Assets, local files, and `LockCachingAudioSource` streaming |
+| Media session | `audio_service` | Lock-screen and headset controls; on Android, the media-playback foreground service that keeps a long session alive. Owns no audio — see `SessionMediaControls` |
+| Local storage | `hive_ce` + `hive_ce_flutter` | **Not** the original `hive` |
+| Quran data | `sqflite` + `sqflite_common` | `sqflite_common` is sqflite's pure-Dart API, so loaders stay Flutter-free |
+| Paths | `path_provider`, `path` | |
+| Network | `http` | Public GETs only (A.2 rule 3) |
+| Downloads | `background_downloader` | Per-surah packs |
+| Packs | `archive`, `crypto` | Unzip; sha256 verification |
 | FP types | `dartz` | |
 | Value equality | `equatable` | |
+| Test only | `sqflite_common_ffi` | In-process sqlite under `flutter test` |
+| Build only | `flutter_launcher_icons`, `flutter_native_splash` | |
 
 Nothing else without an explicit blocker.
 
-## A.5 Data contracts (JSON assets — the single source of truth)
+## A.5 Data contracts
 
-### `assets/data/surahs.json`
-```json
-[
-  {
-    "number": 1,
-    "nameAr": "الفاتحة",
-    "nameEn": "Al-Fatiha",
-    "ayahCount": 7,
-    "revelationPlace": "makkah",
-    "bismillahMode": "counted_as_ayah_1"
-  }
-]
+### `assets/data/quran.db` — the text and surah catalog
+
+Read-only SQLite, built by `tool/build_quran_data.py` from the QUL sources in
+`data/sources/`. Schema version in `meta.schema_version`, mirrored by
+`AppConstants.quranDatabaseSchemaVersion`; bump both on any schema change.
+
 ```
-`bismillahMode` ∈ `counted_as_ayah_1` | `separate_preamble` | `none` (At-Tawbah).
-Milestone 1 only needs `counted_as_ayah_1`, but the model, the parser, and the audio resolver must all handle the other two values so surahs 2+ drop in cleanly.
-
-### `assets/data/ayahs/001.json`
-```json
-{
-  "surah": 1,
-  "script": "uthmani",
-  "source": "<filled in by developer>",
-  "ayahs": [
-    { "number": 1, "text": "<verbatim from source file>" }
-  ]
-}
+surahs(id, name_ar, name_translit, ayah_count, revelation, start_page, basmala_mode)
+ayahs (id, surah, ayah, text, page, juz, hizb, sajda, sajda_type, first_word_id, last_word_id)
+words (id, surah, ayah, position, text, is_marker, page, line)
+lines (page, line, line_type, is_centered, surah_number, first_word_id, last_word_id)
+meta  (key, value)
 ```
-One file per surah, named by zero-padded surah number. **The agent does not author the `text` values.**
 
-### `assets/data/reciters.json`
+- `basmala_mode` ∈ `first_ayah` (Al-Fatiha: the basmala **is** ayah 1) | `separate` (the
+  basmala precedes ayah 1 and is not part of it) | `none` (At-Tawba).
+- `line_type` ∈ `surah_name` | `basmallah` | `ayah`. A line's words are the ids
+  `first_word_id..last_word_id`, in id order. `is_marker = 1` words are ayah-number
+  glyphs: drawn, never part of ayah text, never tappable.
+- `name_translit` is the English label. There is no English translation field.
+- There is no `surahs.json`. The surah list is all 114 rows of `surahs`, ordered by id,
+  and knows nothing about audio.
+
+### `assets/data/reciters.json` — bundled reciters
+
 ```json
 [
   {
@@ -115,41 +172,266 @@ One file per surah, named by zero-padded surah number. **The agent does not auth
     "audioMode": "per_ayah_files",
     "basePath": "assets/audio/ahmed_khalil_shaheen",
     "bundled": true,
-    "availableSurahs": [1]
+    "availableSurahs": [1, 58, 112, 113, 114],
+    "hasIstiadhah": true,
+    "hasBismillah": true,
+    "imagePath": "assets/images/reciters/ahmed_khalil_shaheen.jpeg"
   }
 ]
 ```
-`audioMode` ∈ `per_ayah_files` | `single_file_with_timings`. Both must be implemented in Milestone 1 (see A.6) even though only one is used, because the second reciter's assets may arrive in the other shape.
+
+`audioMode` ∈ `per_ayah_files` | `single_file_with_timings`; both stay implemented.
+
+### Audio manifest — remote reciters
+
+Fetched from `kManifestUrl` —
+`https://ahmedelsersi.github.io/iqra-cdn/manifest.json`, overridable with
+`--dart-define=MANIFEST_URL=…` — cached to disk, falling back to the disk cache and then to
+the bundled `assets/data/manifest.json`, which is kept a copy of the published file.
+
+The manifest lives on a GitHub Pages site holding nothing else; the audio itself lives
+wherever the manifest's own `baseUrl` points (today an R2 public bucket). That indirection
+is the point: the bucket can move without an app update. A `baseUrl` with no trailing slash
+is resolved as though it had one.
+
+Both the manifest and the packs are built by `tool/build_manifest.py` from a tree of ayah
+files — it reads ayah counts and basmala modes out of `quran.db`, so a hand-written
+manifest is never the source of those numbers. Packs are deterministic: rebuilding an
+unchanged surah produces the same bytes and the same digest.
+
+```json
+{ "schemaVersion": 1, "baseUrl": "https://…", "mirrors": [],
+  "reciters": [ { "id", "nameAr", "nameEn", "riwayah", "bitrate", "version",
+                  "audioPath", "packPath", "imagePath?", "totalBytes",
+                  "surahs": [ { "n", "ayahs", "bytes", "sha256",
+                                "hasBasmala?",
+                                "qualities?": { "128": { "bytes", "sha256" } }
+                              } ] } ] }
+```
+
+**A reciter is added here, not in a release.** `ReciterCatalog` merges the manifest's
+reciters into `reciters.json` on every launch, and `imagePath` — `images/<id>.jpg`,
+resolved against `baseUrl` — is their portrait. `ReciterImageCache` fetches it once and
+keeps it beside the audio, so it survives offline; a reciter with no portrait shows their
+initial rather than a hole. `reciters.json` is now only for reciters whose *preambles*
+ship, and no portrait ships at all.
+
+`audioPath` is a template: `audio/{id}/{bitrate}/{s3}{a3}.mp3`, with surah and ayah
+zero-padded to 3 digits. **The basmala of a `separate` surah is its own file inside that
+surah, ayah `000`** — `audio/shaheen/64/002000.mp3` — and is played once before ayah 1 when
+a session starts at ayah 1.
+
+`hasBasmala` is optional and has three states. `false` means the surah has no `000` file
+and none is ever requested — the only way to skip a *streamed* basmala silently, since a
+remote file's absence cannot be discovered without playing it. `true` means the file is
+there, and a pack missing it is refused as incomplete. Absent means the manifest does not
+say, and the layout above is assumed. A missing *local* basmala is always skipped silently,
+never a failure.
+
+`bitrate` is the reciter's own, and `qualities` is optional: a surah published at more
+than one bitrate carries one entry per extra bitrate, each with its own size and digest,
+because a different encode is a different file. The app's audio-quality selector
+(32/64/128) asks for one of those; a reciter who does not publish it is served at theirs,
+and a surah already on the device plays from disk whatever the selector now says.
+
+`bytes` is the size of the pack zip, and it is checked **before** the digest and before
+anything is unzipped: a truncated download is the common failure and length is the cheap
+way to catch it.
+
+A manifest reciter whose id matches a bundled reciter extends it: bundled surahs play from
+assets, the rest from the manifest.
 
 ### Audio asset layout
 
-`per_ayah_files` mode:
-```
-assets/audio/ahmed_khalil_shaheen/001/001.mp3 ... 007.mp3
-assets/audio/ahmed_khalil_shaheen/bismillah.mp3   (only for surahs with separate_preamble)
-```
-
-`single_file_with_timings` mode:
-```
-assets/audio/<reciter_id>/001.mp3
-assets/data/timings/<reciter_id>/001.json
-```
-```json
-{ "surah": 1, "ayahs": [ { "number": 1, "startMs": 0, "endMs": 4120 } ] }
-```
-
-### `assets/audio/silence_400ms.mp3`
-A single short silent clip, used as a gap spacer inside the playback queue (see B.4).
-
-## A.6 `AyahAudioResolver`
-
-One interface, two implementations behind it:
+**No surah audio ships.** Every surah of every reciter comes from the CDN —
+streamed, or downloaded as a pack. What stays in the bundle is 137 KB of
+reciter-level preambles, so a session can open with the isti'adhah and the
+basmala before a byte is fetched:
 
 ```
-AudioSource resolve({ required Reciter reciter, required int surah, required int ayah })
+assets/audio/<reciter_id>/bismillah.mp3     (reciter-level)
+assets/audio/<reciter_id>/istiadhah.mp3
 ```
 
-- `per_ayah_files` → `AudioSource.asset('<basePath>/<surah3>/<ayah3>.mp3')`
-- `single_file_with_timings` → `ClippingAudioSource(child: asset('<basePath>/<surah3>.mp3'), start: startMs, end: endMs)`
+A bundled reciter is therefore one with `availableSurahs: []`: it ships its
+preambles and its portrait, and the manifest supplies its recitation. The
+layouts below remain implemented, because a future build may ship a surah
+again — a starter surah, or a reciter whose licence forbids a CDN:
 
-The player layer must never know which mode is in use. Adding a reciter = drop assets + append one object to `reciters.json`.
+```
+assets/audio/<reciter_id>/<surah3>/<ayah3>.mp3      per_ayah_files
+assets/audio/<reciter_id>/<surah3>.mp3              single_file_with_timings
+assets/data/timings/<reciter_id>/<surah3>.json
+```
+
+`test/assets_integrity_test.dart` fails if surah audio or a timings directory
+reappears in the bundle without that being a decision someone made: 11 MB of
+clips is what this weighed before, and it is the difference between a 25 MB
+install and a 36 MB one.
+
+Downloaded packs unzip to the application support directory at
+`audio/<reciter_id>/<bitrate>/<surah3><ayah3>.mp3`, basmala as ayah `000`. Application
+support, never Caches: iOS may purge Caches mid-session, which would take a surah out from
+under a running session. On iOS the audio directory carries the do-not-back-up flag —
+Apple rejects apps that back re-downloadable content up to iCloud.
+
+A pack holds one file per ayah, plus `<surah3>000.mp3` where the surah's `basmala_mode` is
+`separate`. A file count that disagrees with `ayah_count` is **logged, not refused**: the
+manifest's sha256 has already verified these are the published bytes, and what is missing
+simply streams.
+
+### `downloads.db` — what is on the device
+
+The app's own writable SQLite file, in the application support directory beside the audio:
+
+```
+downloads(reciter_id, surah, bitrate, version, state, bytes, ayahs, updated_at)
+```
+
+`state` ∈ `complete` | `stale` | `failed`. Never `quran.db`, which ships read-only and is
+replaced wholesale on a schema bump (A.2 rule 6). `bitrate` is not optional bookkeeping: a
+pack lives under `audio/<id>/<bitrate>/` and the quality selected now is not necessarily
+the one a surah was fetched at. A reciter whose manifest `version` has moved on has its
+rows marked `stale` — the audio keeps playing, a superseded take beats silence, and the
+settings screen offers a re-download of that reciter alone.
+
+The files remain the truth: `AudioResolver` asks the filesystem on every lookup, so
+deleting a surah falls back to streaming with no restart.
+
+### `assets/audio/silence_400ms.wav`
+A single short silent clip, used as a gap spacer inside the playback queue.
+
+## A.6 `AudioResolver`
+
+The one place that knows where audio lives and whether we are online. No other file
+in `lib/` constructs an `AudioSource`.
+
+Resolution is bound to a reciter and a surah first, because the asynchronous facts —
+the storage root, the manifest, a timings file — have to be settled before a queue is
+built. Everything after that is synchronous, so a queue of hundreds of entries does
+not await once per ayah:
+
+```
+Future<SurahAudio>  forSurah({ reciter, surah })      // AudioResolver
+
+AudioSource         sourceFor(int ayah)               // SurahAudio
+AudioSource?        basmala()
+AudioSource?        istiadhah()
+AudioSource         spacer()
+bool                isLocal(int ayah)
+```
+
+`sourceFor` answers in order: a bundled asset (`per_ayah_files` →
+`AudioSource.asset`, `single_file_with_timings` → `ClippingAudioSource`) → a
+downloaded local file (`AudioSource.file`) → the CDN (`LockCachingAudioSource`,
+cached to the very path a pack download would have written, so an ayah streamed once
+plays from disk after). Nothing resolvable at all is a `SessionConfigException`, never
+queued silence. The player layer never knows which arm answered. Adding a reciter =
+assets plus one `reciters.json` object, or one manifest entry.
+
+`audioMode` describes a reciter's **bundled** layout only: manifest audio is per-ayah
+files whatever mode their bundled surahs use.
+
+`basmala` covers both layouts of the same words — a bundled reciter's single
+`bismillah.mp3`, which serves every surah, or a manifest surah's own ayah `000`.
+Whether a session *plays* it stays `SessionPreambles`' decision, keyed on the surah's
+`bismillahMode`. `istiadhah` and `spacer` are bundled-only: neither belongs to a
+surah, and a gap is never worth a request.
+
+`isLocal` is for callers that would have to *load* a clip rather than play it — the
+session summary's duration probe. A surah that would have to be streamed is left
+unmeasured and the summary shows no duration; it is never filled in with a guess.
+
+## A.7 The admin tool — macOS only
+
+`lib/main_admin.dart` splits a whole-surah recording into ayahs, shows each segment
+beside its text, and publishes the result to R2. It is a workbench, not a product.
+
+**It can never reach a phone.** `lib/main.dart` imports nothing under `lib/admin/`, and
+the rule is enforced by walking the real import graph in
+`test/admin/admin_isolation_test.dart`, not by trusting the directory layout. The macOS
+target exists only to host this tool; its entitlements say so.
+
+**Credentials** come from `--dart-define` — `R2_ACCOUNT_ID`, `R2_ACCESS_KEY`,
+`R2_SECRET_KEY`, `R2_BUCKET`, `R2_ENDPOINT`, `R2_PUBLIC_BASE`, `AUDIO_BITRATE` — passed by
+`./run_admin.sh`, which sources the gitignored `admin.env`. **No key has a fallback
+anywhere in code**, and a build missing one refuses to start, naming what is absent. A
+literal that looks like a secret in `lib/` fails a test.
+
+**The R2 token is read/write, never delete, and `R2Client` has no delete method** — its
+absence is asserted. A published path is never overwritten *by accident*: the tool refuses
+a key that already exists unless the operator asks for it (`Replace existing` on the
+screen, `--replace` on the command line).
+
+**A cut that turns out wrong is fixed by replacing the surah in place and bumping the
+reciter's `version`.** A surah's clips always carry the same names — `{SSS}000` to
+`{SSS}{NNN}`, plus the pack — so writing over them replaces the surah whole: one copy,
+nothing orphaned, nothing deleted. The `version` bump is what marks existing installs
+stale, so a phone holding the old cut downloads the new one. Publishing under a second,
+versioned path was considered and turned down: it doubles the storage and leaves two
+copies of a surah to keep straight. Replacement uploads come from audited files
+(`--publish-from`), never from a fresh cut nobody has measured.
+
+**The recording is chosen through the system file panel** — an `NSOpenPanel` behind the
+`mirqat/admin_files` channel in `macos/Runner/MainFlutterWindow.swift`, not `file_picker`,
+which is not on the approved list (A.4). Cancelling keeps the current choice; choosing a
+different file, or a different surah, drops the split made from the last one, because
+segments cut from one recording must never be published under another's numbers.
+
+**ffmpeg is the system binary**, over `Process.run` (`ffmpeg_kit_flutter` was archived in
+2026). A missing binary stops the tool at launch with `brew install ffmpeg`, in the script
+and again in the app.
+
+**Every Quranic fact comes from `QuranRepository`** — the surah dropdown, the ayah text
+beside each segment, and `basmala_mode`, which decides both how many segments to expect and
+what segment 0 is:
+
+| `basmala_mode` | segments        | segment 0 is                     |
+|----------------|-----------------|----------------------------------|
+| `separate`     | `ayah_count + 1`| the basmala, exported `{SSS}000` |
+| `first_ayah`   | `ayah_count`    | ayah 1, with the basmala inside  |
+| `none`         | `ayah_count`    | ayah 1, no basmala               |
+
+A.2 rule 1 applies here too: the text shown beside a segment is `quran.db`'s bytes,
+untouched.
+
+That table is what the *surah* calls for. What a particular *recording* holds is the
+operator's to say, with two checkboxes beside the surah:
+
+- **Audio has basmala** (on by default, and only meaningful for a `separate` surah).
+  Off, for a recording that starts straight at ayah 1: no basmala segment is expected, no
+  `{SSS}000` is exported, and the manifest says `hasBasmala: false` so the app never asks
+  the CDN for a file nobody made.
+- **Audio has isti'adhah** (off by default). On, one more leading segment is expected. It
+  is cut so that it stays out of the basmala, and it is **never published** — it belongs
+  to no surah.
+
+**One service cuts, for the screen and the command line alike**: `SurahSplitter`. Pauses
+are candidates, chosen for *coverage* (no stretch of the recording left without one) rather
+than for their number; the text chooses among them by the length each segment should be —
+weighted by `recitationWeight`, which reads letter names (the muqatta'at) and held vowels
+off the text itself, with no list of surahs anywhere (A.2 rule 2). A split with the right
+count is still checked clip by clip, and the screen marks the rows whose length their text
+cannot explain.
+
+**A cut can be fixed by ear.** Each row plays its segment straight from the recording
+(`SegmentPreview`, over `just_audio`'s `setFilePath`/`setClip` — no `AudioSource` is built
+outside `AudioResolver`, A.6), and its start and end can be typed or nudged. By default
+boundaries are shared: moving the end of one segment moves the start of the next, so a hand
+edit never leaves a gap or an overlap. Unticking the box under a field moves that edge
+alone and **cuts out** what is left between the two segments — for a cough, a repeated
+phrase, an isti'adhah — and the screen says how many seconds are going into no clip. A gap
+is allowed; an overlap never is. This is the one edit that needs no pause to land on, which is
+what a reciter running one ayah into the next calls for.
+
+**`tool/audit_audio.py` is the definition of clean** — every ayah present, nothing extra,
+no clip under 45% or over 2.2x of what its words call for. It reads published packs
+(`--live`) or exported clips (`--dir`), using the same arithmetic as the admin tool. A
+re-cut is exported with `--export-only`, audited, and uploaded from those very files with
+`--publish-from`, so what was measured is what goes live. Where every surah stands is kept
+in `docs/AUDIO_STATUS_<reciter>.md`.
+
+**A split whose count does not match is never published silently.** The operator either
+fixes the split or types a reason, which is recorded in the log beside the upload. A
+checkbox would not do: a surah published one segment short files every later ayah under the
+wrong number, and the app would teach that by repetition.

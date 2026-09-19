@@ -323,7 +323,8 @@ void main() {
 
   // PNG: IHDR width/height are big-endian at offsets 16 and 20.
   if (b.length > 24 && b[0] == 0x89 && b[1] == 0x50) {
-    int be(int o) => (b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3];
+    int be(int o) =>
+        (b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3];
     return (w: be(16), h: be(20));
   }
 

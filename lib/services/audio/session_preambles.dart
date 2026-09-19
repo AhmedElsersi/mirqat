@@ -41,7 +41,10 @@ class SessionPreambles {
     required bool istiadhahEnabled,
   }) => SessionPreambles(
     istiadhah: istiadhahEnabled && reciter.hasIstiadhah,
-    bismillah: _playsBismillah(surah) && reciter.hasBismillah,
+    // `hasBasmala`, not `hasBismillah`: a manifest reciter's basmala is ayah 0
+    // of the surah rather than a reciter-level clip, and a session over
+    // streamed audio still opens with it.
+    bismillah: _playsBismillah(surah) && reciter.hasBasmala(surah.number),
   );
 
   /// Every [BismillahMode] gets an explicit arm, `none` included, so adding a

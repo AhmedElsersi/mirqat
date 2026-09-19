@@ -12,6 +12,8 @@ import '../../../core/state/load_status.dart';
 import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/session_config.dart';
+import '../../mushaf/cubit/mushaf_page.dart';
+import '../../mushaf/mushaf_args.dart';
 import '../../player/player_args.dart';
 import '../../settings/cubit/settings_cubit.dart';
 import '../../surah_list/widgets/error_view.dart';
@@ -83,6 +85,17 @@ class _ReaderViewState extends State<_ReaderView> {
           appBar: AppBar(
             title: Text(state.surah?.nameAr ?? ''),
             actions: <Widget>[
+              if (state.surah != null)
+                IconButton(
+                  onPressed: () => context.pushNamed(
+                    AppRoutes.mushafName,
+                    extra: MushafArgs(
+                      initialAyah: AyahRef(state.surah!.number, 1),
+                    ),
+                  ),
+                  tooltip: LocaleKeys.mushafViewInMushaf.tr(),
+                  icon: const Icon(Icons.auto_stories_outlined),
+                ),
               if (state.surah != null)
                 IconButton(
                   onPressed: () => context.pushNamed(

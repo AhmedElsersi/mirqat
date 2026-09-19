@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:developer' as developer;
+import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +19,43 @@ import 'data/models/app_settings.dart';
 import 'features/settings/cubit/settings_cubit.dart';
 import 'features/settings/cubit/settings_state.dart';
 
-Future<void> main() async {
+void main() {
+  // Everything runs inside one guarded zone.
+  //
+  // `just_audio` fetches a streamed clip on a future it never hands back, so
+  // a connection that drops mid-fetch raises where no `try` of ours can
+  // reach: not at `load`, not at `play`, but out of the zone. The player has
+  // already turned that same failure into something the listener can read
+  // (see PlayerFailure), so the only thing left to decide is whether it is
+  // also reported as a crash. It is not — A.2 rule 3 asks a network failure
+  // to degrade quietly.
+  //
+  // Only network errors are quieted. Anything else is handed to Flutter's own
+  // reporter exactly as before, because a zone that swallows every uncaught
+  // error is a zone that hides real faults.
+  runZonedGuarded(_run, _onUncaught);
+}
+
+/// What Flutter would have reported, minus the failures we expect offline.
+void _onUncaught(Object error, StackTrace stack) {
+  if (error is SocketException ||
+      error is HttpException ||
+      error is TlsException) {
+    // Logged, never sent anywhere: this app has no crash reporting, and
+    // acquiring one is a product decision, not a debugging convenience.
+    developer.log(
+      'a fetch failed; the app carries on with what is on the device',
+      name: 'mirqat.network',
+      error: error,
+    );
+    return;
+  }
+  FlutterError.reportError(
+    FlutterErrorDetails(exception: error, stack: stack, library: 'mirqat'),
+  );
+}
+
+Future<void> _run() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Awaited, unlike the rest: the splash renders the wordmark out of the

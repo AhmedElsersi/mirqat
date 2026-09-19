@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../data/models/reciter.dart';
+import '../../services/reciter_image_cache.dart';
+import '../di/injection.dart';
 
 /// The reciter's photograph, circular, at whatever diameter the caller needs.
 ///
@@ -11,13 +15,15 @@ import '../../data/models/reciter.dart';
 /// name is the information — so every path that cannot produce an image
 /// produces the fallback instead:
 ///
-///   * [Reciter.imagePath] is null (no photo catalogued),
-///   * the asset is declared but missing from the bundle,
+///   * the reciter has no portrait at all, bundled or remote,
+///   * an asset is declared but missing from the bundle,
+///   * a remote portrait has not been fetched yet, or cannot be,
 ///   * the bytes are there but will not decode.
 ///
-/// The first is a plain null check; the other two arrive asynchronously, after
-/// the widget has already been laid out, which is why [Image.asset]'s
-/// `errorBuilder` is wired rather than trusted to be unnecessary.
+/// Three sources, in order: a bundled asset, a portrait cached on disk from
+/// the CDN, and the initial. The bundled one wins because it costs no request
+/// and is there on first run; the cached one is what lets a reciter be added
+/// to the manifest without shipping an app version.
 class ReciterAvatar extends StatelessWidget {
   const ReciterAvatar({required this.reciter, required this.diameter, super.key});
 
@@ -35,9 +41,8 @@ class ReciterAvatar extends StatelessWidget {
     return SizedBox.square(
       dimension: size,
       child: ClipOval(
-        child: path == null
-            ? _Fallback(reciter: reciter, size: size)
-            : Image.asset(
+        child: path != null
+            ? Image.asset(
                 path,
                 width: size,
                 height: size,
@@ -47,8 +52,67 @@ class ReciterAvatar extends StatelessWidget {
                 excludeFromSemantics: true,
                 errorBuilder: (BuildContext context, Object error, StackTrace? _) =>
                     _Fallback(reciter: reciter, size: size),
-              ),
+              )
+            : _RemotePortrait(reciter: reciter, size: size),
       ),
+    );
+  }
+}
+
+/// A portrait fetched from the CDN and kept on disk.
+///
+/// The initial is shown until the file is there, and stays if it never is —
+/// no spinner. A circle that flickers a progress indicator on every list row
+/// is noisier than a letter that quietly becomes a face.
+class _RemotePortrait extends StatefulWidget {
+  const _RemotePortrait({required this.reciter, required this.size});
+
+  final Reciter reciter;
+  final double size;
+
+  @override
+  State<_RemotePortrait> createState() => _RemotePortraitState();
+}
+
+class _RemotePortraitState extends State<_RemotePortrait> {
+  File? _file;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(_RemotePortrait oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.reciter.imageUrl != widget.reciter.imageUrl) _load();
+  }
+
+  Future<void> _load() async {
+    if (widget.reciter.imageUrl == null) return;
+    // Registered lazily rather than injected: this widget is built deep inside
+    // lists that have no reason to know about a cache.
+    if (!sl.isRegistered<ReciterImageCache>()) return;
+
+    final File? file = await sl<ReciterImageCache>().imageFor(widget.reciter);
+    if (mounted && file != null) setState(() => _file = file);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final File? file = _file;
+    if (file == null) {
+      return _Fallback(reciter: widget.reciter, size: widget.size);
+    }
+    return Image.file(
+      file,
+      width: widget.size,
+      height: widget.size,
+      fit: BoxFit.cover,
+      excludeFromSemantics: true,
+      errorBuilder: (BuildContext context, Object error, StackTrace? _) =>
+          _Fallback(reciter: widget.reciter, size: widget.size),
     );
   }
 }

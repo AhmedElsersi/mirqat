@@ -56,3 +56,6 @@ android/app/upload-keystore.jks
 # Google Play service-account credential. Grants CI's upload step Play
 # Console access; treat it like any other private key.
 **/play-service-account.json
+
+admin.env
+data/work/

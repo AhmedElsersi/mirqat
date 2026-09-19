@@ -60,9 +60,8 @@ String fieldText(WidgetTester tester) =>
 
 /// Western digits written as Arabic-Indic, as `toLocalisedString` does under
 /// `ar` — without depending on the locale the test happens to run in.
-String arabicIndic(int v) => String.fromCharCodes(
-  '$v'.codeUnits.map((int u) => u - 0x30 + 0x660),
-);
+String arabicIndic(int v) =>
+    String.fromCharCodes('$v'.codeUnits.map((int u) => u - 0x30 + 0x660));
 
 void main() {
   group('typing', () {

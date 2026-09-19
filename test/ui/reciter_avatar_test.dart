@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:mirqat/core/di/injection.dart';
+import 'package:mirqat/services/audio/audio_storage.dart';
+import 'package:mirqat/services/reciter_image_cache.dart';
 import 'package:mirqat/core/theme/app_theme.dart';
 import 'package:mirqat/core/widgets/reciter_avatar.dart';
 import 'package:mirqat/data/models/reciter.dart';
@@ -83,15 +90,71 @@ void main() {
     expect(find.text('أ'), findsOneWidget);
   });
 
-  testWidgets('the real catalogued portrait loads', (
+  testWidgets('a portrait on the CDN is fetched, cached and drawn', (
     WidgetTester tester,
   ) async {
+    // The path that lets a reciter be added without an app release: nothing
+    // is bundled for them, and the only picture is the one the manifest names.
+    final Directory root = Directory.systemTemp.createTempSync('mirqat_avatar');
+    addTearDown(() => root.deleteSync(recursive: true));
+
+    await sl.reset();
+    sl.registerLazySingleton<ReciterImageCache>(
+      () => ReciterImageCache(
+        audioStorage: AudioStorage(resolveStorageDirectory: () async => root),
+        client: MockClient(
+          (http.Request _) async => http.Response.bytes(onePixelPng, 200),
+        ),
+      ),
+    );
+    addTearDown(sl.reset);
+
     await tester.pumpWidget(
       host(
         ReciterAvatar(
           reciter: reciterWith(
-            'assets/images/reciters/ahmed_khalil_shaheen.jpeg',
-          ),
+            null,
+          ).copyWithImageUrl('https://pub-example.r2.dev/images/mishary.png'),
+          diameter: 48,
+        ),
+      ),
+    );
+    // The initial stands in until the bytes are there — no spinner.
+    expect(find.text('أ'), findsOneWidget);
+
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text('أ'), findsNothing);
+    expect(
+      Directory('${root.path}/images').listSync(),
+      hasLength(1),
+      reason: 'kept on disk for the next launch',
+    );
+  });
+
+  testWidgets('a portrait that cannot be fetched leaves the initial', (
+    WidgetTester tester,
+  ) async {
+    final Directory root = Directory.systemTemp.createTempSync('mirqat_avatar');
+    addTearDown(() => root.deleteSync(recursive: true));
+
+    await sl.reset();
+    sl.registerLazySingleton<ReciterImageCache>(
+      () => ReciterImageCache(
+        audioStorage: AudioStorage(resolveStorageDirectory: () async => root),
+        client: MockClient((http.Request _) async => http.Response('', 404)),
+      ),
+    );
+    addTearDown(sl.reset);
+
+    await tester.pumpWidget(
+      host(
+        ReciterAvatar(
+          reciter: reciterWith(
+            null,
+          ).copyWithImageUrl('https://pub-example.r2.dev/images/nobody.png'),
           diameter: 48,
         ),
       ),
@@ -99,9 +162,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.byType(Image), findsOneWidget);
-    // The fallback is not also on screen.
-    expect(find.text('أ'), findsNothing);
+    expect(find.text('أ'), findsOneWidget);
   });
 
   testWidgets('stays inside its diameter at a large text scale', (
@@ -137,4 +198,93 @@ void main() {
       expect(tester.takeException(), isNull, reason: '$brightness');
     }
   });
+}
+
+/// A 1×1 PNG — the smallest thing Flutter will actually decode.
+const List<int> onePixelPng = <int>[
+  137,
+  80,
+  78,
+  71,
+  13,
+  10,
+  26,
+  10,
+  0,
+  0,
+  0,
+  13,
+  73,
+  72,
+  68,
+  82,
+  0,
+  0,
+  0,
+  1,
+  0,
+  0,
+  0,
+  1,
+  8,
+  2,
+  0,
+  0,
+  0,
+  144,
+  119,
+  83,
+  222,
+  0,
+  0,
+  0,
+  12,
+  73,
+  68,
+  65,
+  84,
+  120,
+  156,
+  99,
+  80,
+  112,
+  72,
+  0,
+  0,
+  1,
+  68,
+  0,
+  193,
+  11,
+  141,
+  150,
+  66,
+  0,
+  0,
+  0,
+  0,
+  73,
+  69,
+  78,
+  68,
+  174,
+  66,
+  96,
+  130,
+];
+
+extension on Reciter {
+  Reciter copyWithImageUrl(String url) => Reciter(
+    id: id,
+    nameAr: nameAr,
+    nameEn: nameEn,
+    audioMode: audioMode,
+    basePath: basePath,
+    bundled: bundled,
+    availableSurahs: availableSurahs,
+    hasIstiadhah: hasIstiadhah,
+    hasBismillah: hasBismillah,
+    imagePath: imagePath,
+    imageUrl: url,
+  );
 }

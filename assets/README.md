@@ -31,11 +31,12 @@ which therefore need a standalone Bismillah clip.
 
 ## Text is never generated
 
-Ayah text is loaded verbatim from `quran.db` and only ever NFC-normalised (and
-tatweel dropped), so two canonically equivalent encodings of the same ayah
-compare equal. The loader rejects a surah whose ayah count, numbering or
-ordering disagrees with its catalog row rather than padding or trimming it. See
-`QuranLocalDataSource`.
+Ayah text reaches the screen byte-for-byte as `quran.db` stores it — no
+normalization, no tatweel removal, no whitespace fixing. A tatweel here is often
+the seat of a hamza or small yeh; removing it moves the mark to another letter.
+The loader rejects a surah whose ayah count, numbering or ordering disagrees
+with its catalog row rather than padding or trimming it. Comparison-only
+stripping lives in `test/text_comparison.dart`.
 
 ## Adding a surah's audio
 

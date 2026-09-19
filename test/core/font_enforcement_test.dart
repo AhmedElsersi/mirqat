@@ -6,6 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// does not itself become an occurrence and skew its own count.
 final String _quranFamily = <String>['Quran', 'Uthmani'].join();
 final String _ayahStyle = <String>['AppTextStyles', 'ayah'].join('.');
+final String _mushafWordStyle = <String>[
+  'AppTextStyles',
+  'mushafWord',
+].join('.');
 
 /// Every tracked source file: Dart under `lib/`, plus the manifest.
 List<File> _sourceFiles() {
@@ -39,8 +43,11 @@ void main() {
     ]);
   });
 
-  test('AyahText is the only file that reaches for the ayah style', () {
+  test('AyahText is the only file that reaches for the ayah styles', () {
     expect(_filesContaining(_ayahStyle), <String>[
+      'lib/core/widgets/ayah_text.dart',
+    ]);
+    expect(_filesContaining(_mushafWordStyle), <String>[
       'lib/core/widgets/ayah_text.dart',
     ]);
   });
@@ -66,9 +73,10 @@ void main() {
 
     expect(
       constructors,
-      hasLength(2),
-      reason: 'expected the default and flowing constructors; a new one must '
-          'be checked here too',
+      hasLength(3),
+      reason:
+          'expected the default, flowing and word constructors; a new one '
+          'must be checked here too',
     );
 
     for (final Match match in constructors) {
@@ -90,7 +98,9 @@ void main() {
     final Iterable<File> others = _sourceFiles().where(
       (File f) =>
           f.path.endsWith('.dart') &&
-          !f.path.replaceAll(r'\', '/').endsWith('core/theme/app_text_styles.dart'),
+          !f.path
+              .replaceAll(r'\', '/')
+              .endsWith('core/theme/app_text_styles.dart'),
     );
 
     for (final File f in others) {

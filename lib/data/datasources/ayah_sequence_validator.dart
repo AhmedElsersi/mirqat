@@ -73,9 +73,9 @@ void validateAyahSequence(
   }
 }
 
-/// Guards the scope of the NFC normalizer, whose tables cover the Arabic
-/// blocks only. Text carrying a combining mark from another script would be
-/// silently mis-ordered rather than normalised, so it is rejected instead.
+/// Rejects text carrying a character from outside the Arabic blocks — a sign
+/// the source was decoded or exported wrongly. A check, never a repair: the
+/// text itself is not touched.
 void _assertArabicOnly(Ayah ayah, String path) {
   for (final int cp in ayah.text.runes) {
     if (_isArabicRange(cp) || _isAllowedNonArabic(cp)) continue;
@@ -83,8 +83,7 @@ void _assertArabicOnly(Ayah ayah, String path) {
       path,
       'Ayah ${ayah.surahNumber}:${ayah.number} contains U+'
       '${cp.toRadixString(16).toUpperCase().padLeft(4, '0')}, which is '
-      'outside the Arabic blocks. Normalization is Arabic-scoped, so this '
-      'text cannot be safely compared — check the source encoding.',
+      'outside the Arabic blocks — check the source encoding.',
     );
   }
 }

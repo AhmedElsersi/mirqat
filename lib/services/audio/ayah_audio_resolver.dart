@@ -5,61 +5,27 @@ import '../../core/error/exceptions.dart';
 import '../../data/models/ayah_timing.dart';
 import '../../data/models/reciter.dart';
 
-/// Turns an ayah number into something the player can play.
+/// Turns an ayah number into the bundled asset that holds it.
 ///
-/// One interface, one implementation per [AudioMode]. The player layer never
-/// learns which mode is in use, so adding a reciter is assets plus one object
-/// in `reciters.json` (CLAUDE.md A.6).
+/// One implementation per [AudioMode], and this is the *bundled* arm only:
+/// which asset a surah that ships inside the app is laid out as. Where an
+/// ayah comes from when it does not ship — a downloaded pack, or the CDN — is
+/// `AudioResolver`'s decision, and manifest audio is per-ayah files whatever
+/// mode a reciter's bundled surahs use (CLAUDE.md A.5, A.6).
+///
+/// The preambles and the spacer are not here: they are fixed reciter-level
+/// assets with no mode and no fallback chain, so they belong beside the rest
+/// of the resolution decision rather than inside a layout strategy.
 abstract class AyahAudioResolver {
   AudioSource resolve({
     required Reciter reciter,
     required int surah,
     required int ayah,
   });
-
-  /// The isti'adhah preamble, or null when this reciter has none.
-  ///
-  /// Takes only a reciter: there is nothing surah-dependent left to pass. It
-  /// is not an ayah and never enters the queue as a `PlaybackUnit`.
-  AudioSource? resolveIstiadhah({required Reciter reciter});
-
-  /// The standalone bismillah clip, or null when this reciter has none.
-  ///
-  /// Answers only "does this reciter have the clip". Whether a given session
-  /// *plays* it is a separate decision that belongs to the catalog's
-  /// `bismillahMode` — see `SessionPreambles`.
-  AudioSource? resolveBismillah({required Reciter reciter});
-
-  /// The silence spacer used to build gaps between units.
-  AudioSource resolveSpacer();
-}
-
-/// Shared preamble and spacer handling — identical in both audio modes.
-///
-/// Both preambles ship as their own reciter-level files whichever way the
-/// ayahs are laid out, so there is no per-mode override and no fallback chain.
-/// A `single_file_with_timings` reciter who ships no standalone clips declares
-/// `hasIstiadhah`/`hasBismillah` false; the preamble windows in the timings
-/// files stay unused, as documented there.
-mixin _PreambleResolution on AyahAudioResolver {
-  @override
-  AudioSource? resolveIstiadhah({required Reciter reciter}) =>
-      reciter.hasIstiadhah
-      ? AudioSource.asset(AssetPaths.istiadhahFile(reciter.basePath))
-      : null;
-
-  @override
-  AudioSource? resolveBismillah({required Reciter reciter}) =>
-      reciter.hasBismillah
-      ? AudioSource.asset(AssetPaths.bismillahFile(reciter.basePath))
-      : null;
-
-  @override
-  AudioSource resolveSpacer() => AudioSource.asset(AssetPaths.silenceSpacer);
 }
 
 /// `<basePath>/<surah3>/<ayah3>.mp3`
-class PerAyahFilesResolver extends AyahAudioResolver with _PreambleResolution {
+class PerAyahFilesResolver extends AyahAudioResolver {
   PerAyahFilesResolver();
 
   @override
@@ -72,7 +38,7 @@ class PerAyahFilesResolver extends AyahAudioResolver with _PreambleResolution {
 }
 
 /// One whole-surah file, clipped to each ayah's window.
-class TimingsAudioResolver extends AyahAudioResolver with _PreambleResolution {
+class TimingsAudioResolver extends AyahAudioResolver {
   TimingsAudioResolver(this._timings);
 
   final SurahTimings _timings;

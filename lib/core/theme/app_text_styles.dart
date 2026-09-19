@@ -86,4 +86,16 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
     height: 2.0,
   );
+
+  /// One word on a mushaf page.
+  ///
+  /// [fontSize] is exact logical pixels — no `.sp`, no stretched line height —
+  /// because the page computes it to fit the screen and must never scroll.
+  ///
+  /// Call this from `AyahText` only, like [ayah].
+  static TextStyle mushafWord({required double fontSize}) => TextStyle(
+    fontFamily: quranFontFamily,
+    fontSize: fontSize,
+    fontWeight: FontWeight.w400,
+  );
 }

@@ -140,8 +140,8 @@ void main() {
     });
 
     test('rejects text carrying a non-Arabic combining mark', () async {
-      // A Latin combining acute (U+0301) would be silently mis-ordered by the
-      // Arabic-scoped normalizer, so it is refused instead.
+      // A Latin combining acute (U+0301) means the source was exported or
+      // decoded wrongly.
       final QuranLocalDataSource source = _sourceWith(
         ayahs: _ayahs(<String>['ب', 'b\u0301', 'ب']),
       );
@@ -152,15 +152,18 @@ void main() {
       );
     });
 
-    test('accepts NFD input and normalises it to NFC', () async {
-      // Alef + maddah written as U+0627 U+0653 instead of U+0622.
+    test('passes decomposed text and tatweel through untouched', () async {
+      // Alef + maddah as U+0627 U+0653 rather than U+0622, and a hamza seated
+      // on a tatweel. Both are returned exactly as stored.
+      const String decomposed = '\u0627\u0653';
+      const String seated = '\u064A\u0640\u0654';
       final QuranLocalDataSource source = _sourceWith(
-        ayahs: _ayahs(<String>['\u0627\u0653', 'ب', 'ب']),
+        ayahs: _ayahs(<String>[decomposed, seated, 'ب']),
       );
 
       final List<Ayah> ayahs = await source.getAyahs(1);
-      expect(ayahs.first.text, '\u0622');
-      expect(ayahs.first.text.codeUnits, hasLength(1));
+      expect(ayahs[0].text.codeUnits, decomposed.codeUnits);
+      expect(ayahs[1].text.codeUnits, seated.codeUnits);
     });
   });
 

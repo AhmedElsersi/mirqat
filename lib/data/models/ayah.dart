@@ -1,13 +1,14 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/error/exceptions.dart';
-import '../../core/extensions/arabic_text_extensions.dart';
 
-/// One ayah, loaded verbatim from `quran.db`.
+/// One ayah, exactly as `quran.db` stores it.
 ///
-/// The only transformations applied to [text] are Unicode NFC normalization
-/// and the removal of U+0640 tatweel. Nothing here rewrites, re-diacritizes or
-/// repairs scripture (CLAUDE.md A.2 rule 1).
+/// [text] is never transformed — no tatweel removal, no mark reordering, no
+/// Unicode normalization, no whitespace fixing. In this text a tatweel is
+/// often the base a hamza or small yeh sits on; removing it moves the mark onto
+/// the neighbouring letter, which is a change to the mushaf. Stripping belongs
+/// only to comparison helpers under `test/` (CLAUDE.md A.2 rule 1).
 class Ayah extends Equatable {
   const Ayah({
     required this.surahNumber,
@@ -18,7 +19,7 @@ class Ayah extends Equatable {
   final int surahNumber;
   final int number;
 
-  /// Uthmani text in canonical form: tatweel-free and NFC-normalised.
+  /// Uthmani text, byte-for-byte as stored.
   final String text;
 
   /// Built from a row of `quran.db`'s `ayahs` table. Empty text is rejected,
@@ -37,7 +38,7 @@ class Ayah extends Equatable {
     return Ayah(
       surahNumber: surahNumber,
       number: number,
-      text: rawText.toCanonicalQuranicText(),
+      text: rawText,
     );
   }
 

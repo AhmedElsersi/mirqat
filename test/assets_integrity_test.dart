@@ -57,8 +57,9 @@ void main() {
       reason: 'the checker ran nothing — the catalog failed to load',
     );
 
-    final List<CheckResult> failures =
-        results.where((CheckResult r) => !r.passed).toList();
+    final List<CheckResult> failures = results
+        .where((CheckResult r) => !r.passed)
+        .toList();
 
     expect(
       failures,
@@ -70,9 +71,9 @@ void main() {
   });
 
   test('every asset directory is declared in pubspec.yaml', () {
-    final List<CheckResult> failures = pubspecChecks(Directory.current.path)
-        .where((CheckResult r) => !r.passed)
-        .toList();
+    final List<CheckResult> failures = pubspecChecks(
+      Directory.current.path,
+    ).where((CheckResult r) => !r.passed).toList();
 
     expect(
       failures,
@@ -84,6 +85,44 @@ void main() {
   });
 
   group('the audit is load-bearing, not decorative', () {
+    test(
+      'no surah audio ships: the bundle holds preambles and nothing else',
+      () {
+        // The 11 MB of per-ayah clips moved to the CDN, and the app now streams
+        // or downloads every surah. Re-adding a surah directory here would put
+        // that weight back into every install without anyone deciding to.
+        final Directory reciters = Directory('assets/audio');
+        final List<String> surahDirectories = <String>[
+          for (final FileSystemEntity reciter in reciters.listSync())
+            if (reciter is Directory)
+              for (final FileSystemEntity child in reciter.listSync())
+                if (child is Directory) child.path,
+        ];
+
+        expect(
+          surahDirectories,
+          isEmpty,
+          reason: 'surah audio belongs on the CDN, not in the bundle',
+        );
+        expect(
+          Directory('assets/data/timings').existsSync(),
+          isFalse,
+          reason:
+              'timings describe a bundled whole-surah recording, and none '
+              'ships any more',
+        );
+        // What stays is small and load-bearing: the two preambles and the
+        // spacer, 137 KB that let a session open before a byte is fetched.
+        for (final String path in <String>[
+          'assets/audio/ahmed_khalil_shaheen/bismillah.mp3',
+          'assets/audio/ahmed_khalil_shaheen/istiadhah.mp3',
+          AssetPaths.silenceSpacer,
+        ]) {
+          expect(File(path).existsSync(), isTrue, reason: path);
+        }
+      },
+    );
+
     test('a reciter declaring a surah with no audio behind it fails rather '
         'than crashing at runtime', () async {
       // The last surah in the mushaf the reciter does not already claim — by
@@ -127,60 +166,23 @@ void main() {
         reason: 'the failure must name the surah that is missing its audio',
       );
     });
-
-    test('a missing ayah clip is reported by name', () async {
-      const String hidden = 'assets/audio/ahmed_khalil_shaheen/001/003.mp3';
-      final List<CheckResult> caused = await _failuresCausedBy(
-        loader: loader,
-        baseline: probe,
-        altered: _HidingProbe(probe, hidden),
-      );
-
-      expect(
-        caused,
-        isNotEmpty,
-        reason: 'removing $hidden must be caught by something',
-      );
-      expect(
-        caused.map((CheckResult r) => '$r').join('\n'),
-        contains('001/003.mp3'),
-        reason: 'the message must name the file that went missing',
-      );
-    });
-
-    test('reverting the refactor — a bismillah back under a surah '
-        'directory — fails', () async {
-      final List<CheckResult> caused = await _failuresCausedBy(
-        loader: loader,
-        baseline: probe,
-        altered: _AddingProbe(
-          probe,
-          'assets/audio/ahmed_khalil_shaheen/112/bismillah.mp3',
-        ),
-      );
-
-      expect(caused, isNotEmpty);
-      expect(
-        caused.map((CheckResult r) => '$r').join('\n'),
-        contains('112/bismillah.mp3'),
-        reason: 'surah directories hold ayahs only',
-      );
-    });
   });
 
   group('reciter portraits', () {
     test('every catalogued imagePath exists and is declared', () async {
       final List<Reciter> reciters = await loader.getReciters();
-      expect(reciters, isNotEmpty, reason: 'the reciter catalog failed to load');
+      expect(
+        reciters,
+        isNotEmpty,
+        reason: 'the reciter catalog failed to load',
+      );
 
       // Iterates the catalog: a second reciter's photo is checked with no new
       // test code, and a reciter with no photo is skipped rather than failed —
       // imagePath is nullable on purpose.
-      int checked = 0;
       for (final Reciter reciter in reciters) {
         final String? path = reciter.imagePath;
         if (path == null) continue;
-        checked++;
 
         // On disk. Probed against the working tree for the same reason the
         // clips are: `flutter test` never removes a stale copy from
@@ -207,16 +209,11 @@ void main() {
         );
       }
 
-      // Guards the guard: if every entry were null this test would pass
-      // without asserting anything, and that is a state worth noticing rather
-      // than a green tick.
-      expect(
-        checked,
-        greaterThan(0),
-        reason:
-            'no reciter in the catalog has an imagePath, so this check '
-            'asserted nothing — is that intended?',
-      );
+      // `checked` is allowed to be zero now, and usually is: portraits moved
+      // to the CDN, where a reciter added to the manifest can have one without
+      // an app release. The loop stays because a bundled portrait remains
+      // legal — a reciter whose licence forbids a CDN copy would have one —
+      // and it must still be declared if it exists.
     });
 
     test('a portrait directory that is not declared is caught', () {
@@ -230,11 +227,18 @@ void main() {
           .map((String l) => l.substring(2))
           .toList();
 
-      expect(
-        declared,
-        contains('assets/images/reciters/'),
-        reason: 'reciter portraits live here and must be bundled',
-      );
+      // A portrait directory is optional now, but if one exists it has to be
+      // declared — a file in the repo that never reaches the bundle is the
+      // failure this whole audit exists for.
+      final Directory portraits = Directory('assets/images/reciters');
+      if (portraits.existsSync() &&
+          portraits.listSync().whereType<File>().isNotEmpty) {
+        expect(
+          declared,
+          contains('assets/images/reciters/'),
+          reason: 'portraits are in the repo but nothing declares them',
+        );
+      }
 
       // Nothing under assets/ is exempt from check 23 any more: the icon
       // generator's inputs and the editing masters moved to brand/, outside
@@ -275,7 +279,10 @@ void main() {
         for (final Surah surah in surahs) {
           final String dir =
               '${reciter.basePath}/${surah.number.toString().padLeft(3, '0')}';
-          for (final String name in <String>['bismillah.mp3', 'istiadhah.mp3']) {
+          for (final String name in <String>[
+            'bismillah.mp3',
+            'istiadhah.mp3',
+          ]) {
             expect(
               await probe.exists('$dir/$name'),
               isFalse,
@@ -311,67 +318,6 @@ void main() {
       }
     });
   });
-}
-
-/// A probe with one asset removed, to prove a deletion is caught.
-class _HidingProbe implements AssetProbe {
-  _HidingProbe(this._inner, this._hidden);
-
-  final AssetProbe _inner;
-  final String _hidden;
-
-  @override
-  Future<bool> exists(String path) async =>
-      path != _hidden && await _inner.exists(path);
-
-  @override
-  Future<List<String>> childrenOf(String directory) async {
-    final List<String> all = await _inner.childrenOf(directory);
-    return all
-        .where((String name) => '$directory/$name' != _hidden)
-        .toList();
-  }
-
-  @override
-  Future<List<String>> childrenDirsOf(String directory) =>
-      _inner.childrenDirsOf(directory);
-
-  @override
-  Future<List<int>> head(String path, int count) => path == _hidden
-      ? Future<List<int>>.value(const <int>[])
-      : _inner.head(path, count);
-}
-
-/// A probe with one extra asset, to prove a regression is caught.
-class _AddingProbe implements AssetProbe {
-  _AddingProbe(this._inner, this._extra);
-
-  final AssetProbe _inner;
-  final String _extra;
-
-  @override
-  Future<bool> exists(String path) async =>
-      path == _extra || await _inner.exists(path);
-
-  @override
-  Future<List<String>> childrenOf(String directory) async {
-    final List<String> all = await _inner.childrenOf(directory);
-    final String prefix = '$directory/';
-    if (_extra.startsWith(prefix) &&
-        !_extra.substring(prefix.length).contains('/')) {
-      return <String>[...all, _extra.substring(prefix.length)];
-    }
-    return all;
-  }
-
-  @override
-  Future<List<String>> childrenDirsOf(String directory) =>
-      _inner.childrenDirsOf(directory);
-
-  @override
-  Future<List<int>> head(String path, int count) => path == _extra
-      ? Future<List<int>>.value(const <int>[0xFF, 0xFB, 0x00, 0x00])
-      : _inner.head(path, count);
 }
 
 /// Serves substitute content for named paths, everything else from the bundle.

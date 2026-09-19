@@ -58,6 +58,30 @@ enum RangeBehaviour {
   }
 }
 
+/// The bitrate a download asks the CDN for.
+///
+/// The values are the ones the manifest publishes, not a made-up scale: a
+/// reciter carries a default bitrate and may carry others, and a choice the
+/// reciter does not offer falls back to theirs rather than failing
+/// (CLAUDE.md A.5).
+enum AudioQuality {
+  low(32),
+  standard(64),
+  high(128);
+
+  const AudioQuality(this.bitrate);
+
+  /// kbps, and the `{bitrate}` segment of every audio and pack path.
+  final int bitrate;
+
+  static AudioQuality fromStorage(Object? value) {
+    for (final AudioQuality quality in AudioQuality.values) {
+      if (quality.bitrate == value) return quality;
+    }
+    return AudioQuality.standard;
+  }
+}
+
 /// An ayah range remembered for one surah.
 class AyahRange extends Equatable {
   const AyahRange({required this.startAyah, required this.endAyah});
@@ -91,6 +115,8 @@ class AppSettings extends Equatable {
     this.themeMode = AppThemeMode.system,
     this.homeViewMode = HomeViewMode.list,
     this.arabicFontSize = defaultArabicFontSize,
+    this.audioQuality = AudioQuality.standard,
+    this.downloadOverWifiOnly = true,
   });
 
   static const double defaultArabicFontSize = 24;
@@ -134,6 +160,16 @@ class AppSettings extends Equatable {
   final HomeViewMode homeViewMode;
   final double arabicFontSize;
 
+  /// Which bitrate downloads and streams ask for, where the reciter offers a
+  /// choice.
+  final AudioQuality audioQuality;
+
+  /// Whether a pack may be fetched over mobile data.
+  ///
+  /// True by default: a surah is tens of megabytes, and someone on a metered
+  /// plan should have to say so rather than find out afterwards.
+  final bool downloadOverWifiOnly;
+
   /// The remembered range for [surahNumber], or null when there is none or
   /// when the behaviour is set to always use the whole surah.
   AyahRange? rememberedRangeFor(int surahNumber) =>
@@ -156,6 +192,8 @@ class AppSettings extends Equatable {
     AppThemeMode? themeMode,
     HomeViewMode? homeViewMode,
     double? arabicFontSize,
+    AudioQuality? audioQuality,
+    bool? downloadOverWifiOnly,
   }) => AppSettings(
     reciterId: reciterId ?? this.reciterId,
     defaultRepeatCount: defaultRepeatCount ?? this.defaultRepeatCount,
@@ -177,6 +215,8 @@ class AppSettings extends Equatable {
     themeMode: themeMode ?? this.themeMode,
     homeViewMode: homeViewMode ?? this.homeViewMode,
     arabicFontSize: arabicFontSize ?? this.arabicFontSize,
+    audioQuality: audioQuality ?? this.audioQuality,
+    downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
   );
 
   /// Records [range] as the last one used for [surahNumber].
@@ -203,6 +243,11 @@ class AppSettings extends Equatable {
     'themeMode': themeMode.storageValue,
     'homeViewMode': homeViewMode.storageValue,
     'arabicFontSize': arabicFontSize,
+    // The bitrate itself, not the enum name: it is the number the manifest
+    // and every path use, so a stored 64 stays meaningful even if these cases
+    // are ever renamed.
+    'audioQuality': audioQuality.bitrate,
+    'downloadOverWifiOnly': downloadOverWifiOnly,
   };
 
   factory AppSettings.fromMap(Map<dynamic, dynamic> map) => AppSettings(
@@ -238,6 +283,8 @@ class AppSettings extends Equatable {
     homeViewMode: HomeViewMode.fromStorage(map['homeViewMode'] as String?),
     arabicFontSize:
         (map['arabicFontSize'] as num?)?.toDouble() ?? defaultArabicFontSize,
+    audioQuality: AudioQuality.fromStorage(map['audioQuality']),
+    downloadOverWifiOnly: map['downloadOverWifiOnly'] as bool? ?? true,
   );
 
   /// Reads the remembered ranges back, skipping anything malformed.
@@ -275,5 +322,7 @@ class AppSettings extends Equatable {
     themeMode,
     homeViewMode,
     arabicFontSize,
+    audioQuality,
+    downloadOverWifiOnly,
   ];
 }

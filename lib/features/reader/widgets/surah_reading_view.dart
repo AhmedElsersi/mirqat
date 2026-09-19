@@ -15,7 +15,7 @@ import '../../../data/models/surah.dart';
 /// [BismillahMode.none] there is nothing to draw. Nothing here asks which
 /// surah it is looking at.
 ///
-/// [bismillahText] arrives from the cubit, read out of the ayah assets. It is
+/// [bismillahText] arrives from the cubit, read out of quran.db. It is
 /// never a literal in this file: the basmala is Quranic text, so it is loaded
 /// verbatim like everything else (CLAUDE.md A.2 rule 1). Null means the
 /// catalog offered no verbatim source, and the header is then simply not
@@ -36,7 +36,7 @@ class SurahReadingView extends StatelessWidget {
   final List<Ayah> ayahs;
   final double fontSize;
 
-  /// The basmala, verbatim from the ayah assets, or null when none was found.
+  /// The basmala, verbatim from quran.db, or null when none was found.
   final String? bismillahText;
 
   final bool Function(int ayahNumber) isSelected;
@@ -64,7 +64,7 @@ class SurahReadingView extends StatelessWidget {
               for (final Ayah ayah in ayahs)
                 FlowingAyah(
                   number: ayah.number,
-                  // Verbatim from the JSON asset (CLAUDE.md A.2 rule 1).
+                  // Byte-for-byte from quran.db (CLAUDE.md A.2 rule 1).
                   text: ayah.text,
                   selected: isSelected(ayah.number),
                   // With nothing selected the whole surah is in play, so every

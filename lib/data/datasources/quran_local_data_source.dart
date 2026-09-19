@@ -20,14 +20,14 @@ import 'quran_database_opener.dart';
 /// here, because reading does not depend on audio.
 ///
 /// Every load is validated and fails loudly on any disagreement. Nothing is
-/// padded, trimmed or repaired (CLAUDE.md A.2 rule 1).
+/// padded, trimmed, normalised or repaired (CLAUDE.md A.2 rule 1).
 abstract class QuranLocalDataSource {
   /// Every surah in `quran.db`, ordered by number.
   Future<List<Surah>> getSurahs();
 
   Future<Surah> getSurah(int surahNumber);
 
-  /// Ayahs for a surah, NFC-normalised, ordered 1..ayahCount.
+  /// Ayahs for a surah, text verbatim from `quran.db`, ordered 1..ayahCount.
   Future<List<Ayah>> getAyahs(int surahNumber);
 
   Future<List<Reciter>> getReciters();

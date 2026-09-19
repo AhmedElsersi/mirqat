@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates lib/core/extensions/arabic_normalization_tables.dart from the
+"""Generates test/arabic_normalization_tables.dart from the
 Unicode Character Database that ships with Python.
 
 Dart has no built-in Unicode normalization and `unorm_dart` is not on the
@@ -20,7 +20,7 @@ RANGES = [
     (0xFE70, 0xFEFF, "Arabic Presentation Forms-B"),
 ]
 
-OUT = "lib/core/extensions/arabic_normalization_tables.dart"
+OUT = "test/arabic_normalization_tables.dart"
 
 
 def main() -> None:

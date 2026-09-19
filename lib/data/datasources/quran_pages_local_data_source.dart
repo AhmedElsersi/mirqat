@@ -19,6 +19,19 @@ abstract class QuranPagesLocalDataSource {
   /// The words that make up one line, in reading order.
   Future<List<Word>> wordsForLine(int page, int line);
 
+  /// Words [firstId]..[lastId] inclusive, ordered by id — the reading order.
+  /// A mushaf line is exactly such a range.
+  Future<List<Word>> wordsInRange(int firstId, int lastId);
+
+  /// Every word of one ayah, its ayah-number marker included, ordered by id.
+  Future<List<Word>> wordsForAyah(int surahNumber, int ayahNumber);
+
+  /// How many pages the layout has.
+  Future<int> pageCount();
+
+  /// The most lines any page holds — the height a full page is laid out for.
+  Future<int> linesPerFullPage();
+
   /// The page [surahNumber]:[ayahNumber] is printed on.
   Future<int> pageForAyah(int surahNumber, int ayahNumber);
 
@@ -74,9 +87,59 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
       'words',
       where: 'page = ? AND line = ?',
       whereArgs: <int>[page, line],
-      orderBy: 'position',
+      // By id, not position: position counts within an ayah, and most lines
+      // carry the end of one ayah and the start of the next.
+      orderBy: 'id',
     );
     return rows.map(Word.fromRow).toList(growable: false);
+  }
+
+  @override
+  Future<List<Word>> wordsInRange(int firstId, int lastId) async {
+    final Database db = await _database.open();
+    final List<Map<String, Object?>> rows = await db.query(
+      'words',
+      where: 'id BETWEEN ? AND ?',
+      whereArgs: <int>[firstId, lastId],
+      orderBy: 'id',
+    );
+    return rows.map(Word.fromRow).toList(growable: false);
+  }
+
+  @override
+  Future<List<Word>> wordsForAyah(int surahNumber, int ayahNumber) async {
+    final Database db = await _database.open();
+    final List<Map<String, Object?>> rows = await db.query(
+      'words',
+      where: 'surah = ? AND ayah = ?',
+      whereArgs: <int>[surahNumber, ayahNumber],
+      orderBy: 'id',
+    );
+    if (rows.isEmpty) {
+      throw CatalogValidationException(
+        AssetPaths.quranDatabase,
+        'quran.db has no words for ayah $surahNumber:$ayahNumber.',
+      );
+    }
+    return rows.map(Word.fromRow).toList(growable: false);
+  }
+
+  @override
+  Future<int> pageCount() async {
+    final Database db = await _database.open();
+    return (await db.rawQuery('SELECT MAX(page) AS n FROM lines'))
+            .single['n']!
+        as int;
+  }
+
+  @override
+  Future<int> linesPerFullPage() async {
+    final Database db = await _database.open();
+    return (await db.rawQuery(
+              'SELECT MAX(c) AS n FROM '
+              '(SELECT COUNT(*) AS c FROM lines GROUP BY page)',
+            )).single['n']!
+        as int;
   }
 
   @override

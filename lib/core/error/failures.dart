@@ -55,6 +55,47 @@ class StorageFailure extends Failure {
   const StorageFailure(super.message);
 }
 
+/// A tool the admin pipeline needs is not installed.
+class ToolMissingFailure extends Failure {
+  const ToolMissingFailure(this.tool, super.message);
+
+  final String tool;
+
+  @override
+  List<Object?> get props => <Object?>[tool, message];
+}
+
+/// A local processing step failed.
+class ProcessingFailure extends Failure {
+  const ProcessingFailure(this.path, super.message);
+
+  final String path;
+
+  @override
+  List<Object?> get props => <Object?>[path, message];
+}
+
+/// An upload to the CDN failed, or was refused.
+class UploadFailure extends Failure {
+  const UploadFailure(this.key, super.message);
+
+  final String key;
+
+  @override
+  List<Object?> get props => <Object?>[key, message];
+}
+
+/// An audio pack could not be downloaded, verified or installed.
+class DownloadFailure extends Failure {
+  const DownloadFailure(this.source, super.message);
+
+  /// What was being fetched or opened — a url or a file path.
+  final String source;
+
+  @override
+  List<Object?> get props => <Object?>[source, message];
+}
+
 /// Maps a data-source exception onto its failure. Kept in one place so every
 /// repository translates the same way.
 Failure failureFromException(AppException e) => switch (e) {
@@ -66,4 +107,8 @@ Failure failureFromException(AppException e) => switch (e) {
   ),
   SessionConfigException() => SessionConfigFailure(e.message),
   StorageException() => StorageFailure(e.message),
+  DownloadException() => DownloadFailure(e.source, e.message),
+  ToolMissingException() => ToolMissingFailure(e.tool, e.message),
+  ProcessingException() => ProcessingFailure(e.path, e.message),
+  UploadException() => UploadFailure(e.key, e.message),
 };

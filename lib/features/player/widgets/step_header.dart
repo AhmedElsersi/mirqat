@@ -137,7 +137,10 @@ class _RepeatPips extends StatelessWidget {
         else
           Text(
             LocaleKeys.playerRepeatPips.tr(
-              args: <String>[current.toLocalisedString(), total.toLocalisedString()],
+              args: <String>[
+                current.toLocalisedString(),
+                total.toLocalisedString(),
+              ],
             ),
             style: theme.textTheme.labelLarge,
           ),

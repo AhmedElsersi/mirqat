@@ -69,9 +69,7 @@ void main() {
       defaultBetweenStepsPauseMs: 2000,
       defaultPlaybackSpeed: 0.9,
       defaultRangeBehaviour: RangeBehaviour.lastUsed,
-      lastRanges: <int, AyahRange>{
-        1: AyahRange(startAyah: 2, endAyah: 5),
-      },
+      lastRanges: <int, AyahRange>{1: AyahRange(startAyah: 2, endAyah: 5)},
       themeMode: AppThemeMode.dark,
       homeViewMode: HomeViewMode.grid,
       arabicFontSize: 32,

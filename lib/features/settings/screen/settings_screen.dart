@@ -2,9 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/ayah_text.dart';
@@ -54,6 +56,17 @@ class SettingsScreen extends StatelessWidget {
               _GroupHeading(label: LocaleKeys.settingsSectionReciter.tr()),
               _ReciterControl(settings: settings, state: state, cubit: cubit),
 
+              _GroupHeading(label: LocaleKeys.settingsSectionStorage.tr()),
+              _AudioQualityControl(settings: settings, cubit: cubit),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsetsDirectional.zero,
+                title: Text(LocaleKeys.settingsWifiOnly.tr()),
+                subtitle: Text(LocaleKeys.settingsWifiOnlyHint.tr()),
+                value: settings.downloadOverWifiOnly,
+                onChanged: cubit.setDownloadOverWifiOnly,
+              ),
+              const _SavedRecitationsRow(),
+
               // No _GroupHeading here: the ExpansionTile's own title is the
               // group's heading. Two widgets carrying the same words read as a
               // heading with an empty section under it.
@@ -75,6 +88,79 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Which bitrate downloads and streams ask for.
+///
+/// A preference, not a promise: a reciter published at one bitrate is served
+/// at that bitrate whatever is chosen here, and nothing already on the device
+/// is re-fetched when it changes.
+class _AudioQualityControl extends StatelessWidget {
+  const _AudioQualityControl({required this.settings, required this.cubit});
+
+  final AppSettings settings;
+  final SettingsCubit cubit;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return SetupSection(
+      label: LocaleKeys.settingsAudioQuality.tr(),
+      child: RadioGroup<AudioQuality>(
+        groupValue: settings.audioQuality,
+        onChanged: (AudioQuality? quality) {
+          if (quality != null) cubit.setAudioQuality(quality);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            for (final AudioQuality quality in AudioQuality.values)
+              RadioListTile<AudioQuality>(
+                contentPadding: EdgeInsetsDirectional.zero,
+                value: quality,
+                title: Text(_label(quality)),
+              ),
+            Text(
+              LocaleKeys.settingsAudioQualityHint.tr(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _label(AudioQuality quality) => switch (quality) {
+    AudioQuality.low => LocaleKeys.settingsAudioQualityLow.tr(),
+    AudioQuality.standard => LocaleKeys.settingsAudioQualityStandard.tr(),
+    AudioQuality.high => LocaleKeys.settingsAudioQualityHigh.tr(),
+  };
+}
+
+/// The way into the saved-recitations list.
+///
+/// A row rather than the list itself: what is saved is a handful of surahs at
+/// most, and the settings screen is already long.
+class _SavedRecitationsRow extends StatelessWidget {
+  const _SavedRecitationsRow();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsetsDirectional.only(bottom: 20.h),
+    child: ListTile(
+      contentPadding: EdgeInsetsDirectional.zero,
+      leading: const Icon(Icons.download_done_outlined),
+      title: Text(LocaleKeys.settingsSavedRecitations.tr()),
+      subtitle: Text(LocaleKeys.settingsSavedRecitationsHint.tr()),
+      // Directional on purpose: the affordance points the way the language
+      // reads, so it mirrors with the locale.
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.pushNamed(AppRoutes.downloadsName),
+    ),
+  );
 }
 
 class _GroupHeading extends StatelessWidget {

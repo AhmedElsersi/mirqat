@@ -73,7 +73,7 @@ class ReaderState extends Equatable {
   /// whatever the selection is.
   final List<Ayah> ayahs;
 
-  /// The basmala, read verbatim out of the ayah assets for surahs that recite
+  /// The basmala, read verbatim out of quran.db for surahs that recite
   /// it as an unnumbered preamble. Null when the catalog holds no surah that
   /// numbers it as ayah 1, and so offers no verbatim source — the header is
   /// then not drawn rather than invented (CLAUDE.md A.2 rule 1).

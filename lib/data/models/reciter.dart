@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/error/exceptions.dart';
+import 'audio_manifest.dart';
 
 /// How a reciter's audio is laid out on disk.
 ///
@@ -29,7 +30,8 @@ enum AudioMode {
   }
 }
 
-/// One entry in `assets/data/reciters.json`.
+/// A reciter: bundled (`assets/data/reciters.json`), remote (the audio
+/// manifest), or both when the manifest extends a bundled reciter by id.
 class Reciter extends Equatable {
   const Reciter({
     required this.id,
@@ -42,7 +44,27 @@ class Reciter extends Equatable {
     required this.hasIstiadhah,
     required this.hasBismillah,
     this.imagePath,
+    this.imageUrl,
+    this.remote,
+    this.remoteSurahs = const <int>{},
   });
+
+  /// A reciter known only from the audio manifest.
+  factory Reciter.remoteOnly(
+    ManifestReciter manifest, {
+    Set<int>? surahs,
+    String? imageUrl,
+  }) => Reciter(
+        id: manifest.id,
+        nameAr: manifest.nameAr,
+        nameEn: manifest.nameEn,
+        audioMode: AudioMode.perAyahFiles,
+        basePath: '',
+        bundled: false,
+        availableSurahs: const <int>[],
+        hasIstiadhah: false,
+        hasBismillah: false,
+      ).withRemote(manifest, surahs: surahs, imageUrl: imageUrl);
 
   final String id;
   final String nameAr;
@@ -77,7 +99,69 @@ class Reciter extends Equatable {
   /// nothing in Dart knows a reciter's file name (CLAUDE.md A.2 rule 2).
   final String? imagePath;
 
-  bool hasSurah(int surahNumber) => availableSurahs.contains(surahNumber);
+  /// The portrait on the CDN, for a reciter the app does not ship.
+  ///
+  /// A bundled [imagePath] wins where there is one — it costs no request and
+  /// works offline on first run. This is what a reciter added to the manifest
+  /// alone is drawn with.
+  final String? imageUrl;
+
+  /// The manifest entry serving this reciter's non-bundled surahs, if any.
+  final ManifestReciter? remote;
+
+  /// Surahs the manifest offers, after checking each against the text catalog.
+  /// Held separately from [remote]'s own list so a surah recorded against the
+  /// wrong ayah count is never reachable.
+  final Set<int> remoteSurahs;
+
+  bool hasSurah(int surahNumber) =>
+      isBundledSurah(surahNumber) || remoteSurahs.contains(surahNumber);
+
+  /// Whether [surahNumber]'s audio ships inside the app.
+  bool isBundledSurah(int surahNumber) =>
+      bundled && availableSurahs.contains(surahNumber);
+
+  /// Whether this reciter has a basmala to play before ayah 1 of
+  /// [surahNumber].
+  ///
+  /// Two layouts answer the same question. A bundled reciter ships one
+  /// `bismillah.mp3` that serves every surah, and declares it with
+  /// [hasBismillah]. A manifest reciter's basmala is ayah 0 inside the surah
+  /// itself, so having the surah is having the basmala — unless the manifest
+  /// says otherwise, which is authoritative: a remote file's absence cannot be
+  /// discovered without a request (CLAUDE.md A.5).
+  /// Whether a session *plays* it is `SessionPreambles`' decision, keyed on
+  /// the surah's `bismillahMode`.
+  bool hasBasmala(int surahNumber) =>
+      hasBismillah ||
+      (remoteSurahs.contains(surahNumber) &&
+          remote?.surah(surahNumber)?.hasBasmala != false);
+
+  /// This reciter extended by [manifest]. [surahs] limits which of its surahs
+  /// are offered; null offers all of them.
+  /// [imageUrl] is resolved by the caller, which is the one place holding the
+  /// manifest's `baseUrl` — a reciter cannot resolve its own portrait.
+  Reciter withRemote(
+    ManifestReciter manifest, {
+    Set<int>? surahs,
+    String? imageUrl,
+  }) => Reciter(
+    id: id,
+    nameAr: nameAr,
+    nameEn: nameEn,
+    audioMode: audioMode,
+    basePath: basePath,
+    bundled: bundled,
+    availableSurahs: availableSurahs,
+    hasIstiadhah: hasIstiadhah,
+    hasBismillah: hasBismillah,
+    imagePath: imagePath,
+    imageUrl: imageUrl ?? this.imageUrl,
+    remote: manifest,
+    remoteSurahs: Set<int>.unmodifiable(
+      surahs ?? manifest.surahs.map((ManifestSurah s) => s.number),
+    ),
+  );
 
   factory Reciter.fromJson(Map<String, dynamic> json, String assetPath) {
     final String id = _requireString(json, 'id', assetPath);
@@ -150,5 +234,8 @@ class Reciter extends Equatable {
     hasIstiadhah,
     hasBismillah,
     imagePath,
+    imageUrl,
+    remote,
+    remoteSurahs,
   ];
 }

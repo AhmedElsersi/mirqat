@@ -1,35 +1,62 @@
+import 'dart:async';
+
 import 'package:just_audio/just_audio.dart';
 
 import '../../core/error/exceptions.dart';
 import '../../data/models/reciter.dart';
 import '../../data/models/surah.dart';
-import '../../data/repositories/quran_repository.dart';
 import '../../domain/entities/playback_unit.dart';
 import '../../domain/entities/session_plan.dart';
-import 'ayah_audio_resolver.dart';
+import 'audio_resolver.dart';
 import 'playback_queue.dart';
 import 'session_preambles.dart';
 
+/// What is loaded into the player: enough to name it on a lock screen.
+class LoadedSession {
+  const LoadedSession({
+    required this.surah,
+    required this.reciter,
+    required this.plan,
+  });
+
+  final Surah surah;
+  final Reciter reciter;
+  final SessionPlan plan;
+}
+
 /// Every player call goes through this class.
 ///
-/// Keeping `just_audio` behind it means `just_audio_background` can be added
-/// later for lock-screen controls without touching the UI or the engine
-/// (CLAUDE.md / Part B, Phase 3). Wake-lock handling deliberately lives in the
-/// player screen, not here.
+/// Keeping `just_audio` behind it is what let lock-screen controls be added
+/// without touching the UI or the engine: `SessionMediaControls` listens to
+/// [sessionStream] and the two streams below, and calls back into [play],
+/// [pause] and the step skips — it never sees the player. Wake-lock handling
+/// deliberately lives in the player screen, not here.
 class MemorizationPlayerService {
   MemorizationPlayerService({
-    required QuranRepository quranRepository,
+    required AudioResolver audioResolver,
     AudioPlayer? player,
     this.queueBuilder = const PlaybackQueueBuilder(),
-  }) : _quran = quranRepository,
+  }) : _resolver = audioResolver,
        _player = player ?? AudioPlayer();
 
-  final QuranRepository _quran;
+  final AudioResolver _resolver;
   final AudioPlayer _player;
   final PlaybackQueueBuilder queueBuilder;
 
   PlaybackQueue? _queue;
-  AyahAudioResolver? _resolver;
+
+  final StreamController<LoadedSession?> _sessions =
+      StreamController<LoadedSession?>.broadcast();
+
+  /// The session that is loaded, and null when it ends. What the lock screen
+  /// shows hangs off this: there is something to control exactly while there
+  /// is a session.
+  Stream<LoadedSession?> get sessionStream => _sessions.stream;
+
+  /// Where this session's audio comes from — bundled, downloaded or streamed.
+  /// Settled by [load], because resolution has to be synchronous once the
+  /// queue is being built.
+  SurahAudio? _sources;
 
   PlaybackQueue? get queue => _queue;
 
@@ -74,8 +101,7 @@ class MemorizationPlayerService {
       );
     }
 
-    final AyahAudioResolver resolver = await _createResolver(reciter, surah);
-    _resolver = resolver;
+    _sources = await _resolver.forSurah(reciter: reciter, surah: surah);
 
     final SessionPreambles preambles = SessionPreambles.forSession(
       surah: surah,
@@ -97,34 +123,29 @@ class MemorizationPlayerService {
     await _player.setAudioSources(
       <AudioSource>[
         for (final QueueEntry entry in queue.entries)
-          _sourceFor(entry, reciter: reciter, surah: surah),
+          _sourceFor(entry, reciter: reciter),
       ],
       initialIndex: 0,
       initialPosition: Duration.zero,
     );
     await _player.setSpeed(plan.config.playbackSpeed);
+    _sessions.add(LoadedSession(surah: surah, reciter: reciter, plan: plan));
   }
 
-  AudioSource _sourceFor(
-    QueueEntry entry, {
-    required Reciter reciter,
-    required Surah surah,
-  }) {
-    final AyahAudioResolver resolver = _requireResolver;
+  AudioSource _sourceFor(QueueEntry entry, {required Reciter reciter}) {
+    final SurahAudio sources = _requireSources;
     return switch (entry) {
-      AyahQueueEntry(unit: final PlaybackUnit unit) => resolver.resolve(
-        reciter: reciter,
-        surah: surah.number,
-        ayah: unit.ayahNumber,
+      AyahQueueEntry(unit: final PlaybackUnit unit) => sources.sourceFor(
+        unit.ayahNumber,
       ),
-      SpacerQueueEntry() => resolver.resolveSpacer(),
+      SpacerQueueEntry() => sources.spacer(),
       PreambleQueueEntry(kind: PreambleKind.istiadhah) => _requirePreamble(
-        resolver.resolveIstiadhah(reciter: reciter),
+        sources.istiadhah(),
         reciter: reciter,
         flag: 'hasIstiadhah',
       ),
       PreambleQueueEntry(kind: PreambleKind.bismillah) => _requirePreamble(
-        resolver.resolveBismillah(reciter: reciter),
+        sources.basmala(),
         reciter: reciter,
         flag: 'hasBismillah',
       ),
@@ -149,33 +170,29 @@ class MemorizationPlayerService {
     );
   }
 
-  Future<AyahAudioResolver> _createResolver(
-    Reciter reciter,
-    Surah surah,
-  ) async {
-    switch (reciter.audioMode) {
-      case AudioMode.perAyahFiles:
-        return PerAyahFilesResolver();
-      case AudioMode.singleFileWithTimings:
-        final result = await _quran.getTimings(
-          reciterId: reciter.id,
-          surahNumber: surah.number,
-        );
-        return result.fold(
-          (failure) => throw SessionConfigException(failure.message),
-          TimingsAudioResolver.new,
-        );
-    }
-  }
-
-  AyahAudioResolver get _requireResolver {
-    final AyahAudioResolver? resolver = _resolver;
-    if (resolver == null) {
+  SurahAudio get _requireSources {
+    final SurahAudio? sources = _sources;
+    if (sources == null) {
       throw const SessionConfigException(
         'The player was used before load() was called.',
       );
     }
-    return resolver;
+    return sources;
+  }
+
+  /// Whether any ayah this session queued would have to be fetched.
+  ///
+  /// Asked only after a failure, to tell "the network was not there" apart
+  /// from a packaging fault: a queue of files already on the device does not
+  /// fail for want of a CDN, so if one of these did, the missing piece was
+  /// the network. False before [load] has resolved anything.
+  bool get streamsAnyAyah {
+    final SurahAudio? sources = _sources;
+    final PlaybackQueue? queue = _queue;
+    if (sources == null || queue == null) return false;
+    return queue.entries.whereType<AyahQueueEntry>().any(
+      (AyahQueueEntry entry) => !sources.isLocal(entry.unit.ayahNumber),
+    );
   }
 
   Future<void> play() => _player.play();
@@ -187,6 +204,14 @@ class MemorizationPlayerService {
     await _player.pause();
     await _player.seek(Duration.zero, index: 0);
     _lastUnit = null;
+  }
+
+  /// The listener has left the session: stop, and take the controls off the
+  /// lock screen. Distinct from [stop], after which the same session can be
+  /// played again from the top.
+  Future<void> endSession() async {
+    await stop();
+    _sessions.add(null);
   }
 
   /// Jumps to the first ayah play of the next step. At the last step this
@@ -202,7 +227,10 @@ class MemorizationPlayerService {
   /// Changing speed does not move the play position.
   Future<void> setSpeed(double speed) => _player.setSpeed(speed);
 
-  Future<void> dispose() => _player.dispose();
+  Future<void> dispose() async {
+    await _sessions.close();
+    await _player.dispose();
+  }
 
   int get _currentStepIndex => currentUnit?.stepIndex ?? 0;
 

@@ -23,6 +23,10 @@ class AssetPaths {
   static const String _data = 'assets/data';
   static const String recitersCatalog = '$_data/reciters.json';
 
+  /// The audio manifest shipped with the app, used until the CDN's copy has
+  /// been fetched once.
+  static const String bundledManifest = '$_data/manifest.json';
+
   /// The bundled mushaf database — surah/ayah facts, page layout and
   /// word-by-word text. Copied out to a versioned file on first run by
   /// `QuranDatabase` rather than opened straight from the bundle.
@@ -68,4 +72,25 @@ class AssetPaths {
   /// in a stronger sense: it is not part of any surah. Neither preamble is an
   /// ayah, and neither ever enters the playback queue as one.
   static String istiadhahFile(String basePath) => '$basePath/istiadhah.mp3';
+
+  /// The root a downloaded audio pack unzips into, relative to the
+  /// application support directory.
+  static const String downloadedAudioDirectory = 'audio';
+
+  /// One downloaded ayah, relative to the application support directory:
+  /// `audio/<reciterId>/<bitrate>/<surah3><ayah3>.mp3` (CLAUDE.md A.5).
+  ///
+  /// The two numbers run together in one file name here, unlike the bundled
+  /// `<surah3>/<ayah3>.mp3` tree: this is the layout inside a pack, and it is
+  /// also the path the manifest's `audioPath` template produces, so a
+  /// streamed ayah and an unzipped one land on the same name. Ayah 0 is the
+  /// surah's basmala.
+  static String downloadedAyahFile({
+    required String reciterId,
+    required int bitrate,
+    required int surahNumber,
+    required int ayahNumber,
+  }) =>
+      '$downloadedAudioDirectory/$reciterId/$bitrate/'
+      '${pad3(surahNumber)}${pad3(ayahNumber)}.mp3';
 }

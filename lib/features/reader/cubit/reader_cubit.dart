@@ -13,6 +13,7 @@ import '../../../domain/entities/session_config.dart';
 import '../../../domain/entities/session_plan.dart';
 import '../../../services/audio/audio_availability.dart';
 import '../../../services/audio/ayah_duration_service.dart';
+import '../../../services/audio/reciter_catalog.dart';
 import 'reader_state.dart';
 
 /// Owns one surah's reading page and the session that will be started from it.
@@ -25,11 +26,13 @@ class ReaderCubit extends Cubit<ReaderState> {
   ReaderCubit({
     required QuranRepository quranRepository,
     required SettingsRepository settingsRepository,
+    required ReciterCatalog reciterCatalog,
     required AudioAvailability audioAvailability,
     required AyahDurationService durationService,
     required RepetitionPlanBuilder planBuilder,
   }) : _quran = quranRepository,
        _settings = settingsRepository,
+       _reciters = reciterCatalog,
        _audio = audioAvailability,
        _durations = durationService,
        _builder = planBuilder,
@@ -37,6 +40,7 @@ class ReaderCubit extends Cubit<ReaderState> {
 
   final QuranRepository _quran;
   final SettingsRepository _settings;
+  final ReciterCatalog _reciters;
   final AudioAvailability _audio;
   final AyahDurationService _durations;
   final RepetitionPlanBuilder _builder;
@@ -51,7 +55,7 @@ class ReaderCubit extends Cubit<ReaderState> {
     }, (Surah s) => s);
     if (surah == null) return;
 
-    final recitersResult = await _quran.getReciters();
+    final recitersResult = await _reciters.reciters();
     final List<Reciter>? reciters = recitersResult.fold((Failure f) {
       emit(state.copyWith(status: LoadStatus.failure, errorMessage: f.message));
       return null;
@@ -436,11 +440,13 @@ class ReaderCubit extends Cubit<ReaderState> {
         .build(config, surahAyahCount: surah.ayahCount)
         .fold(
           (Failure failure) => next.copyWith(configError: failure.message),
-          // No reciter means no measured clips, so there is nothing honest to
-          // estimate from: the plan still exists, the duration does not.
+          // No reciter, or a surah whose clips are not on the device to be
+          // measured, means there is nothing honest to estimate from: the plan
+          // still exists, the duration does not.
           (SessionPlan plan) => next.copyWith(
             plan: plan,
-            estimatedDuration: next.reciter == null
+            estimatedDuration:
+                next.reciter == null || next.ayahDurations.isEmpty
                 ? null
                 : plan.estimatedDuration(ayahDurations: next.ayahDurations),
           ),

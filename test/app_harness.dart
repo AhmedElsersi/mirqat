@@ -5,6 +5,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mirqat/core/bootstrap.dart';
@@ -13,6 +15,7 @@ import 'package:mirqat/core/di/injection.dart';
 import 'package:mirqat/core/error/exceptions.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/data/datasources/asset_reader.dart';
+import 'package:mirqat/data/datasources/downloads_database.dart';
 import 'package:mirqat/data/datasources/quran_database.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
 import 'package:mirqat/data/models/reciter.dart';
@@ -21,6 +24,7 @@ import 'package:mirqat/core/router/app_router.dart';
 import 'package:mirqat/features/splash/screen/splash_screen.dart';
 import 'package:mirqat/main.dart';
 import 'package:mirqat/services/audio/ayah_duration_service.dart';
+import 'package:mirqat/services/audio/manifest_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Real clip lengths for Ahmed Khalil Shaheen's Al-Fatiha, so the session
@@ -86,6 +90,31 @@ class FileTranslationLoader extends AssetLoader {
   }
 }
 
+/// What the tests' CDN offers: the bundled reciter, with Al-Fatiha and nothing
+/// else.
+///
+/// Small on purpose. One surah with audio and 113 without is what the reader,
+/// the surah list and the session all need to be exercised, and pinning it
+/// here means publishing a surah never moves a test.
+const String testManifest = '''
+{"schemaVersion":1,"baseUrl":"https://cdn.invalid/","mirrors":[],
+ "reciters":[{"id":"ahmed_khalil_shaheen","nameAr":"أحمد خليل شاهين",
+   "nameEn":"Ahmed Khalil Shaheen","riwayah":"hafs","bitrate":64,"version":"1",
+   "audioPath":"audio/{id}/{bitrate}/{s3}{a3}.mp3",
+   "packPath":"packs/{id}/{bitrate}/{s3}.zip","totalBytes":571930,
+   "surahs":[{"n":1,"ayahs":7,"bytes":571930,"sha256":"ab","hasBasmala":false}]}]}
+''';
+
+/// Serves one string, whatever is asked for.
+class _FixedManifestReader implements AssetReader {
+  const _FixedManifestReader(this.contents);
+
+  final String contents;
+
+  @override
+  Future<String> loadString(String path) async => contents;
+}
+
 /// Boots the app the way `main` does, against a throwaway Hive directory.
 ///
 /// Hive is initialised once per test file rather than per test: closing and
@@ -145,6 +174,25 @@ class AppHarness {
     sl.unregister<AssetReader>();
     sl.registerLazySingleton<AssetReader>(FileAssetReader.new);
 
+    // The real service would fetch the manifest and cache it through
+    // path_provider, neither of which has an implementation under
+    // `flutter test`. This one reads the bundled manifest off disk and has no
+    // network and no cache — exactly the app's offline first-run state.
+    sl.unregister<ManifestService>();
+    sl.registerLazySingleton<ManifestService>(
+      () => ManifestService(
+        // A fixed manifest, not the shipped one. `assets/data/manifest.json` is
+        // a copy of what is published, so reading it here would make every UI
+        // test depend on which surahs happen to be live — a publish would then
+        // change what the tests exercise, and one did.
+        const _FixedManifestReader(testManifest),
+        client: MockClient((http.Request _) async => http.Response('', 404)),
+        storageDirectory: () =>
+            throw UnsupportedError('No manifest cache under flutter test.'),
+      ),
+      dispose: (ManifestService s) => s.dispose(),
+    );
+
     // quran.db is opened through sqflite, which has no plugin implementation
     // under `flutter test`. Two more constraints, same family as the
     // AssetReader swap above: the no-isolate ffi factory, because a reply from
@@ -159,6 +207,16 @@ class AppHarness {
     sl.unregister<QuranDatabase>();
     sl.registerLazySingleton<QuranDatabase>(() => quranDatabase);
 
+    // `downloads.db` is the app's own writable database and goes through the
+    // same plugin, so it gets the same swap: the no-isolate ffi factory, and a
+    // throwaway directory per test run.
+    sl.unregister<DownloadsDatabase>();
+    sl.registerLazySingleton<DownloadsDatabase>(
+      () => DownloadsDatabase(
+        databaseFactoryOverride: databaseFactoryFfiNoIsolate,
+        resolveStorageDirectory: () async => _storageDir!,
+      ),
+    );
     // A sqflite query still does not reliably complete when a screen first
     // loads inside pure fake-async pumps (the splash hand-off has no runAsync
     // around it). The catalog source caches every surah and its ayahs, so
