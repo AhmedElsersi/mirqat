@@ -90,17 +90,29 @@ identically everywhere.
 
 ## 4. Colour
 
-Drawn from manuscript illumination (*tadhhīb*) — lapis, gold leaf, vellum — not
-from the default mosque-green every Quran app already owns.
+Taken from the launcher icon: a gold mihrab arch and an open, lit book on deep
+green.
+
+> **Changed 2026-09-19.** This guide first specified lapis ink, gold leaf and
+> vellum, chosen to stay clear of "the default mosque-green every Quran app
+> already owns". The icon was then drawn in green and gold, and for a while the
+> icon and the app wore different palettes. The owner settled it: the app
+> follows the icon. The argument against green was a fair one and is recorded
+> here rather than erased — what keeps this green from being the default one is
+> how dark it is, the gold it is always seen with, and the cream it sits on.
 
 | Token | Hex | Use |
 |---|---|---|
-| `ink` | `#16233F` | Primary brand, icon ground, headings on light |
-| `gold` | `#C8A54B` | Accent only — active ayah, current rung, progress fill |
-| `vellum` | `#F7F3EA` | Light surface — warm, easier than white for long reading |
-| `ink-deep` | `#0E1626` | Dark-mode surface |
-| `sabr` | `#2E7D6B` | Muted teal. Completion states **only** |
-| `muted` | `#6B7385` | Secondary text, disabled |
+| `forest` | `#0B4E35` | Primary brand, icon ground, headings and filled controls on light |
+| `gold` | `#E1B45C` | Accent only — frames, active ayah, current rung, progress fill. Never text on cream (1.8:1) |
+| `cream` | `#F9F4E6` | Light surface — the icon's book page eased toward white |
+| `forest-deep` | `#04241A` | Dark-mode surface |
+| `sabr` | `#337A63` / `#3FA182` | Emerald. Completion states **only**; one value per mode |
+| `muted` | `#65706B` / `#7F978B` | Secondary text, disabled; a green-grey, one value per mode |
+
+The exact values are the icon's hues moved to the nearest point that clears the
+contrast each needs; `lib/core/theme/app_colors.dart` quotes every ratio and
+`test/core/brand_contrast_test.dart` recomputes them on every run.
 
 Dark mode is not optional — a large share of hifz happens before Fajr and after
 Isha. Design it first, not as an inversion afterthought.

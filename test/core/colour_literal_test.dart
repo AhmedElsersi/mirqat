@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Assembled at runtime so this file is not itself an occurrence.
-/// The lookbehind is what keeps `AppColors.ink` from reading as `Colors.ink`.
+/// The lookbehind is what keeps `AppColors.gold` from reading as `Colors.gold`.
 final RegExp _literal = RegExp(
   '(?<![A-Za-z])(${<String>['Colo', 'rs'].join()}\\.[A-Za-z]'
   '|${<String>['Colo', 'r'].join()}\\(0x)',

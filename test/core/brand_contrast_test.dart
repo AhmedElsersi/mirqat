@@ -23,10 +23,10 @@ void main() {
     // These are the tokens that were split per mode precisely because a single
     // value failed. If one of them drops below 4.5 the split has been undone.
     const Map<String, (Color, Color)> pairs = <String, (Color, Color)>{
-      'mutedLight on vellum': (AppColors.mutedLight, AppColors.vellum),
-      'sabrLight on vellum': (AppColors.sabrLight, AppColors.vellum),
-      'mutedDark on inkDeep': (AppColors.mutedDark, AppColors.inkDeep),
-      'sabrDark on inkDeep': (AppColors.sabrDark, AppColors.inkDeep),
+      'mutedLight on cream': (AppColors.mutedLight, AppColors.cream),
+      'sabrLight on cream': (AppColors.sabrLight, AppColors.cream),
+      'mutedDark on forestDeep': (AppColors.mutedDark, AppColors.forestDeep),
+      'sabrDark on forestDeep': (AppColors.sabrDark, AppColors.forestDeep),
     };
 
     pairs.forEach((String name, (Color, Color) pair) {
@@ -37,16 +37,16 @@ void main() {
   });
 
   group('WCAG contrast — primary text', () {
-    test('ink on vellum', () {
+    test('forest on cream', () {
       expect(
-        contrastRatio(AppColors.ink, AppColors.vellum),
+        contrastRatio(AppColors.forest, AppColors.cream),
         greaterThanOrEqualTo(4.5),
       );
     });
 
-    test('vellum on inkDeep', () {
+    test('cream on forestDeep', () {
       expect(
-        contrastRatio(AppColors.vellum, AppColors.inkDeep),
+        contrastRatio(AppColors.cream, AppColors.forestDeep),
         greaterThanOrEqualTo(4.5),
       );
     });
@@ -85,24 +85,24 @@ void main() {
         AppColors.statusMemorized,
       ]) {
         expect(
-          contrastRatio(status, AppColors.vellum),
+          contrastRatio(status, AppColors.cream),
           greaterThanOrEqualTo(3.0),
         );
         expect(
-          contrastRatio(status, AppColors.inkDeep),
+          contrastRatio(status, AppColors.forestDeep),
           greaterThanOrEqualTo(3.0),
         );
       }
     });
   });
 
-  test('gold is never legible as text on vellum — the rule has a number', () {
+  test('gold is never legible as text on cream — the rule has a number', () {
     // Guards the hard rule rather than a preference: if someone "fixes" gold
     // so this passes, they have changed the brand colour, and this test tells
     // them so instead of letting it through silently.
-    expect(contrastRatio(AppColors.gold, AppColors.vellum), lessThan(3.0));
+    expect(contrastRatio(AppColors.gold, AppColors.cream), lessThan(3.0));
     expect(
-      contrastRatio(AppColors.gold, AppColors.inkDeep),
+      contrastRatio(AppColors.gold, AppColors.forestDeep),
       greaterThanOrEqualTo(4.5),
     );
   });

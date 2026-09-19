@@ -9,38 +9,40 @@ import 'package:flutter/material.dart';
 /// suite noticing.
 abstract final class AppColors {
   // ---------------------------------------------------------------------------
-  // Brand constants (docs/BRAND_GUIDE.md §4).
-  // Drawn from manuscript illumination: lapis, gold leaf, vellum.
+  // Brand constants, taken from the launcher icon: a gold mihrab arch and an
+  // open, lit book on deep green. The UI used to wear an older palette — lapis
+  // forest on cream — while the icon had already moved to green and gold, so the
+  // icon and the app did not look like the same product. The owner settled it
+  // on 2026-09-19 (docs/UI_OVERHAUL.md): the app follows the icon.
   //
-  // NOTE: the app's UI still wears the ORIGINAL palette — lapis ink and warm
-  // vellum — while the brand around it has moved to green and gold: the
-  // launcher icon is a gold mihrab arch on #0C5238, and the splash is the cave
-  // interior, #1C1209. So the icon and the first screen do not currently share
-  // a palette with the rest of the app.
-  //
-  // Reconciling them is a design decision with measured accessibility
-  // consequences — every ratio below is recomputed by brand_contrast_test on
-  // every run — so it is deliberately NOT done here. Raised in the report.
+  // The values are not the icon's pixels copied over. Each was moved, within
+  // the icon's hue, to the nearest value that clears the contrast it needs;
+  // `brand_contrast_test` recomputes every ratio quoted here on every run.
   // ---------------------------------------------------------------------------
 
-  /// Primary brand. Headings on light, icon ground, dark-mode raised fills.
-  /// 14.09:1 on [vellum].
-  static const Color ink = Color(0xFF16233F);
+  /// Primary brand: the icon's ground. Headings and filled controls on light,
+  /// raised fills in dark mode. 9.0:1 on [cream].
+  static const Color forest = Color(0xFF0B4E35);
 
-  /// Dark-mode reading surface. 16.33:1 against [vellum].
-  static const Color inkDeep = Color(0xFF0E1626);
+  /// Dark-mode reading surface: the shadow inside the icon's arch, taken a
+  /// step darker. The step is not taste — at the icon's own #06301F the two
+  /// mode-blind status colours cannot clear 3:1 here and 4.5:1 on [cream] at
+  /// once; at this value they can. 15.0:1 against [cream].
+  static const Color forestDeep = Color(0xFF04241A);
 
-  /// ACCENT ONLY — never a text colour on [vellum]. The pairing measures
-  /// 2.12:1, which fails every WCAG threshold including the 3:1 floor for
+  /// ACCENT ONLY — never a text colour on [cream]. The pairing measures
+  /// 1.8:1, which fails every WCAG threshold including the 3:1 floor for
   /// non-text UI components; no amount of weight or size rescues it, and
   /// darkening it until it passes stops it being gold. Gold is permitted as:
-  /// the active rung in the mark, a progress-bar fill, an icon tint on ink,
-  /// and a focus ring. Nowhere else. This is measurement, not taste — please
-  /// do not re-litigate it.
-  static const Color gold = Color(0xFFC8A54B);
+  /// the frame and ornaments around a page, the active rung in the mark, a
+  /// progress-bar fill, an icon tint on green, and a focus ring. Nowhere
+  /// else. This is measurement, not taste — please do not re-litigate it.
+  static const Color gold = Color(0xFFE1B45C);
 
-  /// Light reading surface. Warm, and easier than white over a long session.
-  static const Color vellum = Color(0xFFF7F3EA);
+  /// Light reading surface: the icon's book page, eased toward white. The
+  /// page itself (#FAEDD5) is right for a glowing book an inch across and too
+  /// yellow for a screen read for an hour.
+  static const Color cream = Color(0xFFF9F4E6);
 
   /// The splash's ground: frame 0 of the launch animation, the cave interior.
   ///
@@ -55,96 +57,99 @@ abstract final class AppColors {
   // Mode-specific secondaries.
   //
   // These two tokens deliberately differ per mode. A single value cannot clear
-  // 4.5:1 against both vellum and ink-deep — the guide's original single
-  // `muted` and `sabr` measured 4.29/3.80 and 4.45/3.67 and failed on both
+  // 4.5:1 against both cream and forest-deep — a single `muted` and a single
+  // `sabr` were tried under the first palette, measured 4.29/3.80 and 4.45/3.67, and failed on both
   // sides. Splitting them per mode is how Material 3 solves the same problem.
   // Do not collapse them back into one value.
   // ---------------------------------------------------------------------------
 
-  /// Secondary text and disabled state, light mode. 4.62:1 on [vellum].
-  static const Color mutedLight = Color(0xFF666E7F);
+  /// Secondary text and disabled state, light mode. A green-grey, so that it
+  /// belongs to the palette rather than sitting beside it. 4.68:1 on [cream].
+  static const Color mutedLight = Color(0xFF65706B);
 
-  /// Secondary text and disabled state, dark mode. 4.63:1 on [inkDeep].
-  static const Color mutedDark = Color(0xFF798193);
+  /// Secondary text and disabled state, dark mode. 5.3:1 on [forestDeep].
+  static const Color mutedDark = Color(0xFF7F978B);
 
-  /// Completion states only, light mode. 4.69:1 on [vellum].
-  static const Color sabrLight = Color(0xFF2D7968);
+  /// Completion states only, light mode. An emerald, lighter and bluer than
+  /// [forest], so "memorized" reads as a state and not as more brand.
+  /// 4.66:1 on [cream].
+  static const Color sabrLight = Color(0xFF337A63);
 
-  /// Completion states only, dark mode. 4.67:1 on [inkDeep].
-  static const Color sabrDark = Color(0xFF35907B);
+  /// Completion states only, dark mode. 5.2:1 on [forestDeep].
+  static const Color sabrDark = Color(0xFF3FA182);
 
   // ---------------------------------------------------------------------------
   // Semantic aliases. Every token below resolves to a brand constant or to a
-  // point on the vellum/ink ramps — there is one palette, not two.
+  // point on the cream/forest ramps — there is one palette, not two.
   // ---------------------------------------------------------------------------
 
-  /// Filled controls, light mode. `onPrimary` is [vellum] (14.09:1).
-  static const Color primary = ink;
+  /// Filled controls, light mode. `onPrimary` is [cream] (8.87:1).
+  static const Color primary = forest;
 
-  /// Filled controls, dark mode. `onPrimary` is [inkDeep] (16.33:1).
+  /// Filled controls, dark mode. `onPrimary` is [forestDeep] (15.02:1).
   /// Not [gold]: a filled gold control is a gold *surface*, which the brand
   /// forbids, and gold-as-fill is reserved for progress.
-  static const Color primaryDark = vellum;
+  static const Color primaryDark = cream;
 
   /// The active rung. Accent only — see the note on [gold].
   static const Color accent = gold;
 
-  // Light surfaces. The ramp runs vellum -> white, because `mutedLight` clears
-  // 4.5:1 only against backgrounds at or lighter than vellum; a card therefore
+  // Light surfaces. The ramp runs cream -> white, because `mutedLight` clears
+  // 4.5:1 only against backgrounds at or lighter than cream; a card therefore
   // lifts toward white rather than tinting downward.
-  static const Color lightBackground = vellum;
+  static const Color lightBackground = cream;
 
-  /// Raised cards. mutedLight 5.03:1, ink 15.33:1.
-  static const Color lightSurface = Color(0xFFFFFDF7);
+  /// Raised cards. mutedLight 5.05:1, forest 9.57:1.
+  static const Color lightSurface = Color(0xFFFFFDF6);
 
   /// Recessed fills — progress tracks, chips. Non-text use: see the note in
   /// the Phase 1 report about the one label still sitting on this token.
-  static const Color lightSurfaceVariant = Color(0xFFEDE7D9);
+  static const Color lightSurfaceVariant = Color(0xFFEEE8D6);
 
-  /// Hairline rules. Vellum darkened; decorative, carries no information.
-  static const Color lightOutline = Color(0xFFDDD5C4);
+  /// Hairline rules. Cream darkened; decorative, carries no information.
+  static const Color lightOutline = Color(0xFFDED6C0);
 
   // Dark surfaces. Mirror logic: `mutedDark` clears 4.5:1 only at or below
-  // ink-deep's luminance, so ink-deep is the *surface* and the page sits one
+  // forest-deep's luminance, so forest-deep is the *surface* and the page sits one
   // notch beneath it.
-  static const Color darkBackground = Color(0xFF0A101C);
+  static const Color darkBackground = Color(0xFF031A11);
 
-  /// Reading surface. mutedDark 4.63:1, vellum 16.33:1.
-  static const Color darkSurface = inkDeep;
+  /// Reading surface. mutedDark 5.27:1, cream 15.02:1.
+  static const Color darkSurface = forestDeep;
 
-  /// Raised fills. vellum 14.09:1.
-  static const Color darkSurfaceVariant = ink;
+  /// Raised fills. cream 8.87:1.
+  static const Color darkSurfaceVariant = forest;
 
-  /// Hairline rules. Ink lightened; decorative.
-  static const Color darkOutline = Color(0xFF26314A);
+  /// Hairline rules. Forest lightened; decorative.
+  static const Color darkOutline = Color(0xFF1A5A42);
 
   // Text.
-  static const Color lightTextPrimary = ink; // 14.09:1 on vellum
-  static const Color lightTextSecondary = mutedLight; // 4.62:1 on vellum
-  static const Color darkTextPrimary = vellum; // 16.33:1 on inkDeep
-  static const Color darkTextSecondary = mutedDark; // 4.63:1 on inkDeep
+  static const Color lightTextPrimary = forest; // 8.87:1 on cream
+  static const Color lightTextSecondary = mutedLight; // 4.68:1 on cream
+  static const Color darkTextPrimary = cream; // 15.02:1 on forestDeep
+  static const Color darkTextSecondary = mutedDark; // 5.27:1 on forestDeep
 
   // Semantic.
-  /// 5.90:1 on [vellum]. Unreadable on ink-deep (2.77:1) — dark mode uses
+  /// 5.95:1 on [cream]. Unreadable on forest-deep (2.52:1) — dark mode uses
   /// [errorDark].
   static const Color error = Color(0xFFB3261E);
 
-  /// 5.60:1 on [inkDeep]. `onError` is [inkDeep].
-  static const Color errorDark = Color(0xFFE6685E);
+  /// 5.69:1 on [forestDeep]. `onError` is [forestDeep].
+  static const Color errorDark = Color(0xFFEE7268);
 
   static const Color success = sabrLight;
 
   // Memorization status. These are borders and fills, never text, so the bar
-  // is 3:1 rather than 4.5:1 — and each value clears it against *both* vellum
-  // and ink-deep, because the widgets that read them are mode-blind.
-  static const Color statusNotStarted = mutedLight; // 4.62 / 3.53
-  static const Color statusInProgress = gold; // 2.12 on vellum — see report
-  static const Color statusMemorized = sabrLight; // 4.69 / 3.48
+  // is 3:1 rather than 4.5:1 — and each value clears it against *both* cream
+  // and forest-deep, because the widgets that read them are mode-blind.
+  static const Color statusNotStarted = mutedLight; // 4.68 / 3.21
+  static const Color statusInProgress = gold; // 1.76 on cream — see report
+  static const Color statusMemorized = sabrLight; // 4.66 / 3.23
 
   /// Wash behind the ayah currently sounding. Gold at 20% — a fill, not text.
-  /// Ink stays at 12.24:1 over it on vellum; vellum at 11.48:1 over it on
-  /// ink-deep.
-  static const Color ayahHighlight = Color(0x33C8A54B);
+  /// Forest stays at 7.95:1 over it on cream; cream at 10.0:1 over it on
+  /// forest-deep.
+  static const Color ayahHighlight = Color(0x33E1B45C);
 
   /// Fully transparent. A token rather than `Colors.transparent`, so the rule
   /// "no colour literal outside this file" has no exceptions to argue about —
@@ -179,6 +184,6 @@ abstract final class AppColors {
   static const Color splashBloom = Color(0xFFFFFFFF);
 
   /// Wash behind the whole block of a connect step. Gold at 8%.
-  /// Ink 13.35:1 over it on vellum; vellum 14.57:1 over it on ink-deep.
-  static const Color blockHighlight = Color(0x14C8A54B);
+  /// Forest 8.5:1 over it on cream; cream 12.94:1 over it on forest-deep.
+  static const Color blockHighlight = Color(0x14E1B45C);
 }
