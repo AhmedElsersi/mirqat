@@ -22,7 +22,7 @@ any edit. Items only the account holder can answer are marked **verify**.
 | Copyright | © 2026 Ahmed Elsersi |
 | Support URL | <https://ahmedelsersi.github.io/iqra-wartaq/> |
 | Marketing URL | <https://ahmedelsersi.github.io/iqra-wartaq/> |
-| Privacy Policy URL | <https://ahmedelsersi.github.io/iqra-wartaq/privacy.html> — **must be updated first, see `PRIVACY_POLICY.md`** |
+| Privacy Policy URL | <https://ahmedelsersi.github.io/iqra-wartaq/privacy.html> — corrected and republished 2026-09-20; `PRIVACY_POLICY.md` is its source text |
 
 ## Arabic (`ar-SA`) — primary
 
@@ -269,8 +269,8 @@ The interface is in Arabic, laid out right to left.
 
 - [ ] Accept the updated Program License Agreement; create the Apple
       Distribution certificate (see `docs/STORE_RELEASE.md`).
-- [ ] **Publish the corrected privacy policy** (`PRIVACY_POLICY.md`). The page
-      that is live says the app never uses the internet; the app now streams.
+- [x] Publish the corrected privacy policy (done 2026-09-20; the old page said
+      the app never uses the internet).
 - [ ] Register `com.mirqat.app` and create the app record.
 - [ ] Paste this listing; upload both screenshot sets under Arabic.
 - [ ] Answer content rights, age rating, App Privacy as above.

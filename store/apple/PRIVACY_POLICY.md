@@ -1,19 +1,18 @@
-# Privacy policy — corrected text
+# Privacy policy — source text
 
-The page that is live at
-<https://ahmedelsersi.github.io/iqra-wartaq/privacy.html> was written when the
-app shipped its audio inside the bundle. It says the app "runs entirely
-offline", "does not request internet permission at all" and that "recitations
-are bundled". **None of that is true any more**: recitation streams from a CDN,
-surahs are downloaded on request, and `app.json` is fetched at launch. Apple
-reviews the policy against the app, and Google's Data safety form links to the
-same page — so it has to be corrected before either store sees this version.
+This is the text of <https://ahmedelsersi.github.io/iqra-wartaq/privacy.html>,
+republished on 2026-09-20. The page it replaced was written when the app
+shipped its audio inside the bundle: it said the app "runs entirely offline",
+"does not request internet permission at all" and that "recitations are
+bundled". None of that survived recitation moving to a CDN, and both stores
+review the policy against what the app does.
 
 What did **not** change, and is still the heart of it: no accounts, nothing
 collected, nothing shared, no analytics, no ads.
 
-Replace the body of the page (it lives in the separate
-`AhmedElsersi/iqra-wartaq` repo) with the text below.
+The page lives in the separate `AhmedElsersi/iqra-wartaq` repo. **Change this
+file and that page together**, and before — not after — any feature that
+changes what the app sends or stores.
 
 ---
 
