@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:ui' show FlutterView;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -158,10 +159,7 @@ class _IqraWartaqAppState extends State<IqraWartaqApp> {
         lazy: true,
         create: (_) => sl<UpdateCubit>(),
         child: ScreenUtilInit(
-          designSize: const Size(
-            AppConstants.designWidth,
-            AppConstants.designHeight,
-          ),
+          designSize: _designSizeFor(View.of(context)),
           minTextAdapt: true,
           builder: (BuildContext context, Widget? child) => MaterialApp.router(
             debugShowCheckedModeBanner: false,
@@ -191,4 +189,17 @@ class _IqraWartaqAppState extends State<IqraWartaqApp> {
     AppThemeMode.light => ThemeMode.light,
     AppThemeMode.dark => ThemeMode.dark,
   };
+}
+
+/// The design the screen's dimensions are scaled from: a phone's, or — from
+/// [AppConstants.tabletShortestSide] up — a tablet's. See that constant for
+/// why a tablet must not be scaled from a phone.
+Size _designSizeFor(FlutterView view) {
+  final Size screen = view.physicalSize / view.devicePixelRatio;
+  return screen.shortestSide >= AppConstants.tabletShortestSide
+      ? const Size(
+          AppConstants.tabletDesignWidth,
+          AppConstants.tabletDesignHeight,
+        )
+      : const Size(AppConstants.designWidth, AppConstants.designHeight);
 }

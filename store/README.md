@@ -3,9 +3,9 @@
 Generated from `brand/` (the same source `flutter_launcher_icons` reads —
 see `pubspec.yaml`), via a one-off script, not checked in as a build step:
 
-- `icon-512.png` — 512x512, no alpha (Play rejects an icon with one).
+- `google/icon-512.png` — 512x512, no alpha (Play rejects an icon with one).
   Downscaled from `brand/icon_1024.png`.
-- `feature-graphic-1024x500.png` — the app's arch-and-book mark
+- `google/feature-graphic-1024x500.png` — the app's arch-and-book mark
   (`brand/icon_foreground_1024.png`, transparent) centered on the same
   vertical green gradient as the launcher icon's background
   (`brand/icon_background_1024.png`). No wordmark text on it: rendering
@@ -19,7 +19,7 @@ Regenerate either with Pillow if `brand/` changes:
 ```python
 from PIL import Image
 icon = Image.open("brand/icon_1024.png").convert("RGB")
-icon.resize((512, 512), Image.LANCZOS).save("store/icon-512.png")
+icon.resize((512, 512), Image.LANCZOS).save("store/google/icon-512.png")
 ```
 
 (see git history for the full feature-graphic composite script if the
@@ -59,3 +59,14 @@ Save them as `store/screenshots/ar/01-surah-list.png` etc. (create the
 directory) — nothing reads this path automatically, it's just where to keep
 them before uploading to Play Console under **Store presence → Main store
 listing → Phone screenshots**.
+
+## Apple
+
+`apple/LISTING.md` is the whole App Store Connect listing, ready to paste —
+name, subtitle, keywords, descriptions in Arabic and English, App Privacy, age
+rating, content rights, the reviewer's notes and a checklist.
+`apple/PRIVACY_POLICY.md` is the corrected privacy policy the listing depends
+on. `apple/iphone/` (1320 × 2868) and `apple/ipad/` (2064 × 2752) are the
+screenshots, taken from the running app by `tool/store_screenshots.sh`; the
+Play screenshots in `google/` predate the reading-and-session redesign and can
+be retaken the same way on an Android emulator.

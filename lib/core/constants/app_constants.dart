@@ -26,6 +26,23 @@ class AppConstants {
   static const double designWidth = 375;
   static const double designHeight = 812;
 
+  /// From this shortest side up, the screen is a tablet, and dimensions are
+  /// scaled from [tabletDesignWidth] x [tabletDesignHeight] instead.
+  ///
+  /// `flutter_screenutil` multiplies every `.w`, `.h` and `.r` by the ratio of
+  /// the screen to the design. Against a phone-sized design a 13-inch iPad is
+  /// 2.75 times as wide, so every padding, avatar and row came out nearly
+  /// three times its size — while the theme's text, which is not scaled,
+  /// stayed at 14 to 16 points. The result was small text adrift in huge rows,
+  /// and a grid whose tiles overflowed. Against a tablet-sized design the
+  /// same iPad scales by about a third, which is what a tablet wants.
+  ///
+  /// 700, so that the smallest iPad (744) is a tablet and no phone is — the
+  /// largest phones are about 440 wide.
+  static const double tabletShortestSide = 700;
+  static const double tabletDesignWidth = 768;
+  static const double tabletDesignHeight = 1024;
+
   /// Where the home grid goes from two columns to three.
   ///
   /// 600dp is Material 3's compact/medium window boundary, not a number picked

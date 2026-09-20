@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -248,10 +249,14 @@ class _SurahListViewState extends State<_SurahListView> {
         mainAxisSpacing: 12.r,
         crossAxisSpacing: 12.r,
         mainAxisExtent:
-            // Logical pixels, not `.h`: the card's content does not shrink on
-            // a short screen, so neither may the room it is given — scaled to
-            // the screen's height it overflowed on anything short and wide.
-            150 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6),
+            // Not `.h`: the card's content does not shrink on a short
+            // screen, so neither may the room it is given — scaled to the
+            // screen's height it overflowed on anything short and wide. But
+            // its content *is* scaled by width (`.w`, `.r`), so the room grows
+            // with that and never shrinks below what a phone needs.
+            150 *
+            math.max(1, ScreenUtil().scaleWidth) *
+            MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6),
       ),
       itemCount: index.ajzaa.length,
       itemBuilder: (BuildContext context, int i) =>
