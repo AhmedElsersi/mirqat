@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failures.dart';
 import '../../../core/state/load_status.dart';
+import '../../../data/models/juz_info.dart';
 import '../../../data/models/page_info.dart';
 import '../../../data/models/reading_position.dart';
 import '../../../data/models/mushaf_line.dart';
@@ -13,6 +14,7 @@ import '../../../data/models/word.dart';
 import '../../../data/repositories/quran_pages_repository.dart';
 import '../../../data/repositories/reading_history_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
+import '../reading_section.dart';
 import 'mushaf_page.dart';
 import 'mushaf_state.dart';
 
@@ -54,20 +56,33 @@ class MushafCubit extends Cubit<MushafState> {
   int _requestToken = 0;
 
   /// Opens at [initialAyah]'s page when given, otherwise at [initialPage].
-  Future<void> init({AyahRef? initialAyah, int initialPage = 1}) async {
+  /// With a [section], only that surah or juz is on show, and the opening
+  /// page is held inside it.
+  Future<void> init({
+    AyahRef? initialAyah,
+    int initialPage = 1,
+    SectionRequest? section,
+  }) async {
     emit(state.copyWith(status: LoadStatus.loading));
     try {
       final int pageCount = await _unwrap(_pages.pageCount());
       final int linesPerFullPage = await _unwrap(_pages.linesPerFullPage());
       final List<Surah> surahs = await _unwrap(_quran.getSurahs());
-      final int start = initialAyah == null
-          ? initialPage.clamp(1, pageCount)
+      _surahs = <int, Surah>{for (final Surah s in surahs) s.number: s};
+      _basmalaWords = await _basmalaSource(surahs);
+
+      final ReadingSection? resolved = section == null
+          ? null
+          : await _resolve(section);
+      final int wanted = initialAyah == null
+          ? (section == null ? initialPage : resolved!.firstPage)
           : await _unwrap(
               _pages.pageForAyah(initialAyah.surah, initialAyah.ayah),
             );
-
-      _surahs = <int, Surah>{for (final Surah s in surahs) s.number: s};
-      _basmalaWords = await _basmalaSource(surahs);
+      final int start = wanted.clamp(
+        resolved?.firstPage ?? 1,
+        resolved?.lastPage ?? pageCount,
+      );
       if (isClosed) return;
 
       emit(
@@ -75,6 +90,7 @@ class MushafCubit extends Cubit<MushafState> {
           status: LoadStatus.ready,
           pageCount: pageCount,
           linesPerFullPage: linesPerFullPage,
+          section: resolved,
           initialPage: start,
           currentPage: start,
           highlighted: initialAyah,
@@ -96,6 +112,115 @@ class MushafCubit extends Cubit<MushafState> {
     }
   }
 
+  /// Where a surah or a juz starts and ends, asked of the catalog.
+  Future<ReadingSection> _resolve(SectionRequest request) async {
+    final AyahRef first;
+    final AyahRef last;
+    final int total;
+
+    switch (request.kind) {
+      case SectionKind.surah:
+        final Surah? surah = _surahs[request.number];
+        if (surah == null) throw _Failed(_noSuch(request));
+        first = AyahRef(surah.number, 1);
+        last = AyahRef(surah.number, surah.ayahCount);
+        total = _surahs.length;
+      case SectionKind.juz:
+        final List<JuzInfo> ajzaa = await _unwrap(_pages.juzList());
+        final int index = ajzaa.indexWhere(
+          (JuzInfo j) => j.number == request.number,
+        );
+        if (index < 0) throw _Failed(_noSuch(request));
+        first = AyahRef(ajzaa[index].surahNumber, ajzaa[index].ayahNumber);
+        // A juz runs up to the ayah before the next one begins, and the last
+        // juz to the end of the last surah.
+        last = index + 1 < ajzaa.length
+            ? _before(
+                AyahRef(
+                  ajzaa[index + 1].surahNumber,
+                  ajzaa[index + 1].ayahNumber,
+                ),
+              )
+            : _lastAyah;
+        total = ajzaa.length;
+    }
+
+    final int firstPage = await _unwrap(
+      _pages.pageForAyah(first.surah, first.ayah),
+    );
+    return ReadingSection(
+      kind: request.kind,
+      number: request.number,
+      first: first,
+      last: last,
+      firstPage: firstPage,
+      lastPage: await _unwrap(_pages.pageForAyah(last.surah, last.ayah)),
+      total: total,
+      leadPage: await _leadPageOf(first, firstPage),
+    );
+  }
+
+  /// The page holding the opening surah's heading, when that is not the page
+  /// of its first ayah: 21 surahs are printed with their name as the last
+  /// line of one page and their first ayah at the top of the next.
+  Future<int?> _leadPageOf(AyahRef first, int firstPage) async {
+    if (first.ayah != 1) return null;
+    final int? heading = await _unwrap(_pages.surahHeadingPage(first.surah));
+    return heading != null && heading < firstPage ? heading : null;
+  }
+
+  static Failure _noSuch(SectionRequest request) => CatalogValidationFailure(
+    'quran.db',
+    'There is no ${request.kind.name} ${request.number} in the catalog.',
+  );
+
+  AyahRef get _lastAyah {
+    final int surah = _surahs.keys.reduce(_max);
+    return AyahRef(surah, _surahs[surah]!.ayahCount);
+  }
+
+  /// The ayah printed just before [ref].
+  AyahRef _before(AyahRef ref) {
+    if (ref.ayah > 1) return AyahRef(ref.surah, ref.ayah - 1);
+    final Surah? previous = _surahs[ref.surah - 1];
+    if (previous == null) return ref;
+    return AyahRef(previous.number, previous.ayahCount);
+  }
+
+  /// Replaces what is on show with another surah or juz — the "next" and
+  /// "previous" at the end of a section, and a session that has recited its
+  /// way out of this one. Opens on [at]'s page when given.
+  Future<void> openSection(SectionRequest request, {AyahRef? at}) async {
+    try {
+      final ReadingSection section = await _resolve(request);
+      final int start = at == null
+          ? section.firstPage
+          : (await _unwrap(
+              _pages.pageForAyah(at.surah, at.ayah),
+            )).clamp(section.firstPage, section.lastPage);
+      if (isClosed) return;
+
+      // The pages built so far were filtered for the old section; a page the
+      // two share shows different lines in each.
+      _building.clear();
+      emit(
+        state.copyWith(
+          section: section,
+          epoch: state.epoch + 1,
+          pages: const <int, MushafPage>{},
+          failedPages: const <int, String>{},
+          initialPage: start,
+          currentPage: start,
+        ),
+      );
+      await ensurePage(start);
+      _warmNeighbours(start);
+      unawaited(recordPosition());
+    } on _Failed catch (e) {
+      if (!isClosed) emit(state.copyWith(errorMessage: e.failure.message));
+    }
+  }
+
   /// The basmala as quran.db stores it: ayah 1 of the surah whose basmala is
   /// counted as that ayah, minus its ayah-number marker. Empty — and the line
   /// drawn blank — if there is no such surah; the words are never typed.
@@ -113,7 +238,9 @@ class MushafCubit extends Cubit<MushafState> {
   /// Builds [page] if it is not already built; completes once it is (or has
   /// failed). Concurrent calls for one page share a single build.
   Future<void> ensurePage(int page) {
-    if (page < 1 || page > state.pageCount) return Future<void>.value();
+    if (page < state.firstPage || page > state.lastPage) {
+      return Future<void>.value();
+    }
     if (state.pages.containsKey(page)) return Future<void>.value();
     return _building[page] ??= _build(page).whenComplete(() {
       // A block, not an arrow: `remove` returns this very future, and
@@ -123,8 +250,11 @@ class MushafCubit extends Cubit<MushafState> {
   }
 
   Future<void> _build(int page) async {
+    final int epoch = state.epoch;
     final Either<Failure, MushafPage> built = await _buildPage(page);
-    if (isClosed) return;
+    // A page built for a section that has since been replaced is filtered
+    // for the wrong one.
+    if (isClosed || epoch != state.epoch) return;
 
     built.fold(
       (Failure f) => emit(
@@ -165,7 +295,19 @@ class MushafCubit extends Cubit<MushafState> {
                 w.id: w,
             };
 
-      final PageInfo? info = await _unwrap(_pages.pageInfo(page));
+      final List<PageLine> all = <PageLine>[
+        for (final MushafLine line in lines) _lineFrom(line, byId),
+      ];
+      final List<PageLine> carried = await _carriedOnto(page);
+      final List<PageLine> shown = <PageLine>[...carried, ..._inSection(all)];
+      final bool partial = carried.isNotEmpty || shown.length != all.length;
+
+      // A page shown from part-way down is labelled from its first word on
+      // show, not from the neighbour's lines above it.
+      final Word? firstShown = partial ? _firstWord(shown) : null;
+      final PageInfo? info = await _unwrap(
+        _pages.pageInfo(page, fromWordId: firstShown?.id),
+      );
 
       return Right<Failure, MushafPage>(
         MushafPage(
@@ -173,15 +315,69 @@ class MushafCubit extends Cubit<MushafState> {
           surah: info == null ? null : _surahs[info.surahNumber],
           juz: info?.juz,
           hizb: info?.hizb,
-          lines: <PageLine>[
-            for (final MushafLine line in lines) _lineFrom(line, byId),
-          ],
+          lines: shown,
+          partial: partial,
         ),
       );
     } on _Failed catch (e) {
       return Left<Failure, MushafPage>(e.failure);
     }
   }
+
+  /// The heading lines a section's first page takes over from the page
+  /// before it (see [ReadingSection.leadPage]). Headings and basmalas only:
+  /// they hold no words of their own to fetch.
+  Future<List<PageLine>> _carriedOnto(int page) async {
+    final ReadingSection? section = state.section;
+    final int? lead = section?.leadPage;
+    if (section == null || lead == null || page != section.firstPage) {
+      return const <PageLine>[];
+    }
+    final List<MushafLine> lines = await _unwrap(_pages.linesForPage(lead));
+    return _inSection(<PageLine>[
+      for (final MushafLine line in lines)
+        if (line.lineType != LineType.ayah)
+          _lineFrom(line, const <int, Word>{}),
+    ]);
+  }
+
+  /// The lines of a page that belong to the section on show — all of them,
+  /// for the whole mushaf.
+  ///
+  /// A line of text is kept if any word on it is the section's: a juz may
+  /// begin part-way along a line, and that line is then shown whole with the
+  /// neighbour's words held back, because half a justified line is not
+  /// something a mushaf ever prints. A surah's heading and basmala go with
+  /// its first ayah.
+  List<PageLine> _inSection(List<PageLine> lines) {
+    final ReadingSection? section = state.section;
+    if (section == null) return lines;
+
+    final List<PageLine> kept = <PageLine>[];
+    int? opening;
+    for (final PageLine line in lines) {
+      switch (line) {
+        case SurahHeaderLine(:final Surah surah):
+          opening = surah.number;
+          if (section.holds(AyahRef(surah.number, 1))) kept.add(line);
+        case BasmalaLine():
+          if (opening != null && section.holds(AyahRef(opening, 1))) {
+            kept.add(line);
+          }
+        case AyahLine(:final List<Word> words):
+          if (words.any((Word w) => !w.isMarker && section.holds(w.ref))) {
+            kept.add(line);
+          }
+      }
+    }
+    return kept;
+  }
+
+  Word? _firstWord(List<PageLine> lines) => lines
+      .whereType<AyahLine>()
+      .expand((AyahLine l) => l.words)
+      .where((Word w) => !w.isMarker && (state.section?.holds(w.ref) ?? true))
+      .firstOrNull;
 
   PageLine _lineFrom(MushafLine line, Map<int, Word> byId) {
     switch (line.lineType) {
@@ -239,11 +435,7 @@ class MushafCubit extends Cubit<MushafState> {
     final MushafPage? page = state.pages[state.currentPage];
     if (history == null || page == null) return;
 
-    final Word? first = page.lines
-        .whereType<AyahLine>()
-        .expand((AyahLine l) => l.words)
-        .where((Word w) => !w.isMarker)
-        .firstOrNull;
+    final Word? first = _firstWord(page.lines);
     final int? surah = first?.surahNumber ?? page.surah?.number;
     if (surah == null) return;
 
@@ -273,7 +465,19 @@ class MushafCubit extends Cubit<MushafState> {
   void clearHighlight() => emit(state.copyWith(clearHighlighted: true));
 
   /// Brings the page holding [surah]:[ayah] on screen, animated.
+  ///
+  /// When one surah or juz is on show and the ayah is in another, that other
+  /// one is opened in its place: a session that recites its way into the next
+  /// surah takes the reader with it.
   Future<void> goToAyah(int surah, int ayah) async {
+    final AyahRef ref = AyahRef(surah, ayah);
+    final ReadingSection? section = state.section;
+    if (section != null && !section.holds(ref)) {
+      final SectionRequest? home = await _sectionHolding(ref, section.kind);
+      if (home != null) await openSection(home, at: ref);
+      return;
+    }
+
     final Either<Failure, int> page = await _pages.pageForAyah(surah, ayah);
     if (isClosed) return;
     await page.fold(
@@ -288,6 +492,22 @@ class MushafCubit extends Cubit<MushafState> {
         );
       },
     );
+  }
+
+  Future<SectionRequest?> _sectionHolding(AyahRef ref, SectionKind kind) async {
+    switch (kind) {
+      case SectionKind.surah:
+        return SectionRequest.surah(ref.surah);
+      case SectionKind.juz:
+        final List<JuzInfo> ajzaa = (await _pages.juzList()).getOrElse(
+          () => const <JuzInfo>[],
+        );
+        // The last juz to begin at or before the ayah.
+        final JuzInfo? home = ajzaa
+            .where((JuzInfo j) => AyahRef(j.surahNumber, j.ayahNumber) <= ref)
+            .lastOrNull;
+        return home == null ? null : SectionRequest.juz(home.number);
+    }
   }
 
   // --- selection ------------------------------------------------------------

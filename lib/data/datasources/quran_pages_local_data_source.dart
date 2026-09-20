@@ -31,7 +31,7 @@ abstract class QuranPagesLocalDataSource {
   /// How many pages the layout has.
   /// The surah, juz and hizb the page opens in, or null for a page with no
   /// words on it.
-  Future<PageInfo?> pageInfo(int page);
+  Future<PageInfo?> pageInfo(int page, {int? fromWordId});
 
   /// Every juz and where it begins, in order.
   Future<List<JuzInfo>> juzList();
@@ -43,6 +43,11 @@ abstract class QuranPagesLocalDataSource {
 
   /// The page [surahNumber]:[ayahNumber] is printed on.
   Future<int> pageForAyah(int surahNumber, int ayahNumber);
+
+  /// The page [surahNumber]'s heading is printed on, or null if the layout
+  /// gives it none. Not always the page of its first ayah: a heading can be
+  /// the last line of the page before.
+  Future<int?> surahHeadingPage(int surahNumber);
 
   /// How many ayahs [surahNumber] has, read straight from `quran.db`.
   Future<int> ayahCount(int surahNumber);
@@ -134,15 +139,18 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   }
 
   @override
-  Future<PageInfo?> pageInfo(int page) async {
+  Future<PageInfo?> pageInfo(int page, {int? fromWordId}) async {
     final Database db = await _database.open();
     // The first word on the page, not the first ayah to *start* on it: a page
     // usually opens in the middle of an ayah that began on the one before.
+    // [fromWordId] moves "first" down the page, for a page shown from part-way
+    // — a surah that begins mid-page is labelled with its own juz, not with
+    // that of the lines above it.
     final List<Map<String, Object?>> rows = await db.rawQuery(
       'SELECT a.surah AS surah, a.juz AS juz, a.hizb AS hizb '
       'FROM words w JOIN ayahs a ON a.surah = w.surah AND a.ayah = w.ayah '
-      'WHERE w.page = ? ORDER BY w.id LIMIT 1',
-      <Object>[page],
+      'WHERE w.page = ? AND w.id >= ? ORDER BY w.id LIMIT 1',
+      <Object>[page, fromWordId ?? 0],
     );
     if (rows.isEmpty) return null;
     final Map<String, Object?> row = rows.single;
@@ -211,6 +219,20 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
       );
     }
     return rows.single['page']! as int;
+  }
+
+  @override
+  Future<int?> surahHeadingPage(int surahNumber) async {
+    final Database db = await _database.open();
+    final List<Map<String, Object?>> rows = await db.query(
+      'lines',
+      columns: <String>['page'],
+      where: "line_type = 'surah_name' AND surah_number = ?",
+      whereArgs: <int>[surahNumber],
+      orderBy: 'page',
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.single['page']! as int;
   }
 
   @override

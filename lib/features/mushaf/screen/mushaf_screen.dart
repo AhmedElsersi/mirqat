@@ -7,6 +7,7 @@ import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
 import '../../surah_list/widgets/error_view.dart';
@@ -14,6 +15,7 @@ import '../cubit/mushaf_cubit.dart';
 import '../cubit/mushaf_page.dart';
 import '../cubit/mushaf_state.dart';
 import '../mushaf_args.dart';
+import '../reading_section.dart';
 import '../widgets/ayah_actions_sheet.dart';
 import '../widgets/mushaf_page_view.dart';
 
@@ -29,6 +31,7 @@ class MushafScreen extends StatelessWidget {
         ..init(
           initialAyah: args.initialAyah,
           initialPage: args.initialPage ?? 1,
+          section: args.section,
         ),
       child: const MushafView(),
     );
@@ -48,6 +51,10 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
   static const int _animatedPageSpan = 2;
 
   PageController? _controller;
+
+  /// The run of pages [_controller] was made for. Another surah or juz is
+  /// another run, with its own first page, and needs its own controller.
+  int _controllerEpoch = -1;
 
   /// Whether the bottom bar is showing. It starts hidden: the screen opens on
   /// the page, whole, the way a book opens — and a tap anywhere brings the
@@ -78,8 +85,21 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  PageController _controllerFor(MushafState state) =>
-      _controller ??= PageController(initialPage: state.initialPage - 1);
+  PageController _controllerFor(MushafState state) {
+    if (_controller == null || _controllerEpoch != state.epoch) {
+      final PageController? old = _controller;
+      // Disposed after the frame: the old page view is still attached to it
+      // until this build has replaced that view.
+      if (old != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+      }
+      _controllerEpoch = state.epoch;
+      _controller = PageController(
+        initialPage: state.initialPage - state.firstPage,
+      );
+    }
+    return _controller!;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +109,7 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
       listener: (BuildContext context, MushafState state) {
         final PageController? controller = _controller;
         if (controller == null || !controller.hasClients) return;
-        final int target = state.pageRequest!.page - 1;
+        final int target = state.pageRequest!.page - state.firstPage;
         // Animate a short hop so the turn is visible; jump a long one. An
         // animation across hundreds of pages would build and load every page
         // it passes, only to show each for a frame.
@@ -106,6 +126,7 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
       buildWhen: (MushafState a, MushafState b) =>
           a.status != b.status ||
           a.currentPage != b.currentPage ||
+          a.epoch != b.epoch ||
           a.errorMessage != b.errorMessage,
       builder: (BuildContext context, MushafState state) {
         return Scaffold(
@@ -150,13 +171,107 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
     return Directionality(
       textDirection: TextDirection.ltr,
       child: PageView.builder(
+        // Keyed by the run of pages, so that another surah or juz is a new
+        // page view on a new controller rather than the old one re-counted
+        // under the reader's thumb.
+        key: ValueKey<int>(state.epoch),
         controller: _controllerFor(state),
         reverse: true,
-        itemCount: state.pageCount,
-        onPageChanged: (int index) => cubit.onPageChanged(index + 1),
+        // One more leaf after a surah or a juz: where to go from here.
+        itemCount: state.visiblePageCount + (state.section == null ? 0 : 1),
+        onPageChanged: (int index) {
+          if (index < state.visiblePageCount) {
+            cubit.onPageChanged(state.firstPage + index);
+          }
+        },
         itemBuilder: (BuildContext context, int index) => Directionality(
           textDirection: TextDirection.rtl,
-          child: _PageSlot(pageNumber: index + 1, onTap: _toggleChrome),
+          child: index < state.visiblePageCount
+              ? _PageSlot(
+                  pageNumber: state.firstPage + index,
+                  onTap: _toggleChrome,
+                )
+              : _SectionEnd(section: state.section!, onTap: _toggleChrome),
+        ),
+      ),
+    );
+  }
+}
+
+/// The leaf after the last page of a surah or a juz: it is finished, and here
+/// are the one after it and the one before.
+class _SectionEnd extends StatelessWidget {
+  const _SectionEnd({required this.section, required this.onTap});
+
+  final ReadingSection section;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final MushafCubit cubit = context.read<MushafCubit>();
+
+    String nameOf(SectionRequest request) => switch (request.kind) {
+      SectionKind.surah => LocaleKeys.mushafSurahLabel.tr(
+        args: <String>[cubit.surahFor(request.number)?.nameAr ?? ''],
+      ),
+      SectionKind.juz => LocaleKeys.mushafJuzLabel.tr(
+        args: <String>[request.number.toLocalisedString()],
+      ),
+    };
+
+    final SectionRequest? next = section.next;
+    final SectionRequest? previous = section.previous;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsetsDirectional.symmetric(
+          horizontal: 4.w,
+          vertical: 3.h,
+        ),
+        child: IslamicFrame(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsetsDirectional.all(24.r),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    LocaleKeys.mushafSectionEnd.tr(
+                      args: <String>[nameOf(section.request)],
+                    ),
+                    style: theme.textTheme.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 28.h),
+                  if (next != null)
+                    FilledButton.icon(
+                      onPressed: () => cubit.openSection(next),
+                      icon: const Icon(Icons.arrow_forward),
+                      label: Text(
+                        LocaleKeys.mushafSectionNext.tr(
+                          args: <String>[nameOf(next)],
+                        ),
+                      ),
+                    ),
+                  if (previous != null) ...<Widget>[
+                    SizedBox(height: 12.h),
+                    OutlinedButton.icon(
+                      onPressed: () => cubit.openSection(previous),
+                      icon: const Icon(Icons.arrow_back),
+                      label: Text(
+                        LocaleKeys.mushafSectionPrevious.tr(
+                          args: <String>[nameOf(previous)],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -202,6 +317,9 @@ class _PageSlot extends StatelessWidget {
           linesPerFullPage: state.linesPerFullPage,
           highlighted: state.highlighted,
           selected: state.selected,
+          isHeldBack: state.section == null
+              ? null
+              : (Word w) => !state.section!.holds(w.ref),
           onTap: onTap,
           onWordLongPress: (Word word) => _openAyah(context, cubit, word),
         );

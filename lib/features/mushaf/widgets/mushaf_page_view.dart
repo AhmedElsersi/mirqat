@@ -29,6 +29,8 @@ class MushafPageView extends StatefulWidget {
     required this.selected,
     required this.onWordLongPress,
     this.onTap,
+    this.isSelected,
+    this.isHeldBack,
     super.key,
   });
 
@@ -44,6 +46,15 @@ class MushafPageView extends StatefulWidget {
 
   /// A tap anywhere on the page, words included.
   final VoidCallback? onTap;
+
+  /// Whether a word lies in the range chosen for a session. Beside
+  /// [selected], which is the one ayah under the reader's finger.
+  final bool Function(Word word)? isSelected;
+
+  /// Whether a word is on the page only because it shares a line with the
+  /// surah or juz being read — printed, but not part of it, and drawn
+  /// fainter. Such a word takes no long press.
+  final bool Function(Word word)? isHeldBack;
 
   @override
   State<MushafPageView> createState() => _MushafPageViewState();
@@ -134,7 +145,12 @@ class _MushafPageViewState extends State<MushafPageView> {
               width: width,
               height: pitch * slots,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                // A page with a neighbour's lines left out starts at the top,
+                // like the opening of a chapter. A page that is simply short
+                // stays centred, as the mushaf prints it.
+                mainAxisAlignment: widget.page.partial
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
                 children: <Widget>[
                   for (final PageLine line in widget.page.lines)
                     SizedBox(
@@ -210,34 +226,51 @@ class _MushafPageViewState extends State<MushafPageView> {
 
   List<Widget> _words(List<Word> words, double fontSize) => <Widget>[
     for (final Word w in words)
-      w.isMarker
-          // The ayah-number medallion: part of the line, not of the ayah.
-          ? AyahText.word(text: w.text, fontSize: fontSize, isMarker: true)
-          : GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: widget.onTap,
-              onLongPress: () => widget.onWordLongPress(w),
-              // As tall as the line, not as the letters: the strip between
-              // two lines of text belongs to the word above or below it, or a
-              // long press that lands a few pixels off a word silently turns
-              // into a tap on the page.
-              child: SizedBox(
-                height: double.infinity,
-                child: Center(
-                  widthFactor: 1,
-                  child: AyahText.word(
-                    text: w.text,
-                    fontSize: fontSize,
-                    tint: _tintFor(w),
-                  ),
-                ),
+      if (w.isMarker)
+        // The ayah-number medallion: part of the line, not of the ayah.
+        AyahText.word(
+          text: w.text,
+          fontSize: fontSize,
+          isMarker: true,
+          heldBack: widget.isHeldBack?.call(w) ?? false,
+        )
+      else if (widget.isHeldBack?.call(w) ?? false)
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: AyahText.word(
+            text: w.text,
+            fontSize: fontSize,
+            heldBack: true,
+          ),
+        )
+      else
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          onLongPress: () => widget.onWordLongPress(w),
+          // As tall as the line, not as the letters: the strip between
+          // two lines of text belongs to the word above or below it, or a
+          // long press that lands a few pixels off a word silently turns
+          // into a tap on the page.
+          child: SizedBox(
+            height: double.infinity,
+            child: Center(
+              widthFactor: 1,
+              child: AyahText.word(
+                text: w.text,
+                fontSize: fontSize,
+                tint: _tintFor(w),
               ),
             ),
+          ),
+        ),
   ];
 
   WordTint _tintFor(Word w) {
     if (widget.selected?.contains(w) ?? false) return WordTint.selected;
     if (widget.highlighted?.contains(w) ?? false) return WordTint.highlighted;
+    if (widget.isSelected?.call(w) ?? false) return WordTint.ranged;
     return WordTint.none;
   }
 }

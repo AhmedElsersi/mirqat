@@ -24,6 +24,10 @@ enum WordTint {
 
   /// The ayah the reader tapped.
   selected,
+
+  /// Inside the range chosen for a session: marked, but quieter than the
+  /// ayah being recited, which has to stand out from it.
+  ranged,
 }
 
 /// One ayah inside a flowing block, for [AyahText.flowing].
@@ -81,6 +85,7 @@ class AyahText extends StatefulWidget {
   }) : ayahs = null,
        _word = false,
        isMarker = false,
+       heldBack = false,
        tint = WordTint.none;
 
   /// One word of a mushaf page line, byte-for-byte from quran.db.
@@ -93,6 +98,7 @@ class AyahText extends StatefulWidget {
     required this.fontSize,
     this.isMarker = false,
     this.tint = WordTint.none,
+    this.heldBack = false,
     super.key,
   }) : ayahs = null,
        _word = true,
@@ -115,6 +121,7 @@ class AyahText extends StatefulWidget {
        emphasis = AyahEmphasis.current,
        _word = false,
        isMarker = false,
+       heldBack = false,
        tint = WordTint.none;
 
   /// Verbatim ayah text, byte-for-byte from `quran.db`. Never generated, never
@@ -136,6 +143,10 @@ class AyahText extends StatefulWidget {
 
   /// [AyahText.word] only.
   final bool isMarker;
+
+  /// [AyahText.word] only: a word printed on the line but outside what is
+  /// being read. Colour only — the word itself is what quran.db holds.
+  final bool heldBack;
 
   /// [AyahText.word] only.
   final WordTint tint;
@@ -246,10 +257,12 @@ class _AyahTextState extends State<AyahText> {
         // is never truncated (CLAUDE.md A.2 rule 7).
         softWrap: false,
         style: AppTextStyles.mushafWord(fontSize: widget.fontSize).copyWith(
-          color: widget.isMarker ? colors.primary : colors.onSurface,
+          color: (widget.isMarker ? colors.primary : colors.onSurface)
+              .withValues(alpha: widget.heldBack ? 0.32 : 1),
           backgroundColor: switch (widget.tint) {
             WordTint.none => null,
-            WordTint.highlighted => colors.primary.withValues(alpha: 0.14),
+            WordTint.ranged => colors.primary.withValues(alpha: 0.07),
+            WordTint.highlighted => colors.primary.withValues(alpha: 0.2),
             WordTint.selected => colors.primary.withValues(alpha: 0.26),
           },
         ),

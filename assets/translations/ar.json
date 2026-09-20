@@ -136,7 +136,10 @@
     "juz_label": "الجزء {}",
     "hizb_label": "الحزب {}",
     "back": "رجوع",
-    "hint_long_press": "اضغط مطولًا على آية لخياراتها"
+    "hint_long_press": "اضغط مطولًا على آية لخياراتها",
+    "section_end": "انتهت {}",
+    "section_next": "التالي: {}",
+    "section_previous": "السابق: {}"
   },
   "downloads": {
     "section": "الصوت دون إنترنت",

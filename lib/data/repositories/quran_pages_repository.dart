@@ -13,7 +13,7 @@ import '../models/word.dart';
 abstract class QuranPagesRepository {
   Future<Either<Failure, List<Ayah>>> ayahsForPage(int page);
 
-  Future<Either<Failure, PageInfo?>> pageInfo(int page);
+  Future<Either<Failure, PageInfo?>> pageInfo(int page, {int? fromWordId});
 
   Future<Either<Failure, List<JuzInfo>>> juzList();
 
@@ -34,6 +34,8 @@ abstract class QuranPagesRepository {
 
   Future<Either<Failure, int>> pageForAyah(int surahNumber, int ayahNumber);
 
+  Future<Either<Failure, int?>> surahHeadingPage(int surahNumber);
+
   Future<Either<Failure, int>> ayahCount(int surahNumber);
 }
 
@@ -47,8 +49,8 @@ class QuranPagesRepositoryImpl implements QuranPagesRepository {
       _guard(() => _local.ayahsForPage(page));
 
   @override
-  Future<Either<Failure, PageInfo?>> pageInfo(int page) =>
-      _guard(() => _local.pageInfo(page));
+  Future<Either<Failure, PageInfo?>> pageInfo(int page, {int? fromWordId}) =>
+      _guard(() => _local.pageInfo(page, fromWordId: fromWordId));
 
   @override
   Future<Either<Failure, List<JuzInfo>>> juzList() => _guard(_local.juzList);
@@ -81,6 +83,10 @@ class QuranPagesRepositoryImpl implements QuranPagesRepository {
   @override
   Future<Either<Failure, int>> pageForAyah(int surahNumber, int ayahNumber) =>
       _guard(() => _local.pageForAyah(surahNumber, ayahNumber));
+
+  @override
+  Future<Either<Failure, int?>> surahHeadingPage(int surahNumber) =>
+      _guard(() => _local.surahHeadingPage(surahNumber));
 
   @override
   Future<Either<Failure, int>> ayahCount(int surahNumber) =>

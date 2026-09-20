@@ -136,7 +136,10 @@
     "juz_label": "Juz {}",
     "hizb_label": "Hizb {}",
     "back": "Back",
-    "hint_long_press": "Long-press an ayah for its options"
+    "hint_long_press": "Long-press an ayah for its options",
+    "section_end": "End of {}",
+    "section_next": "Next: {}",
+    "section_previous": "Previous: {}"
   },
   "downloads": {
     "section": "Offline audio",

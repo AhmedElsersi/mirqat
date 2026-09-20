@@ -193,4 +193,7 @@ class LocaleKeys {
   static const String settingsHomeViewMushaf = 'settings.home_view_mushaf';
   static const String settingsHomeViewMushafHint =
       'settings.home_view_mushaf_hint';
+  static const String mushafSectionEnd = 'mushaf.section_end';
+  static const String mushafSectionNext = 'mushaf.section_next';
+  static const String mushafSectionPrevious = 'mushaf.section_previous';
 }
