@@ -102,6 +102,7 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
     required AdminFilePicker filePicker,
     http.Client? client,
     this.url = kAppInfoUrl,
+    this.bundledCopy,
   }) : _pages = pagesPublisher,
        _r2 = r2Client,
        _assets = assetReader,
@@ -115,6 +116,12 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
   final AdminFilePicker _files;
   final http.Client _client;
   final String url;
+
+  /// The app's own bundled `app.json`, in the checkout the tool was started
+  /// from. Written after a publish, so that a fresh install — offline, before
+  /// its first fetch — starts from the words that are live. Null when the tool
+  /// does not know where the checkout is.
+  final File? bundledCopy;
 
   /// Starts from what is live, so that an edit is an edit of what people are
   /// reading now and not of whatever this checkout happens to bundle. Falls
@@ -246,6 +253,7 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
         state.draft.toJson(),
         message: _messageFor(state.published, state.draft, raised),
       );
+      final String bundled = await _writeBundledCopy();
       emit(
         state.copyWith(
           busy: false,
@@ -254,12 +262,30 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
           message:
               'Published${commit.isEmpty ? '' : ' ($commit)'}. The app picks it '
               'up on its next launch; Pages can take a minute to serve it. '
-              'Copy the JSON into assets/data/app.json so that a fresh install '
-              'has it too.',
+              '$bundled',
         ),
       );
     } on AppException catch (e) {
       emit(state.copyWith(busy: false, error: e.message));
+    }
+  }
+
+  /// Keeps the bundled copy in step with what was just published, and says
+  /// what happened in a sentence. Never a failure of the publish: the file is
+  /// live either way, and this only saves a copy-and-paste.
+  Future<String> _writeBundledCopy() async {
+    final File? file = bundledCopy;
+    if (file == null) {
+      return 'Copy the JSON into assets/data/app.json so that a fresh install '
+          'has it too.';
+    }
+    try {
+      await file.writeAsString(json, flush: true);
+      return 'Also written to ${file.path} — commit it, so that a fresh '
+          'install starts from the same words.';
+    } on FileSystemException catch (e) {
+      return 'Could not write ${file.path} (${e.message}); copy the JSON into '
+          'it by hand.';
     }
   }
 

@@ -84,6 +84,7 @@ workflow. Each stage ends with screenshots for the owner's approval.
 | 3 | Home: ajzaa tab, view mode in Settings, history, last position | done — `ui/3-home`, awaiting the owner's look. A juz opens the mushaf at its first page; "one juz at a time" as its own view is stage 4 |
 | 4 | Reading + session merged; cross-surah sessions; player screen removed | done — `ui/4-reading-session` (three commits: engine, sections, session), awaiting the owner's look |
 | 5 | Settings cards, Session settings page, About / Goal / Developer / How to use, onboarding | done — `ui/5-settings-about`, awaiting the owner's look |
+| 7 | The text-size slider, back and meaningful; the admin keeps the bundled `app.json` in step | done — `ui/7-text-size` |
 | 6 | `app.json`, version + update dialog, admin editor | done — `ui/6-app-json-updates` (two commits: the app, the admin editor), awaiting the owner's look. **`app.json` is not published yet** — the app runs on its bundled copy until it is |
 
 ## Stage 4 — what was decided while building it
@@ -186,4 +187,26 @@ workflow. Each stage ends with screenshots for the owner's approval.
 - When version 1 is through Play review and a second version is uploaded:
   set Android **latest** to it. Set a **minimum** only when an old version
   must genuinely stop being used.
+
+## Stage 7 — the text size, again
+
+The owner asked for the slider back. It could not simply be put back: in page
+layout a line is as large as the page is wide, which is why it had stopped
+doing anything. So it now means something in page layout:
+
+- **The default (24) is the mushaf as printed**, line for line.
+- **Smaller** keeps the printed lines and sets them smaller.
+- **Larger** re-breaks the page's lines at the bigger size and lets the page
+  scroll, which the owner had said was acceptable ("it's okay to make the page
+  scrollable if the text gets bigger"). Runs of ordinary lines are re-broken
+  together into justified rows; runs of centred lines — the two opening pages
+  — together into centred rows; a heading stays put; a word and its ayah
+  marker are never parted. Checked over all 604 pages: no word lost, added or
+  moved.
+- The Settings control previews a real ayah in the mushaf face and says in a
+  sentence what "larger" does to a page.
+
+The admin tool, started through `run_admin.sh`, now also writes what it
+publishes into `assets/data/app.json`, so the bundled copy cannot drift from
+the live one.
 

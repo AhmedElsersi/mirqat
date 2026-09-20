@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../core/state/load_status.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/ayah.dart';
 import '../../../data/models/reciter.dart';
 import '../../../services/app_version_service.dart';
 
@@ -12,6 +13,7 @@ class SettingsState extends Equatable {
     this.reciters = const <Reciter>[],
     this.settingsRead = false,
     this.appVersion,
+    this.previewAyah,
     this.errorMessage,
   });
 
@@ -29,6 +31,11 @@ class SettingsState extends Equatable {
   /// has been read, and where the platform will not say.
   final InstalledVersion? appVersion;
 
+  /// A real ayah, so the text-size control previews the mushaf face at the
+  /// chosen size rather than approximating it with UI text. Null until the
+  /// catalog has been read, or if that fails.
+  final Ayah? previewAyah;
+
   final String? errorMessage;
 
   SettingsState copyWith({
@@ -37,6 +44,7 @@ class SettingsState extends Equatable {
     List<Reciter>? reciters,
     bool? settingsRead,
     InstalledVersion? appVersion,
+    Ayah? previewAyah,
     String? errorMessage,
   }) => SettingsState(
     status: status ?? this.status,
@@ -44,6 +52,7 @@ class SettingsState extends Equatable {
     reciters: reciters ?? this.reciters,
     settingsRead: settingsRead ?? this.settingsRead,
     appVersion: appVersion ?? this.appVersion,
+    previewAyah: previewAyah ?? this.previewAyah,
     errorMessage: errorMessage,
   );
 
@@ -55,6 +64,7 @@ class SettingsState extends Equatable {
     settingsRead,
     appVersion?.version,
     appVersion?.buildNumber,
+    previewAyah,
     errorMessage,
   ];
 }

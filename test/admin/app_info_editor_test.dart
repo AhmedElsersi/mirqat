@@ -187,6 +187,7 @@ void main() {
       String? live,
       String? image,
       List<http.Request>? r2,
+      File? bundledCopy,
     }) {
       github = <http.Request>[];
       final AppInfoEditorCubit cubit = AppInfoEditorCubit(
@@ -213,6 +214,7 @@ void main() {
         ),
         assetReader: _Bundle(),
         filePicker: _Picker(image),
+        bundledCopy: bundledCopy,
         client: MockClient(
           (_) async => live == null
               ? http.Response('', 404)
@@ -287,6 +289,75 @@ void main() {
         // Published is the new baseline: nothing is left to publish.
         expect(cubit.state.dirty, isFalse);
         expect(cubit.state.message, contains('abc123'));
+      },
+    );
+
+    test(
+      'what is published is also written into the app\'s bundled copy',
+      () async {
+        final Directory dir = Directory.systemTemp.createTempSync('bundle');
+        addTearDown(() => dir.deleteSync(recursive: true));
+        final File bundled = File('${dir.path}/app.json')
+          ..writeAsStringSync('{}');
+        final AppInfoEditorCubit cubit = editor(
+          live: jsonEncode(good.toJson()),
+          bundledCopy: bundled,
+        );
+        await cubit.load();
+        cubit.edit(
+          (AppInfo i) => i.copyWith(
+            goal: const LocalizedText(ar: 'هدف', en: 'A goal'),
+          ),
+        );
+
+        await cubit.publish();
+
+        // Byte for byte what went to the site.
+        expect(AppInfo.parse(bundled.readAsStringSync()), cubit.state.draft);
+        expect(jsonDecode(bundled.readAsStringSync()), published());
+        expect(cubit.state.message, contains(bundled.path));
+      },
+    );
+
+    test('a refused publish leaves the bundled copy alone', () async {
+      final Directory dir = Directory.systemTemp.createTempSync('bundle');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final File bundled = File('${dir.path}/app.json')
+        ..writeAsStringSync('{}');
+      final AppInfoEditorCubit cubit = editor(
+        live: jsonEncode(good.toJson()),
+        bundledCopy: bundled,
+      );
+      await cubit.load();
+      cubit.edit((_) => withAndroid(storeUrl: ''));
+
+      await cubit.publish();
+
+      expect(bundled.readAsStringSync(), '{}');
+    });
+
+    test(
+      'a bundled copy that cannot be written does not fail the publish',
+      () async {
+        final AppInfoEditorCubit cubit = editor(
+          live: jsonEncode(good.toJson()),
+          bundledCopy: File('/nonexistent-dir/for/sure/app.json'),
+        );
+        await cubit.load();
+        cubit.edit(
+          (AppInfo i) => i.copyWith(
+            goal: const LocalizedText(ar: 'هدف', en: 'A goal'),
+          ),
+        );
+
+        await cubit.publish();
+
+        expect(
+          github.where((http.Request r) => r.method == 'PUT'),
+          hasLength(1),
+        );
+        expect(cubit.state.error, isNull);
+        expect(cubit.state.message, contains('by hand'));
       },
     );
 

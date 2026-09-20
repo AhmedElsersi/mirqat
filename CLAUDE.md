@@ -121,7 +121,13 @@ lib/
   for cubits.
 - **Routing:** `GoRouter`, typed args via `state.extra`.
 - **Sizing:** `flutter_screenutil` (`.w / .h / .r / .sp`) for all dimensions. Mushaf pages
-  compute their own font size to fit and are the one exception.
+  compute their own font size to fit and are the one exception: at the default text size
+  a printed line exactly fills the page's width. The reader's text-size setting is a
+  multiple of that. Smaller, the printed lines are kept and set smaller. Larger, no
+  printed line fits, so `reflowPage` re-breaks the page's lines at the bigger size and the
+  page scrolls — **where the lines break changes and nothing else does**: the same `Word`
+  objects, in the same order, on the same page, a word and its ayah marker never parted
+  (A.2 rule 1 is about the bytes, and they are untouched).
 - **Colors:** `Theme.of(context)` / `AppColors` tokens only — no raw `Colors.*` literals.
 - **Strings:** `easy_localization`, both `ar.json` and `en.json` populated with accurate
   Arabic. No hardcoded user-facing strings.

@@ -5,7 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/error/failures.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/ayah.dart';
 import '../../../data/models/reciter.dart';
+import '../../../data/models/surah.dart';
+import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../services/app_version_service.dart';
@@ -18,8 +21,10 @@ class SettingsCubit extends Cubit<SettingsState> {
   SettingsCubit({
     required SettingsRepository settingsRepository,
     required ReciterCatalog reciterCatalog,
+    QuranRepository? quranRepository,
     AppVersionService? appVersionService,
   }) : _settings = settingsRepository,
+       _quran = quranRepository,
        _appVersion = appVersionService,
        _reciters = reciterCatalog,
        super(const SettingsState()) {
@@ -42,6 +47,10 @@ class SettingsCubit extends Cubit<SettingsState> {
   final SettingsRepository _settings;
   final ReciterCatalog _reciters;
 
+  /// For the text-size preview's sample ayah. Optional: without it the
+  /// control works and simply shows no sample.
+  final QuranRepository? _quran;
+
   /// Optional, so that the many tests of the settings themselves need no
   /// platform to ask.
   final AppVersionService? _appVersion;
@@ -63,8 +72,10 @@ class SettingsCubit extends Cubit<SettingsState> {
       ),
     );
 
-    // Off to the side: a line of small print must not hold the settings up.
+    // Off to the side: a line of small print, and a sample line for the text
+    // size, must not hold the settings up.
     unawaited(_readVersion());
+    unawaited(_loadPreviewAyah());
 
     final recitersResult = await _reciters.reciters();
     recitersResult.fold(
@@ -83,6 +94,28 @@ class SettingsCubit extends Cubit<SettingsState> {
         ),
       ),
     );
+  }
+
+  /// The text-size control previews the real mushaf face on real scripture:
+  /// ayah 1 of the first surah in the catalog, whichever that is
+  /// (CLAUDE.md A.2 rule 2). A preview failure is not worth surfacing — the
+  /// control still works, it simply renders without a sample.
+  Future<void> _loadPreviewAyah() async {
+    final QuranRepository? quran = _quran;
+    if (quran == null || state.previewAyah != null) return;
+    final List<Surah> surahs = (await quran.getSurahs()).getOrElse(
+      () => const <Surah>[],
+    );
+    if (surahs.isEmpty) return;
+
+    final List<Ayah> ayahs = (await quran.getAyahRange(
+      surahs.first.number,
+      startAyah: 1,
+      endAyah: 1,
+    )).getOrElse(() => const <Ayah>[]);
+    if (ayahs.isEmpty || isClosed) return;
+
+    emit(state.copyWith(previewAyah: ayahs.first));
   }
 
   Future<void> _readVersion() async {

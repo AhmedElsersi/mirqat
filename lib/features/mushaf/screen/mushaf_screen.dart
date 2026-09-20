@@ -9,6 +9,7 @@ import '../../../domain/entities/playback_unit.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/widgets/islamic_frame.dart';
+import '../../../data/models/app_settings.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
 import '../../session/cubit/session_cubit.dart';
@@ -16,6 +17,7 @@ import '../../session/cubit/session_state.dart';
 import '../../session/default_range.dart';
 import '../../session/widgets/session_bar.dart';
 import '../../session/widgets/session_sheet.dart';
+import '../../settings/cubit/settings_cubit.dart';
 import '../../surah_list/widgets/error_view.dart';
 import '../cubit/mushaf_cubit.dart';
 import '../cubit/mushaf_page.dart';
@@ -501,9 +503,18 @@ class _PageSlot extends StatelessWidget {
               (SessionCubit c) => c.state.markedRange,
             );
 
+        // The reader's text size, against the size that fits a printed line
+        // to the page exactly.
+        final double textScale = context.select<SettingsCubit, double>(
+          (SettingsCubit c) =>
+              c.state.settings.arabicFontSize /
+              AppSettings.defaultArabicFontSize,
+        );
+
         return MushafPageView(
           page: page,
           linesPerFullPage: state.linesPerFullPage,
+          textScale: textScale,
           highlighted: state.highlighted,
           selected: state.selected,
           isSelected: marked == null

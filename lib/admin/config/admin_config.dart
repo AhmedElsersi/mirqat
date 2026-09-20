@@ -18,6 +18,7 @@ class AdminConfig {
     this.githubRepo = '',
     this.manifestPath = 'manifest.json',
     this.appInfoPath = 'app.json',
+    this.projectDir = '',
   });
 
   /// Reads the compile-time environment. Every field is required; see
@@ -34,6 +35,7 @@ class AdminConfig {
     githubRepo: _githubRepo,
     manifestPath: _manifestPath.isEmpty ? 'manifest.json' : _manifestPath,
     appInfoPath: _appInfoPath.isEmpty ? 'app.json' : _appInfoPath,
+    projectDir: _projectDir,
   );
 
   final String accountId;
@@ -69,6 +71,11 @@ class AdminConfig {
   /// where the app looks for it.
   final String appInfoPath;
 
+  /// The checkout the tool was started from, so that what it publishes can
+  /// also be written into the app's own bundled copies. Not a credential, and
+  /// optional: without it the tool says what to copy where.
+  final String projectDir;
+
   /// Whether the manifest can be published from here.
   bool get canPublishManifest =>
       githubToken.isNotEmpty && githubRepo.contains('/');
@@ -88,6 +95,7 @@ class AdminConfig {
   static const String _appInfoPath = String.fromEnvironment(
     'GITHUB_APP_INFO_PATH',
   );
+  static const String _projectDir = String.fromEnvironment('PROJECT_DIR');
 
   /// The `--dart-define` names that were not supplied, in the order
   /// `admin.env` lists them. Empty means the tool can start.

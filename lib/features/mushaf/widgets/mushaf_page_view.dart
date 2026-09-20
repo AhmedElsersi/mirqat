@@ -10,6 +10,7 @@ import '../../../core/widgets/ayah_text.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/word.dart';
 import '../cubit/mushaf_page.dart';
+import 'page_reflow.dart';
 
 /// One mushaf page, fitted to the space it is given. It never scrolls.
 ///
@@ -31,6 +32,7 @@ class MushafPageView extends StatefulWidget {
     this.onTap,
     this.isSelected,
     this.isHeldBack,
+    this.textScale = 1,
     super.key,
   });
 
@@ -55,6 +57,13 @@ class MushafPageView extends StatefulWidget {
   /// surah or juz being read — printed, but not part of it, and drawn
   /// fainter. Such a word takes no long press.
   final bool Function(Word word)? isHeldBack;
+
+  /// The reader's text size, as a multiple of the size at which a printed
+  /// line exactly fills the page. 1 is the mushaf as it is printed. Below 1
+  /// the same lines are set smaller. Above 1 no printed line fits any more,
+  /// so the page's lines are re-broken at the larger size (see [reflowPage])
+  /// and the page scrolls.
+  final double textScale;
 
   @override
   State<MushafPageView> createState() => _MushafPageViewState();
@@ -125,18 +134,24 @@ class _MushafPageViewState extends State<MushafPageView> {
           final double width = box.maxWidth - insets.horizontal;
           final double room = box.maxHeight - insets.vertical;
 
-          final int slots = math.max(
-            widget.linesPerFullPage,
-            widget.page.lines.length,
-          );
+          // The width decides the size of the text: at a scale of 1 a line
+          // is as large as it can be and still fit across the page. The
+          // height never squeezes it. Where the page is taller than the
+          // glass — a short phone, a tablet on its side, a thick frame, a
+          // reader who has asked for larger text — the page scrolls, frame
+          // and all, the way a printed page larger than the window would.
+          // Where there is room to spare, the lines spread to fill it.
+          final double fontSize = _fontSizeFor(width) * widget.textScale;
+          final List<PageLine> lines = widget.textScale > 1
+              ? reflowPage(
+                  lines: widget.page.lines,
+                  maxWidth: width * _safety,
+                  gap: fontSize * _minGapEm,
+                  widthOf: (Word w) => _width(w) * fontSize,
+                )
+              : widget.page.lines;
 
-          // The width alone decides the size of the text: a line is as large
-          // as it can be and still fit across the page. The height never
-          // squeezes it. Where the page is taller than the glass — a short
-          // phone, a tablet on its side, a thick frame — the page scrolls,
-          // frame and all, the way a printed page larger than the window
-          // would. Where there is room to spare, the lines spread to fill it.
-          final double fontSize = _fontSizeFor(width);
+          final int slots = math.max(widget.linesPerFullPage, lines.length);
           final double pitch = math.max(room / slots, fontSize * _lineHeight);
 
           final Widget page = IslamicFrame(
@@ -152,7 +167,7 @@ class _MushafPageViewState extends State<MushafPageView> {
                     ? MainAxisAlignment.start
                     : MainAxisAlignment.center,
                 children: <Widget>[
-                  for (final PageLine line in widget.page.lines)
+                  for (final PageLine line in lines)
                     SizedBox(
                       height: pitch,
                       width: width,

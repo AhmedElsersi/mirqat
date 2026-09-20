@@ -253,4 +253,6 @@ class LocaleKeys {
   static const String updateNow = 'update.now';
   static const String updateWhatsNew = 'update.whats_new';
   static const String settingsVersion = 'settings.version';
+  static const String settingsArabicFontSizeHint =
+      'settings.arabic_font_size_hint';
 }

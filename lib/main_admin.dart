@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,6 +14,7 @@ import 'admin/services/ffmpeg_runner.dart';
 import 'admin/services/pages_publisher.dart';
 import 'admin/services/r2_client.dart';
 import 'core/constants/app_constants.dart';
+import 'core/constants/asset_paths.dart';
 import 'core/theme/app_theme.dart';
 import 'data/datasources/asset_reader.dart';
 import 'data/datasources/bundle_asset_reader.dart';
@@ -86,6 +89,9 @@ class AdminApp extends StatelessWidget {
                 r2Client: R2Client(adminConfig: config),
                 assetReader: assets,
                 filePicker: const NativeAdminFilePicker(),
+                bundledCopy: config.projectDir.isEmpty
+                    ? null
+                    : File('${config.projectDir}/${AssetPaths.bundledAppInfo}'),
               )..load(),
               child: const AppInfoEditorScreen(),
             ),

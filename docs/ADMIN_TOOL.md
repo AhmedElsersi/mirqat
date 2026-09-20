@@ -162,9 +162,10 @@ until that version is typed into **Confirm**. Lowering or clearing a minimum
 only ever lets more people in, and needs nothing.
 
 After publishing, the app picks the file up on its next launch (Pages can take a
-minute to serve it). **Copy JSON** puts the file on the clipboard: paste it into
-`assets/data/app.json` so that a fresh install, offline, starts from the same
-words.
+minute to serve it). Started through `./run_admin.sh`, the tool also writes the
+same JSON into this checkout's `assets/data/app.json` — **commit that file**, so
+that a fresh install, offline, starts from the same words. (**Copy JSON** puts
+it on the clipboard, for a tool started some other way.)
 
 ## What it cannot do
 

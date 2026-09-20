@@ -233,6 +233,7 @@ Future<void> configureDependencies() async {
     () => SettingsCubit(
       settingsRepository: sl<SettingsRepository>(),
       reciterCatalog: sl<ReciterCatalog>(),
+      quranRepository: sl<QuranRepository>(),
       appVersionService: sl<AppVersionService>(),
     ),
   );

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
+import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
+import 'package:mirqat/core/widgets/ayah_text.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mirqat/core/widgets/reciter_avatar.dart';
 import 'package:mirqat/core/widgets/session_controls.dart';
 import 'package:mirqat/features/progress/screen/progress_screen.dart';
@@ -152,6 +156,42 @@ void main() {
       expect(find.byType(SettingsScreen), findsOneWidget);
     });
 
+    testWidgets('the text size is set on a real ayah, and the choice reaches '
+        'the page', (WidgetTester tester) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+      await reveal(tester, find.byType(Slider));
+
+      // The sample is scripture in the mushaf face, not interface text.
+      expect(
+        find.descendant(
+          of: find.byType(SettingsCard).first,
+          matching: find.byType(AyahText),
+        ),
+        findsOneWidget,
+      );
+
+      final SettingsCubit cubit = BlocProvider.of<SettingsCubit>(
+        tester.element(find.byType(SettingsScreen)),
+      );
+      await tester.runAsync(() async {
+        await cubit.setArabicFontSize(36);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await AppHarness.settle(tester);
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 36);
+
+      // A restart, then a page: it is drawn at one and a half times the size
+      // that fits a printed line.
+      await harness.pumpApp(tester);
+      await AppHarness.openReading(tester, find.byType(SurahRow).first);
+      expect(
+        tester.widget<MushafPageView>(find.byType(MushafPageView)).textScale,
+        36 / AppSettings.defaultArabicFontSize,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('every group sits in a container of its own', (
       WidgetTester tester,
     ) async {
@@ -166,7 +206,10 @@ void main() {
         'الجلسة',
         'عن التطبيق',
       ]) {
-        await reveal(tester, find.widgetWithText(SettingsCard, title).first);
+        // By its heading: a card further down is not built until it is
+        // scrolled to, and `.first` of nothing throws instead of scrolling.
+        await reveal(tester, find.text(title));
+        expect(find.widgetWithText(SettingsCard, title), findsWidgets);
         seen.add(title);
         expect(tester.takeException(), isNull, reason: title);
       }

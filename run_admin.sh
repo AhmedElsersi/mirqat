@@ -51,7 +51,12 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 GITHUB_REPO="${GITHUB_REPO:-}"
 GITHUB_MANIFEST_PATH="${GITHUB_MANIFEST_PATH:-manifest.json}"
 
+# Where this checkout is, so that what the tool publishes — app.json — is also
+# written into the app's bundled copy and the two never drift.
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 exec flutter run -d macos -t lib/main_admin.dart "$@" \
+  --dart-define=PROJECT_DIR="$PROJECT_DIR" \
   --dart-define=GITHUB_TOKEN="$GITHUB_TOKEN" \
   --dart-define=GITHUB_REPO="$GITHUB_REPO" \
   --dart-define=GITHUB_MANIFEST_PATH="$GITHUB_MANIFEST_PATH" \
