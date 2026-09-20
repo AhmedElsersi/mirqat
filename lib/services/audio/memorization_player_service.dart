@@ -14,12 +14,21 @@ import 'session_preambles.dart';
 /// What is loaded into the player: enough to name it on a lock screen.
 class LoadedSession {
   const LoadedSession({
-    required this.surah,
+    required this.surahs,
     required this.reciter,
     required this.plan,
   });
 
-  final Surah surah;
+  /// Every surah the session recites from, in order. One, usually.
+  final List<Surah> surahs;
+
+  /// The surah the session starts in.
+  Surah get surah => surahs.first;
+
+  /// The surah [number] names, for a unit that says which one it is in.
+  Surah surahOf(int number) =>
+      surahs.firstWhere((Surah s) => s.number == number, orElse: () => surah);
+
   final Reciter reciter;
   final SessionPlan plan;
 }
@@ -53,10 +62,10 @@ class MemorizationPlayerService {
   /// is a session.
   Stream<LoadedSession?> get sessionStream => _sessions.stream;
 
-  /// Where this session's audio comes from — bundled, downloaded or streamed.
-  /// Settled by [load], because resolution has to be synchronous once the
-  /// queue is being built.
-  SurahAudio? _sources;
+  /// Where this session's audio comes from — bundled, downloaded or streamed
+  /// — surah by surah. Settled by [load], because resolution has to be
+  /// synchronous once the queue is being built.
+  Map<int, SurahAudio> _sources = const <int, SurahAudio>{};
 
   PlaybackQueue? get queue => _queue;
 
@@ -90,21 +99,43 @@ class MemorizationPlayerService {
 
   /// Builds the queue for [plan] and hands it to the player. Nothing starts
   /// until [play] is called.
+  ///
+  /// [surahs] is every surah the plan recites from, in order. [startAtUnit]
+  /// is where to pick the plan up — 0 for a session from the top, and the
+  /// index of an ayah play for one carried over from a session whose settings
+  /// changed under it.
   Future<void> load({
     required SessionPlan plan,
     required Reciter reciter,
-    required Surah surah,
+    required List<Surah> surahs,
+    int startAtUnit = 0,
   }) async {
-    if (!reciter.hasSurah(surah.number)) {
-      throw SessionConfigException(
-        'Reciter "${reciter.id}" has no audio for surah ${surah.number}.',
-      );
+    final List<int> needed = plan.surahNumbers;
+    for (final int number in needed) {
+      if (!surahs.any((Surah s) => s.number == number)) {
+        throw SessionConfigException(
+          'The session recites from surah $number, but it was not handed to '
+          'the player.',
+        );
+      }
+      if (!reciter.hasSurah(number)) {
+        throw SessionConfigException(
+          'Reciter "${reciter.id}" has no audio for surah $number.',
+        );
+      }
     }
+    final List<Surah> inPlan = <Surah>[
+      for (final int number in needed)
+        surahs.firstWhere((Surah s) => s.number == number),
+    ];
 
-    _sources = await _resolver.forSurah(reciter: reciter, surah: surah);
+    _sources = <int, SurahAudio>{
+      for (final Surah surah in inPlan)
+        surah.number: await _resolver.forSurah(reciter: reciter, surah: surah),
+    };
 
     final SessionPreambles preambles = SessionPreambles.forSession(
-      surah: surah,
+      surah: inPlan.first,
       reciter: reciter,
       istiadhahEnabled: plan.config.playIstiadhah,
     );
@@ -113,6 +144,10 @@ class MemorizationPlayerService {
       plan: plan,
       includeIstiadhah: preambles.istiadhah,
       includeBismillah: preambles.bismillah,
+      basmalaBeforeSurahs: SessionPreambles.forLaterSurahs(
+        surahs: inPlan.skip(1),
+        reciter: reciter,
+      ),
     );
     _queue = queue;
     _lastUnit = null;
@@ -123,34 +158,36 @@ class MemorizationPlayerService {
     await _player.setAudioSources(
       <AudioSource>[
         for (final QueueEntry entry in queue.entries)
-          _sourceFor(entry, reciter: reciter),
+          _sourceFor(entry, reciter: reciter, firstSurah: inPlan.first.number),
       ],
-      initialIndex: 0,
+      initialIndex: queue.indexOfUnit(startAtUnit),
       initialPosition: Duration.zero,
     );
     await _player.setSpeed(plan.config.playbackSpeed);
-    _sessions.add(LoadedSession(surah: surah, reciter: reciter, plan: plan));
+    _sessions.add(LoadedSession(surahs: inPlan, reciter: reciter, plan: plan));
   }
 
-  AudioSource _sourceFor(QueueEntry entry, {required Reciter reciter}) {
-    final SurahAudio sources = _requireSources;
-    return switch (entry) {
-      AyahQueueEntry(unit: final PlaybackUnit unit) => sources.sourceFor(
-        unit.ayahNumber,
-      ),
-      SpacerQueueEntry() => sources.spacer(),
-      PreambleQueueEntry(kind: PreambleKind.istiadhah) => _requirePreamble(
-        sources.istiadhah(),
-        reciter: reciter,
-        flag: 'hasIstiadhah',
-      ),
-      PreambleQueueEntry(kind: PreambleKind.bismillah) => _requirePreamble(
-        sources.basmala(),
+  AudioSource _sourceFor(
+    QueueEntry entry, {
+    required Reciter reciter,
+    required int firstSurah,
+  }) => switch (entry) {
+    AyahQueueEntry(unit: final PlaybackUnit unit) => _sourcesOf(
+      unit.surahNumber,
+    ).sourceFor(unit.ayahNumber),
+    SpacerQueueEntry() => _sourcesOf(firstSurah).spacer(),
+    PreambleQueueEntry(kind: PreambleKind.istiadhah) => _requirePreamble(
+      _sourcesOf(firstSurah).istiadhah(),
+      reciter: reciter,
+      flag: 'hasIstiadhah',
+    ),
+    PreambleQueueEntry(kind: PreambleKind.bismillah, surah: final int? surah) =>
+      _requirePreamble(
+        _sourcesOf(surah ?? firstSurah).basmala(),
         reciter: reciter,
         flag: 'hasBismillah',
       ),
-    };
-  }
+  };
 
   /// [SessionPreambles] only queues a preamble whose flag is set, and the
   /// resolver returns a source for exactly those, so this is unreachable in a
@@ -170,11 +207,13 @@ class MemorizationPlayerService {
     );
   }
 
-  SurahAudio get _requireSources {
-    final SurahAudio? sources = _sources;
+  SurahAudio _sourcesOf(int surah) {
+    final SurahAudio? sources = _sources[surah];
     if (sources == null) {
-      throw const SessionConfigException(
-        'The player was used before load() was called.',
+      throw SessionConfigException(
+        _sources.isEmpty
+            ? 'The player was used before load() was called.'
+            : 'No audio was resolved for surah $surah.',
       );
     }
     return sources;
@@ -187,11 +226,12 @@ class MemorizationPlayerService {
   /// fail for want of a CDN, so if one of these did, the missing piece was
   /// the network. False before [load] has resolved anything.
   bool get streamsAnyAyah {
-    final SurahAudio? sources = _sources;
     final PlaybackQueue? queue = _queue;
-    if (sources == null || queue == null) return false;
+    if (queue == null) return false;
     return queue.entries.whereType<AyahQueueEntry>().any(
-      (AyahQueueEntry entry) => !sources.isLocal(entry.unit.ayahNumber),
+      (AyahQueueEntry entry) =>
+          !(_sources[entry.unit.surahNumber]?.isLocal(entry.unit.ayahNumber) ??
+              true),
     );
   }
 

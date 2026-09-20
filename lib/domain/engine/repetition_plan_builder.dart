@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
+import '../entities/ayah_ref.dart';
 import '../entities/playback_unit.dart';
 import '../entities/plan_step.dart';
 import '../entities/session_config.dart';
@@ -18,18 +19,25 @@ class RepetitionPlanBuilder {
   /// Builds the plan, or a [SessionConfigFailure] describing why the config is
   /// unusable.
   ///
-  /// [surahAyahCount] comes from the catalog — the range is never checked
-  /// against a hardcoded constant (CLAUDE.md A.2 rule 2).
+  /// The ayah counts come from the catalog — the range is never checked
+  /// against a hardcoded constant (CLAUDE.md A.2 rule 2). A session inside one
+  /// surah passes [surahAyahCount]; one that runs on into later surahs passes
+  /// [ayahCounts], surah number to ayah count, for every surah it touches.
   Either<Failure, SessionPlan> build(
     SessionConfig config, {
-    required int surahAyahCount,
+    int? surahAyahCount,
+    Map<int, int>? ayahCounts,
   }) {
-    final String? error = _validate(config, surahAyahCount);
+    final Map<int, int> counts = <int, int>{
+      config.surahNumber: ?surahAyahCount,
+      ...?ayahCounts,
+    };
+    final String? error = _validate(config, counts);
     if (error != null) {
       return Left<Failure, SessionPlan>(SessionConfigFailure(error));
     }
 
-    final List<PlanStep> steps = _buildSteps(config);
+    final List<PlanStep> steps = _buildSteps(config, rangeOf(config, counts));
     return Right<Failure, SessionPlan>(
       SessionPlan(config: config, steps: steps, units: flatten(steps, config)),
     );
@@ -38,27 +46,70 @@ class RepetitionPlanBuilder {
   /// The throwing form, for call sites that have already validated the config.
   SessionPlan buildOrThrow(
     SessionConfig config, {
-    required int surahAyahCount,
-  }) => build(config, surahAyahCount: surahAyahCount).fold(
-    (Failure f) => throw SessionConfigException(f.message),
-    (SessionPlan plan) => plan,
-  );
+    int? surahAyahCount,
+    Map<int, int>? ayahCounts,
+  }) => build(config, surahAyahCount: surahAyahCount, ayahCounts: ayahCounts)
+      .fold(
+        (Failure f) => throw SessionConfigException(f.message),
+        (SessionPlan plan) => plan,
+      );
 
-  String? _validate(SessionConfig config, int surahAyahCount) {
-    if (surahAyahCount < 1) {
-      return 'Surah ${config.surahNumber} reports $surahAyahCount ayahs, so no '
-          'session can be built from it.';
+  /// Every ayah of the range, in mushaf order: the rest of the first surah,
+  /// the whole of any surah between, and the last surah up to the end ayah.
+  ///
+  /// A surah's basmala is not in here and never will be — it is not an ayah
+  /// (except where the catalog numbers it as one, and then it is simply
+  /// ayah 1). The queue plays it as a preamble ahead of the surah.
+  static List<AyahRef> rangeOf(SessionConfig config, Map<int, int> ayahCounts) {
+    final List<AyahRef> range = <AyahRef>[];
+    for (int s = config.surahNumber; s <= config.endSurahNumber; s++) {
+      final int first = s == config.surahNumber ? config.startAyah : 1;
+      final int last = s == config.endSurahNumber
+          ? config.endAyah
+          : ayahCounts[s]!;
+      for (int a = first; a <= last; a++) {
+        range.add(AyahRef(s, a));
+      }
+    }
+    return List<AyahRef>.unmodifiable(range);
+  }
+
+  String? _validate(SessionConfig config, Map<int, int> ayahCounts) {
+    if (config.endSurahNumber < config.surahNumber) {
+      return 'The range runs backwards: it starts in surah '
+          '${config.surahNumber} and ends in surah ${config.endSurahNumber}. '
+          'A session only ever runs forward.';
+    }
+    for (int s = config.surahNumber; s <= config.endSurahNumber; s++) {
+      final int? count = ayahCounts[s];
+      if (count == null) {
+        return 'No ayah count was supplied for surah $s, which the range '
+            '${config.start}..${config.end} runs through.';
+      }
+      if (count < 1) {
+        return 'Surah $s reports $count ayahs, so no session can be built '
+            'from it.';
+      }
     }
     if (config.startAyah < 1) {
       return 'startAyah must be at least 1, got ${config.startAyah}.';
     }
-    if (config.startAyah > config.endAyah) {
+    if (config.endAyah < 1) {
+      return 'endAyah must be at least 1, got ${config.endAyah}.';
+    }
+    if (!config.spansSurahs && config.startAyah > config.endAyah) {
       return 'Ayah range is inverted: startAyah ${config.startAyah} is after '
           'endAyah ${config.endAyah}.';
     }
-    if (config.endAyah > surahAyahCount) {
+    if (config.startAyah > ayahCounts[config.surahNumber]!) {
+      return 'Ayah range ${config.start}..${config.end} starts outside surah '
+          '${config.surahNumber}, which has '
+          '${ayahCounts[config.surahNumber]} ayahs.';
+    }
+    if (config.endAyah > ayahCounts[config.endSurahNumber]!) {
       return 'Ayah range ${config.startAyah}..${config.endAyah} is outside '
-          'surah ${config.surahNumber}, which has $surahAyahCount ayahs.';
+          'surah ${config.endSurahNumber}, which has '
+          '${ayahCounts[config.endSurahNumber]} ayahs.';
     }
     if (config.repeatCount < SessionConfig.minRepeatCount ||
         config.repeatCount > SessionConfig.maxRepeatCount) {
@@ -98,7 +149,7 @@ class RepetitionPlanBuilder {
   ///
   /// The connect step after the first learn step is never emitted — joining a
   /// single ayah to nothing is a no-op.
-  List<PlanStep> _buildSteps(SessionConfig config) {
+  List<PlanStep> _buildSteps(SessionConfig config, List<AyahRef> range) {
     final int n = config.repeatCount;
     final List<PlanStep> steps = <PlanStep>[];
 
@@ -107,25 +158,26 @@ class RepetitionPlanBuilder {
     // there are no per-ayah drill steps to emit. One step, and `flatten` turns
     // its `repeats` into the repeated passes.
     if (config.connectMode == ConnectMode.continuous) {
-      steps.add(
-        ConnectStep(from: config.startAyah, to: config.endAyah, repeats: n),
-      );
-      if (config.finalFullPass && config.endAyah > config.startAyah) {
-        steps.add(
-          ConnectStep(from: config.startAyah, to: config.endAyah, repeats: n),
-        );
+      steps.add(ConnectStep(refs: range, repeats: n));
+      if (config.finalFullPass && range.length > 1) {
+        steps.add(ConnectStep(refs: range, repeats: n));
       }
       return List<PlanStep>.unmodifiable(steps);
     }
 
-    for (int i = config.startAyah; i <= config.endAyah; i++) {
-      steps.add(LearnStep(ayah: i, repeats: n));
+    // The joining is over the *range*, not over a surah: the block after the
+    // first ayah of a second surah reaches all the way back to where the
+    // session began, exactly as it would inside one surah.
+    for (int i = 0; i < range.length; i++) {
+      steps.add(
+        LearnStep(surah: range[i].surah, ayah: range[i].ayah, repeats: n),
+      );
 
-      if (i == config.startAyah) continue;
+      if (i == 0) continue;
 
       switch (config.connectMode) {
         case ConnectMode.cumulative:
-          steps.add(ConnectStep(from: config.startAyah, to: i, repeats: n));
+          steps.add(ConnectStep(refs: range.sublist(0, i + 1), repeats: n));
         case ConnectMode.none:
           break;
         case ConnectMode.continuous:
@@ -136,10 +188,8 @@ class RepetitionPlanBuilder {
 
     // A full pass over a single-ayah range would be the same no-op as the
     // skipped first connect step, so it is suppressed too.
-    if (config.finalFullPass && config.endAyah > config.startAyah) {
-      steps.add(
-        ConnectStep(from: config.startAyah, to: config.endAyah, repeats: n),
-      );
+    if (config.finalFullPass && range.length > 1) {
+      steps.add(ConnectStep(refs: range, repeats: n));
     }
 
     return List<PlanStep>.unmodifiable(steps);
@@ -151,20 +201,23 @@ class RepetitionPlanBuilder {
 
     for (int stepIndex = 0; stepIndex < steps.length; stepIndex++) {
       final PlanStep step = steps[stepIndex];
-      final List<int> ayahs = step.ayahs;
+      final List<AyahRef> refs = step.refs;
 
       for (int repeat = 1; repeat <= step.repeats; repeat++) {
-        for (int position = 0; position < ayahs.length; position++) {
-          final bool lastOfRepeat = position == ayahs.length - 1;
+        for (int position = 0; position < refs.length; position++) {
+          final bool lastOfRepeat = position == refs.length - 1;
           units.add(
             PlaybackUnit(
               stepIndex: stepIndex,
               stepType: step.type,
-              ayahNumber: ayahs[position],
+              surahNumber: refs[position].surah,
+              ayahNumber: refs[position].ayah,
               repeatIndex: repeat,
               totalRepeats: step.repeats,
               blockFrom: step.fromAyah,
               blockTo: step.toAyah,
+              blockFromSurah: step.fromRef.surah,
+              blockToSurah: step.toRef.surah,
               isLastUnitOfRepeat: lastOfRepeat,
               isLastUnitOfStep: lastOfRepeat && repeat == step.repeats,
             ),

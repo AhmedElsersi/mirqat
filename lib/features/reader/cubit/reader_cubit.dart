@@ -9,6 +9,7 @@ import '../../../data/models/surah.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
 import '../../../domain/engine/repetition_plan_builder.dart';
+import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../domain/entities/session_plan.dart';
 import '../../../services/audio/audio_availability.dart';
@@ -446,7 +447,13 @@ class ReaderCubit extends Cubit<ReaderState> {
             estimatedDuration:
                 next.reciter == null || next.ayahDurations.isEmpty
                 ? null
-                : plan.estimatedDuration(ayahDurations: next.ayahDurations),
+                : plan.estimatedDuration(
+                    clipDurations: <AyahRef, Duration>{
+                      for (final MapEntry<int, Duration> e
+                          in next.ayahDurations.entries)
+                        AyahRef(surah.number, e.key): e.value,
+                    },
+                  ),
           ),
         );
   }

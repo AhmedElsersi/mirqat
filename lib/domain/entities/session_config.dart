@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'ayah_ref.dart';
+
 /// How consecutive ayahs get joined together as the session progresses.
 enum ConnectMode {
   /// After learning ayah i, replay the whole block from the start of the range
@@ -135,6 +137,7 @@ class SessionConfig extends Equatable {
     required this.surahNumber,
     required this.startAyah,
     required this.endAyah,
+    int? endSurahNumber,
     this.repeatCount = defaultRepeatCount,
     this.connectMode = ConnectMode.cumulative,
     bool? finalFullPass,
@@ -148,7 +151,8 @@ class SessionConfig extends Equatable {
        // `const` and a const initialiser cannot call a getter. The two
        // must agree; `session_config_test` asserts they do for every
        // value of the enum, so adding a mode cannot desynchronise them.
-       finalFullPass = finalFullPass ?? (connectMode == ConnectMode.none);
+       finalFullPass = finalFullPass ?? (connectMode == ConnectMode.none),
+       endSurahNumber = endSurahNumber ?? surahNumber;
 
   static const int defaultRepeatCount = 3;
   static const int minRepeatCount = 1;
@@ -166,9 +170,21 @@ class SessionConfig extends Equatable {
   static const double minPlaybackSpeed = 0.5;
   static const double maxPlaybackSpeed = 1.5;
 
+  /// The surah the range starts in.
   final int surahNumber;
   final int startAyah;
+
+  /// The surah the range ends in — [surahNumber] unless the session runs on
+  /// into later surahs. A range only ever runs forward.
+  final int endSurahNumber;
+
+  /// Numbered within [endSurahNumber].
   final int endAyah;
+
+  AyahRef get start => AyahRef(surahNumber, startAyah);
+  AyahRef get end => AyahRef(endSurahNumber, endAyah);
+
+  bool get spansSurahs => endSurahNumber != surahNumber;
 
   /// How many times each step is repeated.
   final int repeatCount;
@@ -200,12 +216,10 @@ class SessionConfig extends Equatable {
   /// [PlaybackUnit] and never counts toward a repetition.
   final bool playIstiadhah;
 
-  /// Number of ayahs in the range.
-  int get ayahSpan => endAyah - startAyah + 1;
-
   SessionConfig copyWith({
     int? surahNumber,
     int? startAyah,
+    int? endSurahNumber,
     int? endAyah,
     int? repeatCount,
     ConnectMode? connectMode,
@@ -218,6 +232,13 @@ class SessionConfig extends Equatable {
   }) => SessionConfig(
     surahNumber: surahNumber ?? this.surahNumber,
     startAyah: startAyah ?? this.startAyah,
+    // Moving the start to another surah without saying where the range ends
+    // would leave an end that lies before it, so the end follows the start.
+    endSurahNumber:
+        endSurahNumber ??
+        (surahNumber != null && surahNumber != this.surahNumber
+            ? surahNumber
+            : this.endSurahNumber),
     endAyah: endAyah ?? this.endAyah,
     repeatCount: repeatCount ?? this.repeatCount,
     connectMode: connectMode ?? this.connectMode,
@@ -233,6 +254,7 @@ class SessionConfig extends Equatable {
   List<Object?> get props => <Object?>[
     surahNumber,
     startAyah,
+    endSurahNumber,
     endAyah,
     repeatCount,
     connectMode,

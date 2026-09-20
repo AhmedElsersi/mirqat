@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 
 import '../../core/localization/locale_keys.dart';
+import '../../data/models/surah.dart';
 import '../../domain/entities/playback_unit.dart';
 import '../reciter_image_cache.dart';
 import 'memorization_player_service.dart';
@@ -134,9 +135,14 @@ class SessionMediaControls extends BaseAudioHandler {
     String? locale,
   }) {
     final bool arabic = (locale ?? Intl.defaultLocale ?? 'ar').startsWith('ar');
+    // The surah being recited, not the one the session began in: a session
+    // that has run on into the next surah should say so.
+    final Surah surah = unit == null
+        ? session.surah
+        : session.surahOf(unit.surahNumber);
     return MediaItem(
-      id: 'surah-${session.surah.number}',
-      title: arabic ? session.surah.nameAr : session.surah.nameEn,
+      id: 'surah-${surah.number}',
+      title: arabic ? surah.nameAr : surah.nameEn,
       artist: arabic ? session.reciter.nameAr : session.reciter.nameEn,
       album: unit == null
           ? null

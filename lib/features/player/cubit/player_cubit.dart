@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart' as ja;
 
 import '../../../core/error/exceptions.dart';
 import '../../../core/state/load_status.dart';
+import '../../../data/models/surah.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../services/audio/memorization_player_service.dart';
@@ -54,7 +55,7 @@ class PlayerCubit extends Cubit<PlayerScreenState> {
       await _player.load(
         plan: args.plan,
         reciter: args.reciter,
-        surah: args.surah,
+        surahs: <Surah>[args.surah],
       );
     } catch (e) {
       _fail(e);

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/error/failures.dart';
 import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
+import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
 import 'package:mirqat/domain/entities/plan_step.dart';
 import 'package:mirqat/domain/entities/session_config.dart';
@@ -579,10 +580,10 @@ void main() {
 
   group('duration estimate', () {
     // Real clip lengths for Ahmed Khalil Shaheen's Al-Fatiha.
-    const Map<int, Duration> clips = <int, Duration>{
-      1: Duration(milliseconds: 3527),
-      2: Duration(milliseconds: 3918),
-      3: Duration(milliseconds: 2795),
+    final Map<AyahRef, Duration> clips = <AyahRef, Duration>{
+      AyahRef(1, 1): Duration(milliseconds: 3527),
+      AyahRef(1, 2): Duration(milliseconds: 3918),
+      AyahRef(1, 3): Duration(milliseconds: 2795),
     };
 
     test('sums real clip lengths and the gaps between them', () {
@@ -599,7 +600,7 @@ void main() {
       const int intraGaps = 23 - 4 - 10;
 
       expect(
-        plan.estimatedDuration(ayahDurations: clips),
+        plan.estimatedDuration(clipDurations: clips),
         Duration(
           milliseconds: audioMs + stepGaps + repeatGaps + intraGaps * 300,
         ),
@@ -620,9 +621,9 @@ void main() {
       );
 
       expect(
-        fast.estimatedDuration(ayahDurations: clips).inMilliseconds,
+        fast.estimatedDuration(clipDurations: clips).inMilliseconds,
         closeTo(
-          normal.estimatedDuration(ayahDurations: clips).inMilliseconds / 1.5,
+          normal.estimatedDuration(clipDurations: clips).inMilliseconds / 1.5,
           1,
         ),
       );
@@ -635,7 +636,9 @@ void main() {
 
       expect(
         () => plan.estimatedDuration(
-          ayahDurations: const <int, Duration>{1: Duration(seconds: 3)},
+          clipDurations: <AyahRef, Duration>{
+            AyahRef(1, 1): Duration(seconds: 3),
+          },
         ),
         throwsArgumentError,
       );

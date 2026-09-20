@@ -37,12 +37,17 @@ class SpacerQueueEntry extends QueueEntry {
 /// The isti'adhah or a standalone bismillah. Played once before the session,
 /// never counted as a recitation.
 class PreambleQueueEntry extends QueueEntry {
-  const PreambleQueueEntry(this.kind);
+  const PreambleQueueEntry(this.kind, {this.surah});
 
   final PreambleKind kind;
 
+  /// The surah whose basmala this is, for one the session runs on into. Null
+  /// for the preambles that open the session, which belong to its first
+  /// surah.
+  final int? surah;
+
   @override
-  List<Object?> get props => <Object?>[kind];
+  List<Object?> get props => <Object?>[kind, surah];
 }
 
 /// The flat queue handed to the player, plus the index bookkeeping the UI
@@ -60,6 +65,20 @@ class PlaybackQueue extends Equatable {
     if (queueIndex < 0 || queueIndex >= entries.length) return null;
     final QueueEntry entry = entries[queueIndex];
     return entry is AyahQueueEntry ? entry.unit : null;
+  }
+
+  /// Queue index of the [unitIndex]-th ayah play — where a session resumed
+  /// part-way picks up. Unit 0 answers 0, not the first ayah's own index, so
+  /// that a session started from the top still opens with its preambles.
+  int indexOfUnit(int unitIndex) {
+    if (unitIndex <= 0) return 0;
+    int seen = 0;
+    for (int i = 0; i < entries.length; i++) {
+      if (entries[i] is! AyahQueueEntry) continue;
+      if (seen == unitIndex) return i;
+      seen++;
+    }
+    throw RangeError.index(unitIndex, plan.units, 'unitIndex');
   }
 
   /// Queue index of the first ayah play of [stepIndex].
@@ -109,6 +128,7 @@ class PlaybackQueueBuilder {
     required SessionPlan plan,
     bool includeIstiadhah = false,
     bool includeBismillah = false,
+    Set<int> basmalaBeforeSurahs = const <int>{},
   }) {
     final List<QueueEntry> entries = <QueueEntry>[];
 
@@ -127,8 +147,21 @@ class PlaybackQueueBuilder {
       addGap(plan.config.betweenStepsPauseMs, GapKind.afterPreamble);
     }
 
+    // A surah the session runs on into is announced the way a reciter
+    // announces it: its basmala, once, ahead of the first time its opening
+    // ayah is heard. Not ahead of every repeat — the basmala is not part of
+    // the drill, and saying it thirty times would make it one.
+    final Set<int> announced = <int>{};
+
     for (int i = 0; i < plan.units.length; i++) {
       final PlaybackUnit unit = plan.units[i];
+      if (basmalaBeforeSurahs.contains(unit.surahNumber) &&
+          announced.add(unit.surahNumber)) {
+        entries.add(
+          PreambleQueueEntry(PreambleKind.bismillah, surah: unit.surahNumber),
+        );
+        addGap(plan.config.betweenStepsPauseMs, GapKind.afterPreamble);
+      }
       entries.add(AyahQueueEntry(unit));
 
       if (i == plan.units.length - 1) break;

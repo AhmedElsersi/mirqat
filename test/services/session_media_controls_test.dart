@@ -32,7 +32,7 @@ const Reciter reciter = Reciter(
 );
 
 final LoadedSession session = LoadedSession(
-  surah: ikhlas,
+  surahs: <Surah>[ikhlas],
   reciter: reciter,
   plan: SessionPlan(
     config: const SessionConfig(surahNumber: 112, startAyah: 1, endAyah: 4),
@@ -44,6 +44,7 @@ final LoadedSession session = LoadedSession(
 const PlaybackUnit ayah3 = PlaybackUnit(
   stepIndex: 2,
   stepType: StepType.learn,
+  surahNumber: 112,
   ayahNumber: 3,
   repeatIndex: 0,
   totalRepeats: 3,

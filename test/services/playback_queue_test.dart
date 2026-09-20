@@ -5,6 +5,7 @@ import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
+import 'package:mirqat/domain/entities/plan_step.dart';
 import 'package:mirqat/domain/entities/session_config.dart';
 import 'package:mirqat/domain/entities/session_plan.dart';
 import 'package:mirqat/services/audio/ayah_audio_resolver.dart';
@@ -210,6 +211,113 @@ void main() {
         queue.entries.first,
         const PreambleQueueEntry(PreambleKind.bismillah),
       );
+    });
+  });
+
+  group('a session that runs on into the next surah', () {
+    SessionPlan twoSurahs({ConnectMode mode = ConnectMode.cumulative}) =>
+        const RepetitionPlanBuilder().buildOrThrow(
+          SessionConfig(
+            surahNumber: 112,
+            startAyah: 4,
+            endSurahNumber: 113,
+            endAyah: 2,
+            repeatCount: 3,
+            connectMode: mode,
+          ),
+          ayahCounts: const <int, int>{112: 4, 113: 5},
+        );
+
+    List<int> basmalaIndices(PlaybackQueue queue) => <int>[
+      for (int i = 0; i < queue.length; i++)
+        if (queue.entries[i] case PreambleQueueEntry(
+          kind: PreambleKind.bismillah,
+          surah: 113,
+        ))
+          i,
+    ];
+
+    test('plays the new surah\'s basmala once, ahead of its first ayah', () {
+      final PlaybackQueue queue = builder.build(
+        plan: twoSurahs(),
+        basmalaBeforeSurahs: const <int>{113},
+      );
+
+      final List<int> at = basmalaIndices(queue);
+      expect(at, hasLength(1), reason: 'once, not once per repeat');
+
+      // The next ayah play after it is the very first play of 113:1 …
+      final int nextAyah = queue.entries.indexWhere(
+        (QueueEntry e) => e is AyahQueueEntry,
+        at.single,
+      );
+      final PlaybackUnit opening = queue.unitAt(nextAyah)!;
+      expect(opening.surahNumber, 113);
+      expect(opening.ayahNumber, 1);
+      expect(opening.repeatIndex, 1);
+      expect(opening.stepType, StepType.learn);
+
+      // … and nothing of 113 was heard before it.
+      expect(
+        queue.entries
+            .take(at.single)
+            .whereType<AyahQueueEntry>()
+            .every((AyahQueueEntry e) => e.unit.surahNumber == 112),
+        isTrue,
+      );
+    });
+
+    test('the basmala adds no recitation and is followed by a gap', () {
+      final SessionPlan plan = twoSurahs();
+      final PlaybackQueue queue = builder.build(
+        plan: plan,
+        basmalaBeforeSurahs: const <int>{113},
+      );
+      expect(queue.entries.whereType<AyahQueueEntry>().length, plan.unitCount);
+      expect(
+        queue.entries[basmalaIndices(queue).single + 1],
+        const SpacerQueueEntry(GapKind.afterPreamble),
+      );
+    });
+
+    test('recited straight through, it is still said once', () {
+      final PlaybackQueue queue = builder.build(
+        plan: twoSurahs(mode: ConnectMode.continuous),
+        basmalaBeforeSurahs: const <int>{113},
+      );
+      expect(basmalaIndices(queue), hasLength(1));
+    });
+
+    test('a surah with no standalone basmala is entered without one', () {
+      final PlaybackQueue queue = builder.build(plan: twoSurahs());
+      expect(queue.entries.whereType<PreambleQueueEntry>(), isEmpty);
+    });
+  });
+
+  group('resuming part-way', () {
+    test('unit 0 starts at the top, preambles included', () {
+      final PlaybackQueue queue = builder.build(
+        plan: planFor(
+          const SessionConfig(surahNumber: 1, startAyah: 1, endAyah: 2),
+        ),
+        includeIstiadhah: true,
+      );
+      expect(queue.indexOfUnit(0), 0);
+      expect(queue.unitAt(0), isNull);
+    });
+
+    test('a later unit lands on exactly that ayah play', () {
+      final SessionPlan plan = planFor(
+        const SessionConfig(surahNumber: 1, startAyah: 1, endAyah: 3),
+      );
+      final PlaybackQueue queue = builder.build(
+        plan: plan,
+        includeIstiadhah: true,
+      );
+      for (final int unit in <int>[1, 5, plan.unitCount - 1]) {
+        expect(queue.unitAt(queue.indexOfUnit(unit)), plan.units[unit]);
+      }
+      expect(() => queue.indexOfUnit(plan.unitCount), throwsRangeError);
     });
   });
 

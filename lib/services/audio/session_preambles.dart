@@ -44,8 +44,26 @@ class SessionPreambles {
     // `hasBasmala`, not `hasBismillah`: a manifest reciter's basmala is ayah 0
     // of the surah rather than a reciter-level clip, and a session over
     // streamed audio still opens with it.
-    bismillah: _playsBismillah(surah) && reciter.hasBasmala(surah.number),
+    bismillah: playsBasmala(surah: surah, reciter: reciter),
   );
+
+  /// Whether [surah] is opened with a standalone basmala in [reciter]'s voice.
+  ///
+  /// The same answer serves the surah a session starts in and any surah it
+  /// runs on into, which is the point of asking it in one place.
+  static bool playsBasmala({required Surah surah, required Reciter reciter}) =>
+      _playsBismillah(surah) && reciter.hasBasmala(surah.number);
+
+  /// Of the surahs a session enters after its first, those whose basmala is
+  /// played on the way in. A range only ever enters a later surah at its
+  /// ayah 1, so there is no "started part-way" case to weigh here.
+  static Set<int> forLaterSurahs({
+    required Iterable<Surah> surahs,
+    required Reciter reciter,
+  }) => <int>{
+    for (final Surah surah in surahs)
+      if (playsBasmala(surah: surah, reciter: reciter)) surah.number,
+  };
 
   /// Every [BismillahMode] gets an explicit arm, `none` included, so adding a
   /// fourth mode is a compile error here rather than silence at playback.
