@@ -26,6 +26,9 @@ class LocalizedText extends Equatable {
 
   bool get isEmpty => ar.trim().isEmpty && en.trim().isEmpty;
 
+  LocalizedText copyWith({String? ar, String? en}) =>
+      LocalizedText(ar: ar ?? this.ar, en: en ?? this.en);
+
   Map<String, dynamic> toJson() => <String, dynamic>{'ar': ar, 'en': en};
 
   @override
@@ -90,6 +93,33 @@ class DeveloperInfo extends Equatable {
         );
         return uri != null && uri.host.isNotEmpty ? uri : null;
     }
+  }
+
+  DeveloperInfo copyWith({
+    LocalizedText? name,
+    String? photo,
+    Map<DeveloperLink, String>? links,
+  }) => DeveloperInfo(
+    name: name ?? this.name,
+    photo: photo ?? this.photo,
+    links: links ?? this.links,
+  );
+
+  /// With [link] set to [value] — or taken away, when [value] is blank. The
+  /// links keep the order they are shown in, whatever order they were set in.
+  DeveloperInfo withLink(DeveloperLink link, String value) {
+    final Map<DeveloperLink, String> next = <DeveloperLink, String>{...links};
+    if (value.trim().isEmpty) {
+      next.remove(link);
+    } else {
+      next[link] = value.trim();
+    }
+    return copyWith(
+      links: <DeveloperLink, String>{
+        for (final DeveloperLink l in DeveloperLink.values)
+          if (next[l] case final String kept) l: kept,
+      },
+    );
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -172,6 +202,13 @@ class PlatformUpdate extends Equatable {
   /// The store page the update button opens.
   final String storeUrl;
 
+  PlatformUpdate copyWith({String? min, String? latest, String? storeUrl}) =>
+      PlatformUpdate(
+        min: min ?? this.min,
+        latest: latest ?? this.latest,
+        storeUrl: storeUrl ?? this.storeUrl,
+      );
+
   Map<String, dynamic> toJson() => <String, dynamic>{
     'min': min,
     'latest': latest,
@@ -205,6 +242,16 @@ class UpdateRules extends Equatable {
 
   /// "What's new", shown under the fixed wording of the prompt. Optional.
   final LocalizedText notes;
+
+  UpdateRules copyWith({
+    PlatformUpdate? android,
+    PlatformUpdate? ios,
+    LocalizedText? notes,
+  }) => UpdateRules(
+    android: android ?? this.android,
+    ios: ios ?? this.ios,
+    notes: notes ?? this.notes,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'android': android.toJson(),

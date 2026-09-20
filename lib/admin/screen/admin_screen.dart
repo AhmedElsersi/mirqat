@@ -19,7 +19,13 @@ import '../services/timecode.dart';
 /// every minute spent styling it is a minute not spent on the app people
 /// actually use.
 class AdminScreen extends StatelessWidget {
-  const AdminScreen({super.key});
+  const AdminScreen({this.appInfoEditor, super.key});
+
+  /// Builds the `app.json` editor, with whatever it needs already provided.
+  /// Handed in rather than built here, because what it needs — the Pages
+  /// publisher, the R2 client — is made where the credentials are, in
+  /// `main_admin.dart`. Null leaves the button out.
+  final WidgetBuilder? appInfoEditor;
 
   @override
   Widget build(BuildContext context) => BlocBuilder<AdminCubit, AdminState>(
@@ -29,6 +35,17 @@ class AdminScreen extends StatelessWidget {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Mirqat — audio admin'),
+          actions: <Widget>[
+            if (appInfoEditor != null)
+              TextButton.icon(
+                onPressed: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute<void>(builder: appInfoEditor!)),
+                icon: const Icon(Icons.info_outline),
+                label: const Text('app.json — about, developer, updates'),
+              ),
+            const SizedBox(width: 8),
+          ],
           bottom: state.progress == null
               ? null
               : PreferredSize(

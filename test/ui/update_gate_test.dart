@@ -141,7 +141,8 @@ void main() {
     expect(find.text('لاحقًا'), findsNothing);
     expect(find.byType(SurahRow).hitTestable(), findsNothing);
 
-    // The back gesture is swallowed: there is nothing behind it to go to.
+    // Back cannot put it away: it is not a route, so there is nothing of it
+    // to pop.
     await tester.binding.handlePopRoute();
     await AppHarness.settle(tester);
     expect(find.text('يلزم تحديث التطبيق'), findsOneWidget);

@@ -165,7 +165,12 @@ void main() {
     expect(cubit.state.saved, isEmpty);
 
     await packs.download(reciter: reciter, surahNumber: 2);
-    await pumpEventQueue();
+    // The list is re-read from disk when the download lands, which is real
+    // I/O: an emptied event queue says nothing about whether it has finished.
+    // On a busy machine it had not, and this failed one run in twenty.
+    await cubit.stream
+        .firstWhere((DownloadsState s) => s.saved.isNotEmpty)
+        .timeout(const Duration(seconds: 5), onTimeout: () => cubit.state);
 
     expect(cubit.state.saved, hasLength(1));
   });

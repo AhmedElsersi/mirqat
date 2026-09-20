@@ -17,6 +17,7 @@ class AdminConfig {
     this.githubToken = '',
     this.githubRepo = '',
     this.manifestPath = 'manifest.json',
+    this.appInfoPath = 'app.json',
   });
 
   /// Reads the compile-time environment. Every field is required; see
@@ -32,6 +33,7 @@ class AdminConfig {
     githubToken: _githubToken,
     githubRepo: _githubRepo,
     manifestPath: _manifestPath.isEmpty ? 'manifest.json' : _manifestPath,
+    appInfoPath: _appInfoPath.isEmpty ? 'app.json' : _appInfoPath,
   );
 
   final String accountId;
@@ -63,6 +65,10 @@ class AdminConfig {
   /// Where the manifest lives inside that repo.
   final String manifestPath;
 
+  /// Where `app.json` lives inside that repo — beside the manifest, which is
+  /// where the app looks for it.
+  final String appInfoPath;
+
   /// Whether the manifest can be published from here.
   bool get canPublishManifest =>
       githubToken.isNotEmpty && githubRepo.contains('/');
@@ -78,6 +84,9 @@ class AdminConfig {
   static const String _githubRepo = String.fromEnvironment('GITHUB_REPO');
   static const String _manifestPath = String.fromEnvironment(
     'GITHUB_MANIFEST_PATH',
+  );
+  static const String _appInfoPath = String.fromEnvironment(
+    'GITHUB_APP_INFO_PATH',
   );
 
   /// The `--dart-define` names that were not supplied, in the order

@@ -84,7 +84,7 @@ workflow. Each stage ends with screenshots for the owner's approval.
 | 3 | Home: ajzaa tab, view mode in Settings, history, last position | done — `ui/3-home`, awaiting the owner's look. A juz opens the mushaf at its first page; "one juz at a time" as its own view is stage 4 |
 | 4 | Reading + session merged; cross-surah sessions; player screen removed | done — `ui/4-reading-session` (three commits: engine, sections, session), awaiting the owner's look |
 | 5 | Settings cards, Session settings page, About / Goal / Developer / How to use, onboarding | done — `ui/5-settings-about`, awaiting the owner's look |
-| 6 | `app.json`, version + update dialog, admin editor | |
+| 6 | `app.json`, version + update dialog, admin editor | done — `ui/6-app-json-updates` (two commits: the app, the admin editor), awaiting the owner's look. **`app.json` is not published yet** — the app runs on its bundled copy until it is |
 
 ## Stage 4 — what was decided while building it
 
@@ -148,4 +148,42 @@ workflow. Each stage ends with screenshots for the owner's approval.
   hands over. The settings cubit is created lazily and the splash is the
   first thing to read it, so without the wait every first launch went
   straight past the introduction. Caught by the first test written for it.
+
+## Stage 6 — what was decided while building it
+
+- **`app.json` is handled exactly as the manifest is:** answered at once from
+  the device, refreshed behind, silent on failure. A fetched file that says
+  nothing — an error page, `{}` — is not taken up, so it can neither blank the
+  About screen nor lift an update rule.
+- **Every doubt about an update is resolved towards saying nothing.** No store
+  page, no prompt; a version that cannot be read on either side is no rule; a
+  build ahead of the store is left alone. The other direction locks people
+  out, and the only fix for that would be a file they may not be able to
+  fetch.
+- **The prompt is drawn over the app, not pushed as a route**, so it sits over
+  whichever screen is up and a session underneath keeps its place. Back
+  cannot put the required page away; from the home page it leaves the app.
+- **The gate waits for startup.** It is built on the first frame, under the
+  splash, and its cubit is made the moment something reads it — before the
+  locator has anything registered. The UI harness registers everything before
+  its first pump, so this was only seen on the emulator; there is a test for
+  the order now.
+- **"Later" is a day's quiet**, written to the settings so that it outlives
+  the app; a required update published in the meantime overrides it.
+- **The version line** is in Western digits in both languages: it is what
+  someone reads out in a support email.
+- **The settings map had several writers, each with its own copy.** The
+  repository now broadcasts saves, the settings cubit takes them up, and a
+  session reads the stored map afresh before changing its one field.
+- **iOS rules are blank** until there is an App Store page; the editor
+  refuses a rule without an `https` store page, so they cannot be half set.
+
+## What is left for the owner
+
+- Open the admin tool → **app.json**, fill in the Arabic name and the links,
+  and **Publish**. Until then the app uses its bundled copy.
+- Paste the published JSON into `assets/data/app.json`.
+- When version 1 is through Play review and a second version is uploaded:
+  set Android **latest** to it. Set a **minimum** only when an old version
+  must genuinely stop being used.
 

@@ -519,6 +519,15 @@ re-cut is exported with `--export-only`, audited, and uploaded from those very f
 `--publish-from`, so what was measured is what goes live. Where every surah stands is kept
 in `docs/AUDIO_STATUS_<reciter>.md`.
 
+**It also edits `app.json`** (A.5) — About us, Our goal, the developer's card and the
+update rules — and commits it to the Pages site beside the manifest, through the same
+`PagesPublisher`. It starts from what is live, refuses a draft `validateAppInfo` finds
+fault with, and uploads the developer's photo to the bucket under a name made from its own
+bytes, so the no-overwrite rule is kept without an exception. **Raising a minimum version
+is confirmed by typing that version**, for the same reason a short split is explained in
+words: it is the one edit that locks people out of the app, and a checkbox would not stop a
+slip of a digit.
+
 **A split whose count does not match is never published silently.** The operator either
 fixes the split or types a reason, which is recorded in the log beside the upload. A
 checkbox would not do: a surah published one segment short files every later ayah under the

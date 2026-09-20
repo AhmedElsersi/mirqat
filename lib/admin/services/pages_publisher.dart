@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import '../../core/error/exceptions.dart';
 import '../config/admin_config.dart';
 
-/// Publishes the manifest to the GitHub Pages site the app reads it from.
+/// Publishes the manifest — and `app.json` — to the GitHub Pages site the app
+/// reads them from.
 ///
 /// This is the step that makes a reciter or a surah appear without an app
 /// release. The audio lives in R2; the manifest that names it lives here, in a
@@ -29,37 +30,55 @@ class PagesPublisher {
   /// An overwrite, deliberately: the manifest is one file describing the whole
   /// CDN, and it is rebuilt from the published one every time — so what is
   /// written already contains everything that was there.
-  Future<String> publish(Map<String, dynamic> manifest) async {
+  Future<String> publish(Map<String, dynamic> manifest) => publishJson(
+    path: _config.manifestPath,
+    json: manifest,
+    message: _messageFor(manifest),
+  );
+
+  /// Commits `app.json` — what the app says about itself, and its update
+  /// rules — beside the manifest.
+  Future<String> publishAppInfo(
+    Map<String, dynamic> appInfo, {
+    required String message,
+  }) => publishJson(path: _config.appInfoPath, json: appInfo, message: message);
+
+  /// Commits [json] at [path] over whatever is there, and answers the commit
+  /// sha.
+  Future<String> publishJson({
+    required String path,
+    required Map<String, dynamic> json,
+    required String message,
+  }) async {
     if (!_config.canPublishManifest) {
-      throw const UploadException(
-        'manifest.json',
-        'No GitHub token or repo is configured, so the manifest cannot be '
-            'published from here. Add GITHUB_TOKEN and GITHUB_REPO to '
-            'admin.env, or publish the written file by hand.',
+      throw UploadException(
+        path,
+        'No GitHub token or repo is configured, so $path cannot be '
+        'published from here. Add GITHUB_TOKEN and GITHUB_REPO to '
+        'admin.env, or publish the file by hand.',
       );
     }
 
     final Uri url = Uri.parse(
-      '$_api/repos/${_config.githubRepo}/contents/${_config.manifestPath}',
+      '$_api/repos/${_config.githubRepo}/contents/$path',
     );
-    final String body =
-        '${const JsonEncoder.withIndent('  ').convert(manifest)}\n';
+    final String body = '${const JsonEncoder.withIndent('  ').convert(json)}\n';
 
     final http.Response result = await _client.put(
       url,
       headers: _headers,
       body: jsonEncode(<String, Object?>{
-        'message': _messageFor(manifest),
+        'message': message,
         'content': base64Encode(utf8.encode(body)),
         // Absent on the first publish, required after: GitHub refuses a blind
         // overwrite, which is what stops two operators clobbering each other.
-        if (await _currentSha() case final String sha) 'sha': sha,
+        if (await _currentSha(path) case final String sha) 'sha': sha,
       }),
     );
 
     if (result.statusCode != 200 && result.statusCode != 201) {
       throw UploadException(
-        _config.manifestPath,
+        path,
         'GitHub returned ${result.statusCode}. '
         '${_reasonFrom(result.body)}',
       );
@@ -72,11 +91,9 @@ class PagesPublisher {
   }
 
   /// The sha of the file being replaced, or null when there is none yet.
-  Future<String?> _currentSha() async {
+  Future<String?> _currentSha(String path) async {
     final http.Response response = await _client.get(
-      Uri.parse(
-        '$_api/repos/${_config.githubRepo}/contents/${_config.manifestPath}',
-      ),
+      Uri.parse('$_api/repos/${_config.githubRepo}/contents/$path'),
       headers: _headers,
     );
     if (response.statusCode != 200) return null;

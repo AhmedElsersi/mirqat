@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/bootstrap.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../services/link_opener.dart';
@@ -24,19 +25,43 @@ import '../cubit/update_cubit.dart';
 /// Drawn here, in the app's own tree, rather than as a route: it has to sit
 /// over whichever screen is up, the splash aside, and must not be something a
 /// back gesture can pop.
-class UpdateGate extends StatelessWidget {
+class UpdateGate extends StatefulWidget {
   const UpdateGate({required this.child, super.key});
 
   final Widget child;
 
   @override
+  State<UpdateGate> createState() => _UpdateGateState();
+}
+
+class _UpdateGateState extends State<UpdateGate> {
+  /// Whether startup has finished, and with it the registration of everything
+  /// the update cubit is made from.
+  ///
+  /// This widget is built on the app's very first frame, under the splash,
+  /// and its cubit is created the moment something reads it — so reading it
+  /// before startup is done asks the locator for services that are not there
+  /// yet, and the app opens on an error instead of a splash. Until then the
+  /// gate is simply not there.
+  bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AppBootstrap.future.then((_) {
+      if (mounted) setState(() => _started = true);
+    }, onError: (Object _) {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (!_started) return widget.child;
     return BlocBuilder<UpdateCubit, UpdateState>(
       builder: (BuildContext context, UpdateState state) => Stack(
         children: <Widget>[
           // Still there underneath, and still running: an optional prompt
           // must not cost a session its place.
-          child,
+          widget.child,
           if (state.kind == UpdateKind.optional) ...<Widget>[
             ModalBarrier(
               dismissible: false,
@@ -171,46 +196,45 @@ class _RequiredPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    // Swallows the back gesture: there is nothing behind this to go back to.
-    return PopScope(
-      canPop: false,
-      child: Material(
-        color: theme.scaffoldBackgroundColor,
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsetsDirectional.all(32.r),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(
-                    Icons.system_update_outlined,
-                    size: 64.r,
-                    color: theme.colorScheme.primary,
+    // Not a route, so there is nothing here for a back gesture to pop: back
+    // goes to the navigator underneath — and, from the home page, out of the
+    // app — while this stays where it is.
+    return Material(
+      color: theme.scaffoldBackgroundColor,
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsetsDirectional.all(32.r),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(
+                  Icons.system_update_outlined,
+                  size: 64.r,
+                  color: theme.colorScheme.primary,
+                ),
+                SizedBox(height: 24.h),
+                Text(
+                  LocaleKeys.updateRequiredTitle.tr(),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall,
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  LocaleKeys.updateRequiredBody.tr(),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
+                ),
+                _Notes(state: state),
+                SizedBox(height: 28.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => _openStore(context, state),
+                    child: Text(LocaleKeys.updateNow.tr()),
                   ),
-                  SizedBox(height: 24.h),
-                  Text(
-                    LocaleKeys.updateRequiredTitle.tr(),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                  SizedBox(height: 12.h),
-                  Text(
-                    LocaleKeys.updateRequiredBody.tr(),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
-                  ),
-                  _Notes(state: state),
-                  SizedBox(height: 28.h),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => _openStore(context, state),
-                      child: Text(LocaleKeys.updateNow.tr()),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

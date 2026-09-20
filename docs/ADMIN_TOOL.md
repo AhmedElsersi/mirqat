@@ -125,6 +125,47 @@ python3 tool/audit_audio.py --live 24 39                   # confirm on the CDN
 uploads the files that were audited rather than cutting again, and refuses a
 surah that is not clean.
 
+## app.json — about, developer, updates
+
+The button at the top right of the tool, **app.json — about, developer,
+updates**, opens an editor for the one other file the app reads from the Pages
+site. It needs the same `GITHUB_TOKEN` and `GITHUB_REPO` as publishing the
+manifest, and nothing else.
+
+It opens on **what is live now** (or, before the first publish, on the copy
+bundled with the app, and says which). Four sections:
+
+- **About us** and **Our goal** — English and Arabic side by side.
+- **The developer** — name, photo, and five ways of reaching them. A link left
+  blank is not shown in the app. Links are read the way people type them: an
+  email without `mailto:`, a WhatsApp number with spaces and a plus, a profile
+  without `https://`. **Photo…** uploads the picture to the bucket under a name
+  made from its own bytes, so a new photo is a new address and nothing already
+  published is ever overwritten.
+- **Updates** — for each store, a **minimum** version, a **latest** version and
+  the **store page**; and an optional "what is new" in both languages.
+  - Below the *minimum*, the app shows a page asking to be updated and does
+    nothing else.
+  - Below the *latest*, it mentions the update over a dimmed app, with
+    "later", and not again for a day.
+  - Blank means no rule. Until there is an App Store page, leave iOS blank.
+
+What is wrong is listed at the foot in red and **Publish** stays off until it is
+fixed: a page with one language missing, a link a phone cannot open, a version
+that is not a version, a minimum newer than the latest, a rule with no `https`
+store page.
+
+**Raising a minimum has to be typed.** It is the one edit that locks people out
+of the app, and a slip of a digit — `10.0.0` for `1.0.0` — locks out everyone.
+The tool says which minimum is being raised and to what, and Publish stays off
+until that version is typed into **Confirm**. Lowering or clearing a minimum
+only ever lets more people in, and needs nothing.
+
+After publishing, the app picks the file up on its next launch (Pages can take a
+minute to serve it). **Copy JSON** puts the file on the clipboard: paste it into
+`assets/data/app.json` so that a fresh install, offline, starts from the same
+words.
+
 ## What it cannot do
 
 - **It does not judge the recitation**, only lengths: a clip can be the right
