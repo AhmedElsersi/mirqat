@@ -86,6 +86,7 @@ class AyahText extends StatefulWidget {
        _word = false,
        isMarker = false,
        heldBack = false,
+       paintsTint = true,
        tint = WordTint.none;
 
   /// One word of a mushaf page line, byte-for-byte from quran.db.
@@ -99,6 +100,7 @@ class AyahText extends StatefulWidget {
     this.isMarker = false,
     this.tint = WordTint.none,
     this.heldBack = false,
+    this.paintsTint = true,
     super.key,
   }) : ayahs = null,
        _word = true,
@@ -122,6 +124,7 @@ class AyahText extends StatefulWidget {
        _word = false,
        isMarker = false,
        heldBack = false,
+       paintsTint = true,
        tint = WordTint.none;
 
   /// Verbatim ayah text, byte-for-byte from `quran.db`. Never generated, never
@@ -150,6 +153,22 @@ class AyahText extends StatefulWidget {
 
   /// [AyahText.word] only.
   final WordTint tint;
+
+  /// [AyahText.word] only: whether the word draws its own [tint]. A mushaf
+  /// page draws it instead — one band along the line, under the words and the
+  /// spaces between them — and a word that drew its own as well would darken
+  /// the band wherever there are letters.
+  final bool paintsTint;
+
+  /// The colour behind a tinted word, or null for none. Shared with the page,
+  /// which paints a marked run as one band along the line, so that a marked
+  /// ayah reads as a stroke of highlighter and not as a row of boxes.
+  static Color? tintColor(ColorScheme colors, WordTint tint) => switch (tint) {
+    WordTint.none => null,
+    WordTint.ranged => colors.primary.withValues(alpha: 0.08),
+    WordTint.highlighted => colors.primary.withValues(alpha: 0.2),
+    WordTint.selected => colors.primary.withValues(alpha: 0.26),
+  };
 
   /// Width of [text] as [AyahText.word] draws it at [fontSize].
   static double mushafWordWidth(String text, {required double fontSize}) =>
@@ -259,12 +278,9 @@ class _AyahTextState extends State<AyahText> {
         style: AppTextStyles.mushafWord(fontSize: widget.fontSize).copyWith(
           color: (widget.isMarker ? colors.primary : colors.onSurface)
               .withValues(alpha: widget.heldBack ? 0.32 : 1),
-          backgroundColor: switch (widget.tint) {
-            WordTint.none => null,
-            WordTint.ranged => colors.primary.withValues(alpha: 0.07),
-            WordTint.highlighted => colors.primary.withValues(alpha: 0.2),
-            WordTint.selected => colors.primary.withValues(alpha: 0.26),
-          },
+          backgroundColor: widget.paintsTint
+              ? AyahText.tintColor(colors, widget.tint)
+              : null,
         ),
       );
     }

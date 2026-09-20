@@ -82,6 +82,41 @@ workflow. Each stage ends with screenshots for the owner's approval.
 | 2 | Frames: mushaf page, one-surah view, surah-name cartouche | done — `ui/2-frames` |
 | 2b | Thicker frame, scrolling page, labels in the borders, no app bar, tap-to-show bar | done — `ui/2b-frame-thicker`, awaiting the owner's look |
 | 3 | Home: ajzaa tab, view mode in Settings, history, last position | done — `ui/3-home`, awaiting the owner's look. A juz opens the mushaf at its first page; "one juz at a time" as its own view is stage 4 |
-| 4 | Reading + session merged; cross-surah sessions; player screen removed | |
+| 4 | Reading + session merged; cross-surah sessions; player screen removed | done — `ui/4-reading-session` (three commits: engine, sections, session), awaiting the owner's look |
 | 5 | Settings cards, Session settings page, About / Goal / Developer / How to use, onboarding | |
 | 6 | `app.json`, version + update dialog, admin editor | |
+
+## Stage 4 — what was decided while building it
+
+- **The reader and player screens are gone.** One reading view (`MushafScreen`)
+  serves the whole mushaf, one surah and one juz; the session lives in it.
+- **Long press on an ayah** offers: listen from here to the end of the surah,
+  memorize this ayah alone, make it the start of the range, make it the end.
+  A chosen range is tinted on the page and can be given back to the page.
+- **While a session plays, only the ayah being recited is tinted.** Tinting the
+  whole range washed the page end to end and said nothing; the bar says what
+  is playing. A marked run is painted as one band along the line — under the
+  words and the spaces between them — not as a box per word.
+- **Pauses** changed mid-session re-queue the session at the play it was on,
+  600 ms after the slider rests. It restarts the ayah being heard; asking the
+  reader about a gap would be worse.
+- **"Carry on from this ayah"** resumes at the first play of that ayah in the
+  new plan — the start of its drill — or at the top if the new range no longer
+  holds it.
+- **The opening basmala** now follows CLAUDE.md to the letter: only a session
+  that starts at ayah 1 opens with it. The code had always played it whatever
+  the start ayah, which went unnoticed while sessions defaulted to the whole
+  surah; "play" now defaults to the first ayah *on the page*.
+- **The skip glyphs are swapped in Arabic.** The framework does not mirror
+  them, so "previous", which sits on the right, would have pointed left.
+- **Dropped with the player screen:** the step timeline (as decided) and the
+  "restart this step" button — "previous step" at the first repeat does the
+  same. The per-surah *progress* icon stays on the home rows, not in the bar.
+- **Remembered ranges** (`RangeBehaviour.lastUsed`, in Settings) still work:
+  a surah opened whole gets its last range back as a *chosen* range, once, and
+  starting a session inside one surah writes its range down. A range across
+  two surahs is not remembered — the setting is per surah.
+- **`AyahText.flowing`** has no caller left (the one-surah view is page layout
+  now). Kept, with its tests and the U+06DD note, until stage 5 shows whether
+  anything wants it.
+

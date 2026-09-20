@@ -551,6 +551,23 @@ void main() {
         isFalse,
       );
     });
+
+    test('a session that picks a surah up part-way opens with no basmala', () {
+      // The basmala opens the surah. Ayah 120 is not its opening, and a page
+      // in the middle of a surah is where most sessions now start.
+      final Reciter remote = Reciter.remoteOnly(manifestEntry('cdn'));
+      SessionPreambles at(int ayah) => SessionPreambles.forSession(
+        surah: surah2,
+        reciter: remote,
+        istiadhahEnabled: true,
+        startAyah: ayah,
+      );
+      expect(at(1).bismillah, isTrue);
+      expect(at(2).bismillah, isFalse);
+      expect(at(120).bismillah, isFalse);
+      // The isti'adhah is for beginning to recite, wherever that is.
+      expect(at(120).istiadhah, at(1).istiadhah);
+    });
   });
 
   group('what is on the device', () {

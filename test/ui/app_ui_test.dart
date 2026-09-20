@@ -9,9 +9,12 @@ import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
 import 'package:mirqat/core/widgets/session_controls.dart';
 import 'package:mirqat/data/models/surah.dart';
-import 'package:mirqat/features/reader/screen/reader_screen.dart';
-import 'package:mirqat/features/reader/widgets/audio_pack_tile.dart';
-import 'package:mirqat/features/reader/widgets/session_drawer.dart';
+import 'package:mirqat/features/mushaf/cubit/mushaf_cubit.dart';
+import 'package:mirqat/features/mushaf/reading_section.dart';
+import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
+import 'package:mirqat/features/session/widgets/audio_pack_tile.dart';
+import 'package:mirqat/features/session/widgets/session_bar.dart';
+import 'package:mirqat/features/session/widgets/session_sheet.dart';
 import 'package:mirqat/features/surah_list/widgets/reading_only_marker.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_tile.dart';
@@ -63,15 +66,26 @@ void main() {
   /// Opens the first row — Al-Fatiha, since the catalog is ascending. The
   /// harness only fakes clip durations for surah 1, so the session summary is
   /// exercised against real measured numbers rather than invented ones.
-  Future<void> openReader(WidgetTester tester) async {
-    await AppHarness.tapAndSettle(tester, find.byType(SurahRow).first);
+  Future<MushafCubit> openReader(WidgetTester tester) async {
+    final MushafCubit cubit = await AppHarness.openReading(
+      tester,
+      find.byType(SurahRow).first,
+    );
+    await AppHarness.showReadingBar(tester);
+    return cubit;
   }
 
-  /// The session summary now lives in the reader's end drawer, so reaching it
-  /// means opening the drawer.
-  Future<void> openDrawer(WidgetTester tester) async {
-    await AppHarness.tapAndSettle(tester, find.byIcon(Icons.tune));
-  }
+  /// The session summary lives in the settings sheet, opened from the bar.
+  Future<void> openSheet(WidgetTester tester) =>
+      AppHarness.openSessionSheet(tester);
+
+  /// The start button in the reading bar.
+  FilledButton startButton(WidgetTester tester) => tester.widget<FilledButton>(
+    find.descendant(
+      of: find.byType(SessionBar),
+      matching: find.byWidgetPredicate((Widget w) => w is FilledButton),
+    ),
+  );
 
   group('localisation and direction', () {
     testWidgets('launches in Arabic, laid out right to left', (
@@ -156,16 +170,21 @@ void main() {
       expect(_itemCount(tester, ListView), catalog.length);
     });
 
-    testWidgets('a grid tile opens the same reader as a row', (
+    testWidgets('a grid tile opens the same surah, on its own, as a row', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
       await AppHarness.setHomeView(tester, HomeViewMode.grid);
 
-      await AppHarness.tapAndSettle(tester, find.byType(SurahTile).first);
+      final MushafCubit cubit = await AppHarness.openReading(
+        tester,
+        find.byType(SurahTile).first,
+      );
 
-      expect(find.byType(ReaderScreen), findsOneWidget);
+      expect(find.byType(MushafScreen), findsOneWidget);
+      expect(cubit.state.section?.request, const SectionRequest.surah(1));
     });
+
     testWidgets('marks a surah no reciter has recorded as reading only, and '
         'only that', (WidgetTester tester) async {
       await harness.pumpApp(tester);
@@ -201,7 +220,7 @@ void main() {
     });
   });
 
-  group('reader', () {
+  group('reading and its session', () {
     testWidgets('a surah nobody has recorded is readable, with the session '
         'blocked and the reason shown up front', (WidgetTester tester) async {
       await harness.pumpApp(tester);
@@ -214,26 +233,16 @@ void main() {
         300,
         scrollable: AppHarness.homeScrollable(ListView),
       );
-      await AppHarness.tapAndSettle(tester, find.text(unrecorded.nameAr));
+      await AppHarness.openReading(tester, find.text(unrecorded.nameAr));
+      await AppHarness.showReadingBar(tester);
 
-      expect(find.byType(ReaderScreen), findsOneWidget);
+      expect(find.byType(MushafScreen), findsOneWidget);
       expect(find.byType(AyahText), findsWidgets, reason: 'it is readable');
       expect(
-        find.text(
-          arabic['reader']['no_audio'].replaceFirst('{}', unrecorded.nameAr),
-        ),
+        find.text(arabic['session']['no_audio_range'] as String),
         findsOneWidget,
       );
-
-      final ButtonStyleButton play = tester.widget<ButtonStyleButton>(
-        find.ancestor(
-          of: find.byIcon(Icons.play_arrow),
-          matching: find.byWidgetPredicate(
-            (Widget w) => w is ButtonStyleButton,
-          ),
-        ),
-      );
-      expect(play.onPressed, isNull, reason: 'no session can start');
+      expect(startButton(tester).onPressed, isNull, reason: 'nothing to play');
     });
 
     testWidgets('a recorded surah shows no block notice', (
@@ -242,32 +251,53 @@ void main() {
       await harness.pumpApp(tester);
       await openReader(tester);
 
-      expect(find.byIcon(Icons.info_outline), findsNothing);
+      expect(
+        find.text(arabic['session']['no_audio_range'] as String),
+        findsNothing,
+      );
+      expect(startButton(tester).onPressed, isNotNull);
     });
 
-    testWidgets('tapping a surah lands on the text, with no dialog', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('tapping a surah lands on the text, with nothing in front of '
+        'it — not even the bar', (WidgetTester tester) async {
       await harness.pumpApp(tester);
-      await openReader(tester);
+      final MushafCubit cubit = await AppHarness.openReading(
+        tester,
+        find.byType(SurahRow).first,
+      );
 
-      expect(find.byType(ReaderScreen), findsOneWidget);
-      // The surah is rendered, and as one flowing block rather than a card
-      // per ayah.
-      expect(find.byType(AyahText), findsOneWidget);
-      // Nothing is standing in front of it.
+      expect(find.byType(MushafScreen), findsOneWidget);
+      expect(cubit.state.section?.request, const SectionRequest.surah(1));
+      expect(find.byType(AyahText), findsWidgets);
       expect(find.byType(Dialog), findsNothing);
-      expect(find.byType(SessionDrawer), findsNothing);
-      // The whole surah is the default selection.
-      expect(find.text('السورة كاملة'), findsOneWidget);
+      expect(find.byType(SessionSheet), findsNothing);
+      expect(find.byType(AppBar), findsNothing);
+      // The bar is there but away, and deaf: the page is never dead to a tap.
+      expect(
+        tester
+            .widget<IgnorePointer>(
+              find
+                  .descendant(
+                    of: find.byType(SessionBar),
+                    matching: find.byType(IgnorePointer),
+                  )
+                  .first,
+            )
+            .ignoring,
+        isTrue,
+      );
+
+      // One tap brings it up, offering the whole surah.
+      await AppHarness.showReadingBar(tester);
+      expect(find.text('سورة الفاتحة كاملة'), findsOneWidget);
     });
 
-    testWidgets('summarises the default full-surah session in the drawer', (
+    testWidgets('summarises the default full-surah session in the sheet', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
       await openReader(tester);
-      await openDrawer(tester);
+      await openSheet(tester);
 
       // Full Al-Fatiha, N=3, continuous — the fresh-install default: one
       // step, 7 * 3 = 21 recitations.
@@ -279,12 +309,12 @@ void main() {
       expect(summary.duration, isNotEmpty);
     });
 
-    testWidgets('the drawer offers to download a surah that streams', (
+    testWidgets('the sheet offers to download a surah that streams', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
       await openReader(tester);
-      await openDrawer(tester);
+      await openSheet(tester);
 
       expect(find.byType(AudioPackTile), findsOneWidget);
       // No surah audio ships any more: Al-Fatiha comes from the manifest, so
@@ -294,15 +324,15 @@ void main() {
       expect(find.byIcon(Icons.delete_outline), findsNothing);
     });
 
-    testWidgets('the drawer summary tracks the repeat count live', (
+    testWidgets('the summary tracks the repeat count live', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
       await openReader(tester);
-      await openDrawer(tester);
+      await openSheet(tester);
 
-      // Steppers in the drawer, in order: range from, range to, repeat count.
-      await AppHarness.tapAndSettle(tester, find.byIcon(Icons.add).at(2));
+      // Steppers in the sheet, in order: from ayah, to ayah, repeat count.
+      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).at(2));
 
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
@@ -312,17 +342,16 @@ void main() {
       expect(summary.unitCount, 28);
     });
 
-    testWidgets('tap-to-select and the drawer stay in sync', (
+    testWidgets('a range set in the sheet is the range the bar offers', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
       await openReader(tester);
 
-      // Narrow the range from the drawer, then read it off the bottom bar.
-      await openDrawer(tester);
+      await openSheet(tester);
       // "From" stepper up twice: ayahs 3..7.
-      await AppHarness.tapAndSettle(tester, find.byIcon(Icons.add).first);
-      await AppHarness.tapAndSettle(tester, find.byIcon(Icons.add).first);
+      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
+      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
 
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
@@ -330,11 +359,11 @@ void main() {
       // 5 ayahs x 3 passes.
       expect(summary.unitCount, 15);
 
-      await AppHarness.tapAndSettle(tester, find.byIcon(Icons.close));
+      await AppHarness.tapAndRun(tester, find.byIcon(Icons.close));
 
-      // The bottom bar reflects the drawer's range, in Arabic numerals.
-      expect(find.text('الآيات ٣ - ٧'), findsOneWidget);
-      expect(find.text('السورة كاملة'), findsNothing);
+      // The bar reflects the sheet's range, in Arabic numerals.
+      expect(find.text('سورة الفاتحة · الآيات ٣ - ٧'), findsOneWidget);
+      expect(find.text('سورة الفاتحة كاملة'), findsNothing);
     });
 
     testWidgets('a single-ayah range still produces a startable plan', (
@@ -342,11 +371,11 @@ void main() {
     ) async {
       await harness.pumpApp(tester);
       await openReader(tester);
-      await openDrawer(tester);
+      await openSheet(tester);
 
       // Pull "to" down to 1, so from == to == 1.
       for (int i = 0; i < 6; i++) {
-        await AppHarness.tapAndSettle(tester, find.byIcon(Icons.remove).at(1));
+        await AppHarness.tapAndRun(tester, find.byIcon(Icons.remove).at(1));
       }
 
       final SessionSummary summary = tester.widget<SessionSummary>(
@@ -354,13 +383,35 @@ void main() {
       );
       expect(summary.unitCount, 3);
 
-      await AppHarness.tapAndSettle(tester, find.byIcon(Icons.close));
+      await AppHarness.tapAndRun(tester, find.byIcon(Icons.close));
 
-      expect(find.text('الآية ١'), findsOneWidget);
-      final FilledButton play = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'ابدأ الجلسة'),
+      expect(find.text('سورة الفاتحة · الآية ١'), findsOneWidget);
+      expect(startButton(tester).onPressed, isNotNull);
+    });
+
+    testWidgets('the range may be carried into a later surah from the sheet', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      final MushafCubit cubit = await openReader(tester);
+      await openSheet(tester);
+
+      // The "to" surah picker: second of the two dropdowns.
+      await AppHarness.tapAndRun(
+        tester,
+        find
+            .byWidgetPredicate((Widget w) => w is DropdownButtonFormField<int>)
+            .at(1),
       );
-      expect(play.onPressed, isNotNull);
+      await AppHarness.tapAndRun(tester, find.textContaining('البقرة').last);
+
+      expect(cubit.state.section?.number, 1, reason: 'still reading surah 1');
+      // Al-Baqara is not in the tests' manifest, so nobody can recite a range
+      // that runs into it — and the sheet says so rather than letting it start.
+      expect(
+        find.text(arabic['session']['no_audio_range'] as String),
+        findsWidgets,
+      );
     });
   });
 
@@ -379,10 +430,13 @@ void main() {
       await AppHarness.setHomeView(tester, HomeViewMode.grid);
       expect(tester.takeException(), isNull);
 
-      await AppHarness.tapAndSettle(tester, find.byType(SurahTile).first);
+      await AppHarness.openReading(tester, find.byType(SurahTile).first);
       expect(tester.takeException(), isNull);
 
-      await openDrawer(tester);
+      await AppHarness.showReadingBar(tester);
+      expect(tester.takeException(), isNull);
+
+      await openSheet(tester);
       expect(tester.takeException(), isNull);
     });
 
@@ -400,7 +454,7 @@ void main() {
       await openReader(tester);
       expect(tester.takeException(), isNull);
 
-      await openDrawer(tester);
+      await openSheet(tester);
       expect(tester.takeException(), isNull);
 
       await harness.pumpApp(tester);

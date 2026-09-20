@@ -13,7 +13,9 @@ import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
 import 'package:mirqat/data/models/surah.dart';
-import 'package:mirqat/features/reader/widgets/session_drawer.dart';
+import 'package:mirqat/features/mushaf/cubit/mushaf_cubit.dart';
+import 'package:mirqat/features/mushaf/cubit/mushaf_page.dart';
+import 'package:mirqat/features/session/widgets/session_sheet.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_tile.dart';
 
@@ -65,45 +67,59 @@ void main() {
         expect(tester.takeException(), isNull);
 
         await AppHarness.setHomeView(tester, HomeViewMode.list);
-        await AppHarness.tapAndSettle(tester, find.byType(SurahRow).first);
+        await AppHarness.openReading(tester, find.byType(SurahRow).first);
         expect(tester.takeException(), isNull);
 
-        // The drawer is an endDrawer, so Directionality decides which edge it
-        // comes from. Nothing in the widget mirrors anything by hand, which is
-        // what this asserts: it opens in both directions.
-        await AppHarness.tapAndSettle(tester, find.byIcon(Icons.tune));
-        expect(find.byType(SessionDrawer), findsOneWidget);
+        // The bar and the sheet lay out in both directions, with nothing in
+        // either mirrored by hand.
+        await AppHarness.showReadingBar(tester);
+        expect(tester.takeException(), isNull);
+        await AppHarness.openSessionSheet(tester);
+        expect(find.byType(SessionSheet), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('a separate-preamble surah renders its bismillah header', (
+      testWidgets('a separate-preamble surah opens with its basmala line', (
         WidgetTester tester,
       ) async {
         await harness.pumpApp(tester, locale: locale);
 
         // The first catalog surah that recites the bismillah unnumbered.
-        // Al-Fatiha counts it as ayah 1 and gets no header. Chosen by mode,
-        // never by surah number.
+        // Al-Fatiha counts it as ayah 1 and gets no line of its own. Chosen
+        // by mode, never by surah number.
         final Surah separate = catalog.firstWhere(
           (Surah s) => s.bismillahMode == BismillahMode.separatePreamble,
         );
-        await AppHarness.tapAndSettle(tester, find.text(separate.nameAr));
+        final MushafCubit cubit = await AppHarness.openReading(
+          tester,
+          // The Arabic name is on the row in both locales.
+          find.text(separate.nameAr).first,
+        );
         expect(tester.takeException(), isNull);
 
-        // Two AyahText widgets: the unnumbered header, and the flowing surah.
-        expect(find.byType(AyahText), findsNWidgets(2));
+        final MushafPage first = cubit.state.pages[cubit.state.currentPage]!;
+        expect(first.lines.whereType<BasmalaLine>(), hasLength(1));
+        expect(first.lines.first, isA<SurahHeaderLine>());
       });
 
-      testWidgets('Al-Fatiha renders no separate bismillah header', (
+      testWidgets('Al-Fatiha has no separate basmala line', (
         WidgetTester tester,
       ) async {
         await harness.pumpApp(tester, locale: locale);
 
         // The first catalog row counts the bismillah as its ayah 1, so a
-        // header would show the same words twice.
-        await AppHarness.tapAndSettle(tester, find.byType(SurahRow).first);
+        // line of its own would show the same words twice.
+        final MushafCubit cubit = await AppHarness.openReading(
+          tester,
+          find.byType(SurahRow).first,
+        );
         expect(tester.takeException(), isNull);
-        expect(find.byType(AyahText), findsOneWidget);
+        expect(
+          cubit.state.pages[cubit.state.currentPage]!.lines
+              .whereType<BasmalaLine>(),
+          isEmpty,
+        );
+        expect(find.byType(AyahText), findsWidgets);
       });
 
       testWidgets('the reader survives the largest system font scale', (
@@ -113,10 +129,12 @@ void main() {
         addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
         await harness.pumpApp(tester, locale: locale);
-        await AppHarness.tapAndSettle(tester, find.byType(SurahRow).first);
+        await AppHarness.openReading(tester, find.byType(SurahRow).first);
         expect(tester.takeException(), isNull);
 
-        await AppHarness.tapAndSettle(tester, find.byIcon(Icons.tune));
+        await AppHarness.showReadingBar(tester);
+        expect(tester.takeException(), isNull);
+        await AppHarness.openSessionSheet(tester);
         expect(tester.takeException(), isNull);
       });
     });

@@ -9,18 +9,18 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mirqat/core/error/exceptions.dart';
-import 'package:mirqat/features/player/cubit/player_cubit.dart';
-import 'package:mirqat/features/player/cubit/player_state.dart';
+import 'package:mirqat/features/session/cubit/session_cubit.dart';
+import 'package:mirqat/features/session/cubit/session_state.dart';
 
 void main() {
-  group('PlayerCubit.classifyFailure', () {
+  group('SessionCubit.classifyFailure', () {
     test('a source that had to be fetched blames the network', () {
       expect(
-        PlayerCubit.classifyFailure(
+        SessionCubit.classifyFailure(
           PlayerException(0, 'Source error', null),
           streamsAnyAyah: true,
         ),
-        PlayerFailure.audioUnreachable,
+        SessionFailure.audioUnreachable,
       );
     });
 
@@ -28,47 +28,47 @@ void main() {
       // Sending someone to check their connection when every clip is on disk
       // sends them after the wrong thing.
       expect(
-        PlayerCubit.classifyFailure(
+        SessionCubit.classifyFailure(
           PlayerException(0, 'Source error', null),
           streamsAnyAyah: false,
         ),
-        PlayerFailure.unknown,
+        SessionFailure.unknown,
       );
     });
 
     test('a catalog fault stays a catalog fault even while streaming', () {
       expect(
-        PlayerCubit.classifyFailure(
+        SessionCubit.classifyFailure(
           const SessionConfigException('no timings'),
           streamsAnyAyah: true,
         ),
-        PlayerFailure.configuration,
+        SessionFailure.configuration,
       );
     });
 
     test('a socket failure mid-session reads as unreachable audio', () {
       expect(
-        PlayerCubit.classifyFailure(
+        SessionCubit.classifyFailure(
           const SocketishError(),
           streamsAnyAyah: true,
         ),
-        PlayerFailure.audioUnreachable,
+        SessionFailure.audioUnreachable,
       );
     });
   });
 
   group('every failure has a sentence in both locales', () {
-    // The whole point of PlayerFailure is that no listener ever reads
+    // The whole point of SessionFailure is that no listener ever reads
     // "Source error (0)" again, so a kind with no Arabic line is the bug
     // this file exists to catch.
-    const Map<PlayerFailure, String> keys = <PlayerFailure, String>{
-      PlayerFailure.audioUnreachable: 'error_offline',
-      PlayerFailure.configuration: 'error_config',
-      PlayerFailure.unknown: 'error_unknown',
+    const Map<SessionFailure, String> keys = <SessionFailure, String>{
+      SessionFailure.audioUnreachable: 'error_offline',
+      SessionFailure.configuration: 'error_config',
+      SessionFailure.unknown: 'error_unknown',
     };
 
     test('the map covers the enum', () {
-      expect(keys.keys, containsAll(PlayerFailure.values));
+      expect(keys.keys, containsAll(SessionFailure.values));
     });
 
     for (final String locale in <String>['ar', 'en']) {

@@ -77,21 +77,6 @@ class HomeIndexCubit extends Cubit<HomeIndexState> {
     1,
   )).fold((_) => null, (int p) => p);
 
-  /// Notes that a surah is being opened from the list, so that "where I left
-  /// off" is right even when the reading happens outside the mushaf.
-  Future<void> noteSurahOpened(Surah surah) async {
-    final int? page = await pageOfSurah(surah.number);
-    if (page == null) return;
-    await _history.record(
-      ReadingPosition(
-        surahNumber: surah.number,
-        ayahNumber: 1,
-        page: page,
-        at: DateTime.now(),
-      ),
-    );
-  }
-
   Future<void> clearHistory() async {
     await _history.clear();
     await refreshHistory();

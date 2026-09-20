@@ -39,27 +39,19 @@
     "playback_speed": "سرعة التلاوة",
     "milliseconds": "{} مللي ثانية",
     "summary": "{} خطوات · {} تلاوة · {}",
-    "start": "ابدأ الجلسة",
     "connect_continuous": "متصل",
     "connect_continuous_hint": "تُتلى الآيات من أول النطاق إلى آخره، ثم يُعاد المقطع كاملًا"
   },
   "player": {
-    "title": "الجلسة",
     "step_header": "الخطوة {} من {}",
-    "learning": "حفظ الآية {}",
-    "connecting": "وصل الآيات {} - {}",
-    "repeat_pips": "{} / {}",
     "play": "تشغيل",
     "pause": "إيقاف مؤقت",
     "previous_step": "الخطوة السابقة",
     "next_step": "الخطوة التالية",
-    "restart_step": "إعادة الخطوة",
     "stop": "إنهاء",
     "keep_awake": "إبقاء الشاشة مضاءة",
-    "timeline": "خطوات الجلسة",
     "finished": "انتهت الجلسة",
     "repeat_header": "التكرار {} من {}",
-    "reciting_range": "تلاوة الآيات {} - {}",
     "error_offline": "تعذّر الوصول إلى الصوت. تحقّق من اتصالك بالإنترنت، أو حمّل السورة للاستماع دون اتصال.",
     "error_config": "تعذّر تجهيز هذه التلاوة. جرّب قارئًا آخر.",
     "error_unknown": "تعذّر تشغيل الجلسة."
@@ -113,25 +105,16 @@
   },
   "reader": {
     "session_settings": "إعدادات الجلسة",
-    "whole_surah": "السورة كاملة",
-    "selection_single": "الآية {}",
     "reset_defaults": "إعادة تعيين",
     "save_as_default": "حفظ كافتراضي",
-    "saved_as_default": "حُفظت كإعدادات افتراضية",
-    "tap_to_select": "اضغط على آية لتحديد بداية النطاق",
-    "no_audio": "لا يوجد تسجيل صوتي لسورة {} لدى أي قارئ بعد، فلا يمكن بدء جلسة حفظ. السورة متاحة للقراءة.",
-    "reciter_lacks_surah": "القارئ {} ليس لديه تسجيل لسورة {}.",
-    "switch_reciter": "التبديل إلى {}"
+    "saved_as_default": "حُفظت كإعدادات افتراضية"
   },
   "mushaf": {
     "title": "المصحف",
     "open": "فتح المصحف",
-    "view_in_mushaf": "عرض في المصحف",
     "page": "صفحة {}",
     "ayah_reference": "سورة {} · الآية {}",
-    "play_from_here": "الاستماع من هذه الآية",
-    "memorize": "بدء جلسة حفظ",
-    "coming_soon": "قريبًا",
+    "play_from_here": "الاستماع من هذه الآية إلى آخر السورة",
     "surah_label": "سورة {}",
     "juz_label": "الجزء {}",
     "hizb_label": "الحزب {}",
@@ -139,7 +122,11 @@
     "hint_long_press": "اضغط مطولًا على آية لخياراتها",
     "section_end": "انتهت {}",
     "section_next": "التالي: {}",
-    "section_previous": "السابق: {}"
+    "section_previous": "السابق: {}",
+    "memorize_ayah": "حفظ هذه الآية وحدها",
+    "set_range_start": "اجعلها بداية النطاق",
+    "set_range_end": "اجعلها نهاية النطاق",
+    "clear_range": "إلغاء النطاق المحدد"
   },
   "downloads": {
     "section": "الصوت دون إنترنت",
@@ -183,5 +170,25 @@
     "clear_confirm": "مسح سجل القراءة كله؟",
     "today": "اليوم",
     "yesterday": "أمس"
+  },
+  "session": {
+    "range_same": "سورة {} · الآيات {} - {}",
+    "range_single": "سورة {} · الآية {}",
+    "range_whole": "سورة {} كاملة",
+    "range_cross": "من {} {} إلى {} {}",
+    "start": "ابدأ",
+    "back_to_ayah": "العودة إلى الآية",
+    "surah": "السورة",
+    "ayah": "الآية",
+    "range_from_page": "النطاق يتبع الصفحة المعروضة. اختر نطاقًا لتثبيته.",
+    "use_page_range": "اتبع الصفحة",
+    "downloads": "تنزيل سور النطاق ({})",
+    "changed_title": "تغيّرت إعدادات الجلسة",
+    "changed_body": "هل تبدأ الجلسة من جديد بالإعدادات الجديدة، أم تكملها من الآية الحالية؟",
+    "restart": "ابدأ من جديد",
+    "continue_here": "أكمل من الآية الحالية",
+    "discard_changes": "تجاهل التغييرات",
+    "no_audio_range": "لا يوجد تسجيل صوتي لهذا النطاق كاملًا لدى أي قارئ بعد، فلا يمكن بدء جلسة حفظ.",
+    "reciter_lacks_range": "القارئ {} ليس لديه تسجيل لهذا النطاق كاملًا."
   }
 }

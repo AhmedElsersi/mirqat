@@ -39,27 +39,19 @@
     "playback_speed": "Playback speed",
     "milliseconds": "{} ms",
     "summary": "{} steps · {} recitations · {}",
-    "start": "Start session",
     "connect_continuous": "Continuous",
     "connect_continuous_hint": "The range is recited straight through, then the whole pass repeats"
   },
   "player": {
-    "title": "Session",
     "step_header": "Step {} of {}",
-    "learning": "Learning ayah {}",
-    "connecting": "Connecting ayahs {} - {}",
-    "repeat_pips": "{} / {}",
     "play": "Play",
     "pause": "Pause",
     "previous_step": "Previous step",
     "next_step": "Next step",
-    "restart_step": "Restart step",
     "stop": "Stop",
     "keep_awake": "Keep screen awake",
-    "timeline": "Session steps",
     "finished": "Session finished",
     "repeat_header": "Repetition {} of {}",
-    "reciting_range": "Reciting ayahs {} - {}",
     "error_offline": "The audio could not be reached. Check your connection, or download the surah to listen offline.",
     "error_config": "This recitation could not be prepared. Try another reciter.",
     "error_unknown": "The session could not be played."
@@ -113,25 +105,16 @@
   },
   "reader": {
     "session_settings": "Session settings",
-    "whole_surah": "Whole surah",
-    "selection_single": "Ayah {}",
     "reset_defaults": "Reset",
     "save_as_default": "Save as default",
-    "saved_as_default": "Saved as your defaults",
-    "tap_to_select": "Tap an ayah to set the start of the range",
-    "no_audio": "No reciter has recorded Surah {} yet, so a memorization session cannot start. You can still read it.",
-    "reciter_lacks_surah": "{} has no recording of Surah {}.",
-    "switch_reciter": "Switch to {}"
+    "saved_as_default": "Saved as your defaults"
   },
   "mushaf": {
     "title": "Mushaf",
     "open": "Open the mushaf",
-    "view_in_mushaf": "View in the mushaf",
     "page": "Page {}",
     "ayah_reference": "Surah {} · Ayah {}",
-    "play_from_here": "Listen from this ayah",
-    "memorize": "Start a memorization session",
-    "coming_soon": "Coming soon",
+    "play_from_here": "Listen from this ayah to the end of the surah",
     "surah_label": "Surah {}",
     "juz_label": "Juz {}",
     "hizb_label": "Hizb {}",
@@ -139,7 +122,11 @@
     "hint_long_press": "Long-press an ayah for its options",
     "section_end": "End of {}",
     "section_next": "Next: {}",
-    "section_previous": "Previous: {}"
+    "section_previous": "Previous: {}",
+    "memorize_ayah": "Memorize this ayah alone",
+    "set_range_start": "Make it the start of the range",
+    "set_range_end": "Make it the end of the range",
+    "clear_range": "Clear the chosen range"
   },
   "downloads": {
     "section": "Offline audio",
@@ -183,5 +170,25 @@
     "clear_confirm": "Clear the whole reading history?",
     "today": "Today",
     "yesterday": "Yesterday"
+  },
+  "session": {
+    "range_same": "Surah {} · ayahs {} - {}",
+    "range_single": "Surah {} · ayah {}",
+    "range_whole": "All of surah {}",
+    "range_cross": "From {} {} to {} {}",
+    "start": "Start",
+    "back_to_ayah": "Back to the ayah",
+    "surah": "Surah",
+    "ayah": "Ayah",
+    "range_from_page": "The range follows the page on show. Choose one to keep it.",
+    "use_page_range": "Follow the page",
+    "downloads": "Download the range's surahs ({})",
+    "changed_title": "The session's settings have changed",
+    "changed_body": "Start the session again with the new settings, or carry on from the current ayah?",
+    "restart": "Start again",
+    "continue_here": "Carry on from this ayah",
+    "discard_changes": "Discard the changes",
+    "no_audio_range": "No reciter has the whole of this range recorded yet, so a session cannot start.",
+    "reciter_lacks_range": "{} has not recorded the whole of this range."
   }
 }

@@ -49,8 +49,6 @@ class LocaleKeys {
   static const String durationSeconds = 'duration.seconds';
 
   static const String mushafAyahReference = 'mushaf.ayah_reference';
-  static const String mushafComingSoon = 'mushaf.coming_soon';
-  static const String mushafMemorize = 'mushaf.memorize';
   static const String mushafOpen = 'mushaf.open';
   static const String mushafBack = 'mushaf.back';
   static const String mushafHintLongPress = 'mushaf.hint_long_press';
@@ -60,27 +58,19 @@ class LocaleKeys {
   static const String mushafSurahLabel = 'mushaf.surah_label';
   static const String mushafPlayFromHere = 'mushaf.play_from_here';
   static const String mushafTitle = 'mushaf.title';
-  static const String mushafViewInMushaf = 'mushaf.view_in_mushaf';
 
-  static const String playerConnecting = 'player.connecting';
   static const String playerFinished = 'player.finished';
   static const String playerKeepAwake = 'player.keep_awake';
   static const String playerErrorOffline = 'player.error_offline';
   static const String playerErrorConfig = 'player.error_config';
   static const String playerErrorUnknown = 'player.error_unknown';
-  static const String playerLearning = 'player.learning';
   static const String playerNextStep = 'player.next_step';
   static const String playerPause = 'player.pause';
   static const String playerPlay = 'player.play';
   static const String playerPreviousStep = 'player.previous_step';
-  static const String playerRecitingRange = 'player.reciting_range';
   static const String playerRepeatHeader = 'player.repeat_header';
-  static const String playerRepeatPips = 'player.repeat_pips';
-  static const String playerRestartStep = 'player.restart_step';
   static const String playerStepHeader = 'player.step_header';
   static const String playerStop = 'player.stop';
-  static const String playerTimeline = 'player.timeline';
-  static const String playerTitle = 'player.title';
 
   static const String progressMarkMemorized = 'progress.mark_memorized';
   static const String progressRepeats = 'progress.repeats';
@@ -90,16 +80,10 @@ class LocaleKeys {
   static const String progressTitle = 'progress.title';
   static const String progressUnmarkMemorized = 'progress.unmark_memorized';
 
-  static const String readerNoAudio = 'reader.no_audio';
-  static const String readerReciterLacksSurah = 'reader.reciter_lacks_surah';
   static const String readerResetDefaults = 'reader.reset_defaults';
   static const String readerSaveAsDefault = 'reader.save_as_default';
   static const String readerSavedAsDefault = 'reader.saved_as_default';
-  static const String readerSelectionSingle = 'reader.selection_single';
   static const String readerSessionSettings = 'reader.session_settings';
-  static const String readerSwitchReciter = 'reader.switch_reciter';
-  static const String readerTapToSelect = 'reader.tap_to_select';
-  static const String readerWholeSurah = 'reader.whole_surah';
 
   static const String sessionSetupBetweenRepeatPause =
       'session_setup.between_repeat_pause';
@@ -129,7 +113,6 @@ class LocaleKeys {
       'session_setup.playback_speed';
   static const String sessionSetupRange = 'session_setup.range';
   static const String sessionSetupRepeatCount = 'session_setup.repeat_count';
-  static const String sessionSetupStart = 'session_setup.start';
   static const String sessionSetupSummary = 'session_setup.summary';
   static const String sessionSetupTo = 'session_setup.to';
 
@@ -196,4 +179,26 @@ class LocaleKeys {
   static const String mushafSectionEnd = 'mushaf.section_end';
   static const String mushafSectionNext = 'mushaf.section_next';
   static const String mushafSectionPrevious = 'mushaf.section_previous';
+  static const String sessionRangeSame = 'session.range_same';
+  static const String sessionRangeSingle = 'session.range_single';
+  static const String sessionRangeWhole = 'session.range_whole';
+  static const String sessionRangeCross = 'session.range_cross';
+  static const String sessionStart = 'session.start';
+  static const String sessionBackToAyah = 'session.back_to_ayah';
+  static const String sessionSurah = 'session.surah';
+  static const String sessionAyah = 'session.ayah';
+  static const String sessionRangeFromPage = 'session.range_from_page';
+  static const String sessionUsePageRange = 'session.use_page_range';
+  static const String sessionDownloads = 'session.downloads';
+  static const String sessionChangedTitle = 'session.changed_title';
+  static const String sessionChangedBody = 'session.changed_body';
+  static const String sessionRestart = 'session.restart';
+  static const String sessionContinueHere = 'session.continue_here';
+  static const String sessionDiscardChanges = 'session.discard_changes';
+  static const String sessionNoAudioRange = 'session.no_audio_range';
+  static const String sessionReciterLacksRange = 'session.reciter_lacks_range';
+  static const String mushafMemorizeAyah = 'mushaf.memorize_ayah';
+  static const String mushafSetRangeStart = 'mushaf.set_range_start';
+  static const String mushafSetRangeEnd = 'mushaf.set_range_end';
+  static const String mushafClearRange = 'mushaf.clear_range';
 }

@@ -205,13 +205,21 @@ class _MushafPageViewState extends State<MushafPageView> {
           for (final Word w in words)
             AyahText.word(text: w.text, fontSize: fontSize),
         ], fontSize),
-        AyahLine(:final List<Word> words, :final bool centered) =>
-          centered
+        AyahLine(:final List<Word> words, :final bool centered) => CustomPaint(
+          painter: _TintBands(
+            widths: <double>[for (final Word w in words) _width(w) * fontSize],
+            tints: <WordTint>[for (final Word w in words) _tintFor(w)],
+            centredGap: centered ? fontSize * _minGapEm : null,
+            bandHeight: fontSize * _lineHeight,
+            colors: Theme.of(context).colorScheme,
+          ),
+          child: centered
               ? _centred(_words(words, fontSize), fontSize)
               : Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: _words(words, fontSize),
                 ),
+        ),
       };
 
   Widget _centred(List<Widget> children, double fontSize) => Row(
@@ -228,10 +236,14 @@ class _MushafPageViewState extends State<MushafPageView> {
     for (final Word w in words)
       if (w.isMarker)
         // The ayah-number medallion: part of the line, not of the ayah.
+        // Tinted with its ayah, whose last glyph it is, so that a marked run
+        // does not break at every ayah's end.
         AyahText.word(
           text: w.text,
           fontSize: fontSize,
           isMarker: true,
+          tint: _tintFor(w),
+          paintsTint: false,
           heldBack: widget.isHeldBack?.call(w) ?? false,
         )
       else if (widget.isHeldBack?.call(w) ?? false)
@@ -261,6 +273,7 @@ class _MushafPageViewState extends State<MushafPageView> {
                 text: w.text,
                 fontSize: fontSize,
                 tint: _tintFor(w),
+                paintsTint: false,
               ),
             ),
           ),
@@ -268,10 +281,98 @@ class _MushafPageViewState extends State<MushafPageView> {
   ];
 
   WordTint _tintFor(Word w) {
+    if (widget.isHeldBack?.call(w) ?? false) return WordTint.none;
     if (widget.selected?.contains(w) ?? false) return WordTint.selected;
     if (widget.highlighted?.contains(w) ?? false) return WordTint.highlighted;
     if (widget.isSelected?.call(w) ?? false) return WordTint.ranged;
     return WordTint.none;
+  }
+}
+
+/// Paints the tint behind a line's words: one band for each run of
+/// neighbouring words that share a tint, under the words and the spaces
+/// between them, so that a marked ayah is a stroke of highlighter along the
+/// line rather than a box per word.
+///
+/// It works the words' places out the way the line lays itself out: right to
+/// left, each at its measured width, the room left over shared equally
+/// between them (or a fixed gap, for a centred line). Nothing here touches a
+/// word: it is colour behind the text, and the text is drawn over it as it is.
+class _TintBands extends CustomPainter {
+  const _TintBands({
+    required this.widths,
+    required this.tints,
+    required this.centredGap,
+    required this.bandHeight,
+    required this.colors,
+  });
+
+  final List<double> widths;
+  final List<WordTint> tints;
+
+  /// The fixed gap of a centred line, or null for a justified one.
+  final double? centredGap;
+  final double bandHeight;
+  final ColorScheme colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final int n = widths.length;
+    if (n == 0) return;
+    final double total = widths.fold(0, (double a, double b) => a + b);
+    final double gap =
+        centredGap ?? (n > 1 ? (size.width - total) / (n - 1) : 0);
+
+    // The right-hand edge of the first word: the line's own edge when it is
+    // justified, the start of the centred block when it is not.
+    double right = centredGap == null
+        ? size.width
+        : (size.width + total + gap * (n - 1)) / 2;
+    final double top = (size.height - bandHeight) / 2;
+
+    int i = 0;
+    while (i < n) {
+      final WordTint tint = tints[i];
+      final double runRight = right;
+      double runLeft = right - widths[i];
+      right = runLeft - gap;
+      int j = i + 1;
+      while (j < n && tints[j] == tint) {
+        runLeft = right - widths[j];
+        right = runLeft - gap;
+        j++;
+      }
+      final Color? color = AyahText.tintColor(colors, tint);
+      if (color != null) {
+        canvas.drawRRect(
+          RRect.fromLTRBR(
+            runLeft - 2,
+            top,
+            runRight + 2,
+            top + bandHeight,
+            const Radius.circular(4),
+          ),
+          Paint()..color = color,
+        );
+      }
+      i = j;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TintBands old) =>
+      old.centredGap != centredGap ||
+      old.bandHeight != bandHeight ||
+      old.colors != colors ||
+      !_same(old.widths, widths) ||
+      !_same(old.tints, tints);
+
+  static bool _same<T>(List<T> a, List<T> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }
 

@@ -179,8 +179,9 @@ void main() {
       // was persisted, not just held in memory.
       await harness.pumpApp(tester);
 
-      await AppHarness.tapAndSettle(tester, find.byType(SurahRow).first);
-      await AppHarness.tapAndSettle(tester, find.byIcon(Icons.tune));
+      await AppHarness.openReading(tester, find.byType(SurahRow).first);
+      await AppHarness.showReadingBar(tester);
+      await AppHarness.openSessionSheet(tester);
 
       // N=5 over all 7 ayahs, continuous: one step, 35 recitations.
       final SessionSummary summary = tester.widget<SessionSummary>(

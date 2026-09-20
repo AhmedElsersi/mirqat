@@ -8,7 +8,7 @@ import 'package:mirqat/data/models/audio_manifest.dart';
 import 'package:mirqat/data/models/audio_pack.dart';
 import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
-import 'package:mirqat/features/reader/cubit/audio_pack_cubit.dart';
+import 'package:mirqat/features/session/cubit/audio_pack_cubit.dart';
 import 'package:mirqat/services/audio/audio_pack_service.dart';
 import 'package:mirqat/services/audio/audio_storage.dart';
 import 'package:mirqat/services/audio/pack_fetcher.dart';

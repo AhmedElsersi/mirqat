@@ -17,6 +17,7 @@ import '../../home/cubit/home_index_cubit.dart';
 import '../../home/cubit/home_index_state.dart';
 import '../../home/widgets/juz_widgets.dart';
 import '../../mushaf/mushaf_args.dart';
+import '../../mushaf/reading_section.dart';
 import '../../settings/cubit/settings_cubit.dart';
 import '../../settings/cubit/settings_state.dart';
 import '../cubit/surah_list_cubit.dart';
@@ -139,7 +140,7 @@ class _SurahListViewState extends State<_SurahListView> {
               child: TabBarView(
                 children: <Widget>[
                   _surahs(context, grid: grid, mode: viewMode),
-                  _ajzaa(context, index, grid: grid),
+                  _ajzaa(context, index, grid: grid, mode: viewMode),
                 ],
               ),
             ),
@@ -196,10 +197,15 @@ class _SurahListViewState extends State<_SurahListView> {
     BuildContext context,
     HomeIndexState index, {
     required bool grid,
+    required HomeViewMode mode,
   }) {
     if (!index.loaded) return const Center(child: CircularProgressIndicator());
 
-    void open(JuzItem juz) => _openMushaf(context, page: juz.info.page);
+    // The same choice a surah makes: the mushaf at the juz's first page, or
+    // that juz on its own.
+    void open(JuzItem juz) => mode == HomeViewMode.mushaf
+        ? _openMushaf(context, page: juz.info.page)
+        : _openMushaf(context, section: SectionRequest.juz(juz.info.number));
 
     if (!grid) {
       return ListView.separated(
@@ -374,38 +380,38 @@ class _SurahGrid extends StatelessWidget {
   }
 }
 
-/// Opens a surah: in the mushaf at the page it begins on, or in the
-/// one-surah reader. Either way the place is remembered first, and the
-/// "continue" card is brought up to date on the way back.
+/// Opens a surah: in the mushaf view, the mushaf at the page it begins on; in
+/// list or grid, that surah on its own. The "continue" card is brought up to
+/// date on the way back.
 Future<void> _openSurah(
   BuildContext context,
   SurahListItem item, {
   required bool inMushaf,
 }) async {
-  final HomeIndexCubit index = context.read<HomeIndexCubit>();
-  if (inMushaf) {
-    final int? page = await index.pageOfSurah(item.surah.number);
-    if (context.mounted) await _openMushaf(context, page: page);
-    return;
+  if (!inMushaf) {
+    return _openMushaf(
+      context,
+      section: SectionRequest.surah(item.surah.number),
+    );
   }
-
-  // Not awaited: a bookmark is not worth making anyone wait for a surah to
-  // open, and it is written long before they come back.
-  unawaited(index.noteSurahOpened(item.surah));
-  await context.pushNamed<void>(
-    AppRoutes.readerName,
-    pathParameters: <String, String>{
-      AppRoutes.surahNumberParam: '${item.surah.number}',
-    },
+  final int? page = await context.read<HomeIndexCubit>().pageOfSurah(
+    item.surah.number,
   );
-  await index.refreshHistory();
+  if (context.mounted) await _openMushaf(context, page: page);
 }
 
-Future<void> _openMushaf(BuildContext context, {int? page}) async {
+/// Opens the reading view: the whole mushaf at [page], or one [section] of
+/// it. The mushaf writes down where the reader gets to; this only reads it
+/// back when they return.
+Future<void> _openMushaf(
+  BuildContext context, {
+  int? page,
+  SectionRequest? section,
+}) async {
   final HomeIndexCubit index = context.read<HomeIndexCubit>();
   await context.pushNamed<void>(
     AppRoutes.mushafName,
-    extra: MushafArgs(initialPage: page),
+    extra: MushafArgs(initialPage: page, section: section),
   );
   await index.refreshHistory();
 }

@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/features/home/widgets/juz_widgets.dart';
+import 'package:mirqat/features/mushaf/cubit/mushaf_cubit.dart';
+import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
+import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
+import 'package:mirqat/features/session/cubit/session_cubit.dart';
 import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
 import 'package:mirqat/features/surah_list/screen/surah_list_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,7 +38,10 @@ import 'package:mirqat/features/splash/screen/splash_screen.dart';
 import 'package:mirqat/main.dart';
 import 'package:mirqat/services/audio/ayah_duration_service.dart';
 import 'package:mirqat/services/audio/manifest_service.dart';
+import 'package:mirqat/services/audio/memorization_player_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'fake_session_player.dart';
 
 /// Real clip lengths for Ahmed Khalil Shaheen's Al-Fatiha, so the session
 /// summary is exercised with the same numbers the app would measure.
@@ -182,6 +189,12 @@ class AppHarness {
 
     sl.unregister<AssetReader>();
     sl.registerLazySingleton<AssetReader>(FileAssetReader.new);
+
+    // just_audio has no implementation under `flutter test` either. The fake
+    // records what a session asks of the player, and lets a test say which
+    // ayah has been reached.
+    sl.unregister<MemorizationPlayerService>();
+    sl.registerLazySingleton<MemorizationPlayerService>(FakeSessionPlayer.new);
 
     // The real service would fetch the manifest and cache it through
     // path_provider, neither of which has an implementation under
@@ -341,6 +354,81 @@ class AppHarness {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
     await settle(tester);
+  }
+
+  /// Opens the reading view by tapping [target] — a surah, a juz, the
+  /// continue card — and waits until its first page and its session are
+  /// ready.
+  ///
+  /// The taps and the waiting run in `runAsync`: a page is built from real
+  /// database reads, which never complete under the test's fake clock, and a
+  /// read left hanging there holds the connection against every test after.
+  static Future<MushafCubit> openReading(
+    WidgetTester tester,
+    Finder target,
+  ) async {
+    await tester.runAsync(() async {
+      await tester.tap(target);
+      await tester.pump();
+      await tester.pump();
+    });
+    final BuildContext view = tester.element(find.byType(MushafView));
+    final MushafCubit mushaf = BlocProvider.of<MushafCubit>(view);
+    final SessionCubit session = BlocProvider.of<SessionCubit>(view);
+    await tester.runAsync(() async {
+      for (int i = 0; i < 500; i++) {
+        final bool pageReady = mushaf.state.pages.containsKey(
+          mushaf.state.currentPage,
+        );
+        // The page suggests the session's range, so a config means both the
+        // session and the page have arrived.
+        if (pageReady && session.state.config != null) break;
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    });
+    await frames(tester);
+    return mushaf;
+  }
+
+  /// Runs frames for [total] ms, one at a time. A single long pump is a
+  /// single frame, which starts an animation without ever advancing it.
+  static Future<void> frames(WidgetTester tester, [int total = 700]) async {
+    for (int t = 0; t < total; t += 16) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+  }
+
+  /// Brings up the bar at the foot of the reading view, the way a reader
+  /// does: a tap on the page.
+  static Future<void> showReadingBar(WidgetTester tester) async {
+    await tester.tap(find.byType(MushafPageView).first);
+    await frames(tester, 400);
+  }
+
+  /// Opens the session settings from the reading bar. In `runAsync`: the
+  /// sheet asks the device which surahs it holds, which is a database read.
+  static Future<void> openSessionSheet(WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.tap(find.byIcon(Icons.tune));
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+    });
+    await frames(tester, 500);
+  }
+
+  /// A tap on something in the reading view or its sheet, followed by frames
+  /// rather than a settle: a page being recited, or a spinner in the sheet,
+  /// never goes idle.
+  static Future<void> tapAndRun(WidgetTester tester, Finder finder) async {
+    await tester.runAsync(() async {
+      await tester.ensureVisible(finder);
+      await tester.pump();
+      await tester.tap(finder);
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await frames(tester, 300);
   }
 
   /// Chooses how the home screen is drawn, the way the Settings screen does:

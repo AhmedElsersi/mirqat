@@ -5,11 +5,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
+import '../../../domain/entities/playback_unit.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
+import '../../session/cubit/session_cubit.dart';
+import '../../session/cubit/session_state.dart';
+import '../../session/default_range.dart';
+import '../../session/widgets/session_bar.dart';
+import '../../session/widgets/session_sheet.dart';
 import '../../surah_list/widgets/error_view.dart';
 import '../cubit/mushaf_cubit.dart';
 import '../cubit/mushaf_page.dart';
@@ -26,13 +32,20 @@ class MushafScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<MushafCubit>(
-      create: (_) => sl<MushafCubit>()
-        ..init(
-          initialAyah: args.initialAyah,
-          initialPage: args.initialPage ?? 1,
-          section: args.section,
+    return MultiBlocProvider(
+      providers: <BlocProvider<dynamic>>[
+        BlocProvider<MushafCubit>(
+          create: (_) => sl<MushafCubit>()
+            ..init(
+              initialAyah: args.initialAyah,
+              initialPage: args.initialPage ?? 1,
+              section: args.section,
+            ),
         ),
+        // The session belongs to the reading screen: it plays over this text
+        // and ends when the screen is left.
+        BlocProvider<SessionCubit>(create: (_) => sl<SessionCubit>()..load()),
+      ],
       child: const MushafView(),
     );
   }
@@ -60,6 +73,16 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
   /// the page, whole, the way a book opens — and a tap anywhere brings the
   /// controls up, and another puts them away.
   bool _chrome = false;
+
+  /// Whether the page keeps up with the ayah being recited. Turning a page by
+  /// hand lets go of it — the reader is looking at something else — and the
+  /// chip that appears then takes it up again.
+  bool _following = true;
+
+  /// True between a finger going down on the pages and the scroll it started
+  /// coming to rest: a page change in that window is the reader's doing, not
+  /// the session's.
+  bool _dragging = false;
 
   void _toggleChrome() => setState(() => _chrome = !_chrome);
 
@@ -101,8 +124,123 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
     return _controller!;
   }
 
+  // --- the session and the page ---------------------------------------------
+
+  /// Tells the session what the page on show would have it play.
+  void _suggestRange(MushafState mushaf) {
+    final MushafPage? page = mushaf.pages[mushaf.currentPage];
+    if (page == null) return;
+    final SessionCubit session = context.read<SessionCubit>();
+    final ({AyahRef from, AyahRef to})? range = suggestedRange(
+      page: page,
+      section: mushaf.section,
+      endOfSurah: session.endOfSurah,
+    );
+    if (range != null) session.suggestRange(range.from, range.to);
+  }
+
+  /// The ayah being recited: marked, and — while following — brought on
+  /// screen, into another surah or juz if that is where it is.
+  void _onUnit(PlaybackUnit? unit) {
+    final MushafCubit mushaf = context.read<MushafCubit>();
+    if (unit == null) {
+      mushaf.clearHighlight();
+      return;
+    }
+    mushaf.highlightAyah(unit.surahNumber, unit.ayahNumber);
+    if (_following) mushaf.goToAyah(unit.surahNumber, unit.ayahNumber);
+  }
+
+  void _followAgain() {
+    setState(() => _following = true);
+    final PlaybackUnit? unit = context.read<SessionCubit>().state.currentUnit;
+    if (unit != null) {
+      context.read<MushafCubit>().goToAyah(unit.surahNumber, unit.ayahNumber);
+    }
+  }
+
+  Future<void> _openSettings() async {
+    final SessionCubit session = context.read<SessionCubit>();
+    await SessionSheet.show(context);
+    if (!mounted || !session.state.hasPendingChange) return;
+    // Put away with changes a running session cannot simply take: they are
+    // not left hanging. Start again, carry on, or drop them.
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialog) => AlertDialog(
+        title: Text(LocaleKeys.sessionChangedTitle.tr()),
+        content: PendingChangeActions(
+          onRestart: () {
+            session.applyChanges(restart: true);
+            Navigator.of(dialog).pop();
+          },
+          onContinue: () {
+            session.applyChanges(restart: false);
+            Navigator.of(dialog).pop();
+          },
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              session.discardChanges();
+              Navigator.of(dialog).pop();
+            },
+            child: Text(LocaleKeys.sessionDiscardChanges.tr()),
+          ),
+        ],
+      ),
+    );
+    // Dismissed by tapping outside is the same as dropping them.
+    if (session.state.hasPendingChange) session.discardChanges();
+  }
+
   @override
   Widget build(BuildContext context) {
+    return MultiBlocListener(
+      listeners: <BlocListener<dynamic, dynamic>>[
+        // What "play" would mean follows the page, until the reader chooses.
+        BlocListener<MushafCubit, MushafState>(
+          listenWhen: (MushafState a, MushafState b) =>
+              a.currentPage != b.currentPage ||
+              a.epoch != b.epoch ||
+              a.pages[b.currentPage] != b.pages[b.currentPage],
+          listener: (_, MushafState state) => _suggestRange(state),
+        ),
+        BlocListener<SessionCubit, SessionState>(
+          listenWhen: (SessionState a, SessionState b) =>
+              a.ready != b.ready || a.rangeChosen != b.rangeChosen,
+          listener: (BuildContext context, _) =>
+              _suggestRange(context.read<MushafCubit>().state),
+        ),
+        BlocListener<SessionCubit, SessionState>(
+          listenWhen: (SessionState a, SessionState b) =>
+              a.currentUnit?.ref != b.currentUnit?.ref,
+          listener: (_, SessionState state) => _onUnit(state.currentUnit),
+        ),
+        // A session that has just started brings its controls up and takes
+        // hold of the page again.
+        BlocListener<SessionCubit, SessionState>(
+          listenWhen: (SessionState a, SessionState b) =>
+              a.phase != b.phase && b.phase != SessionPhase.idle,
+          listener: (_, SessionState state) => setState(() {
+            _chrome = true;
+            if (state.phase == SessionPhase.loading) _following = true;
+          }),
+        ),
+        BlocListener<SessionCubit, SessionState>(
+          listenWhen: (SessionState a, SessionState b) =>
+              a.defaultsSavedAt != b.defaultsSavedAt,
+          listener: (BuildContext context, _) =>
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(LocaleKeys.readerSavedAsDefault.tr())),
+              ),
+        ),
+      ],
+      child: _scaffold(context),
+    );
+  }
+
+  Widget _scaffold(BuildContext context) {
     return BlocConsumer<MushafCubit, MushafState>(
       listenWhen: (MushafState a, MushafState b) =>
           a.pageRequest != b.pageRequest && b.pageRequest != null,
@@ -131,8 +269,8 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
       builder: (BuildContext context, MushafState state) {
         return Scaffold(
           // No app bar. What it used to say — which surah, which juz, which
-          // page — is written in the borders of the page itself now, and its
-          // one action, going back, is in the bar a tap brings up.
+          // page — is written in the borders of the page itself, and going
+          // back is in the bar a tap brings up, beside the session.
           body: SafeArea(
             child: switch (state.status) {
               LoadStatus.initial || LoadStatus.loading => const Center(
@@ -148,9 +286,18 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
                     start: 0,
                     end: 0,
                     bottom: 0,
-                    child: _ReadingBar(
-                      visible: _chrome,
-                      page: state.currentPage,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        _BackToAyahChip(
+                          following: _following,
+                          onPressed: _followAgain,
+                        ),
+                        SessionBar(
+                          visible: _chrome,
+                          onOpenSettings: _openSettings,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -170,29 +317,65 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
     // pinned to LTR here and each page restores RTL for its own content.
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: PageView.builder(
-        // Keyed by the run of pages, so that another surah or juz is a new
-        // page view on a new controller rather than the old one re-counted
-        // under the reader's thumb.
-        key: ValueKey<int>(state.epoch),
-        controller: _controllerFor(state),
-        reverse: true,
-        // One more leaf after a surah or a juz: where to go from here.
-        itemCount: state.visiblePageCount + (state.section == null ? 0 : 1),
-        onPageChanged: (int index) {
-          if (index < state.visiblePageCount) {
-            cubit.onPageChanged(state.firstPage + index);
-          }
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification n) {
+          // Only the pager's own scrolling, not a tall page scrolling inside
+          // it; and only a finger, not the session turning the page.
+          if (n.metrics.axis != Axis.horizontal) return false;
+          if (n is ScrollStartNotification) _dragging = n.dragDetails != null;
+          if (n is ScrollEndNotification) _dragging = false;
+          return false;
         },
-        itemBuilder: (BuildContext context, int index) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: index < state.visiblePageCount
-              ? _PageSlot(
-                  pageNumber: state.firstPage + index,
-                  onTap: _toggleChrome,
-                )
-              : _SectionEnd(section: state.section!, onTap: _toggleChrome),
+        child: PageView.builder(
+          // Keyed by the run of pages, so that another surah or juz is a new
+          // page view on a new controller rather than the old one re-counted
+          // under the reader's thumb.
+          key: ValueKey<int>(state.epoch),
+          controller: _controllerFor(state),
+          reverse: true,
+          // One more leaf after a surah or a juz: where to go from here.
+          itemCount: state.visiblePageCount + (state.section == null ? 0 : 1),
+          onPageChanged: (int index) {
+            if (_dragging && _following) setState(() => _following = false);
+            if (index < state.visiblePageCount) {
+              cubit.onPageChanged(state.firstPage + index);
+            }
+          },
+          itemBuilder: (BuildContext context, int index) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: index < state.visiblePageCount
+                ? _PageSlot(
+                    pageNumber: state.firstPage + index,
+                    onTap: _toggleChrome,
+                  )
+                : _SectionEnd(section: state.section!, onTap: _toggleChrome),
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shown while a session is reciting an ayah the reader has turned away from:
+/// one tap goes back to it and takes up following again.
+class _BackToAyahChip extends StatelessWidget {
+  const _BackToAyahChip({required this.following, required this.onPressed});
+
+  final bool following;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool active = context.select<SessionCubit, bool>(
+      (SessionCubit c) => c.state.isActive && !c.state.finished,
+    );
+    if (following || !active) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsetsDirectional.only(bottom: 8.h),
+      child: ActionChip(
+        avatar: const Icon(Icons.my_location, size: 18),
+        label: Text(LocaleKeys.sessionBackToAyah.tr()),
+        onPressed: onPressed,
       ),
     );
   }
@@ -312,11 +495,20 @@ class _PageSlot extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
+        // The range a session covers — or would — is tinted on the page.
+        final ({AyahRef from, AyahRef to})? marked = context
+            .select<SessionCubit, ({AyahRef from, AyahRef to})?>(
+              (SessionCubit c) => c.state.markedRange,
+            );
+
         return MushafPageView(
           page: page,
           linesPerFullPage: state.linesPerFullPage,
           highlighted: state.highlighted,
           selected: state.selected,
+          isSelected: marked == null
+              ? null
+              : (Word w) => w.ref.isWithin(marked.from, marked.to),
           isHeldBack: state.section == null
               ? null
               : (Word w) => !state.section!.holds(w.ref),
@@ -335,83 +527,37 @@ class _PageSlot extends StatelessWidget {
     if (word.isMarker) return;
     final Surah? surah = cubit.surahFor(word.surahNumber);
     if (surah == null) return;
+    final SessionCubit session = context.read<SessionCubit>();
+    final AyahRef ayah = word.ref;
 
     cubit.selectWord(word);
-    await showModalBottomSheet<void>(
+    final AyahAction? action = await showModalBottomSheet<AyahAction>(
       context: context,
       builder: (_) => AyahActionsSheet(
-        ayah: AyahRef(word.surahNumber, word.ayahNumber),
+        ayah: ayah,
         surah: surah,
+        canPlay: session.state.reciters.any(
+          (r) => r.hasSurah(word.surahNumber),
+        ),
+        hasChosenRange: session.state.rangeChosen,
       ),
     );
     if (!cubit.isClosed) cubit.clearSelection();
-  }
-}
+    if (action == null || session.isClosed) return;
 
-/// The bar a tap brings up from the foot of the page, and a second tap puts
-/// away. It slides rather than appears, and while it is away it takes no
-/// taps, so the page beneath it is never dead to the touch.
-class _ReadingBar extends StatelessWidget {
-  const _ReadingBar({required this.visible, required this.page});
-
-  final bool visible;
-  final int page;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return IgnorePointer(
-      ignoring: !visible,
-      child: AnimatedSlide(
-        offset: visible ? Offset.zero : const Offset(0, 1.2),
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        child: AnimatedOpacity(
-          opacity: visible ? 1 : 0,
-          duration: const Duration(milliseconds: 180),
-          child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(12.w, 0, 12.w, 10.h),
-            child: Material(
-              elevation: 6,
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(18.r),
-              child: Padding(
-                padding: EdgeInsetsDirectional.symmetric(
-                  horizontal: 6.w,
-                  vertical: 4.h,
-                ),
-                child: Row(
-                  children: <Widget>[
-                    IconButton(
-                      tooltip: LocaleKeys.mushafBack.tr(),
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const BackButtonIcon(),
-                    ),
-                    Expanded(
-                      child: Text(
-                        LocaleKeys.mushafHintLongPress.tr(),
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsetsDirectional.only(end: 12.w),
-                      child: Text(
-                        LocaleKeys.mushafPage.tr(
-                          args: <String>[page.toLocalisedString()],
-                        ),
-                        style: theme.textTheme.labelLarge,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    switch (action) {
+      case AyahAction.playFromHere:
+        session.chooseRange(ayah, AyahRef(surah.number, surah.ayahCount));
+        await session.start();
+      case AyahAction.memorizeAlone:
+        session.chooseRange(ayah, ayah);
+        await session.start();
+      case AyahAction.rangeStart:
+        session.setStart(ayah);
+      case AyahAction.rangeEnd:
+        session.setEnd(ayah);
+      case AyahAction.clearRange:
+        session.clearRange();
+    }
   }
 }

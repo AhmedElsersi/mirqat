@@ -4,10 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/history/screen/history_screen.dart';
 import '../../features/mushaf/mushaf_args.dart';
 import '../../features/mushaf/screen/mushaf_screen.dart';
-import '../../features/player/player_args.dart';
-import '../../features/player/screen/player_screen.dart';
 import '../../features/progress/screen/progress_screen.dart';
-import '../../features/reader/screen/reader_screen.dart';
 import '../../features/settings/screen/downloads_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/splash/screen/splash_screen.dart';
@@ -65,22 +62,10 @@ class AppRouter {
             const SurahListScreen(),
       ),
       GoRoute(
-        path: AppRoutes.readerPath,
-        name: AppRoutes.readerName,
-        builder: (BuildContext context, GoRouterState state) =>
-            ReaderScreen(surahNumber: _surahNumberOf(state)),
-      ),
-      GoRoute(
         path: AppRoutes.progressPath,
         name: AppRoutes.progressName,
         builder: (BuildContext context, GoRouterState state) =>
             ProgressScreen(surahNumber: _surahNumberOf(state)),
-      ),
-      GoRoute(
-        path: AppRoutes.playerPath,
-        name: AppRoutes.playerName,
-        builder: (BuildContext context, GoRouterState state) =>
-            PlayerScreen(args: state.extra! as PlayerArgs),
       ),
       GoRoute(
         path: AppRoutes.mushafPath,

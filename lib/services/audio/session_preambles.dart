@@ -8,7 +8,7 @@ import '../../data/models/surah.dart';
 /// | `bismillahMode`      | bismillah preamble | why                          |
 /// |----------------------|--------------------|------------------------------|
 /// | `counted_as_ayah_1`  | **never**          | it already *is* ayah 1's audio |
-/// | `separate_preamble`  | once, at the start | precedes ayah 1, unnumbered  |
+/// | `separate_preamble`  | once, before ayah 1| precedes ayah 1, unnumbered  |
 /// | `none`               | never              | At-Tawbah                    |
 ///
 /// The isti'adhah is orthogonal to all three: it plays once, before the
@@ -35,16 +35,23 @@ class SessionPreambles {
   ///
   /// [istiadhahEnabled] is the user's toggle; the bismillah has none, because
   /// whether it belongs is a property of the surah, not a preference.
+  ///
+  /// [startAyah] is where in [surah] the session begins. The basmala opens a
+  /// surah, so it leads a session only when the session starts at the surah's
+  /// first ayah (CLAUDE.md A.5): one that picks up at ayah 120 is not the
+  /// opening of anything. The isti'adhah is for beginning to recite at all,
+  /// and does not mind where.
   factory SessionPreambles.forSession({
     required Surah surah,
     required Reciter reciter,
     required bool istiadhahEnabled,
+    int startAyah = 1,
   }) => SessionPreambles(
     istiadhah: istiadhahEnabled && reciter.hasIstiadhah,
     // `hasBasmala`, not `hasBismillah`: a manifest reciter's basmala is ayah 0
     // of the surah rather than a reciter-level clip, and a session over
     // streamed audio still opens with it.
-    bismillah: playsBasmala(surah: surah, reciter: reciter),
+    bismillah: startAyah == 1 && playsBasmala(surah: surah, reciter: reciter),
   );
 
   /// Whether [surah] is opened with a standalone basmala in [reciter]'s voice.

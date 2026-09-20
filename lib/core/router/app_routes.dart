@@ -10,18 +10,12 @@ class AppRoutes {
   static const String surahListPath = '/';
   static const String surahListName = 'surah_list';
 
-  /// The reading page for one surah. Replaced the session-setup form: tapping
-  /// a surah lands on the text, not on a dialog.
-  static const String readerPath = '/surah/:surahNumber';
-  static const String readerName = 'reader';
-
-  static const String playerPath = '/session';
-  static const String playerName = 'player';
-
   static const String progressPath = '/surah/:surahNumber/progress';
   static const String progressName = 'progress';
 
-  /// The page-by-page mushaf. Optional `MushafArgs` in `state.extra`.
+  /// The reading view — the whole mushaf, or one surah or juz of it — and the
+  /// memorization session that plays over it. Optional `MushafArgs` in
+  /// `state.extra`.
   static const String mushafPath = '/mushaf';
   static const String mushafName = 'mushaf';
 

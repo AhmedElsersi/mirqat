@@ -11,8 +11,12 @@ A Quran memorization (hifz) app built around **talqeen-style spaced repetition o
 the app plays one ayah N times, then the next ayah N times, then joins them and plays the
 pair N times, and continues that pattern until the selected range is memorized.
 
-- **Reading** works for all 114 surahs, fully offline, from the bundled `quran.db` — as a
-  mushaf page view and as a per-surah reading view.
+- **Reading** works for all 114 surahs, fully offline, from the bundled `quran.db`, in the
+  mushaf's own page layout — the whole mushaf cover to cover, or one surah or one juz of
+  it at a time.
+- **A session plays over the text being read.** There is no player screen: the reading
+  view carries a bar with the session's controls, marks the ayah being recited, and
+  follows it from page to page. A session may run from one surah on into the next.
 - **Audio** works online and offline. A surah's recitation comes, in order of preference,
   from bundled assets, from a downloaded pack, or streamed from the CDN. A surah that no
   reciter has recorded yet is still fully readable; only memorization sessions need audio.
@@ -85,9 +89,10 @@ lib/
     surah_list/      cubit + screen + widgets   (the home: surahs | ajzaa tabs)
     home/            cubit + widgets            (ajzaa index, last place read)
     history/         screen                     (the last twenty places read)
-    reader/          cubit + screen + widgets   (per-surah reading + session setup)
-    mushaf/          cubit + screen + widgets   (page-by-page mushaf)
-    player/          cubit + screen + widgets
+    mushaf/          cubit + screen + widgets   (the reading view: the mushaf, or
+                                                 one surah / one juz of it)
+    session/         cubit + widgets            (the session set up and played over
+                                                 the reading view: bar, settings sheet)
     progress/        cubit + screen + widgets
     settings/        cubit + screen + widgets
   services/
@@ -114,7 +119,21 @@ lib/
   tests can run it. It shows **names only, never ayah text** — a lock screen truncates what
   it is given, and A.2 rule 7 forbids that.
 - **The repetition engine** (`domain/engine`, `domain/entities`) does not change for audio
-  work; audio sources are looked up around it, never inside it.
+  work; audio sources are looked up around it, never inside it. It addresses ayahs by
+  surah *and* number (`AyahRef`), so a range may start in one surah and end in a later
+  one: the joining is over the range, not over a surah, and a range only runs forward.
+  The ayah counts it needs are handed in from the catalog, one per surah it touches.
+- **The reading view is `MushafScreen`**, with an optional `SectionRequest` — one surah or
+  one juz. A section is its pages with only its lines on them; where it starts and ends
+  is asked of `quran.db` when it opens. A line a juz shares with its neighbour is shown
+  whole, the neighbour's words drawn fainter. Twenty-one surahs are printed with their
+  heading as the last line of the page *before* their first ayah; read on its own, such a
+  surah opens on its first ayah with the heading carried over.
+- **`SessionCubit` belongs to the reading screen** and knows nothing of pages: the screen
+  tells it what the page suggests a session would cover, and listens for the ayah being
+  recited. Settings changed under a running session are applied at once where that moves
+  nothing (speed, pauses); anything that changes what is recited waits for the reader to
+  say *start again* or *carry on from this ayah*.
 
 ## A.4 Approved package list
 
@@ -223,7 +242,10 @@ ship, and no portrait ships at all.
 `audioPath` is a template: `audio/{id}/{bitrate}/{s3}{a3}.mp3`, with surah and ayah
 zero-padded to 3 digits. **The basmala of a `separate` surah is its own file inside that
 surah, ayah `000`** — `audio/shaheen/64/002000.mp3` — and is played once before ayah 1 when
-a session starts at ayah 1.
+a session starts at ayah 1. A session that picks a surah up part-way opens with no
+basmala. A session that runs on into a later surah plays that surah's basmala once, ahead
+of the first time its ayah 1 is heard — a preamble in the queue, never a unit, so it is not
+drilled, joined or counted.
 
 `hasBasmala` is optional and has three states. `false` means the surah has no `000` file
 and none is ever requested — the only way to skip a *streamed* basmala silently, since a

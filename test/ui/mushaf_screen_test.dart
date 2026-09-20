@@ -427,7 +427,13 @@ void main() {
       1,
     ).where((AyahText w) => w.tint == WordTint.highlighted).toList();
 
-    expect(tinted, hasLength(rows.length));
-    expect(tinted.every((AyahText w) => texts.contains(w.text)), isTrue);
+    final List<AyahText> words = tinted
+        .where((AyahText w) => !w.isMarker)
+        .toList();
+    expect(words, hasLength(rows.length));
+    expect(words.every((AyahText w) => texts.contains(w.text)), isTrue);
+    // Its own end-marker is tinted with it, so that a marked run does not
+    // break at the ayah's end — and no other ayah's marker is.
+    expect(tinted.where((AyahText w) => w.isMarker), hasLength(1));
   });
 }

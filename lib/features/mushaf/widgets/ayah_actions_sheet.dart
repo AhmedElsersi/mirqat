@@ -7,13 +7,42 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../data/models/surah.dart';
 import '../cubit/mushaf_page.dart';
 
-/// What a tapped ayah offers. The actions are placeholders until playback
-/// lands.
+/// What can be done with an ayah that has been long-pressed.
+enum AyahAction {
+  /// A session from this ayah to the end of its surah, started at once.
+  playFromHere,
+
+  /// A session over this ayah alone, started at once.
+  memorizeAlone,
+
+  /// This ayah becomes the start, or the end, of the range a session would
+  /// cover. Nothing starts: the range is tinted on the page and the bar's
+  /// play button takes it from there.
+  rangeStart,
+  rangeEnd,
+
+  /// Gives the range back to the page on show.
+  clearRange,
+}
+
+/// What a long-pressed ayah offers. Pops with the [AyahAction] chosen.
 class AyahActionsSheet extends StatelessWidget {
-  const AyahActionsSheet({required this.ayah, required this.surah, super.key});
+  const AyahActionsSheet({
+    required this.ayah,
+    required this.surah,
+    required this.canPlay,
+    required this.hasChosenRange,
+    super.key,
+  });
 
   final AyahRef ayah;
   final Surah surah;
+
+  /// Whether a session can be started at all — a surah nobody has recorded
+  /// can still be read, and its range can still be marked.
+  final bool canPlay;
+
+  final bool hasChosenRange;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +50,12 @@ class AyahActionsSheet extends StatelessWidget {
     final String surahName = context.locale.languageCode == 'ar'
         ? surah.nameAr
         : surah.nameEn;
+
+    ListTile action(AyahAction value, IconData icon, String label) => ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      onTap: () => Navigator.of(context).pop(value),
+    );
 
     return SafeArea(
       child: Padding(
@@ -41,18 +76,34 @@ class AyahActionsSheet extends StatelessWidget {
                 style: theme.textTheme.titleMedium,
               ),
             ),
-            ListTile(
-              enabled: false,
-              leading: const Icon(Icons.play_arrow_outlined),
-              title: Text(LocaleKeys.mushafPlayFromHere.tr()),
-              subtitle: Text(LocaleKeys.mushafComingSoon.tr()),
+            if (canPlay) ...<Widget>[
+              action(
+                AyahAction.playFromHere,
+                Icons.play_arrow_outlined,
+                LocaleKeys.mushafPlayFromHere.tr(),
+              ),
+              action(
+                AyahAction.memorizeAlone,
+                Icons.repeat_one,
+                LocaleKeys.mushafMemorizeAyah.tr(),
+              ),
+            ],
+            action(
+              AyahAction.rangeStart,
+              Icons.first_page,
+              LocaleKeys.mushafSetRangeStart.tr(),
             ),
-            ListTile(
-              enabled: false,
-              leading: const Icon(Icons.repeat),
-              title: Text(LocaleKeys.mushafMemorize.tr()),
-              subtitle: Text(LocaleKeys.mushafComingSoon.tr()),
+            action(
+              AyahAction.rangeEnd,
+              Icons.last_page,
+              LocaleKeys.mushafSetRangeEnd.tr(),
             ),
+            if (hasChosenRange)
+              action(
+                AyahAction.clearRange,
+                Icons.clear,
+                LocaleKeys.mushafClearRange.tr(),
+              ),
           ],
         ),
       ),

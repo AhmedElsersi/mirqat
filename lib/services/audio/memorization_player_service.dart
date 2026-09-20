@@ -138,6 +138,7 @@ class MemorizationPlayerService {
       surah: inPlan.first,
       reciter: reciter,
       istiadhahEnabled: plan.config.playIstiadhah,
+      startAyah: plan.config.startAyah,
     );
 
     final PlaybackQueue queue = queueBuilder.build(

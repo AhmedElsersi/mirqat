@@ -19,10 +19,9 @@ import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
 import '../../features/home/cubit/home_index_cubit.dart';
 import '../../features/mushaf/cubit/mushaf_cubit.dart';
-import '../../features/player/cubit/player_cubit.dart';
 import '../../features/progress/cubit/progress_cubit.dart';
-import '../../features/reader/cubit/audio_pack_cubit.dart';
-import '../../features/reader/cubit/reader_cubit.dart';
+import '../../features/session/cubit/audio_pack_cubit.dart';
+import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
@@ -175,14 +174,16 @@ Future<void> configureDependencies() async {
       historyRepository: sl<ReadingHistoryRepository>(),
     ),
   );
-  sl.registerFactory<ReaderCubit>(
-    () => ReaderCubit(
+  sl.registerFactory<SessionCubit>(
+    () => SessionCubit(
       quranRepository: sl<QuranRepository>(),
       settingsRepository: sl<SettingsRepository>(),
       reciterCatalog: sl<ReciterCatalog>(),
-      audioAvailability: sl<AudioAvailability>(),
       durationService: sl<AyahDurationService>(),
       planBuilder: sl<RepetitionPlanBuilder>(),
+      playerService: sl<MemorizationPlayerService>(),
+      progressRepository: sl<ProgressRepository>(),
+      keepAwakeService: sl<KeepAwakeService>(),
     ),
   );
   sl.registerFactory<AudioPackCubit>(
@@ -193,13 +194,6 @@ Future<void> configureDependencies() async {
       pagesRepository: sl<QuranPagesRepository>(),
       quranRepository: sl<QuranRepository>(),
       historyRepository: sl<ReadingHistoryRepository>(),
-    ),
-  );
-  sl.registerFactory<PlayerCubit>(
-    () => PlayerCubit(
-      playerService: sl<MemorizationPlayerService>(),
-      progressRepository: sl<ProgressRepository>(),
-      keepAwakeService: sl<KeepAwakeService>(),
     ),
   );
   sl.registerFactory<ProgressCubit>(
