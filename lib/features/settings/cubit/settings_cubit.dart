@@ -3,29 +3,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/error/failures.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/app_settings.dart';
-import '../../../data/models/ayah.dart';
 import '../../../data/models/reciter.dart';
-import '../../../data/models/surah.dart';
-import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../services/audio/reciter_catalog.dart';
 import 'settings_state.dart';
 
 /// Owns the persisted settings. Held app-wide rather than per-screen, because
-/// the theme and the Arabic font size are read by every screen.
+/// the theme and the home view are read outside the settings screen.
 class SettingsCubit extends Cubit<SettingsState> {
   SettingsCubit({
     required SettingsRepository settingsRepository,
-    required QuranRepository quranRepository,
     required ReciterCatalog reciterCatalog,
   }) : _settings = settingsRepository,
-       _quran = quranRepository,
        _reciters = reciterCatalog,
        super(const SettingsState());
 
   final SettingsRepository _settings;
-  final QuranRepository _quran;
   final ReciterCatalog _reciters;
 
   Future<void> load() async {
@@ -34,6 +28,15 @@ class SettingsCubit extends Cubit<SettingsState> {
     final settingsResult = await _settings.read();
     final AppSettings settings = settingsResult.getOrElse(
       () => const AppSettings(),
+    );
+    // Said at once, before the reciters: they may wait on the network, and
+    // the theme, the home view and whether the introduction has been seen
+    // are all needed sooner than that.
+    emit(
+      state.copyWith(
+        settings: settings,
+        settingsRead: settingsResult.isRight(),
+      ),
     );
 
     final recitersResult = await _reciters.reciters();
@@ -46,35 +49,13 @@ class SettingsCubit extends Cubit<SettingsState> {
         ),
       ),
       (List<Reciter> reciters) => emit(
-        SettingsState(
+        state.copyWith(
           status: LoadStatus.ready,
           settings: settings,
           reciters: reciters,
-          previewAyah: state.previewAyah,
         ),
       ),
     );
-
-    await _loadPreviewAyah();
-  }
-
-  /// The font-size control previews the real mushaf face on real scripture.
-  /// A preview failure is not worth surfacing — the control still works, it
-  /// simply renders without a sample.
-  Future<void> _loadPreviewAyah() async {
-    final surahsResult = await _quran.getSurahs();
-    final List<Surah> surahs = surahsResult.getOrElse(() => const <Surah>[]);
-    if (surahs.isEmpty) return;
-
-    final ayahsResult = await _quran.getAyahRange(
-      surahs.first.number,
-      startAyah: 1,
-      endAyah: 1,
-    );
-    final List<Ayah> ayahs = ayahsResult.getOrElse(() => const <Ayah>[]);
-    if (ayahs.isEmpty || isClosed) return;
-
-    emit(state.copyWith(previewAyah: ayahs.first));
   }
 
   Future<void> setReciter(String reciterId) =>
@@ -87,6 +68,11 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> setDownloadOverWifiOnly(bool value) =>
       _save(state.settings.copyWith(downloadOverWifiOnly: value));
+
+  /// The introduction has been read through, or skipped: either way it is
+  /// not shown on its own again. It stays one tap away, under How to use.
+  Future<void> markOnboardingSeen() =>
+      _save(state.settings.copyWith(onboardingSeen: true));
 
   Future<void> setDefaultRepeatCount(int value) => _save(
     state.settings.copyWith(

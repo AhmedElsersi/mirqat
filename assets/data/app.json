@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "about": {
+    "ar": "«اقرأ وارتق» تطبيق لحفظ القرآن الكريم بطريقة التلقين: تسمع الآية وتكرّرها، ثم الآية التي تليها، ثم تصلهما معًا — درجةً درجة، حتى تثبت.\n\nالمصحف كاملًا بين يديك للقراءة دون إنترنت، والتلاوات تُبَثّ أو تُنزَّل متى شئت. بلا إعلانات، وبلا حسابات، ولا يجمع التطبيق أي بيانات عنك.",
+    "en": "«اقرأ وارتق» (Iqra Wartaq) teaches the Quran the way a halaqa does: hear an ayah and repeat it, then the next ayah, then both joined together — one rung at a time, until it holds.\n\nThe whole mushaf is there to read offline, and recitations stream or download whenever you choose. No ads, no accounts, and the app collects nothing about you."
+  },
+  "goal": {
+    "ar": "أن يكون حفظ القرآن متاحًا لكل من أراده، في أي وقت وفي أي مكان: طريقة حِلَق التحفيظ بين يديك، بصوت قارئ متقن، وبالقدر الذي تختاره أنت من التكرار والوصل.\n\nنسأل الله أن يجعله عونًا على حفظ كتابه، وأن يتقبّله منّا ومنكم.",
+    "en": "To put memorizing the Quran within reach of anyone who wants it, at any time and in any place: the halaqa's method in your hands, in the voice of a careful reciter, with as much repetition and joining as you choose.\n\nWe ask Allah to make it a help in memorizing His Book, and to accept it from us and from you."
+  },
+  "developer": {
+    "name": {
+      "ar": "Ahmed Elsersi",
+      "en": "Ahmed Elsersi"
+    },
+    "email": "ahmed.elsersi3@gmail.com",
+    "photo": "",
+    "github": "https://github.com/ahmedelsersi",
+    "linkedin": "",
+    "whatsapp": "",
+    "facebook": ""
+  }
+}

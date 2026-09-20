@@ -72,7 +72,8 @@ lib/
     localization/    locale keys (ar.json, en.json under assets/translations)
     constants/       AppConstants, AssetPaths
     extensions/
-    widgets/         AyahText — the only widget allowed to render Quranic text
+    widgets/         AyahText — the only widget allowed to render Quranic text;
+                     SettingsCard, the session form, the Islamic frame
   data/
     models/          Surah, Ayah, Word, MushafLine, Reciter, MemorizationProgress, ...
     datasources/     QuranDatabase, QuranLocalDataSource, QuranPagesLocalDataSource,
@@ -94,12 +95,18 @@ lib/
     session/         cubit + widgets            (the session set up and played over
                                                  the reading view: bar, settings sheet)
     progress/        cubit + screen + widgets
-    settings/        cubit + screen + widgets
+    settings/        cubit + screens            (settings in cards; session settings
+                                                 and saved recitations as pages)
+    about/           cubit + screens            (how to use, our goal, about us,
+                                                 the developer)
+    onboarding/      screen                     (the introduction, first launch)
   services/
     audio/           AudioResolver, AudioStorage, ManifestService, ReciterCatalog,
                      AudioAvailability, AyahDurationService, AudioPackService,
                      PackFetcher, MemorizationPlayerService, SessionPreambles,
                      PlaybackQueue, SessionMediaControls
+    AppInfoService   what the app says about itself (`app.json`)
+    LinkOpener       hands an address to the device — mail, browser, WhatsApp
 ```
 
 - **State management:** `flutter_bloc`, Cubit-per-screen. No global god-cubit.
@@ -150,6 +157,7 @@ lib/
 | Quran data | `sqflite` + `sqflite_common` | `sqflite_common` is sqflite's pure-Dart API, so loaders stay Flutter-free |
 | Paths | `path_provider`, `path` | |
 | Network | `http` | Public GETs only (A.2 rule 3) |
+| Links | `url_launcher` | Opens the developer's email and profiles in another app. Not a network call of the app's own |
 | Downloads | `background_downloader` | Per-surah packs |
 | Packs | `archive`, `crypto` | Unzip; sha256 verification |
 | FP types | `dartz` | |
@@ -323,6 +331,26 @@ settings screen offers a re-download of that reciter alone.
 
 The files remain the truth: `AudioResolver` asks the filesystem on every lookup, so
 deleting a surah falls back to streaming with no restart.
+
+### `assets/data/app.json` — what the app says about itself
+
+```json
+{ "schemaVersion": 1,
+  "about": { "ar", "en" }, "goal": { "ar", "en" },
+  "developer": { "name": { "ar", "en" }, "photo", "email",
+                 "github", "linkedin", "whatsapp", "facebook" } }
+```
+
+About us, Our goal and the developer's card are read from here through
+`AppInfoService`, so their words can change without touching a screen. It is read
+**forgivingly**: a field that is missing or of the wrong type reads as empty, a link left
+blank is simply not shown, and nothing written in this file can take a screen down. Links
+are typed by hand, so they are read the way people type them — an email without `mailto:`,
+a WhatsApp number with spaces and a plus, a profile without `https://`.
+
+**How to use and the introduction are not in this file.** They describe this build's own
+screens and gestures, so they live in the translations and change in the same commit as
+the screens they describe.
 
 ### `assets/audio/silence_400ms.wav`
 A single short silent clip, used as a gap spacer inside the playback queue.

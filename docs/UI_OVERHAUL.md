@@ -83,7 +83,7 @@ workflow. Each stage ends with screenshots for the owner's approval.
 | 2b | Thicker frame, scrolling page, labels in the borders, no app bar, tap-to-show bar | done — `ui/2b-frame-thicker`, awaiting the owner's look |
 | 3 | Home: ajzaa tab, view mode in Settings, history, last position | done — `ui/3-home`, awaiting the owner's look. A juz opens the mushaf at its first page; "one juz at a time" as its own view is stage 4 |
 | 4 | Reading + session merged; cross-surah sessions; player screen removed | done — `ui/4-reading-session` (three commits: engine, sections, session), awaiting the owner's look |
-| 5 | Settings cards, Session settings page, About / Goal / Developer / How to use, onboarding | |
+| 5 | Settings cards, Session settings page, About / Goal / Developer / How to use, onboarding | done — `ui/5-settings-about`, awaiting the owner's look |
 | 6 | `app.json`, version + update dialog, admin editor | |
 
 ## Stage 4 — what was decided while building it
@@ -119,4 +119,33 @@ workflow. Each stage ends with screenshots for the owner's approval.
 - **`AyahText.flowing`** has no caller left (the one-surah view is page layout
   now). Kept, with its tests and the U+06DD note, until stage 5 shows whether
   anything wants it.
+
+## Stage 5 — what was decided while building it
+
+- **Settings are five cards:** appearance, reciter, audio and storage, session,
+  about. The session's values are a page of their own, built from the very
+  widget the reading view's session sheet uses, so the two cannot drift.
+- **The Arabic font-size slider is gone from Settings.** Since stage 4 every
+  ayah is drawn in the mushaf's page layout, where a line is as large as the
+  page is wide — there is nothing left for the slider to change, and a control
+  that does nothing is worse than none. The stored value is kept. If a text
+  size is wanted back it needs a view that is not page layout; that is a
+  product decision, not a slider.
+- **`app.json` is bundled for now** (`assets/data/app.json`): About us, Our
+  goal, the developer. Stage 6 publishes it beside the manifest and lets the
+  admin tool edit it; the screens already read it through `AppInfoService`
+  and will not change. The developer's photo is in the file but not drawn
+  yet — fetching it is a network call, and that waits for the rule-3
+  amendment stage 6 brings.
+- **The developer's card** ships with the name as given, the email, and the
+  GitHub account the CDN already names. LinkedIn, WhatsApp and Facebook are
+  blank and therefore hidden, to be filled in from the admin tool.
+- **The introduction** is four leaves of icon and words — no ayah on a slide.
+  Shown once; an install updating from before it existed sees it too, which
+  is deliberate, since that update is also when the player screen went away.
+  How to use can bring it up again.
+- **The splash waits for the stored settings** (at most a second) before it
+  hands over. The settings cubit is created lazily and the splash is the
+  first thing to read it, so without the wait every first launch went
+  straight past the introduction. Caught by the first test written for it.
 

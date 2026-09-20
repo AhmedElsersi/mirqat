@@ -29,6 +29,7 @@ import 'package:mirqat/data/datasources/quran_database.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
 import 'package:mirqat/data/datasources/quran_pages_local_data_source.dart';
 import 'package:mirqat/data/repositories/reading_history_repository.dart';
+import 'package:mirqat/data/repositories/settings_repository.dart';
 import 'package:mirqat/data/models/reading_position.dart';
 import 'package:mirqat/data/datasources/reading_history_local_data_source.dart';
 import 'package:mirqat/data/models/reciter.dart';
@@ -265,11 +266,21 @@ class AppHarness {
 
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.progressBoxName).clear();
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
+    // Every test but the introduction's own starts as someone who has already
+    // seen it; [freshInstall] puts that back.
+    await sl<SettingsRepository>().save(
+      const AppSettings(onboardingSeen: true),
+    );
 
     return const AppHarness._();
   }
 
   Future<void> stop() async => sl.reset();
+
+  /// Settings as a first launch finds them: nothing stored, the introduction
+  /// not yet seen.
+  static Future<void> freshInstall() =>
+      Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
 
   static Future<void> _warmCatalog(QuranLocalDataSource catalog) async {
     await catalog.getReciters();

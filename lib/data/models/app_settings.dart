@@ -121,6 +121,7 @@ class AppSettings extends Equatable {
     this.arabicFontSize = defaultArabicFontSize,
     this.audioQuality = AudioQuality.standard,
     this.downloadOverWifiOnly = true,
+    this.onboardingSeen = false,
   });
 
   static const double defaultArabicFontSize = 24;
@@ -174,6 +175,12 @@ class AppSettings extends Equatable {
   /// plan should have to say so rather than find out afterwards.
   final bool downloadOverWifiOnly;
 
+  /// Whether the introduction has been shown. False for a fresh install —
+  /// and for one updating from before there was an introduction, which is
+  /// deliberate: that update is also when the player screen went away, and
+  /// the introduction is where the new way of working is explained.
+  final bool onboardingSeen;
+
   /// The remembered range for [surahNumber], or null when there is none or
   /// when the behaviour is set to always use the whole surah.
   AyahRange? rememberedRangeFor(int surahNumber) =>
@@ -198,6 +205,7 @@ class AppSettings extends Equatable {
     double? arabicFontSize,
     AudioQuality? audioQuality,
     bool? downloadOverWifiOnly,
+    bool? onboardingSeen,
   }) => AppSettings(
     reciterId: reciterId ?? this.reciterId,
     defaultRepeatCount: defaultRepeatCount ?? this.defaultRepeatCount,
@@ -221,6 +229,7 @@ class AppSettings extends Equatable {
     arabicFontSize: arabicFontSize ?? this.arabicFontSize,
     audioQuality: audioQuality ?? this.audioQuality,
     downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
+    onboardingSeen: onboardingSeen ?? this.onboardingSeen,
   );
 
   /// Records [range] as the last one used for [surahNumber].
@@ -251,6 +260,7 @@ class AppSettings extends Equatable {
     // are ever renamed.
     'audioQuality': audioQuality.bitrate,
     'downloadOverWifiOnly': downloadOverWifiOnly,
+    'onboardingSeen': onboardingSeen,
   };
 
   factory AppSettings.fromMap(Map<dynamic, dynamic> map) => AppSettings(
@@ -288,6 +298,7 @@ class AppSettings extends Equatable {
         (map['arabicFontSize'] as num?)?.toDouble() ?? defaultArabicFontSize,
     audioQuality: AudioQuality.fromStorage(map['audioQuality']),
     downloadOverWifiOnly: map['downloadOverWifiOnly'] as bool? ?? true,
+    onboardingSeen: map['onboardingSeen'] as bool? ?? false,
   );
 
   /// Reads the remembered ranges back, skipping anything malformed.
@@ -327,5 +338,6 @@ class AppSettings extends Equatable {
     arabicFontSize,
     audioQuality,
     downloadOverWifiOnly,
+    onboardingSeen,
   ];
 }

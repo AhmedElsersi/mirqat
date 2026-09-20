@@ -5,6 +5,11 @@ import 'package:mirqat/core/widgets/session_controls.dart';
 import 'package:mirqat/features/progress/screen/progress_screen.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/features/settings/screen/downloads_screen.dart';
+import 'package:mirqat/core/widgets/settings_card.dart';
+import 'package:mirqat/features/about/screen/developer_screen.dart';
+import 'package:mirqat/features/about/screen/how_to_use_screen.dart';
+import 'package:mirqat/features/about/screen/info_page_screen.dart';
+import 'package:mirqat/features/settings/screen/session_settings_screen.dart';
 import 'package:mirqat/features/settings/screen/settings_screen.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_tile.dart';
@@ -122,27 +127,70 @@ void main() {
       );
     });
 
-    testWidgets('the session group is collapsed on first open', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('the session\'s settings are a page of their own, built from '
+        'the same form as the session sheet', (WidgetTester tester) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
       await reveal(tester, find.text('إعدادات الجلسة'));
 
-      // The heading is there...
+      // A row on the settings page, and none of the form itself.
       expect(find.text('إعدادات الجلسة'), findsOneWidget);
-      // ...but its contents are not built until it is expanded.
       expect(find.byType(SessionTuningControls), findsNothing);
-      expect(find.text('طريقة الوصل'), findsNothing);
 
       await AppHarness.tapAndSettle(tester, find.text('إعدادات الجلسة'));
 
+      expect(find.byType(SessionSettingsScreen), findsOneWidget);
       expect(find.byType(SessionTuningControls), findsOneWidget);
       expect(find.text('طريقة الوصل'), findsOneWidget);
       // The retired mode is gone from the picker.
       expect(find.text('ثنائي'), findsNothing);
       // And the new one is there.
       expect(find.text('متصل'), findsOneWidget);
+
+      // Back returns to Settings, not to the home page.
+      await AppHarness.tapAndSettle(tester, find.byType(BackButton));
+      expect(find.byType(SettingsScreen), findsOneWidget);
+    });
+
+    testWidgets('every group sits in a container of its own', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+
+      final Set<String> seen = <String>{};
+      for (final String title in <String>[
+        'المظهر والعرض',
+        'القارئ',
+        'الصوت والتخزين',
+        'الجلسة',
+        'عن التطبيق',
+      ]) {
+        await reveal(tester, find.widgetWithText(SettingsCard, title).first);
+        seen.add(title);
+        expect(tester.takeException(), isNull, reason: title);
+      }
+      expect(seen, hasLength(5));
+    });
+
+    testWidgets('the about card leads to how to use, our goal, about us and '
+        'the developer', (WidgetTester tester) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+
+      Future<void> visit(String row, Type screen) async {
+        await reveal(tester, find.text(row));
+        await AppHarness.tapAndSettle(tester, find.text(row));
+        expect(find.byType(screen), findsOneWidget, reason: row);
+        expect(tester.takeException(), isNull, reason: row);
+        await AppHarness.tapAndSettle(tester, find.byType(BackButton));
+        expect(find.byType(SettingsScreen), findsOneWidget);
+      }
+
+      await visit('طريقة الاستخدام', HowToUseScreen);
+      await visit('هدفنا', InfoPageScreen);
+      await visit('من نحن', InfoPageScreen);
+      await visit('عن المطوّر', DeveloperScreen);
     });
 
     testWidgets('the home view toggle mirrors the app bar', (
@@ -167,7 +215,8 @@ void main() {
       await openSettings(tester);
       await reveal(tester, find.text('إعدادات الجلسة'));
       await AppHarness.tapAndSettle(tester, find.text('إعدادات الجلسة'));
-      await reveal(tester, find.byIcon(Icons.add).first);
+      // On its own page now; the repeat count is the first stepper on it.
+      expect(find.byType(SessionSettingsScreen), findsOneWidget);
 
       // The first stepper inside the session group is the repeat count.
       // Pumped between taps: the button's callback closes over the value from

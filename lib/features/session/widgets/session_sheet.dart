@@ -410,18 +410,14 @@ class _Tuning extends StatelessWidget {
           betweenRepeatPauseMs: config.betweenRepeatPauseMs,
           betweenStepsPauseMs: config.betweenStepsPauseMs,
           playbackSpeed: config.playbackSpeed,
+          finalFullPass: config.finalFullPass,
           onRepeatCount: cubit.setRepeatCount,
           onConnectMode: cubit.setConnectMode,
           onIntraBlockPause: cubit.setIntraBlockPause,
           onBetweenRepeatPause: cubit.setBetweenRepeatPause,
           onBetweenStepsPause: cubit.setBetweenStepsPause,
           onPlaybackSpeed: cubit.setPlaybackSpeed,
-        ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsetsDirectional.zero,
-          title: Text(LocaleKeys.sessionSetupFinalFullPass.tr()),
-          value: config.finalFullPass,
-          onChanged: cubit.setFinalFullPass,
+          onFinalFullPass: cubit.setFinalFullPass,
         ),
         // Only before a session: the isti'adhah opens one, and a session that
         // is already under way has nothing left to open.

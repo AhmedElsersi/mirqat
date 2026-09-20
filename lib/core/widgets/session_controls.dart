@@ -518,12 +518,14 @@ class SessionTuningControls extends StatelessWidget {
     required this.betweenRepeatPauseMs,
     required this.betweenStepsPauseMs,
     required this.playbackSpeed,
+    required this.finalFullPass,
     required this.onRepeatCount,
     required this.onConnectMode,
     required this.onIntraBlockPause,
     required this.onBetweenRepeatPause,
     required this.onBetweenStepsPause,
     required this.onPlaybackSpeed,
+    required this.onFinalFullPass,
     super.key,
   });
 
@@ -534,12 +536,16 @@ class SessionTuningControls extends StatelessWidget {
   final int betweenStepsPauseMs;
   final double playbackSpeed;
 
+  /// Whether the session closes with one more pass over the whole range.
+  final bool finalFullPass;
+
   final ValueChanged<int> onRepeatCount;
   final ValueChanged<ConnectMode> onConnectMode;
   final ValueChanged<int> onIntraBlockPause;
   final ValueChanged<int> onBetweenRepeatPause;
   final ValueChanged<int> onBetweenStepsPause;
   final ValueChanged<double> onPlaybackSpeed;
+  final ValueChanged<bool> onFinalFullPass;
 
   @override
   Widget build(BuildContext context) {
@@ -623,6 +629,12 @@ class SessionTuningControls extends StatelessWidget {
             // player cannot actually be set to.
             onChanged: (double v) => onPlaybackSpeed((v * 20).round() / 20),
           ),
+        ),
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsetsDirectional.zero,
+          title: Text(LocaleKeys.sessionSetupFinalFullPass.tr()),
+          value: finalFullPass,
+          onChanged: onFinalFullPass,
         ),
       ],
     );

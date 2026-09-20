@@ -23,6 +23,9 @@ class AssetPaths {
   static const String _data = 'assets/data';
   static const String recitersCatalog = '$_data/reciters.json';
 
+  /// What the app says about itself: About us, Our goal, the developer.
+  static const String bundledAppInfo = '$_data/app.json';
+
   /// The audio manifest shipped with the app, used until the CDN's copy has
   /// been fetched once.
   static const String bundledManifest = '$_data/manifest.json';

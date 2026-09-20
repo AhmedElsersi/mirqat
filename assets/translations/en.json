@@ -96,7 +96,12 @@
     "wifi_only": "Download over Wi-Fi only",
     "wifi_only_hint": "A single surah is tens of megabytes",
     "home_view_mushaf": "Mushaf",
-    "home_view_mushaf_hint": "The app opens straight onto the last page you read, and the surah and ajzaa lists become the index."
+    "home_view_mushaf_hint": "The app opens straight onto the last page you read, and the surah and ajzaa lists become the index.",
+    "card_appearance": "Appearance",
+    "card_audio": "Audio and storage",
+    "card_session": "Session",
+    "card_about": "About",
+    "session_page_hint": "The values every new session starts from. What you change during a session stays with that session."
   },
   "duration": {
     "minutes": "{} min",
@@ -190,5 +195,50 @@
     "discard_changes": "Discard the changes",
     "no_audio_range": "No reciter has the whole of this range recorded yet, so a session cannot start.",
     "reciter_lacks_range": "{} has not recorded the whole of this range."
+  },
+  "about": {
+    "how_to_use": "How to use",
+    "goal": "Our goal",
+    "us": "About us",
+    "developer": "About the developer",
+    "developer_role": "App developer",
+    "contact": "Get in touch",
+    "link_email": "Email",
+    "link_github": "GitHub",
+    "link_linkedin": "LinkedIn",
+    "link_whatsapp": "WhatsApp",
+    "link_facebook": "Facebook",
+    "link_failed": "Could not open the link",
+    "empty": "Nothing to show here yet",
+    "show_intro": "Show the introduction again"
+  },
+  "howto": {
+    "read_title": "Read",
+    "read_body": "From the home page, choose a surah or a juz to read on its own in the mushaf's pages; at its end you can move to the one after or before. In Settings you can set the view to “Mushaf”, and the app then opens straight onto the last page you read.",
+    "listen_title": "Listen and repeat",
+    "listen_body": "Tap the page to bring up the session bar, then Start. The ayahs are recited as many times as you choose; the ayah being recited is marked and the page follows it. Tap the page again to put the bar away.",
+    "range_title": "Choose what to memorize",
+    "range_body": "Long-press an ayah to listen from it to the end of the surah, to memorize it alone, or to make it the start or the end of the range. In the session settings you set the range by surah and ayah, and it may end in a later surah.",
+    "modes_title": "Ways of joining",
+    "modes_body": "Cumulative: an ayah is repeated, then everything from the start of the range up to it — one ayah, then two, then three. Continuous: the whole range is recited through, then again. No joining: each ayah is repeated on its own.",
+    "change_title": "Change things mid-session",
+    "change_body": "Speed and pauses change at once. For the reciter, the range, the repeats and the way of joining you are asked: start again, or carry on from the current ayah?",
+    "offline_title": "Offline",
+    "offline_body": "Reading never needs a connection. Recitation streams, and you can download a surah from the session settings to listen offline; what you have downloaded is listed in Settings under Saved recitations.",
+    "resume_title": "Pick up where you stopped",
+    "resume_body": "The app remembers the last page you read and shows it at the top of the home page, and the reading history keeps the last twenty places. The progress icon beside each surah shows what you have memorized of it."
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Start",
+    "read_title": "The mushaf in your hands",
+    "read_body": "Read the whole Quran in the mushaf's own pages, surah by surah or juz by juz, with no connection.",
+    "method_title": "Memorize as in a halaqa",
+    "method_body": "Hear an ayah and repeat it, then the next, then both joined together — one rung at a time, until it holds.",
+    "control_title": "The session, over the text",
+    "control_body": "Tap the page to start, and long-press an ayah to choose what to memorize. The ayah being recited is marked, and the page follows it.",
+    "yours_title": "At your own pace",
+    "yours_body": "Choose the reciter, the repeats and the way of joining, and pick up whenever you like from where you stopped. No ads, no accounts."
   }
 }

@@ -17,6 +17,7 @@ import '../../data/repositories/quran_repository.dart';
 import '../../data/repositories/reading_history_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
+import '../../features/about/cubit/app_info_cubit.dart';
 import '../../features/home/cubit/home_index_cubit.dart';
 import '../../features/mushaf/cubit/mushaf_cubit.dart';
 import '../../features/progress/cubit/progress_cubit.dart';
@@ -25,6 +26,7 @@ import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
+import '../../services/app_info_service.dart';
 import '../../services/audio/audio_availability.dart';
 import '../../services/audio/audio_pack_service.dart';
 import '../../services/audio/audio_resolver.dart';
@@ -35,6 +37,7 @@ import '../../services/audio/memorization_player_service.dart';
 import '../../services/audio/pack_fetcher.dart';
 import '../../services/audio/reciter_catalog.dart';
 import '../../services/keep_awake_service.dart';
+import '../../services/link_opener.dart';
 import '../../services/reciter_image_cache.dart';
 
 /// The service locator.
@@ -167,6 +170,13 @@ Future<void> configureDependencies() async {
       audioAvailability: sl<AudioAvailability>(),
     ),
   );
+  sl.registerLazySingleton<AppInfoService>(
+    () => AppInfoService(sl<AssetReader>()),
+  );
+  sl.registerLazySingleton<LinkOpener>(LinkOpener.new);
+  sl.registerFactory<AppInfoCubit>(
+    () => AppInfoCubit(appInfoService: sl<AppInfoService>()),
+  );
   sl.registerFactory<HomeIndexCubit>(
     () => HomeIndexCubit(
       quranRepository: sl<QuranRepository>(),
@@ -212,7 +222,6 @@ Future<void> configureDependencies() async {
   sl.registerFactory<SettingsCubit>(
     () => SettingsCubit(
       settingsRepository: sl<SettingsRepository>(),
-      quranRepository: sl<QuranRepository>(),
       reciterCatalog: sl<ReciterCatalog>(),
     ),
   );

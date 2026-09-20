@@ -25,6 +25,23 @@ class AppRoutes {
   static const String settingsPath = '/settings';
   static const String settingsName = 'settings';
 
+  /// The introduction. First launch lands here from the splash; How to use
+  /// can bring it up again.
+  static const String onboardingPath = '/welcome';
+  static const String onboardingName = 'onboarding';
+
+  /// Children of settings, so that back returns there.
+  static const String sessionSettingsPath = 'session';
+  static const String sessionSettingsName = 'session_settings';
+  static const String howToUsePath = 'how-to-use';
+  static const String howToUseName = 'how_to_use';
+  static const String goalPath = 'goal';
+  static const String goalName = 'goal';
+  static const String aboutUsPath = 'about';
+  static const String aboutUsName = 'about_us';
+  static const String developerPath = 'developer';
+  static const String developerName = 'developer';
+
   /// The saved-recitations list. A child of settings, so the back button
   /// returns there rather than to the home screen.
   static const String downloadsPath = 'downloads';
