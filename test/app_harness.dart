@@ -37,6 +37,8 @@ import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/core/router/app_router.dart';
 import 'package:mirqat/features/splash/screen/splash_screen.dart';
 import 'package:mirqat/main.dart';
+import 'package:mirqat/services/app_info_service.dart';
+import 'package:mirqat/services/app_version_service.dart';
 import 'package:mirqat/services/audio/ayah_duration_service.dart';
 import 'package:mirqat/services/audio/manifest_service.dart';
 import 'package:mirqat/services/audio/memorization_player_service.dart';
@@ -196,6 +198,19 @@ class AppHarness {
     // ayah has been reached.
     sl.unregister<MemorizationPlayerService>();
     sl.registerLazySingleton<MemorizationPlayerService>(FakeSessionPlayer.new);
+
+    // `app.json` the same way: the bundled copy off disk, a network that is
+    // never there, and no cache. And a version, since package_info_plus has no
+    // implementation here either.
+    sl.unregister<AppInfoService>();
+    sl.registerLazySingleton<AppInfoService>(
+      () => offlineAppInfo(const FileAssetReader()),
+      dispose: (AppInfoService s) => s.dispose(),
+    );
+    sl.unregister<AppVersionService>();
+    sl.registerLazySingleton<AppVersionService>(
+      () => FixedAppVersion(installedVersion),
+    );
 
     // The real service would fetch the manifest and cache it through
     // path_provider, neither of which has an implementation under
@@ -516,6 +531,28 @@ class AppHarness {
     assetLoader: const FileTranslationLoader(),
     child: const IqraWartaqApp(),
   );
+}
+
+/// An [AppInfoService] over [assets] with no network and no disk cache.
+AppInfoService offlineAppInfo(AssetReader assets) => AppInfoService(
+  assets,
+  client: MockClient((http.Request _) async => http.Response('', 404)),
+  storageDirectory: () =>
+      throw UnsupportedError('No app.json cache under flutter test.'),
+);
+
+/// The version the tests' app claims to be.
+const String installedVersion = '1.2.0';
+
+class FixedAppVersion implements AppVersionService {
+  FixedAppVersion(this.version);
+
+  final String? version;
+
+  @override
+  Future<InstalledVersion?> read() async => version == null
+      ? null
+      : InstalledVersion(version: version!, buildNumber: '7');
 }
 
 /// Reading history held in a list, for widget tests. See where it is

@@ -17,6 +17,8 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/models/app_settings.dart';
 import 'features/settings/cubit/settings_cubit.dart';
+import 'features/update/cubit/update_cubit.dart';
+import 'features/update/widgets/update_gate.dart';
 import 'features/settings/cubit/settings_state.dart';
 
 void main() {
@@ -150,25 +152,35 @@ class _IqraWartaqAppState extends State<IqraWartaqApp> {
         _followTheme(cubit);
         return cubit;
       },
-      child: ScreenUtilInit(
-        designSize: const Size(
-          AppConstants.designWidth,
-          AppConstants.designHeight,
-        ),
-        minTextAdapt: true,
-        builder: (BuildContext context, Widget? child) => MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          // onGenerateTitle rather than title: it runs inside a localised
-          // context, so the task-switcher label follows the app locale
-          // instead of being frozen at startup.
-          onGenerateTitle: (BuildContext context) => LocaleKeys.appName.tr(),
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: _themeMode,
-          locale: context.locale,
-          supportedLocales: context.supportedLocales,
-          localizationsDelegates: context.localizationDelegates,
-          routerConfig: _router,
+      // The update prompt's cubit, beside the settings and as lazy: nothing
+      // asks it anything until the home page is up.
+      child: BlocProvider<UpdateCubit>(
+        lazy: true,
+        create: (_) => sl<UpdateCubit>(),
+        child: ScreenUtilInit(
+          designSize: const Size(
+            AppConstants.designWidth,
+            AppConstants.designHeight,
+          ),
+          minTextAdapt: true,
+          builder: (BuildContext context, Widget? child) => MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            // onGenerateTitle rather than title: it runs inside a localised
+            // context, so the task-switcher label follows the app locale
+            // instead of being frozen at startup.
+            onGenerateTitle: (BuildContext context) => LocaleKeys.appName.tr(),
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: _themeMode,
+            locale: context.locale,
+            supportedLocales: context.supportedLocales,
+            localizationsDelegates: context.localizationDelegates,
+            routerConfig: _router,
+            // Over every route, and under the localizations and the theme: the
+            // update prompt is part of the app, not a page in it.
+            builder: (BuildContext context, Widget? child) =>
+                UpdateGate(child: child ?? const SizedBox.shrink()),
+          ),
         ),
       ),
     );

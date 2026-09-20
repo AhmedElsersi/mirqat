@@ -218,7 +218,7 @@ void main() {
     void useAppInfo(Map<String, dynamic> json) {
       sl.unregister<AppInfoService>();
       sl.registerLazySingleton<AppInfoService>(
-        () => AppInfoService(_Fixed(jsonEncode(json))),
+        () => offlineAppInfo(_Fixed(jsonEncode(json))),
       );
     }
 

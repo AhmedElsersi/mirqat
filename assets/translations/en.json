@@ -101,7 +101,8 @@
     "card_audio": "Audio and storage",
     "card_session": "Session",
     "card_about": "About",
-    "session_page_hint": "The values every new session starts from. What you change during a session stays with that session."
+    "session_page_hint": "The values every new session starts from. What you change during a session stays with that session.",
+    "version": "Version {} ({})"
   },
   "duration": {
     "minutes": "{} min",
@@ -240,5 +241,14 @@
     "control_body": "Tap the page to start, and long-press an ayah to choose what to memorize. The ayah being recited is marked, and the page follows it.",
     "yours_title": "At your own pace",
     "yours_body": "Choose the reciter, the repeats and the way of joining, and pick up whenever you like from where you stopped. No ads, no accounts."
+  },
+  "update": {
+    "optional_title": "A newer version is available",
+    "optional_body": "Update the app for the latest improvements. You can carry on now and update later.",
+    "required_title": "The app needs updating",
+    "required_body": "This version is no longer supported. Update the app from the store to carry on reading and memorizing.",
+    "later": "Later",
+    "now": "Update",
+    "whats_new": "What is new"
   }
 }

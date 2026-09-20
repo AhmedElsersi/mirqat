@@ -26,7 +26,9 @@ import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
+import '../../features/update/cubit/update_cubit.dart';
 import '../../services/app_info_service.dart';
+import '../../services/app_version_service.dart';
 import '../../services/audio/audio_availability.dart';
 import '../../services/audio/audio_pack_service.dart';
 import '../../services/audio/audio_resolver.dart';
@@ -172,6 +174,14 @@ Future<void> configureDependencies() async {
   );
   sl.registerLazySingleton<AppInfoService>(
     () => AppInfoService(sl<AssetReader>()),
+    dispose: (AppInfoService s) => s.dispose(),
+  );
+  sl.registerLazySingleton<AppVersionService>(AppVersionService.new);
+  sl.registerFactory<UpdateCubit>(
+    () => UpdateCubit(
+      appInfoService: sl<AppInfoService>(),
+      appVersionService: sl<AppVersionService>(),
+    ),
   );
   sl.registerLazySingleton<LinkOpener>(LinkOpener.new);
   sl.registerFactory<AppInfoCubit>(
@@ -223,6 +233,7 @@ Future<void> configureDependencies() async {
     () => SettingsCubit(
       settingsRepository: sl<SettingsRepository>(),
       reciterCatalog: sl<ReciterCatalog>(),
+      appVersionService: sl<AppVersionService>(),
     ),
   );
 }

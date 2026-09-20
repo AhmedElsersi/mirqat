@@ -122,6 +122,7 @@ class AppSettings extends Equatable {
     this.audioQuality = AudioQuality.standard,
     this.downloadOverWifiOnly = true,
     this.onboardingSeen = false,
+    this.updatePromptedAt,
   });
 
   static const double defaultArabicFontSize = 24;
@@ -181,6 +182,10 @@ class AppSettings extends Equatable {
   /// the introduction is where the new way of working is explained.
   final bool onboardingSeen;
 
+  /// When an optional update was last mentioned, so that it is not mentioned
+  /// again the same day. Null: never.
+  final DateTime? updatePromptedAt;
+
   /// The remembered range for [surahNumber], or null when there is none or
   /// when the behaviour is set to always use the whole surah.
   AyahRange? rememberedRangeFor(int surahNumber) =>
@@ -206,6 +211,7 @@ class AppSettings extends Equatable {
     AudioQuality? audioQuality,
     bool? downloadOverWifiOnly,
     bool? onboardingSeen,
+    DateTime? updatePromptedAt,
   }) => AppSettings(
     reciterId: reciterId ?? this.reciterId,
     defaultRepeatCount: defaultRepeatCount ?? this.defaultRepeatCount,
@@ -230,6 +236,7 @@ class AppSettings extends Equatable {
     audioQuality: audioQuality ?? this.audioQuality,
     downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
     onboardingSeen: onboardingSeen ?? this.onboardingSeen,
+    updatePromptedAt: updatePromptedAt ?? this.updatePromptedAt,
   );
 
   /// Records [range] as the last one used for [surahNumber].
@@ -261,6 +268,7 @@ class AppSettings extends Equatable {
     'audioQuality': audioQuality.bitrate,
     'downloadOverWifiOnly': downloadOverWifiOnly,
     'onboardingSeen': onboardingSeen,
+    'updatePromptedAt': updatePromptedAt?.millisecondsSinceEpoch,
   };
 
   factory AppSettings.fromMap(Map<dynamic, dynamic> map) => AppSettings(
@@ -299,6 +307,9 @@ class AppSettings extends Equatable {
     audioQuality: AudioQuality.fromStorage(map['audioQuality']),
     downloadOverWifiOnly: map['downloadOverWifiOnly'] as bool? ?? true,
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
+    updatePromptedAt: map['updatePromptedAt'] is int
+        ? DateTime.fromMillisecondsSinceEpoch(map['updatePromptedAt'] as int)
+        : null,
   );
 
   /// Reads the remembered ranges back, skipping anything malformed.
@@ -339,5 +350,6 @@ class AppSettings extends Equatable {
     audioQuality,
     downloadOverWifiOnly,
     onboardingSeen,
+    updatePromptedAt,
   ];
 }

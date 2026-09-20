@@ -12,6 +12,7 @@ import '../../../core/widgets/session_controls.dart';
 import '../../../core/widgets/settings_card.dart';
 import '../../../data/models/app_settings.dart';
 import '../../../data/models/reciter.dart';
+import '../../../services/app_version_service.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
 
@@ -119,6 +120,20 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
+
+              if (state.appVersion case final InstalledVersion v)
+                Padding(
+                  padding: EdgeInsetsDirectional.only(top: 4.h, bottom: 12.h),
+                  child: Text(
+                    LocaleKeys.settingsVersion.tr(
+                      args: <String>[v.version, v.buildNumber],
+                    ),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
 
               if (state.errorMessage != null)
                 Padding(

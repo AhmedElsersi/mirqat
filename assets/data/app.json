@@ -19,5 +19,21 @@
     "linkedin": "",
     "whatsapp": "",
     "facebook": ""
+  },
+  "update": {
+    "android": {
+      "min": "",
+      "latest": "",
+      "storeUrl": "https://play.google.com/store/apps/details?id=com.mirqat.app"
+    },
+    "ios": {
+      "min": "",
+      "latest": "",
+      "storeUrl": ""
+    },
+    "notes": {
+      "ar": "",
+      "en": ""
+    }
   }
 }

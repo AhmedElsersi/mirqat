@@ -39,10 +39,15 @@ pair N times, and continues that pattern until the selected range is memorized.
    counts, no hardcoded reciter IDs, no switch on surah number anywhere. Surahs come from
    `quran.db`, reciters from `reciters.json` and the audio manifest; both are pure data.
 3. **Network: public HTTPS GETs only.** The app may fetch the audio manifest, ayah audio
-   and audio packs from the CDN, and nothing else. No backend, no accounts, no Firebase,
-   no analytics, no crash reporting, no remote config. Every network failure degrades
-   quietly to what is available offline — never an error dialog for a failed fetch.
-   Knowing whether a file is local or remote lives in exactly one place: `AudioResolver`.
+   and audio packs from the CDN; `app.json` from the same Pages site as the manifest, and
+   the one portrait it may name; and nothing else. No backend, no accounts, no Firebase,
+   no analytics, no crash reporting. `app.json` is the **only** remote config, and it is
+   deliberately narrow: what the app says about itself, and which versions the stores are
+   on (A.5). It is a static file anyone can read — nothing is sent, nothing identifies the
+   install, and no behaviour of the app is switched by it beyond the update prompt. Every
+   network failure degrades quietly to what is available offline — never an error dialog
+   for a failed fetch. Knowing whether an *audio* file is local or remote lives in
+   exactly one place: `AudioResolver`.
 4. **Arabic-first, RTL-first.** Default locale is `ar`. `EdgeInsetsDirectional`
    everywhere — never raw `EdgeInsets` with left/right assumptions. Layout, icons,
    sliders, and progress indicators must be RTL-correct. The mushaf turns pages the way a
@@ -100,12 +105,14 @@ lib/
     about/           cubit + screens            (how to use, our goal, about us,
                                                  the developer)
     onboarding/      screen                     (the introduction, first launch)
+    update/          cubit + widget             (the update prompt, over the whole app)
   services/
     audio/           AudioResolver, AudioStorage, ManifestService, ReciterCatalog,
                      AudioAvailability, AyahDurationService, AudioPackService,
                      PackFetcher, MemorizationPlayerService, SessionPreambles,
                      PlaybackQueue, SessionMediaControls
-    AppInfoService   what the app says about itself (`app.json`)
+    AppInfoService   `app.json`: about, goal, developer, update rules — cached, refreshed
+    AppVersionService, update_policy   the running version, and what to say about it
     LinkOpener       hands an address to the device — mail, browser, WhatsApp
 ```
 
@@ -157,7 +164,8 @@ lib/
 | Quran data | `sqflite` + `sqflite_common` | `sqflite_common` is sqflite's pure-Dart API, so loaders stay Flutter-free |
 | Paths | `path_provider`, `path` | |
 | Network | `http` | Public GETs only (A.2 rule 3) |
-| Links | `url_launcher` | Opens the developer's email and profiles in another app. Not a network call of the app's own |
+| Version | `package_info_plus` | The running app's own version: the line at the foot of Settings, and what the update rules are compared with |
+| Links | `url_launcher` | Opens the developer's email and profiles, and the store page, in another app. Not a network call of the app's own |
 | Downloads | `background_downloader` | Per-surah packs |
 | Packs | `archive`, `crypto` | Unzip; sha256 verification |
 | FP types | `dartz` | |
@@ -332,25 +340,51 @@ settings screen offers a re-download of that reciter alone.
 The files remain the truth: `AudioResolver` asks the filesystem on every lookup, so
 deleting a surah falls back to streaming with no restart.
 
-### `assets/data/app.json` — what the app says about itself
+### `app.json` — what the app says about itself, and which versions are welcome
+
+Fetched from `kAppInfoUrl` — `https://ahmedelsersi.github.io/iqra-cdn/app.json`, beside
+the manifest, overridable with `--dart-define=APP_INFO_URL=…` — and handled exactly as the
+manifest is: answered at once from the copy cached on the device, or from the bundled
+`assets/data/app.json` when there is none, and refreshed in the background. A fetched file
+that says nothing — not JSON, not an object, an empty object — is **not taken up**: a
+hosting error page must not be able to blank a screen or lift an update rule.
 
 ```json
 { "schemaVersion": 1,
   "about": { "ar", "en" }, "goal": { "ar", "en" },
   "developer": { "name": { "ar", "en" }, "photo", "email",
-                 "github", "linkedin", "whatsapp", "facebook" } }
+                 "github", "linkedin", "whatsapp", "facebook" },
+  "update": { "android": { "min", "latest", "storeUrl" },
+              "ios":     { "min", "latest", "storeUrl" },
+              "notes":   { "ar", "en" } } }
 ```
 
 About us, Our goal and the developer's card are read from here through
-`AppInfoService`, so their words can change without touching a screen. It is read
+`AppInfoService`, so their words can change without a release. It is read
 **forgivingly**: a field that is missing or of the wrong type reads as empty, a link left
 blank is simply not shown, and nothing written in this file can take a screen down. Links
 are typed by hand, so they are read the way people type them — an email without `mailto:`,
-a WhatsApp number with spaces and a plus, a profile without `https://`.
+a WhatsApp number with spaces and a plus, a profile without `https://`. `photo` is an
+address, or a path relative to the file itself.
+
+**The update rules are per store.** Below `min` the app shows a page asking to be updated
+and nothing else; below `latest` it mentions the update over a dimmed app, with "later",
+and not again for a day. The wording is fixed and localized; `notes` adds an optional word
+on what is new. `decideUpdate` resolves **every doubt towards saying nothing**, because the
+other direction locks people out: a rule with no `storeUrl` is ignored, a version that
+cannot be read — on either side — is no rule at all, and a build *ahead* of the store (a
+tester's, a reviewer's) is left alone. A required update cannot be put off; an optional
+one that was put off stays away for the rest of the run, unless a required one arrives.
 
 **How to use and the introduction are not in this file.** They describe this build's own
 screens and gestures, so they live in the translations and change in the same commit as
 the screens they describe.
+
+**The settings are one map with several writers** — the settings screen, a session saving
+its values as defaults, the update prompt noting when it last spoke. `SettingsRepository`
+broadcasts every save and `SettingsCubit` takes it up, and a writer that is not the
+settings cubit reads the stored map afresh before changing its one field. Without both, the
+next save writes a stale copy over what the others changed.
 
 ### `assets/audio/silence_400ms.wav`
 A single short silent clip, used as a gap spacer inside the playback queue.

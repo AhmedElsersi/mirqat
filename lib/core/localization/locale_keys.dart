@@ -245,4 +245,12 @@ class LocaleKeys {
   static const String onboardingControlBody = 'onboarding.control_body';
   static const String onboardingYoursTitle = 'onboarding.yours_title';
   static const String onboardingYoursBody = 'onboarding.yours_body';
+  static const String updateOptionalTitle = 'update.optional_title';
+  static const String updateOptionalBody = 'update.optional_body';
+  static const String updateRequiredTitle = 'update.required_title';
+  static const String updateRequiredBody = 'update.required_body';
+  static const String updateLater = 'update.later';
+  static const String updateNow = 'update.now';
+  static const String updateWhatsNew = 'update.whats_new';
+  static const String settingsVersion = 'settings.version';
 }

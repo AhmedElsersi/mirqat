@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../data/models/app_info.dart';
+import '../../../services/app_info_service.dart';
 import '../../../services/link_opener.dart';
 import '../cubit/app_info_cubit.dart';
 
@@ -45,8 +46,19 @@ class _DeveloperView extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 44.r,
                   backgroundColor: theme.colorScheme.primary,
-                  // The name's first letter. A portrait is optional, and a
-                  // card with no portrait should not look like one is missing.
+                  // The portrait, when `app.json` names one and it can be
+                  // fetched; over the name's first letter, which is what
+                  // shows until then and whenever it cannot. A card with no
+                  // portrait should not look like one is missing.
+                  foregroundImage: switch (sl<AppInfoService>().resolve(
+                    developer.photo,
+                  )) {
+                    final Uri photo => NetworkImage('$photo'),
+                    null => null,
+                  },
+                  onForegroundImageError: developer.photo.isEmpty
+                      ? null
+                      : (Object _, StackTrace? _) {},
                   child: Text(
                     name.isEmpty ? '' : name.characters.first,
                     style: theme.textTheme.headlineMedium?.copyWith(

@@ -291,6 +291,45 @@ void main() {
       },
     );
 
+    test('writing a range down does not undo what was saved elsewhere since '
+        'the screen opened', () async {
+      final SessionCubit cubit = await open(stored: remembering());
+      // While the reading screen is open, the theme is changed in Settings and
+      // the update prompt is put off.
+      final DateTime prompted = DateTime(2026, 9, 20, 9);
+      settings.writtenElsewhere(
+        remembering().copyWith(
+          themeMode: AppThemeMode.dark,
+          updatePromptedAt: prompted,
+          onboardingSeen: true,
+        ),
+      );
+
+      cubit.chooseRange(const AyahRef(1, 2), s1a3);
+      await cubit.start();
+      await settle();
+
+      final AppSettings written = settings.saved.last;
+      expect(written.rememberedRangeFor(1), isNotNull);
+      expect(written.themeMode, AppThemeMode.dark);
+      expect(written.updatePromptedAt, prompted);
+      expect(written.onboardingSeen, isTrue);
+    });
+
+    test('saving as defaults keeps what was saved elsewhere, too', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      settings.writtenElsewhere(
+        const AppSettings(reciterId: 'b', homeViewMode: HomeViewMode.mushaf),
+      );
+      cubit.suggestRange(s1a1, s1a3);
+      cubit.setRepeatCount(9);
+
+      await cubit.saveAsDefaults();
+
+      expect(settings.saved.last.defaultRepeatCount, 9);
+      expect(settings.saved.last.homeViewMode, HomeViewMode.mushaf);
+    });
+
     test('"whole surah" remembers nothing', () async {
       final SessionCubit cubit = await open(reciterId: 'b');
       cubit.chooseRange(const AyahRef(1, 2), s1a3);
@@ -515,11 +554,16 @@ void main() {
   });
 }
 
+/// A store that holds what was last saved, the way the real one does — so
+/// that "read it fresh before changing it" is something a test can see.
 class _Settings implements SettingsRepository {
   _Settings(this._current);
 
-  final AppSettings _current;
+  AppSettings _current;
   final List<AppSettings> saved = <AppSettings>[];
+
+  /// Someone other than the session writing: the settings screen, say.
+  void writtenElsewhere(AppSettings settings) => _current = settings;
 
   @override
   Future<Either<Failure, AppSettings>> read() async =>
@@ -527,9 +571,13 @@ class _Settings implements SettingsRepository {
 
   @override
   Future<Either<Failure, AppSettings>> save(AppSettings settings) async {
+    _current = settings;
     saved.add(settings);
     return Right<Failure, AppSettings>(settings);
   }
+
+  @override
+  Stream<AppSettings> get changes => const Stream<AppSettings>.empty();
 }
 
 /// One second per ayah — the summary only needs a measurement to exist.

@@ -20,6 +20,7 @@ import '../../mushaf/mushaf_args.dart';
 import '../../mushaf/reading_section.dart';
 import '../../settings/cubit/settings_cubit.dart';
 import '../../settings/cubit/settings_state.dart';
+import '../../update/cubit/update_cubit.dart';
 import '../cubit/surah_list_cubit.dart';
 import '../cubit/surah_list_state.dart';
 import '../widgets/error_view.dart';
@@ -70,6 +71,24 @@ class _SurahListViewState extends State<_SurahListView> {
   /// change of the setting did.
   bool _launchDecided = false;
 
+  /// Whether this launch has looked for an update yet. Asked from here, the
+  /// first screen past the splash and the introduction, and once: the cubit
+  /// goes on listening for a newer `app.json` by itself.
+  bool _updateChecked = false;
+
+  void _checkForUpdate(SettingsState settings) {
+    if (_updateChecked || !settings.settingsRead) return;
+    _updateChecked = true;
+    // After the frame: this runs during build, and the answer may be a state
+    // change in a cubit above this widget.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<UpdateCubit>().check(
+        lastPrompted: settings.settings.updatePromptedAt,
+      );
+    });
+  }
+
   @override
   void dispose() {
     _surahScroll.dispose();
@@ -96,6 +115,7 @@ class _SurahListViewState extends State<_SurahListView> {
     final HomeViewMode viewMode = settings.settings.homeViewMode;
     final HomeIndexState index = context.watch<HomeIndexCubit>().state;
     if (settings.status.isReady) _decideLaunch(viewMode, index);
+    _checkForUpdate(settings);
 
     // The mushaf has no list shape of its own; its index is the plain list.
     final bool grid = viewMode == HomeViewMode.grid;

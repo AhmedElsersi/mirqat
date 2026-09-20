@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failures.dart';
@@ -6,6 +8,7 @@ import '../../../data/models/app_settings.dart';
 import '../../../data/models/reciter.dart';
 import '../../../data/repositories/settings_repository.dart';
 import '../../../domain/entities/session_config.dart';
+import '../../../services/app_version_service.dart';
 import '../../../services/audio/reciter_catalog.dart';
 import 'settings_state.dart';
 
@@ -15,12 +18,33 @@ class SettingsCubit extends Cubit<SettingsState> {
   SettingsCubit({
     required SettingsRepository settingsRepository,
     required ReciterCatalog reciterCatalog,
+    AppVersionService? appVersionService,
   }) : _settings = settingsRepository,
+       _appVersion = appVersionService,
        _reciters = reciterCatalog,
-       super(const SettingsState());
+       super(const SettingsState()) {
+    // Someone else saved — a session keeping its values as defaults, say.
+    // Taken up at once, so that the next save from here does not write an
+    // older copy back over theirs.
+    _saved = _settings.changes.listen((AppSettings saved) {
+      if (saved != state.settings) emit(state.copyWith(settings: saved));
+    });
+  }
+
+  StreamSubscription<AppSettings>? _saved;
+
+  @override
+  Future<void> close() async {
+    await _saved?.cancel();
+    return super.close();
+  }
 
   final SettingsRepository _settings;
   final ReciterCatalog _reciters;
+
+  /// Optional, so that the many tests of the settings themselves need no
+  /// platform to ask.
+  final AppVersionService? _appVersion;
 
   Future<void> load() async {
     emit(state.copyWith(status: LoadStatus.loading));
@@ -38,6 +62,9 @@ class SettingsCubit extends Cubit<SettingsState> {
         settingsRead: settingsResult.isRight(),
       ),
     );
+
+    // Off to the side: a line of small print must not hold the settings up.
+    unawaited(_readVersion());
 
     final recitersResult = await _reciters.reciters();
     recitersResult.fold(
@@ -57,6 +84,18 @@ class SettingsCubit extends Cubit<SettingsState> {
       ),
     );
   }
+
+  Future<void> _readVersion() async {
+    final InstalledVersion? version = await _appVersion?.read();
+    if (version != null && !isClosed) {
+      emit(state.copyWith(appVersion: version));
+    }
+  }
+
+  /// An optional update has just been put off; it is not mentioned again for
+  /// a day.
+  Future<void> markUpdatePrompted(DateTime at) =>
+      _save(state.settings.copyWith(updatePromptedAt: at));
 
   Future<void> setReciter(String reciterId) =>
       _save(state.settings.copyWith(reciterId: reciterId));

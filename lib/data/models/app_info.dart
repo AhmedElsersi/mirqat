@@ -103,6 +103,119 @@ class DeveloperInfo extends Equatable {
   List<Object?> get props => <Object?>[name, photo, links];
 }
 
+/// A version as the stores write it: `1.4.0`. Compared number by number, so
+/// that 1.10.0 is newer than 1.9.0, which comparing the strings gets wrong.
+class AppVersion extends Equatable implements Comparable<AppVersion> {
+  const AppVersion(this.parts);
+
+  /// Null for anything that is not dotted numbers — a blank field, a typo.
+  /// A build suffix (`+7`) or a pre-release tag (`-beta`) is ignored: the
+  /// stores order releases by the numbers before it.
+  static AppVersion? tryParse(String? text) {
+    final String core = (text ?? '').trim().split(RegExp('[+-]')).first;
+    if (core.isEmpty) return null;
+    final List<int> parts = <int>[];
+    for (final String piece in core.split('.')) {
+      final int? n = int.tryParse(piece);
+      if (n == null || n < 0) return null;
+      parts.add(n);
+    }
+    return AppVersion(List<int>.unmodifiable(parts));
+  }
+
+  final List<int> parts;
+
+  @override
+  int compareTo(AppVersion other) {
+    final int length = parts.length > other.parts.length
+        ? parts.length
+        : other.parts.length;
+    for (int i = 0; i < length; i++) {
+      final int a = i < parts.length ? parts[i] : 0;
+      final int b = i < other.parts.length ? other.parts[i] : 0;
+      if (a != b) return a - b;
+    }
+    return 0;
+  }
+
+  bool operator <(AppVersion other) => compareTo(other) < 0;
+
+  @override
+  List<Object?> get props => <Object?>[parts];
+
+  @override
+  String toString() => parts.join('.');
+}
+
+/// Which versions one platform's store is on.
+class PlatformUpdate extends Equatable {
+  const PlatformUpdate({this.min = '', this.latest = '', this.storeUrl = ''});
+
+  static const PlatformUpdate none = PlatformUpdate();
+
+  factory PlatformUpdate.fromJson(Object? json) => json is Map<String, dynamic>
+      ? PlatformUpdate(
+          min: _text(json['min']),
+          latest: _text(json['latest']),
+          storeUrl: _text(json['storeUrl']),
+        )
+      : none;
+
+  /// The oldest version still allowed to run. Below it, the app asks to be
+  /// updated and does nothing else. Blank: every version is welcome.
+  final String min;
+
+  /// The newest version in the store. Below it, the app mentions the update
+  /// and can be told "later". Blank: nothing to mention.
+  final String latest;
+
+  /// The store page the update button opens.
+  final String storeUrl;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'min': min,
+    'latest': latest,
+    'storeUrl': storeUrl,
+  };
+
+  @override
+  List<Object?> get props => <Object?>[min, latest, storeUrl];
+}
+
+/// The update rules, one set per store, and an optional word on what is new.
+class UpdateRules extends Equatable {
+  const UpdateRules({
+    this.android = PlatformUpdate.none,
+    this.ios = PlatformUpdate.none,
+    this.notes = LocalizedText.empty,
+  });
+
+  static const UpdateRules none = UpdateRules();
+
+  factory UpdateRules.fromJson(Object? json) => json is Map<String, dynamic>
+      ? UpdateRules(
+          android: PlatformUpdate.fromJson(json['android']),
+          ios: PlatformUpdate.fromJson(json['ios']),
+          notes: LocalizedText.fromJson(json['notes']),
+        )
+      : none;
+
+  final PlatformUpdate android;
+  final PlatformUpdate ios;
+
+  /// "What's new", shown under the fixed wording of the prompt. Optional.
+  final LocalizedText notes;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'android': android.toJson(),
+    'ios': ios.toJson(),
+    'notes': notes.toJson(),
+  };
+
+  @override
+  List<Object?> get props => <Object?>[android, ios, notes];
+}
+
 /// What the app says about itself: `app.json`.
 ///
 /// Read forgivingly. A field that is missing or of the wrong type reads as
@@ -114,6 +227,7 @@ class AppInfo extends Equatable {
     this.about = LocalizedText.empty,
     this.goal = LocalizedText.empty,
     this.developer = DeveloperInfo.empty,
+    this.update = UpdateRules.none,
   });
 
   static const AppInfo empty = AppInfo();
@@ -122,6 +236,7 @@ class AppInfo extends Equatable {
     about: LocalizedText.fromJson(json['about']),
     goal: LocalizedText.fromJson(json['goal']),
     developer: DeveloperInfo.fromJson(json['developer']),
+    update: UpdateRules.fromJson(json['update']),
   );
 
   /// Parses [source], or answers [empty] for anything that is not an object.
@@ -139,9 +254,34 @@ class AppInfo extends Equatable {
   final LocalizedText about;
   final LocalizedText goal;
   final DeveloperInfo developer;
+  final UpdateRules update;
+
+  /// The file as it is published. [schemaVersion] leads, so that a future
+  /// build can tell a shape it does not know from one it does.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'schemaVersion': schemaVersion,
+    'about': about.toJson(),
+    'goal': goal.toJson(),
+    'developer': developer.toJson(),
+    'update': update.toJson(),
+  };
+
+  static const int schemaVersion = 1;
+
+  AppInfo copyWith({
+    LocalizedText? about,
+    LocalizedText? goal,
+    DeveloperInfo? developer,
+    UpdateRules? update,
+  }) => AppInfo(
+    about: about ?? this.about,
+    goal: goal ?? this.goal,
+    developer: developer ?? this.developer,
+    update: update ?? this.update,
+  );
 
   @override
-  List<Object?> get props => <Object?>[about, goal, developer];
+  List<Object?> get props => <Object?>[about, goal, developer, update];
 }
 
 String _text(Object? value) => value is String ? value.trim() : '';

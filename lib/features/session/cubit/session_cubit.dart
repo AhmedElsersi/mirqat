@@ -163,7 +163,7 @@ class SessionCubit extends Cubit<SessionState> {
         config.spansSurahs) {
       return;
     }
-    final AppSettings next = state.defaults.rememberRange(
+    final AppSettings next = (await _freshSettings()).rememberRange(
       config.surahNumber,
       AyahRange(startAyah: config.startAyah, endAyah: config.endAyah),
     );
@@ -361,11 +361,18 @@ class SessionCubit extends Cubit<SessionState> {
     );
   }
 
+  /// The settings as they are stored *now*, to change one thing in. Not the
+  /// copy this cubit read when the screen opened: the theme may have changed
+  /// since, or the update prompt been put off, and saving the old copy would
+  /// undo that.
+  Future<AppSettings> _freshSettings() async =>
+      (await _settings.read()).getOrElse(() => state.defaults);
+
   /// Writes the current tuning back as the defaults for every session.
   Future<void> saveAsDefaults() async {
     final SessionConfig? c = state.config;
     if (c == null) return;
-    final AppSettings next = state.defaults.copyWith(
+    final AppSettings next = (await _freshSettings()).copyWith(
       defaultRepeatCount: c.repeatCount,
       defaultConnectMode: c.connectMode,
       defaultFinalFullPass: c.finalFullPass,

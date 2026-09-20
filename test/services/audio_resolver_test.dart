@@ -760,4 +760,7 @@ class _Settings implements SettingsRepository {
   @override
   Future<Either<Failure, AppSettings>> save(AppSettings settings) async =>
       Right<Failure, AppSettings>(settings);
+
+  @override
+  Stream<AppSettings> get changes => const Stream<AppSettings>.empty();
 }
