@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Mirqat" "\0"
-            VALUE "FileDescription", "Mirqat" "\0"
+            VALUE "CompanyName", "Ahmed Elsersi" "\0"
+            VALUE "FileDescription", "Iqra Wartaq" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "Mirqat" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Mirqat. All rights reserved." "\0"
+            VALUE "InternalName", "Iqra Wartaq" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Ahmed Elsersi. All rights reserved." "\0"
             VALUE "OriginalFilename", "mirqat.exe" "\0"
-            VALUE "ProductName", "Mirqat" "\0"
+            VALUE "ProductName", "Iqra Wartaq" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

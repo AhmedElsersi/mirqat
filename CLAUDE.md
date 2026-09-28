@@ -165,9 +165,11 @@ lib/
 | Sizing | `flutter_screenutil` | |
 | i18n | `easy_localization` | |
 | Audio | `just_audio` | Assets, local files, and `LockCachingAudioSource` streaming |
-| Media session | `audio_service` | Lock-screen and headset controls; on Android, the media-playback foreground service that keeps a long session alive. Owns no audio — see `SessionMediaControls` |
+| Audio on Windows | `just_audio_windows` | just_audio's Windows implementation; registers itself, imported by nothing |
+| Media session | `audio_service` | Lock-screen and headset controls; on Android, the media-playback foreground service that keeps a long session alive. Owns no audio — see `SessionMediaControls`. Not started on Windows, which it does not support |
 | Local storage | `hive_ce` + `hive_ce_flutter` | **Not** the original `hive` |
 | Quran data | `sqflite` + `sqflite_common` | `sqflite_common` is sqflite's pure-Dart API, so loaders stay Flutter-free |
+| Quran data on Windows | `sqflite_common_ffi` | sqflite has no Windows implementation; `AppBootstrap` installs this engine there. Also what tests run sqlite on |
 | Paths | `path_provider`, `path` | |
 | Network | `http` | Public GETs only (A.2 rule 3) |
 | Version | `package_info_plus` | The running app's own version: the line at the foot of Settings, and what the update rules are compared with |
@@ -176,7 +178,6 @@ lib/
 | Packs | `archive`, `crypto` | Unzip; sha256 verification |
 | FP types | `dartz` | |
 | Value equality | `equatable` | |
-| Test only | `sqflite_common_ffi` | In-process sqlite under `flutter test` |
 | Build only | `flutter_launcher_icons`, `flutter_native_splash` | |
 
 Nothing else without an explicit blocker.

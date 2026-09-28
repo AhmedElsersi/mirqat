@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../services/audio/memorization_player_service.dart';
 import '../services/audio/session_media_controls.dart';
@@ -27,7 +30,19 @@ class AppBootstrap {
 
   static Future<void> _run() async {
     await Hive.initFlutter();
+    // sqflite has no Windows implementation. There, quran.db and downloads.db
+    // are opened through the in-process engine instead; both databases read
+    // the global factory when they are built, so this comes before
+    // registration. Every other platform keeps sqflite's own.
+    if (Platform.isWindows) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
     await configureDependencies();
+    // Windows has no media session for audio_service to join: no lock screen,
+    // and no plugin behind it. A session there plays the same, controlled from
+    // the reading view's bar.
+    if (Platform.isWindows) return;
     // Here rather than inside configureDependencies: registering with the
     // system's media session is a platform call, and dependency registration
     // has to stay runnable under `flutter test`. Tests replace this whole

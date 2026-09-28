@@ -26,8 +26,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
-  if (!window.Create(L"Mirqat", origin, size)) {
+  // Portrait, like the mushaf page it opens on, and short enough for a
+  // 1080p screen at 150% scaling. The window can be resized or maximised.
+  Win32Window::Size size(430, 700);
+  // The app name in Arabic (Iqra Wartaq), escaped: MSVC reads a source file
+  // in the system code page, and /WX makes its warning about that fatal.
+  if (!window.Create(L"\u0627\u0642\u0631\u0623 \u0648\u0627\u0631\u062a\u0642",
+                     origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

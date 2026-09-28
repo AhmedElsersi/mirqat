@@ -66,7 +66,8 @@ class UpdateCubit extends Cubit<UpdateState> {
     final PlatformUpdate rules = switch (_platform ?? defaultTargetPlatform) {
       TargetPlatform.android => info.update.android,
       TargetPlatform.iOS => info.update.ios,
-      // No store, no rules: the macOS build is the admin tool.
+      // No store, no rules: the macOS build is the admin tool, and the
+      // Windows build is a zip handed out by hand.
       _ => PlatformUpdate.none,
     };
     final UpdateKind kind = decideUpdate(

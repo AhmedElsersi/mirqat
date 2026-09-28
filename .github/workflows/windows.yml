@@ -1,0 +1,44 @@
+name: Windows
+
+# Flutter builds a Windows app only on Windows, so the .exe is made here and
+# not on a developer's Mac. Run by hand from the Actions tab, or on a version
+# tag beside release.yml. The result is a zip to download from the run's page:
+# mirqat.exe with the DLLs and data/ folder it needs beside it. Unzip it
+# anywhere and run mirqat.exe; nothing is installed.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Keep this pin identical to ci.yml's and release.yml's.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.0"
+          channel: "stable"
+
+      - run: flutter pub get
+
+      # Not repeated here: analyze and test run on every push in ci.yml. This
+      # job only proves the app compiles and links for Windows.
+      - run: flutter build windows --release
+
+      - name: Zip the app folder
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value -replace '\+', '-'
+          $name = "iqra-wartaq-windows-x64-$version"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "$name.zip"
+          "ZIP_NAME=$name" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: ${{ env.ZIP_NAME }}.zip
+          if-no-files-found: error

@@ -40,6 +40,11 @@ dependencies:
   flutter_screenutil: ^5.9.3
   easy_localization: ^3.0.8
   just_audio: ^0.10.6
+  # APPROVED 2026-09-28 (CLAUDE.md A.4, blocker B2 of the Windows build):
+  # just_audio's federated Windows implementation. just_audio itself has none,
+  # so on Windows no recitation plays without it. Registers itself; nothing
+  # under lib/ imports it.
+  just_audio_windows: ^0.2.3
   hive_ce: ^2.19.3
   hive_ce_flutter: ^2.3.4
   dartz: ^0.10.1
@@ -50,6 +55,12 @@ dependencies:
   # Named directly so the catalog loader can use `Database` without importing
   # Flutter, which keeps `dart run tools/verify_assets.dart` working.
   sqflite_common: ^2.5.13
+  # APPROVED 2026-09-28 (CLAUDE.md A.4, blocker B1 of the Windows build),
+  # promoted from test-only. `sqflite` has no Windows implementation, so on
+  # Windows quran.db is opened through this in-process engine instead — see
+  # AppBootstrap. Its `sqlite3` dependency bundles SQLite itself through build
+  # hooks, so no DLL ships by hand. Tests go on using it as before.
+  sqflite_common_ffi: ^2.3.3
   path_provider: ^2.1.0
   path: ^1.9.0
   background_downloader: ^8.5.0
@@ -85,15 +96,6 @@ dev_dependencies:
   #   dart run flutter_native_splash:create
   flutter_native_splash: ^2.4.6
 
-  # PROPOSED EXCEPTION to the no-new-packages rule (CLAUDE.md A.4): test-only.
-  # `sqflite` itself is a platform-channel plugin with no implementation
-  # under `flutter test` (no device, no native code), so QuranDatabase and
-  # anything built on it — the whole QuranRepository/QuranPagesRepository
-  # chain — needs an in-process sqlite engine to run in tests at all. This is
-  # the same role `sqflite_common_ffi` plays for every Flutter app that ships
-  # sqflite and wants that code covered by `flutter test`. Never imported by
-  # anything under lib/.
-  sqflite_common_ffi: ^2.3.3
 
 flutter_launcher_icons:
   android: true
