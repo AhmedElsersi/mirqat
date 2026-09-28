@@ -50,6 +50,9 @@ android {
 
     buildTypes {
         release {
+            // See proguard-rules.pro: without it the release build crashes at
+            // launch. Debug builds are not minified and never show it.
+            proguardFiles("proguard-rules.pro")
             // Falls back to the debug key when key.properties is absent, so
             // `flutter run --release` still works on a machine that never ran
             // tool/make_upload_key.sh. This fallback is exactly why a local
