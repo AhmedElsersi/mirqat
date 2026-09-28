@@ -57,6 +57,14 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# just_audio_windows is built on C++/WinRT's <experimental/coroutine>, which
+# Visual Studio 2026 refuses unless told otherwise. This silences that one
+# deprecation for that one plugin; nothing else is compiled differently.
+if(TARGET just_audio_windows_plugin)
+  target_compile_definitions(just_audio_windows_plugin PRIVATE
+    _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+endif()
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
