@@ -2,14 +2,33 @@ name: Windows
 
 # Flutter builds a Windows app only on Windows, so the .exe is made here and
 # not on a developer's Mac. Run by hand from the Actions tab, or on a version
-# tag beside release.yml. The result is a zip to download from the run's page:
-# mirqat.exe with the DLLs and data/ folder it needs beside it. Unzip it
-# anywhere and run mirqat.exe; nothing is installed.
+# tag beside release.yml. The result is a zip: mirqat.exe with the DLLs and
+# data/ folder it needs beside it. Unzip it anywhere and run mirqat.exe;
+# nothing is installed.
+#
+# The zip is always kept on the run's page. It is also published as a release
+# of the public site repo — on every version tag, and on a manual run with
+# "publish" ticked — because the website's Windows button downloads
+# releases/latest/download/iqra-wartaq-windows-x64.zip from there. That file
+# name must not change, or the button breaks.
+#
+# Publishing needs the SITE_RELEASE_TOKEN secret: a fine-grained token with
+# Contents read/write on AhmedElsersi/iqra-wartaq and nothing else. This
+# repo's own GITHUB_TOKEN cannot write to another repository.
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to the website's download link"
+        type: boolean
+        default: false
+
+env:
+  SITE_REPO: AhmedElsersi/iqra-wartaq
+  ASSET_NAME: iqra-wartaq-windows-x64.zip
 
 jobs:
   build:
@@ -30,15 +49,72 @@ jobs:
       - run: flutter build windows --release
 
       - name: Zip the app folder
+        id: zip
         shell: pwsh
         run: |
-          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value -replace '\+', '-'
+          $full = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value
+          $version = $full -replace '\+', '-'
           $name = "iqra-wartaq-windows-x64-$version"
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "$name.zip"
-          "ZIP_NAME=$name" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ZIP_NAME }}
-          path: ${{ env.ZIP_NAME }}.zip
+          name: ${{ steps.zip.outputs.name }}
+          path: ${{ steps.zip.outputs.name }}.zip
           if-no-files-found: error
+
+    outputs:
+      zip: ${{ steps.zip.outputs.name }}
+      version: ${{ steps.zip.outputs.version }}
+
+  # On Linux rather than the Windows runner: the release title and notes are
+  # Arabic, and a Linux shell hands them to gh as they are.
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.zip }}
+
+      - name: Publish to the website
+        env:
+          GH_TOKEN: ${{ secrets.SITE_RELEASE_TOKEN }}
+          ZIP: ${{ needs.build.outputs.zip }}.zip
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::SITE_RELEASE_TOKEN is not set, so the site's release cannot be written. The zip is on this run's page."
+            exit 1
+          fi
+
+          tag="windows-$VERSION"
+          # A published build is never replaced: someone may already have
+          # downloaded it and checked its digest. Every push to main moves the
+          # build number, so a new build always has a new tag.
+          if gh release view "$tag" -R "$SITE_REPO" >/dev/null 2>&1; then
+            echo "::error::$tag is already published on $SITE_REPO. Push a new build (the build number moves on every push to main) rather than replacing it."
+            exit 1
+          fi
+
+          mv "$ZIP" "$ASSET_NAME"
+          sha=$(sha256sum "$ASSET_NAME" | cut -d' ' -f1)
+          sed "s/{{SHA256}}/$sha/" .github/windows-release-notes.md > notes.md
+
+          # 1.1.0-4 -> "1.1.0 (4)", as the first release was titled.
+          label=$(echo "$VERSION" | sed -E 's/-([0-9]+)$/ (\1)/')
+
+          # --latest is what moves the website's button to this build.
+          gh release create "$tag" "$ASSET_NAME" \
+            -R "$SITE_REPO" \
+            --title "اقرأ وارتق لـ Windows — $label" \
+            --notes-file notes.md \
+            --latest
+          echo "Published https://github.com/$SITE_REPO/releases/tag/$tag"
