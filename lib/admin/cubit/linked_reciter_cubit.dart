@@ -228,6 +228,13 @@ class LinkedReciterState extends Equatable {
 
   /// What stops a publish, in the order it is worth fixing.
   List<String> get problems => <String>[
+    // Merging into a manifest that could not be read would publish a manifest
+    // holding this reciter alone, and every other reciter would vanish from
+    // every phone at its next launch. Not a warning: a refusal.
+    if (!loading && !manifestLive)
+      'The live manifest could not be read, so there is nothing to merge '
+          'into: publishing now would drop every other reciter. Reload, and '
+          'do not publish until it says it is merging into the live manifest.',
     if (file == null) 'Choose a file of links.',
     if (draft.id.isEmpty)
       'The reciter needs an id (lower-case letters, digits and underscores).'
@@ -435,12 +442,20 @@ class LinkedReciterCubit extends Cubit<LinkedReciterState> {
     final Either<Failure, List<Surah>> surahs = await _quran.getSurahs();
     if (isClosed) return;
     _surahs = surahs.getOrElse(() => const <Surah>[]);
+    // A manifest with no bucket address is the empty one `fetchManifest`
+    // answers when the site could not be reached, not a manifest.
+    final bool live = '${manifest['baseUrl'] ?? ''}'.isNotEmpty;
     emit(
       state.copyWith(
         loading: false,
         manifest: manifest,
-        manifestLive: '${manifest['baseUrl'] ?? ''}'.isNotEmpty,
-        error: surahs.isLeft() ? 'The surah catalog could not be read.' : null,
+        manifestLive: live,
+        error: surahs.isLeft()
+            ? 'The surah catalog could not be read.'
+            : live
+            ? null
+            : 'The live manifest at ${_packs.manifestUrl} could not be read. '
+                  'Publishing is refused until a reload succeeds.',
       ),
     );
   }

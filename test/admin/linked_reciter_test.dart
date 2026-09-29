@@ -117,6 +117,9 @@ void main() {
       sent.add(request);
       final String url = request.url.toString();
       if (url == kManifest) {
+        if (!manifest.trimLeft().startsWith('{')) {
+          return http.Response(manifest, 503);
+        }
         // As Pages serves it: UTF-8, which a plain string response is not.
         return http.Response.bytes(
           utf8.encode(manifest),
@@ -411,5 +414,37 @@ void main() {
     await cubit.load();
     await cubit.choosePortrait();
     expect(cubit.state.error, contains('id first'));
+  });
+
+  test('a live manifest that could not be read refuses the publish outright: '
+      'merging into nothing would drop every other reciter', () async {
+    // The site answers with an error page, so fetchManifest hands back the
+    // empty manifest.
+    final harnessed = harness(manifest: 'Service unavailable');
+    final LinkedReciterCubit cubit = harnessed.cubit;
+    await cubit.load();
+    expect(cubit.state.manifestLive, isFalse);
+    expect(cubit.state.error, contains('could not be read'));
+
+    await cubit.useFile(write('export.json', exportFor(complete)).path);
+    cubit.edit(
+      (LinkedReciterDraft d) =>
+          d.copyWith(id: 'links_new', nameAr: 'محمد', nameEn: 'Muhammad'),
+    );
+    await cubit.probe();
+
+    expect(
+      cubit.state.problems,
+      contains(contains('drop every other reciter')),
+    );
+    expect(cubit.state.row, isNull);
+    await cubit.publish();
+    expect(cubit.state.error, contains('Not published'));
+    expect(
+      harnessed.sent.where(
+        (http.Request r) => r.method == 'PUT' && r.url.host == 'api.github.com',
+      ),
+      isEmpty,
+    );
   });
 }
