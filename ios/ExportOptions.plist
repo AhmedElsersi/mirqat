@@ -2,7 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   How the archive leaves the machine: straight to App Store Connect, signed
-  automatically with the team's distribution certificate. Used by the release
+  with the team's distribution certificate and the manually managed App
+  Store profile "Mirqat App Store" — named here, so a runner with no Apple
+  ID signed in can export. (Xcode's own managed profile will not do: Xcode
+  refuses a managed profile under manual signing.) Used by the release
   workflow and by hand (see docs/STORE_RELEASE.md). The version and build
   number are the app's own, from pubspec.yaml — never rewritten on upload.
 -->
@@ -15,7 +18,14 @@
   <key>teamID</key>
   <string>U2443AH4P4</string>
   <key>signingStyle</key>
-  <string>automatic</string>
+  <string>manual</string>
+  <key>signingCertificate</key>
+  <string>iPhone Distribution</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.mirqat.app</key>
+    <string>Mirqat App Store</string>
+  </dict>
   <key>uploadSymbols</key>
   <true/>
   <key>manageAppVersionAndBuildNumber</key>

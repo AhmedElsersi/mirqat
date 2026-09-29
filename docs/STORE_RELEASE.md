@@ -76,13 +76,17 @@ rest as arguments:
 | `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | its passwords | `android/key.properties` |
 | `PLAY_SERVICE_ACCOUNT_JSON` | a Play Console service account with release rights | Play Console → Users and permissions; Google Cloud → its JSON key |
 | `IOS_DIST_CERT_P12_BASE64`, `IOS_DIST_CERT_PASSWORD` | the distribution certificate with its private key | Keychain Access → *iPhone Distribution: Ahmed Elsersi* → Export → .p12 |
+| `IOS_PROVISIONING_PROFILE_BASE64` | the manually managed App Store profile **Mirqat App Store** for `com.mirqat.app` | Certificates, Identifiers & Profiles → Profiles; installed on this Mac, the script finds it by name. **Expires yearly** (currently 2027-09-23): make a new one there with the same name and certificate, open it, run the script again. Xcode's own managed profile will not do under manual signing |
 | `APPSTORE_KEY_ID`, `APPSTORE_PRIVATE_KEY` | an App Store Connect API key (App Manager role) | `~/.appstoreconnect/private_keys/AuthKey_<id>.p8` |
 | `APPSTORE_ISSUER_ID` | that key's issuer | App Store Connect → Users and Access → Integrations → App Store Connect API |
 
 A job whose secrets are missing stops at its first step and names them.
 
-The iOS job signs with team `U2443AH4P4` and `ios/ExportOptions.plist`
-(`app-store-connect`, `destination: upload`, automatic signing). After a push,
+The iOS job signs by hand with team `U2443AH4P4`, the certificate and the
+profile above, and exports with `ios/ExportOptions.plist` (`app-store-connect`,
+`destination: upload`). Not automatic signing: an API key is not always allowed
+to create profiles ("Cloud signing permission error"), and a profile in hand
+needs no permission. After a push,
 the build appears in App Store Connect under TestFlight once Apple has
 processed it; attaching it to a version and submitting for review stays a
 manual step, as does promoting anything in Play beyond what the workflow does.

@@ -56,6 +56,21 @@ else
   echo "skipping the App Store Connect API key: none under ~/.appstoreconnect/private_keys" >&2
 fi
 [[ -z "$ISSUER" ]] || set_secret APPSTORE_ISSUER_ID "$ISSUER"
+# The manually managed App Store profile "Mirqat App Store" (Certificates,
+# Identifiers & Profiles → Profiles), installed on this Mac. Expires yearly:
+# make a new one there with the same name and certificate, download it, double
+# click it, run this again. Not Xcode's own managed profile — Xcode refuses
+# a managed profile under manual signing, which is what the runner uses.
+PROFILE="$(for f in ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision \
+                    ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/*.mobileprovision; do
+  [[ -f "$f" ]] || continue
+  security cms -D -i "$f" 2>/dev/null | grep -q '<string>Mirqat App Store</string>' && { echo "$f"; break; }
+done)"
+if [[ -n "$PROFILE" ]]; then
+  set_secret IOS_PROVISIONING_PROFILE_BASE64 "$(base64 < "$PROFILE")"
+else
+  echo "skipping the provisioning profile: no 'Mirqat App Store' profile installed on this Mac (download it from the developer site and open it)" >&2
+fi
 if [[ -n "$P12" ]]; then
   [[ -n "$P12_PASSWORD" ]] || { echo "--p12 needs --p12-password" >&2; exit 2; }
   set_secret IOS_DIST_CERT_P12_BASE64 "$(base64 < "$P12")"
@@ -65,5 +80,5 @@ fi
 echo
 echo "release.yml needs these; the ones not listed above are still to be set:"
 echo "  ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD PLAY_SERVICE_ACCOUNT_JSON"
-echo "  IOS_DIST_CERT_P12_BASE64 IOS_DIST_CERT_PASSWORD APPSTORE_KEY_ID APPSTORE_ISSUER_ID APPSTORE_PRIVATE_KEY"
+echo "  IOS_DIST_CERT_P12_BASE64 IOS_DIST_CERT_PASSWORD IOS_PROVISIONING_PROFILE_BASE64 APPSTORE_KEY_ID APPSTORE_ISSUER_ID APPSTORE_PRIVATE_KEY"
 echo "now set: $(gh secret list | awk '{print $1}' | tr '\n' ' ')"

@@ -130,10 +130,12 @@ jobs:
         env:
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
           APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
         run: |
           missing=()
-          for key in IOS_DIST_CERT_P12_BASE64 IOS_DIST_CERT_PASSWORD APPSTORE_KEY_ID \
+          for key in IOS_DIST_CERT_P12_BASE64 IOS_DIST_CERT_PASSWORD \
+                     IOS_PROVISIONING_PROFILE_BASE64 APPSTORE_KEY_ID \
                      APPSTORE_ISSUER_ID APPSTORE_PRIVATE_KEY; do
             [[ -n "${!key}" ]] || missing+=("$key")
           done
@@ -167,9 +169,25 @@ jobs:
           rm -f "$RUNNER_TEMP/dist.p12"
           echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
 
-      # The App Store Connect API key is what lets xcodebuild fetch the
-      # team's App Store provisioning profile and upload, with no Apple ID
-      # signed in anywhere.
+      # The App Store profile Xcode made for the bundle id, installed where
+      # xcodebuild looks. Signing is manual with it: an API key is not always
+      # allowed to create profiles ("Cloud signing permission error"), and a
+      # profile in hand needs no permission at all.
+      - name: Install the provisioning profile
+        env:
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          PROFILE="$RUNNER_TEMP/store.mobileprovision"
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE"
+          UUID="$(security cms -D -i "$PROFILE" | plutil -extract UUID raw -)"
+          NAME="$(security cms -D -i "$PROFILE" | plutil -extract Name raw -)"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PROFILE" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID.mobileprovision"
+          echo "Installed profile: $NAME ($UUID)"
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+
+      # The App Store Connect API key is what lets xcodebuild upload, with
+      # no Apple ID signed in anywhere.
       - name: Write the App Store Connect API key
         env:
           APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
@@ -185,16 +203,18 @@ jobs:
       # `flutter build ipa` cannot take one.
       - run: flutter build ios --release --no-codesign
 
+      # Signed by hand with the certificate and profile above; the project's
+      # own "automatic" is for a Mac with an Apple ID in Xcode.
       - name: Archive
         run: |
           set -o pipefail
           xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
             -configuration Release -destination "generic/platform=iOS" \
             -archivePath build/ios/Runner.xcarchive archive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$AUTH_KEY" \
-            -authenticationKeyID "$APPSTORE_KEY_ID" \
-            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=U2443AH4P4 \
+            CODE_SIGN_IDENTITY="iPhone Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME"
 
       - name: Upload to App Store Connect
         run: |
