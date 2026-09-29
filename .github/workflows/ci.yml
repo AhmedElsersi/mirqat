@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # dev is where work is tried; main is what ships (release.yml).
+    branches: [main, dev]
   pull_request:
 
 jobs:

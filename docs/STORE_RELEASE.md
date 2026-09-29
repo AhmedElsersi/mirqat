@@ -52,24 +52,66 @@ Check the Android bundle is signed with the upload key, not the debug key:
 keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab | grep Owner
 ```
 
-## Only the account holder can do these
+## Releasing from GitHub
 
-### Apple (the archive builds; the export is blocked on these)
+**Every push to `main` is a release.** `.github/workflows/release.yml` runs
+analyze and test again, builds the Android bundle and uploads it to Play, and
+archives the iOS app and uploads it to App Store Connect — the same commit,
+with the build number it carries in `pubspec.yaml`. `bump-build-number.yml`
+then moves `main` on by one, so the next push is a new build on both stores.
+Pushes that only touch `docs/`, `store/` or Markdown do not release. A `v*`
+tag and the *Run workflow* button still work.
 
-`flutter build ipa` currently stops at export with *"PLA Update available"* and
-*"No signing certificate iOS Distribution found"*:
+**Work goes to `dev` first.** `ci.yml` runs on every push to `dev` and on
+pull requests; merge into `main` when it is ready to ship. Nothing is
+uploaded from `dev`.
 
-1. Sign in at <https://developer.apple.com/account> as the **Account Holder**
-   and accept the updated Program License Agreement. Until that is done Xcode
-   cannot create certificates or profiles.
-2. Xcode → Settings → Accounts → add the Apple ID of team `Q2BFMPYYX7` →
-   *Manage Certificates* → **+ Apple Distribution**.
-3. Register the app: App Store Connect → Apps → **+ New App** → bundle id
-   `com.mirqat.app` (create the identifier first under Certificates,
-   Identifiers & Profiles if it is not offered).
-4. `flutter build ipa --release`, then upload `build/ios/ipa/*.ipa` with the
-   **Transporter** app (or `open build/ios/archive/Runner.xcarchive` and
-   *Distribute App* in Xcode).
+The workflow needs these repository secrets; `tool/set_release_secrets.sh`
+sets them all in one command, reading what is on this machine and taking the
+rest as arguments:
+
+| Secret | What | Where from |
+|---|---|---|
+| `ANDROID_KEYSTORE_BASE64` | the upload keystore | `android/app/upload-keystore.jks`, base64 |
+| `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | its passwords | `android/key.properties` |
+| `PLAY_SERVICE_ACCOUNT_JSON` | a Play Console service account with release rights | Play Console → Users and permissions; Google Cloud → its JSON key |
+| `IOS_DIST_CERT_P12_BASE64`, `IOS_DIST_CERT_PASSWORD` | the distribution certificate with its private key | Keychain Access → *iPhone Distribution: Ahmed Elsersi* → Export → .p12 |
+| `APPSTORE_KEY_ID`, `APPSTORE_PRIVATE_KEY` | an App Store Connect API key (App Manager role) | `~/.appstoreconnect/private_keys/AuthKey_<id>.p8` |
+| `APPSTORE_ISSUER_ID` | that key's issuer | App Store Connect → Users and Access → Integrations → App Store Connect API |
+
+A job whose secrets are missing stops at its first step and names them.
+
+The iOS job signs with team `U2443AH4P4` and `ios/ExportOptions.plist`
+(`app-store-connect`, `destination: upload`, automatic signing). After a push,
+the build appears in App Store Connect under TestFlight once Apple has
+processed it; attaching it to a version and submitting for review stays a
+manual step, as does promoting anything in Play beyond what the workflow does.
+
+## Releasing by hand
+
+### Apple
+
+The team is `U2443AH4P4`, the distribution certificate is in the login
+keychain, and Xcode is signed in. Then:
+
+```
+flutter build ipa --release
+xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive \
+  -exportOptionsPlist ios/ExportOptions.plist -exportPath build/ios/export \
+  -allowProvisioningUpdates
+```
+
+The second command uploads (that is what `destination: upload` means); the
+`.ipa` under `build/ios/ipa` can instead be dropped into **Transporter**.
+
+**Editing signing in Xcode's UI hardcodes the version into
+`project.pbxproj`** — `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` and a
+`FLUTTER_BUILD_NUMBER` build setting — and that overrides the version from
+`pubspec.yaml`, so the upload carries the wrong build number and is refused.
+After any such edit, check the Runner target still has
+`CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"`,
+`MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)"`, and no `FLUTTER_BUILD_NUMBER =`
+line.
 
 Then in App Store Connect:
 

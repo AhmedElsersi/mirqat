@@ -1,37 +1,84 @@
 name: Release
 
+# Every push to main is a release. The same commit goes to Google Play as an
+# app bundle and to App Store Connect as an iOS build, carrying the build
+# number that commit has in pubspec.yaml; bump-build-number.yml then moves
+# main on by one, so the next push is a new build on both stores. Work is
+# tried on the dev branch first (ci.yml runs there) and merged into main when
+# it is ready to ship. A `v*` tag and the Run-workflow button still work.
+#
+# Nothing here is uploaded past a failing gate: analyze and test run again on
+# the release commit, even though ci.yml already ran them.
 on:
   push:
+    branches: [main]
     tags: ["v*"]
+    # Words alone are not a release. The build number still moves on, so a
+    # docs push never leaves two builds with one number.
+    paths-ignore:
+      - "docs/**"
+      - "store/**"
+      - "**.md"
   workflow_dispatch:
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: "3.44.0"
+
 jobs:
-  release:
+  gate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Keep this pin identical to ci.yml's — move both together, or a
+      # release can be built with a different Dart/Flutter than the one that
+      # last passed analyze/test.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: "stable"
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --fatal-infos --fatal-warnings
+      - run: flutter test
+
+  android:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the secrets are there
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          missing=()
+          for key in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS \
+                     ANDROID_KEY_PASSWORD PLAY_SERVICE_ACCOUNT_JSON; do
+            [[ -n "${!key}" ]] || missing+=("$key")
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error::Repository secrets missing: ${missing[*]} — see docs/STORE_RELEASE.md, 'Releasing from GitHub'."
+            exit 1
+          fi
 
       - uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
-      # Keep this pin identical to ci.yml's — move both together, or a
-      # release can be built with a different Dart/Flutter than the one that
-      # last passed analyze/test.
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: "stable"
-
-      # Optional: only present if this app ever adds a Firebase/Google
-      # Services dependency. Milestone 1 has none (CLAUDE.md A.2.3: offline
-      # only, no Firebase) — this step is a no-op until that changes.
-      - name: Restore google-services.json
-        if: env.GOOGLE_SERVICES_JSON != ''
-        env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: echo "$GOOGLE_SERVICES_JSON" | base64 -d > android/app/google-services.json
+          cache: true
 
       - name: Restore upload keystore
         env:
@@ -52,13 +99,15 @@ jobs:
           PROPS
 
       - run: flutter pub get
-
-      # A release is not shipped past a failing gate, even though ci.yml
-      # already ran these on the commit this tag points at.
-      - run: flutter analyze --fatal-infos --fatal-warnings
-      - run: flutter test
-
       - run: flutter build appbundle --release
+
+      - name: Check the bundle is signed with the upload key, not the debug key
+        run: |
+          keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab | grep Owner
+          if keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab | grep -q "CN=Android Debug"; then
+            echo "::error::The bundle is debug-signed; Play would reject it."
+            exit 1
+          fi
 
       - uses: r0adkll/upload-google-play@v1
         with:
@@ -67,3 +116,99 @@ jobs:
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           track: production
           status: completed
+
+  ios:
+    needs: gate
+    runs-on: macos-latest
+    env:
+      APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+      APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the secrets are there
+        env:
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          missing=()
+          for key in IOS_DIST_CERT_P12_BASE64 IOS_DIST_CERT_PASSWORD APPSTORE_KEY_ID \
+                     APPSTORE_ISSUER_ID APPSTORE_PRIVATE_KEY; do
+            [[ -n "${!key}" ]] || missing+=("$key")
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error::Repository secrets missing: ${missing[*]} — see docs/STORE_RELEASE.md, 'Releasing from GitHub'."
+            exit 1
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: "stable"
+          cache: true
+
+      # The distribution certificate goes into a keychain made for this run
+      # and deleted at the end, never into the runner's login keychain.
+      - name: Install the distribution certificate
+        env:
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$IOS_DIST_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/dist.p12" -P "$IOS_DIST_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          rm -f "$RUNNER_TEMP/dist.p12"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
+      # The App Store Connect API key is what lets xcodebuild fetch the
+      # team's App Store provisioning profile and upload, with no Apple ID
+      # signed in anywhere.
+      - name: Write the App Store Connect API key
+        env:
+          APPSTORE_PRIVATE_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+        run: |
+          AUTH_KEY="$RUNNER_TEMP/AuthKey_$APPSTORE_KEY_ID.p8"
+          printf '%s\n' "$APPSTORE_PRIVATE_KEY" > "$AUTH_KEY"
+          echo "AUTH_KEY=$AUTH_KEY" >> "$GITHUB_ENV"
+
+      - run: flutter pub get
+
+      # Compiles the Dart side and installs the pods. Signing is the
+      # archive's job, below, where the API key can be handed to xcodebuild —
+      # `flutter build ipa` cannot take one.
+      - run: flutter build ios --release --no-codesign
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+            -configuration Release -destination "generic/platform=iOS" \
+            -archivePath build/ios/Runner.xcarchive archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$AUTH_KEY" \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
+
+      - name: Upload to App Store Connect
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/ios/Runner.xcarchive \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath build/ios/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$AUTH_KEY" \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
+
+      - name: Remove the keychain and the key
+        if: always()
+        run: |
+          [[ -z "$KEYCHAIN" ]] || security delete-keychain "$KEYCHAIN" || true
+          [[ -z "$AUTH_KEY" ]] || rm -f "$AUTH_KEY"

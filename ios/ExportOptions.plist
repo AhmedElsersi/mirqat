@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  How the archive leaves the machine: straight to App Store Connect, signed
+  automatically with the team's distribution certificate. Used by the release
+  workflow and by hand (see docs/STORE_RELEASE.md). The version and build
+  number are the app's own, from pubspec.yaml — never rewritten on upload.
+-->
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>app-store-connect</string>
+  <key>destination</key>
+  <string>upload</string>
+  <key>teamID</key>
+  <string>U2443AH4P4</string>
+  <key>signingStyle</key>
+  <string>automatic</string>
+  <key>uploadSymbols</key>
+  <true/>
+  <key>manageAppVersionAndBuildNumber</key>
+  <false/>
+</dict>
+</plist>
