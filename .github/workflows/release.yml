@@ -203,18 +203,21 @@ jobs:
       # `flutter build ipa` cannot take one.
       - run: flutter build ios --release --no-codesign
 
-      # Signed by hand with the certificate and profile above; the project's
-      # own "automatic" is for a Mac with an Apple ID in Xcode.
+      # The archive keeps the project's automatic signing, with the API key
+      # standing in for an Apple ID. The profile is *not* forced on here: a
+      # build setting on the command line reaches every target, and the pods
+      # and Swift packages refuse a provisioning profile. The export below is
+      # where the archive is re-signed by hand with the profile.
       - name: Archive
         run: |
           set -o pipefail
           xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
             -configuration Release -destination "generic/platform=iOS" \
             -archivePath build/ios/Runner.xcarchive archive \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=U2443AH4P4 \
-            CODE_SIGN_IDENTITY="iPhone Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME"
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$AUTH_KEY" \
+            -authenticationKeyID "$APPSTORE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
 
       - name: Upload to App Store Connect
         run: |
