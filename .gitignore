@@ -59,3 +59,6 @@ android/app/upload-keystore.jks
 
 admin.env
 data/work/
+# Release secrets kept beside the project for tool/set_release_secrets.sh. Never committed.
+*.p12
+play_service.json
