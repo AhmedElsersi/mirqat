@@ -59,8 +59,11 @@ analyze and test again, builds the Android bundle and uploads it to Play, and
 archives the iOS app and uploads it to App Store Connect — the same commit,
 with the build number it carries in `pubspec.yaml`. `bump-build-number.yml`
 then moves `main` on by one, so the next push is a new build on both stores.
-Pushes that only touch `docs/`, `store/` or Markdown do not release. A `v*`
-tag and the *Run workflow* button still work.
+Pushes that only touch `docs/`, `store/`, Markdown, or the admin tool
+(`lib/admin/`, `lib/main_admin.dart`, `test/admin/`, `macos/`, `tool/`,
+`run_admin.sh`) do not release: none of that reaches a phone. A push that
+touches the app as well does. A `v*` tag and the *Run workflow* button still
+work.
 
 **Work goes to `dev` first.** `ci.yml` runs on every push to `dev` and on
 pull requests; merge into `main` when it is ready to ship. Nothing is

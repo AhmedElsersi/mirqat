@@ -13,12 +13,22 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
-    # Words alone are not a release. The build number still moves on, so a
-    # docs push never leaves two builds with one number.
+    # Words alone are not a release, and neither is the admin tool: nothing
+    # under lib/admin reaches a phone (test/admin/admin_isolation_test.dart
+    # holds that line), the macOS target only hosts it, and tool/ is the
+    # desk beside it. The build number still moves on for these pushes, so
+    # no two builds ever share a number.
     paths-ignore:
       - "docs/**"
       - "store/**"
       - "**.md"
+      - "lib/admin/**"
+      - "lib/main_admin.dart"
+      - "test/admin/**"
+      - "macos/**"
+      - "tool/**"
+      - "run_admin.sh"
+      - "admin.dev.example"
   workflow_dispatch:
 
 concurrency:
