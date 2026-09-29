@@ -109,6 +109,7 @@ void main() {
   ({LinkedReciterCubit cubit, List<http.Request> sent, File bundled}) harness({
     Set<String>? hostFiles,
     String manifest = liveManifest,
+    String? laterManifest,
     String? image,
   }) {
     final Set<String> files = hostFiles ?? defaultHostFiles;
@@ -117,12 +118,18 @@ void main() {
       sent.add(request);
       final String url = request.url.toString();
       if (url == kManifest) {
-        if (!manifest.trimLeft().startsWith('{')) {
-          return http.Response(manifest, 503);
+        // The second and later reads may be told to answer differently, for
+        // a manifest that moved on between opening the screen and publishing.
+        final int reads = sent
+            .where((http.Request r) => r.url.toString() == kManifest)
+            .length;
+        final String body = reads > 1 ? (laterManifest ?? manifest) : manifest;
+        if (!body.trimLeft().startsWith('{')) {
+          return http.Response(body, 503);
         }
         // As Pages serves it: UTF-8, which a plain string response is not.
         return http.Response.bytes(
-          utf8.encode(manifest),
+          utf8.encode(body),
           200,
           headers: <String, String>{
             'content-type': 'application/json; charset=utf-8',
@@ -440,6 +447,64 @@ void main() {
     expect(cubit.state.row, isNull);
     await cubit.publish();
     expect(cubit.state.error, contains('Not published'));
+    expect(
+      harnessed.sent.where(
+        (http.Request r) => r.method == 'PUT' && r.url.host == 'api.github.com',
+      ),
+      isEmpty,
+    );
+  });
+
+  test(
+    'the entry is merged into the manifest as it is at the moment of '
+    'publishing, so a change that landed since the screen opened survives',
+    () async {
+      // Between opening the screen and pressing Publish, someone gave the old
+      // linked reciter a portrait.
+      final String movedOn = liveManifest.replaceFirst(
+        '"imagePath":"images/links_old-abc.jpg"',
+        '"imagePath":"images/links_old-NEW.jpg"',
+      );
+      final harnessed = harness(laterManifest: movedOn);
+      final LinkedReciterCubit cubit = harnessed.cubit;
+      await cubit.load();
+      await cubit.useFile(write('export.json', exportFor(complete)).path);
+      cubit.edit(
+        (LinkedReciterDraft d) =>
+            d.copyWith(id: 'links_new', nameAr: 'محمد', nameEn: 'Muhammad'),
+      );
+      await cubit.probe();
+      await cubit.publish();
+
+      final http.Request put = harnessed.sent.singleWhere(
+        (http.Request r) => r.method == 'PUT' && r.url.host == 'api.github.com',
+      );
+      final Map<String, dynamic> body =
+          jsonDecode(put.body) as Map<String, dynamic>;
+      final Map<String, dynamic> published =
+          jsonDecode(utf8.decode(base64Decode(body['content'] as String)))
+              as Map<String, dynamic>;
+      final Map<String, dynamic> old = (published['reciters'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .singleWhere((Map<String, dynamic> r) => r['id'] == 'links_old');
+      expect(old['imagePath'], 'images/links_old-NEW.jpg');
+    },
+  );
+
+  test('a manifest that cannot be re-read at publish time is not published '
+      'over', () async {
+    final harnessed = harness(laterManifest: 'Service unavailable');
+    final LinkedReciterCubit cubit = harnessed.cubit;
+    await cubit.load();
+    await cubit.useFile(write('export.json', exportFor(complete)).path);
+    cubit.edit(
+      (LinkedReciterDraft d) =>
+          d.copyWith(id: 'links_new', nameAr: 'محمد', nameEn: 'Muhammad'),
+    );
+    await cubit.probe();
+    await cubit.publish();
+
+    expect(cubit.state.error, contains('could not be re-read'));
     expect(
       harnessed.sent.where(
         (http.Request r) => r.method == 'PUT' && r.url.host == 'api.github.com',

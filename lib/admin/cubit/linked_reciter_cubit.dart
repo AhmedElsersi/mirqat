@@ -733,8 +733,27 @@ class LinkedReciterCubit extends Cubit<LinkedReciterState> {
       return;
     }
 
-    final Map<String, dynamic> next = merged(state.manifest, row);
     emit(state.copyWith(busy: true));
+    // Merged into the manifest as it is *now*, not as it was when this screen
+    // opened: another publish may have landed since — a portrait, a surah —
+    // and merging into a stale copy would quietly undo it. An unreadable
+    // manifest at this moment is a refusal for the same reason as at load.
+    final Map<String, dynamic> current = await _packs.fetchManifest();
+    if (isClosed) return;
+    if ('${current['baseUrl'] ?? ''}'.isEmpty) {
+      emit(
+        state.copyWith(
+          busy: false,
+          manifestLive: false,
+          error:
+              'Not published. The live manifest could not be re-read just '
+              'now, and publishing over a stale copy would drop what others '
+              'changed since. Reload and try again.',
+        ),
+      );
+      return;
+    }
+    final Map<String, dynamic> next = merged(current, row);
     try {
       final String commit = await _pages.publishJson(
         path: _config.manifestPath,
