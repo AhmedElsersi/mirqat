@@ -1414,6 +1414,591 @@
       ]
     },
     {
+      "id": "mohamed_mahmoud_el_tablawy",
+      "nameAr": "محمد محمود الطبلاوي",
+      "nameEn": "Mohamed Mahmoud El-Tablawy",
+      "riwayah": "hafs",
+      "bitrate": 128,
+      "version": "1",
+      "audioPath": "https://mirrors.quranicaudio.com/everyayah/Mohammad_al_Tablaway_128kbps/{s3}{a3}.mp3",
+      "imagePath": "images/mohamed_mahmoud_el_tablawy-a6c2b7c9c5ed.jpeg",
+      "attribution": {
+        "ar": "التلاوة مقدَّمة عبر مكتبة القرآن العالمية (QUL) من ترتيل",
+        "en": "Recitation served through Tarteel's Quranic Universal Library (QUL)"
+      },
+      "totalBytes": 0,
+      "surahs": [
+        {
+          "n": 1,
+          "ayahs": 7
+        },
+        {
+          "n": 2,
+          "ayahs": 286,
+          "hasBasmala": false
+        },
+        {
+          "n": 3,
+          "ayahs": 200,
+          "hasBasmala": false
+        },
+        {
+          "n": 4,
+          "ayahs": 176,
+          "hasBasmala": false
+        },
+        {
+          "n": 5,
+          "ayahs": 120,
+          "hasBasmala": false
+        },
+        {
+          "n": 6,
+          "ayahs": 165,
+          "hasBasmala": false
+        },
+        {
+          "n": 7,
+          "ayahs": 206,
+          "hasBasmala": false
+        },
+        {
+          "n": 8,
+          "ayahs": 75,
+          "hasBasmala": false
+        },
+        {
+          "n": 9,
+          "ayahs": 129
+        },
+        {
+          "n": 10,
+          "ayahs": 109,
+          "hasBasmala": false
+        },
+        {
+          "n": 11,
+          "ayahs": 123,
+          "hasBasmala": false
+        },
+        {
+          "n": 12,
+          "ayahs": 111,
+          "hasBasmala": false
+        },
+        {
+          "n": 13,
+          "ayahs": 43,
+          "hasBasmala": false
+        },
+        {
+          "n": 14,
+          "ayahs": 52,
+          "hasBasmala": false
+        },
+        {
+          "n": 15,
+          "ayahs": 99,
+          "hasBasmala": false
+        },
+        {
+          "n": 16,
+          "ayahs": 128,
+          "hasBasmala": false
+        },
+        {
+          "n": 17,
+          "ayahs": 111,
+          "hasBasmala": false
+        },
+        {
+          "n": 18,
+          "ayahs": 110,
+          "hasBasmala": false
+        },
+        {
+          "n": 19,
+          "ayahs": 98,
+          "hasBasmala": false
+        },
+        {
+          "n": 20,
+          "ayahs": 135,
+          "hasBasmala": false
+        },
+        {
+          "n": 21,
+          "ayahs": 112,
+          "hasBasmala": false
+        },
+        {
+          "n": 22,
+          "ayahs": 78,
+          "hasBasmala": false
+        },
+        {
+          "n": 23,
+          "ayahs": 118,
+          "hasBasmala": false
+        },
+        {
+          "n": 24,
+          "ayahs": 64,
+          "hasBasmala": false
+        },
+        {
+          "n": 25,
+          "ayahs": 77,
+          "hasBasmala": false
+        },
+        {
+          "n": 26,
+          "ayahs": 227,
+          "hasBasmala": false
+        },
+        {
+          "n": 27,
+          "ayahs": 93,
+          "hasBasmala": false
+        },
+        {
+          "n": 28,
+          "ayahs": 88,
+          "hasBasmala": false
+        },
+        {
+          "n": 29,
+          "ayahs": 69,
+          "hasBasmala": false
+        },
+        {
+          "n": 30,
+          "ayahs": 60,
+          "hasBasmala": false
+        },
+        {
+          "n": 31,
+          "ayahs": 34,
+          "hasBasmala": false
+        },
+        {
+          "n": 32,
+          "ayahs": 30,
+          "hasBasmala": false
+        },
+        {
+          "n": 33,
+          "ayahs": 73,
+          "hasBasmala": false
+        },
+        {
+          "n": 34,
+          "ayahs": 54,
+          "hasBasmala": false
+        },
+        {
+          "n": 35,
+          "ayahs": 45,
+          "hasBasmala": false
+        },
+        {
+          "n": 36,
+          "ayahs": 83,
+          "hasBasmala": false
+        },
+        {
+          "n": 37,
+          "ayahs": 182,
+          "hasBasmala": false
+        },
+        {
+          "n": 38,
+          "ayahs": 88,
+          "hasBasmala": false
+        },
+        {
+          "n": 39,
+          "ayahs": 75,
+          "hasBasmala": false
+        },
+        {
+          "n": 40,
+          "ayahs": 85,
+          "hasBasmala": false
+        },
+        {
+          "n": 41,
+          "ayahs": 54,
+          "hasBasmala": false
+        },
+        {
+          "n": 42,
+          "ayahs": 53,
+          "hasBasmala": false
+        },
+        {
+          "n": 43,
+          "ayahs": 89,
+          "hasBasmala": false
+        },
+        {
+          "n": 44,
+          "ayahs": 59,
+          "hasBasmala": false
+        },
+        {
+          "n": 45,
+          "ayahs": 37,
+          "hasBasmala": false
+        },
+        {
+          "n": 46,
+          "ayahs": 35,
+          "hasBasmala": false
+        },
+        {
+          "n": 47,
+          "ayahs": 38,
+          "hasBasmala": false
+        },
+        {
+          "n": 48,
+          "ayahs": 29,
+          "hasBasmala": false
+        },
+        {
+          "n": 49,
+          "ayahs": 18,
+          "hasBasmala": false
+        },
+        {
+          "n": 50,
+          "ayahs": 45,
+          "hasBasmala": false
+        },
+        {
+          "n": 51,
+          "ayahs": 60,
+          "hasBasmala": false
+        },
+        {
+          "n": 52,
+          "ayahs": 49,
+          "hasBasmala": false
+        },
+        {
+          "n": 53,
+          "ayahs": 62,
+          "hasBasmala": false
+        },
+        {
+          "n": 54,
+          "ayahs": 55,
+          "hasBasmala": false
+        },
+        {
+          "n": 55,
+          "ayahs": 78,
+          "hasBasmala": false
+        },
+        {
+          "n": 56,
+          "ayahs": 96,
+          "hasBasmala": false
+        },
+        {
+          "n": 57,
+          "ayahs": 29,
+          "hasBasmala": false
+        },
+        {
+          "n": 58,
+          "ayahs": 22,
+          "hasBasmala": false
+        },
+        {
+          "n": 59,
+          "ayahs": 24,
+          "hasBasmala": false
+        },
+        {
+          "n": 60,
+          "ayahs": 13,
+          "hasBasmala": false
+        },
+        {
+          "n": 61,
+          "ayahs": 14,
+          "hasBasmala": false
+        },
+        {
+          "n": 62,
+          "ayahs": 11,
+          "hasBasmala": false
+        },
+        {
+          "n": 63,
+          "ayahs": 11,
+          "hasBasmala": false
+        },
+        {
+          "n": 64,
+          "ayahs": 18,
+          "hasBasmala": false
+        },
+        {
+          "n": 65,
+          "ayahs": 12,
+          "hasBasmala": false
+        },
+        {
+          "n": 66,
+          "ayahs": 12,
+          "hasBasmala": false
+        },
+        {
+          "n": 67,
+          "ayahs": 30,
+          "hasBasmala": false
+        },
+        {
+          "n": 68,
+          "ayahs": 52,
+          "hasBasmala": false
+        },
+        {
+          "n": 69,
+          "ayahs": 52,
+          "hasBasmala": false
+        },
+        {
+          "n": 70,
+          "ayahs": 44,
+          "hasBasmala": false
+        },
+        {
+          "n": 71,
+          "ayahs": 28,
+          "hasBasmala": false
+        },
+        {
+          "n": 72,
+          "ayahs": 28,
+          "hasBasmala": false
+        },
+        {
+          "n": 73,
+          "ayahs": 20,
+          "hasBasmala": false
+        },
+        {
+          "n": 74,
+          "ayahs": 56,
+          "hasBasmala": false
+        },
+        {
+          "n": 75,
+          "ayahs": 40,
+          "hasBasmala": false
+        },
+        {
+          "n": 76,
+          "ayahs": 31,
+          "hasBasmala": false
+        },
+        {
+          "n": 77,
+          "ayahs": 50,
+          "hasBasmala": false
+        },
+        {
+          "n": 78,
+          "ayahs": 40,
+          "hasBasmala": false
+        },
+        {
+          "n": 79,
+          "ayahs": 46,
+          "hasBasmala": false
+        },
+        {
+          "n": 80,
+          "ayahs": 42,
+          "hasBasmala": false
+        },
+        {
+          "n": 81,
+          "ayahs": 29,
+          "hasBasmala": false
+        },
+        {
+          "n": 82,
+          "ayahs": 19,
+          "hasBasmala": false
+        },
+        {
+          "n": 83,
+          "ayahs": 36,
+          "hasBasmala": false
+        },
+        {
+          "n": 84,
+          "ayahs": 25,
+          "hasBasmala": false
+        },
+        {
+          "n": 85,
+          "ayahs": 22,
+          "hasBasmala": false
+        },
+        {
+          "n": 86,
+          "ayahs": 17,
+          "hasBasmala": false
+        },
+        {
+          "n": 87,
+          "ayahs": 19,
+          "hasBasmala": false
+        },
+        {
+          "n": 88,
+          "ayahs": 26,
+          "hasBasmala": false
+        },
+        {
+          "n": 89,
+          "ayahs": 30,
+          "hasBasmala": false
+        },
+        {
+          "n": 90,
+          "ayahs": 20,
+          "hasBasmala": false
+        },
+        {
+          "n": 91,
+          "ayahs": 15,
+          "hasBasmala": false
+        },
+        {
+          "n": 92,
+          "ayahs": 21,
+          "hasBasmala": false
+        },
+        {
+          "n": 93,
+          "ayahs": 11,
+          "hasBasmala": false
+        },
+        {
+          "n": 94,
+          "ayahs": 8,
+          "hasBasmala": false
+        },
+        {
+          "n": 95,
+          "ayahs": 8,
+          "hasBasmala": false
+        },
+        {
+          "n": 96,
+          "ayahs": 19,
+          "hasBasmala": false
+        },
+        {
+          "n": 97,
+          "ayahs": 5,
+          "hasBasmala": false
+        },
+        {
+          "n": 98,
+          "ayahs": 8,
+          "hasBasmala": false
+        },
+        {
+          "n": 99,
+          "ayahs": 8,
+          "hasBasmala": false
+        },
+        {
+          "n": 100,
+          "ayahs": 11,
+          "hasBasmala": false
+        },
+        {
+          "n": 101,
+          "ayahs": 11,
+          "hasBasmala": false
+        },
+        {
+          "n": 102,
+          "ayahs": 8,
+          "hasBasmala": false
+        },
+        {
+          "n": 103,
+          "ayahs": 3,
+          "hasBasmala": false
+        },
+        {
+          "n": 104,
+          "ayahs": 9,
+          "hasBasmala": false
+        },
+        {
+          "n": 105,
+          "ayahs": 5,
+          "hasBasmala": false
+        },
+        {
+          "n": 106,
+          "ayahs": 4,
+          "hasBasmala": false
+        },
+        {
+          "n": 107,
+          "ayahs": 7,
+          "hasBasmala": false
+        },
+        {
+          "n": 108,
+          "ayahs": 3,
+          "hasBasmala": false
+        },
+        {
+          "n": 109,
+          "ayahs": 6,
+          "hasBasmala": false
+        },
+        {
+          "n": 110,
+          "ayahs": 3,
+          "hasBasmala": false
+        },
+        {
+          "n": 111,
+          "ayahs": 5,
+          "hasBasmala": false
+        },
+        {
+          "n": 112,
+          "ayahs": 4,
+          "hasBasmala": false
+        },
+        {
+          "n": 113,
+          "ayahs": 5,
+          "hasBasmala": false
+        },
+        {
+          "n": 114,
+          "ayahs": 6,
+          "hasBasmala": false
+        }
+      ]
+    },
+    {
       "id": "muhammad_siddiq_al_minshawi",
       "nameAr": "محمد صديق المنشاوي",
       "nameEn": "Muhammad Siddiq Al-Minshawi",
