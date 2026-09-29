@@ -17,7 +17,7 @@ any edit. Items only the account holder can answer are marked **verify**.
 | Primary category | Education |
 | Secondary category | Reference |
 | Price | Free — no in-app purchases, no ads |
-| Availability | All countries and regions |
+| Availability | All countries and regions **except China mainland** — Chinese law requires a permit for religious content, and we hold none |
 | Devices | iPhone and iPad (`TARGETED_DEVICE_FAMILY = 1,2`) |
 | Copyright | © 2026 Ahmed Elsersi |
 | Support URL | <https://ahmedelsersi.github.io/iqra-wartaq/> |
@@ -224,14 +224,36 @@ messaging, web browsing or advertising. Expected rating: **4+**.
 `ITSAppUsesNonExemptEncryption = false` is already in `Info.plist`: the app
 uses only HTTPS, which is exempt, so App Store Connect does not ask at upload.
 
-## Content rights — **verify**
+## Content rights — **blocked until the reciter answers**
 
 App Store Connect asks: *"Does your app contain, show, or access third-party
-content?"* — **Yes**: the recitations are Sheikh Ahmed Khalil Shaheen's. Answer
-*"Yes, and I have the rights"* **only if you hold his permission to distribute
-them**, and keep that permission where you can produce it if Apple asks. The
-Quranic text and page layout come from the Quranic Universal Library (QUL)
-sources in `data/sources/`; check their terms are met.
+content?"* — **Yes**: the recitation is Sheikh Ahmed Khalil Shaheen's. The
+follow-up asks you to confirm you hold all necessary rights, and **you do not**.
+
+The files were downloaded from **surahquran.com**, whose terms of use
+(`surahquran.com/terms.html`) say downloads are for
+«الاستخدام الشخصي غير التجاري» — personal, non-commercial use — and that
+«يحظر أي استخدام آخر للموقع دون إذن كتابي مسبق منا»: any other use is forbidden
+without their prior written permission. Re-hosting the clips on our own CDN and
+shipping them in a store app is not personal use. (The originals also carry
+`www.islamway.net` metadata from 2019, recorded in `docs/ASSETS_README.md` —
+the recording has been passed between several sites, and none of them made it.)
+
+surahquran.com cannot cure this either: they aggregate 250+ reciters and did
+not record this one. The rights are the Sheikh's, or his producer's, so **ask
+him**, and keep the dated reply as a PDF. A short Arabic message is enough; a
+one-line grant is documentation.
+
+Do not tick the rights confirmation until it arrives. The review notes above
+are written so they state no licence in the meantime — they say who recited it,
+that he is credited, that the app does not monetize it, that permission has
+been requested, and that any recitation is removed on request.
+
+If the permission does not come, the recitation has to be replaced before this
+ships: a set whose terms are written down (the King Fahd Complex publishes its
+own recitations at qurancomplex.gov.sa/quran-audios, which would also match the
+KFGQPC text already bundled), or a commissioned reciter. Either is a re-cut
+with `tool/publish_surah.dart` and the admin tool, not a rewrite.
 
 ## App Review information
 
@@ -242,27 +264,36 @@ sources in `data/sources/`; check their terms are met.
 | Contact email | ahmed.elsersi3@gmail.com |
 | Contact phone | **verify — required by Apple, not in the repo** |
 
-**Notes for the reviewer** (paste as is):
+**Notes for the reviewer** — paste into **App Review Information → Notes**
+and send the same text as the Resolution Center reply. Apple asked for both
+in the 2026-09 information request; `docs/APP_REVIEW_NOTES.md` explains what
+each numbered answer is for and what to change once the reciter replies.
 
+<!-- field: reviewnotes en 4000 -->
+**Review notes** (≤ 4000)
 ```
-No account or sign-in exists; every screen is reachable straight away.
+No account, no login, no in-app purchase, no ads, no user-generated content. Every screen is reachable from launch with no credentials, so there is no account creation or deletion flow.
 
-To see the main feature: on the home page tap any surah, tap the page once to
-bring up the bar at the bottom, then tap Start (ابدأ). The recitation streams
-over HTTPS from our CDN, so the device needs a connection for audio; reading
-the Quran text works fully offline.
+1. SCREEN RECORDING: attached. Recorded on a physical iPhone running the latest iOS, beginning with the app launch and showing the typical flow.
 
-Background modes:
-- audio: a memorization session runs for many minutes with the phone locked
-  and is controlled from the lock screen.
-- fetch: used by the downloader so that a surah being saved for offline
-  listening can finish in the background.
+2. PURPOSE AND AUDIENCE: Iqra Wartaq is a free Quran memorization (hifz) app, for anyone memorizing the Quran and for teachers and students in memorization circles (halaqat). Memorizing by audio repetition - the classical "talqeen" method - normally needs a teacher reciting with you. The app does it: one verse N times, then the next verse N times, then the two joined and repeated, widening the range verse by verse until the passage holds. The reader chooses the range, the repetitions, the joining mode, the pauses and the speed. The complete Quran is also readable offline in the printed mushaf page layout, and progress is tracked verse by verse on the device.
 
-The app asks for no permissions. The Photo Library usage strings are present
-only because a downloader plugin references those classes; the permission
-requests are compiled out and the prompt can never appear.
+3. SETUP AND MAIN FEATURES: no credentials, no sample files, no configuration. The interface is Arabic, laid out right to left.
+- Read: home -> "Surahs" or "Juz" tab -> tap any entry -> the mushaf opens there. Swipe to turn pages.
+- Memorize: tap the page once to bring up the bar at the bottom, choose the verse range, repetitions and joining mode, then tap Start. The verse being recited is marked and the page follows it.
+- Offline audio: Settings -> Saved recitations -> choose a surah -> download. Anything not downloaded streams instead.
+- Progress: every verse shows as not started, in progress or memorized, on the device only.
 
-The interface is in Arabic, laid out right to left.
+4. EXTERNAL SERVICES: two, both read-only public HTTPS GETs to static hosting owned by the developer. The app sends nothing to either.
+- GitHub Pages (ahmedelsersi.github.io/iqra-cdn): a static manifest.json listing the available recordings, and an app.json holding the app's About text and update information.
+- Cloudflare R2 (public bucket): the recitation audio, streamed or downloaded per surah.
+There is no backend, no authentication, no payment processor, no AI service, no analytics and no crash reporting. The app collects no data, as declared in App Privacy. The Quranic text is bundled as a read-only database and is never fetched or altered.
+
+5. REGIONAL DIFFERENCES: none. The app behaves identically in every region and on every network. Nothing is geo-restricted, priced or gated by country. The text and the recitation are the same everywhere.
+
+6. THIRD-PARTY MATERIAL: the Quranic text is the KFGQPC Hafs Uthmani Unicode text and font, published by the King Fahd Glorious Quran Printing Complex (qurancomplex.gov.sa) for free use in applications without modification, and shipped unchanged. The Quran itself is public-domain scripture; no translation or commentary is included. The recitation is by Sheikh Ahmed Khalil Shaheen, who is named in the app beside it. The app is free, carries no advertising or in-app purchases, and does not monetize the recording. We have written to the reciter to obtain his permission in writing, and we remove any recitation immediately on request from the reciter or the rights holder. The app is not in a regulated industry: it is a free reference and education app with no medical, financial or health function.
+
+TECHNICAL NOTES: recitation audio streams from the CDN above the first time it is played, so please keep the device online during a session; a downloaded surah then plays with no network, and reading never needs one. Background modes: "audio", because a session runs for many minutes with the phone locked and is controlled from the lock screen; "fetch", so a surah being saved can finish downloading in the background. The app requests no permissions: the Photo Library usage strings exist only because a downloader plugin references those classes, and the requests are compiled out, so no prompt can appear.
 ```
 
 ## Before submitting — a checklist
@@ -274,6 +305,12 @@ The interface is in Arabic, laid out right to left.
 - [ ] Register `com.mirqat.app` and create the app record.
 - [ ] Paste this listing; upload both screenshot sets under Arabic.
 - [ ] Answer content rights, age rating, App Privacy as above.
+- [ ] Remove China mainland from Pricing and Availability; leave the
+      permit line in the Notes box blank.
+- [ ] Paste the review notes above into App Review Information → Notes,
+      attach the screen recording, and send the same text in Resolution
+      Center.
+- [ ] Ask the reciter for written permission before ticking content rights.
 - [ ] `flutter build ipa --release`, upload with Transporter, pick the build.
 - [ ] When there is an App Store page: put its URL in the admin tool's
       **app.json → Updates → iOS → Store page**, or the iOS update prompt

@@ -88,9 +88,19 @@ settings fully control pacing rather than fighting silence baked into the audio.
 offsets into your original full-surah file, in case you ever switch back to
 `single_file_with_timings`. Not used in `per_ayah_files` mode.
 
-**Rights:** the file's own metadata credits `www.islamway.net` (2019). Still worth
-settling redistribution permission before release — hosting for listening is not
-a licence to bundle.
+**Rights — NOT SETTLED.** The recordings were downloaded from
+**surahquran.com**; the files' own metadata credits `www.islamway.net` (2019),
+so they had already been passed along before that. surahquran.com's terms
+(`surahquran.com/terms.html`) allow downloading only for
+«الاستخدام الشخصي غير التجاري» — personal, non-commercial use — and forbid
+«أي استخدام آخر» without their prior written permission. Bundling the clips,
+re-hosting them on our CDN and shipping them in a store app is none of that.
+
+Neither site recorded the recitation, so neither can license it: the rights are
+Sheikh Ahmed Khalil Shaheen's, or his producer's. **Get his permission in
+writing before release** — see `docs/APP_REVIEW_NOTES.md` and the content-rights
+section of `store/apple/LISTING.md`, which is what blocks the App Store
+submission. Hosting for listening is not a licence to bundle.
 
 ## 3. Silence spacer — DONE, use the WAV
 
