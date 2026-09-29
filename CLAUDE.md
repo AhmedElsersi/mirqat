@@ -278,7 +278,13 @@ drilled, joined or counted.
 
 `hasBasmala` is optional and has three states. `false` means the surah has no `000` file
 and none is ever requested — the only way to skip a *streamed* basmala silently, since a
-remote file's absence cannot be discovered without playing it. `true` means the file is
+remote file's absence cannot be discovered without playing it. The surah is still opened
+with the basmala, **borrowed** from the reciter's own recording of the ayah that *is* the
+basmala — ayah 1 of the surah whose `basmala_mode` is `first_ayah`, which the catalog
+names and `ReciterCatalog` hands to the reciter as `basmalaAyahSurah` — whenever the
+reciter has that surah. Same words, same voice; a preamble, never a unit. A download of
+such a surah fetches that ayah alongside, into its own surah's place, so it opens offline
+too. `true` means the file is
 there, and a pack missing it is refused as incomplete. Absent means the manifest does not
 say, and the layout above is assumed. A missing *local* basmala is always skipped silently,
 never a failure.
@@ -449,8 +455,10 @@ assets plus one `reciters.json` object, or one manifest entry.
 `audioMode` describes a reciter's **bundled** layout only: manifest audio is per-ayah
 files whatever mode their bundled surahs use.
 
-`basmala` covers both layouts of the same words — a bundled reciter's single
-`bismillah.mp3`, which serves every surah, or a manifest surah's own ayah `000`.
+`basmala` covers three sources of the same words — a bundled reciter's single
+`bismillah.mp3`, which serves every surah; a manifest surah's own ayah `000`; or, where the
+manifest says there is no `000`, the reciter's recording of the ayah that is the basmala
+(A.5).
 Whether a session *plays* it stays `SessionPreambles`' decision, keyed on the surah's
 `bismillahMode`. `istiadhah` and `spacer` are bundled-only: neither belongs to a
 surah, and a gap is never worth a request.

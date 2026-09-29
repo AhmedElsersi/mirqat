@@ -48,6 +48,7 @@ class Reciter extends Equatable {
     this.imageUrl,
     this.remote,
     this.remoteSurahs = const <int>{},
+    this.basmalaAyahSurah,
   });
 
   /// A reciter known only from the audio manifest.
@@ -55,17 +56,24 @@ class Reciter extends Equatable {
     ManifestReciter manifest, {
     Set<int>? surahs,
     String? imageUrl,
-  }) => Reciter(
-    id: manifest.id,
-    nameAr: manifest.nameAr,
-    nameEn: manifest.nameEn,
-    audioMode: AudioMode.perAyahFiles,
-    basePath: '',
-    bundled: false,
-    availableSurahs: const <int>[],
-    hasIstiadhah: false,
-    hasBismillah: false,
-  ).withRemote(manifest, surahs: surahs, imageUrl: imageUrl);
+    int? basmalaAyahSurah,
+  }) =>
+      Reciter(
+        id: manifest.id,
+        nameAr: manifest.nameAr,
+        nameEn: manifest.nameEn,
+        audioMode: AudioMode.perAyahFiles,
+        basePath: '',
+        bundled: false,
+        availableSurahs: const <int>[],
+        hasIstiadhah: false,
+        hasBismillah: false,
+      ).withRemote(
+        manifest,
+        surahs: surahs,
+        imageUrl: imageUrl,
+        basmalaAyahSurah: basmalaAyahSurah,
+      );
 
   final String id;
   final String nameAr;
@@ -115,6 +123,22 @@ class Reciter extends Equatable {
   /// wrong ayah count is never reachable.
   final Set<int> remoteSurahs;
 
+  /// The surah whose ayah 1 *is* the basmala — `basmala_mode = first_ayah`,
+  /// Al-Fatiha in this mushaf — as the catalog names it. Null for a bundled
+  /// reciter, and for one built without a catalog.
+  ///
+  /// A manifest reciter whose surah has no `000` file of its own still opens
+  /// it with the basmala, in their own voice: their recording of this ayah
+  /// is the same words, and is borrowed (CLAUDE.md A.5). The number comes
+  /// from `quran.db`, never from here (A.2 rule 2).
+  final int? basmalaAyahSurah;
+
+  /// Whether a basmala can be borrowed from this reciter's recording of the
+  /// ayah that is the basmala: the catalog has named that surah, and the
+  /// reciter has it.
+  bool get borrowsBasmala =>
+      basmalaAyahSurah != null && remoteSurahs.contains(basmalaAyahSurah);
+
   /// Who to credit for the recordings, from the manifest. Empty for a
   /// bundled reciter and for most remote ones.
   LocalizedText get attribution => remote?.attribution ?? LocalizedText.empty;
@@ -140,7 +164,7 @@ class Reciter extends Equatable {
   bool hasBasmala(int surahNumber) =>
       hasBismillah ||
       (remoteSurahs.contains(surahNumber) &&
-          remote?.surah(surahNumber)?.hasBasmala != false);
+          (remote?.surah(surahNumber)?.hasBasmala != false || borrowsBasmala));
 
   /// This reciter extended by [manifest]. [surahs] limits which of its surahs
   /// are offered; null offers all of them.
@@ -150,6 +174,7 @@ class Reciter extends Equatable {
     ManifestReciter manifest, {
     Set<int>? surahs,
     String? imageUrl,
+    int? basmalaAyahSurah,
   }) => Reciter(
     id: id,
     nameAr: nameAr,
@@ -166,6 +191,7 @@ class Reciter extends Equatable {
     remoteSurahs: Set<int>.unmodifiable(
       surahs ?? manifest.surahs.map((ManifestSurah s) => s.number),
     ),
+    basmalaAyahSurah: basmalaAyahSurah ?? this.basmalaAyahSurah,
   );
 
   factory Reciter.fromJson(Map<String, dynamic> json, String assetPath) {
@@ -242,5 +268,6 @@ class Reciter extends Equatable {
     imageUrl,
     remote,
     remoteSurahs,
+    basmalaAyahSurah,
   ];
 }

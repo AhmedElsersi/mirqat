@@ -430,6 +430,28 @@ class AudioPackService {
       for (int ayah = 1; ayah <= surah.ayahs; ayah++) ayah,
     ];
 
+    // A surah with no basmala file borrows one from the reciter's recording
+    // of the ayah that is the basmala (CLAUDE.md A.5). Fetched alongside,
+    // into that ayah's own place, so the surah opens offline the way it opens
+    // online — and forgiven if it does not arrive: it belongs to another
+    // surah, and streams until then.
+    final int? borrowFrom =
+        separate && surah.hasBasmala == false && reciter.borrowsBasmala
+        ? reciter.basmalaAyahSurah
+        : null;
+    final File? borrowed = borrowFrom == null
+        ? null
+        : _storage.fileFor(
+            reciterId: remote.id,
+            bitrate: remote.bitrateFor(
+              borrowFrom,
+              preferredBitrate: settings.audioQuality.bitrate,
+            ),
+            surahNumber: borrowFrom,
+            ayahNumber: 1,
+          );
+    final String borrowedTask = '$key/basmala';
+
     final List<FileRequest> requests = <FileRequest>[
       for (final int ayah in wanted)
         if (!_looksLikeMp3(fileFor(ayah)))
@@ -440,6 +462,21 @@ class AudioPackService {
             destination: fileFor(ayah),
             taskId: taskFor(ayah),
           ),
+      if (borrowed != null && borrowFrom != null && !_looksLikeMp3(borrowed))
+        (
+          url: _manifest.current.urlFor(
+            remote.audioPathFor(
+              borrowFrom,
+              1,
+              bitrate: remote.bitrateFor(
+                borrowFrom,
+                preferredBitrate: settings.audioQuality.bitrate,
+              ),
+            ),
+          ),
+          destination: borrowed,
+          taskId: borrowedTask,
+        ),
     ];
 
     _emit(reciter.id, surah.number, PackStatus.downloading);
@@ -461,6 +498,15 @@ class AudioPackService {
     }
 
     _emit(reciter.id, surah.number, PackStatus.verifying, progress: 1);
+    if (borrowed != null && !_looksLikeMp3(borrowed)) {
+      if (borrowed.existsSync()) borrowed.deleteSync();
+      _warn(
+        '${reciter.id} surah ${surah.number}: the borrowed basmala '
+        '($borrowFrom:1) did not arrive'
+        '${failures[borrowedTask] == null ? '' : ': ${failures[borrowedTask]}'}'
+        '; it streams until it does.',
+      );
+    }
     final List<int> missing = <int>[];
     int bytes = 0;
     for (final int ayah in wanted) {

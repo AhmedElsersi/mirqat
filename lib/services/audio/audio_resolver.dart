@@ -139,21 +139,23 @@ class SurahAudio {
 
   /// The bitrate this surah streams at: the preference where the reciter has
   /// it, their own otherwise.
-  int get bitrate =>
+  int get bitrate => _bitrateFor(_surah.number);
+
+  int _bitrateFor(int surahNumber) =>
       _reciter.remote?.bitrateFor(
-        _surah.number,
+        surahNumber,
         preferredBitrate: _preferredBitrate,
       ) ??
       0;
 
   /// Every bitrate worth looking for on disk, the streaming one first.
-  List<int> get _localBitrates {
+  List<int> _localBitratesFor(int surahNumber) {
     final ManifestReciter? remote = _reciter.remote;
     if (remote == null) return const <int>[];
-    final int streaming = bitrate;
+    final int streaming = _bitrateFor(surahNumber);
     return <int>[
       streaming,
-      ...remote.bitratesFor(_surah.number).where((int b) => b != streaming),
+      ...remote.bitratesFor(surahNumber).where((int b) => b != streaming),
     ];
   }
 
@@ -186,13 +188,23 @@ class SurahAudio {
     );
     if (clip != null) return clip;
 
-    // A manifest that declares no basmala for this surah is believed, and
-    // nothing is queued: the alternative is a session that opens on a 404.
+    // A manifest that declares no basmala file for this surah is believed —
+    // the alternative is a session that opens on a 404. The basmala is then
+    // borrowed from the reciter's own recording of the ayah that *is* the
+    // basmala, where the catalog has named that surah and the reciter has it
+    // (CLAUDE.md A.5). Otherwise nothing is queued.
     if (_reciter.remote?.surah(_surah.number)?.hasBasmala == false) {
-      return null;
+      return _borrowsBasmala
+          ? _remoteSourceFor(_reciter.basmalaAyahSurah!, 1)
+          : null;
     }
     return _sourceFor(0);
   }
+
+  /// Whether this surah's basmala is borrowed rather than its own `000`.
+  bool get _borrowsBasmala =>
+      _reciter.remote?.surah(_surah.number)?.hasBasmala == false &&
+      _reciter.borrowsBasmala;
 
   /// The isti'adhah, or null when this reciter has none. Bundled only: it is
   /// not part of any surah, so there is nothing for the manifest to carry.
@@ -210,11 +222,15 @@ class SurahAudio {
 
     final ManifestReciter? remote = _reciter.remote;
     if (remote == null) return false;
+    // A borrowed basmala is local when the ayah it is borrowed from is.
+    final (int surahNumber, int ayahNumber) = ayah == 0 && _borrowsBasmala
+        ? (_reciter.basmalaAyahSurah!, 1)
+        : (_surah.number, ayah);
     return _storage.firstDownloadedFile(
           reciterId: remote.id,
-          bitrates: _localBitrates,
-          surahNumber: _surah.number,
-          ayahNumber: ayah,
+          bitrates: _localBitratesFor(surahNumber),
+          surahNumber: surahNumber,
+          ayahNumber: ayahNumber,
         ) !=
         null;
   }
@@ -237,15 +253,22 @@ class SurahAudio {
       );
     }
 
+    return _remoteSourceFor(_surah.number, ayah);
+  }
+
+  /// The downloaded-or-streamed arms for any surah of this reciter — this
+  /// one, or the one a basmala is borrowed from.
+  AudioSource? _remoteSourceFor(int surahNumber, int ayah) {
     final ManifestReciter? remote = _reciter.remote;
-    if (remote == null || !_reciter.remoteSurahs.contains(_surah.number)) {
+    if (remote == null || !_reciter.remoteSurahs.contains(surahNumber)) {
       return null;
     }
+    final int bitrate = _bitrateFor(surahNumber);
 
     final File? downloaded = _storage.firstDownloadedFile(
       reciterId: remote.id,
-      bitrates: _localBitrates,
-      surahNumber: _surah.number,
+      bitrates: _localBitratesFor(surahNumber),
+      surahNumber: surahNumber,
       ayahNumber: ayah,
     );
     if (downloaded != null) return AudioSource.file(downloaded.path);
@@ -262,12 +285,12 @@ class SurahAudio {
     // ignore: experimental_member_use
     return LockCachingAudioSource(
       _manifest.urlFor(
-        remote.audioPathFor(_surah.number, ayah, bitrate: bitrate),
+        remote.audioPathFor(surahNumber, ayah, bitrate: bitrate),
       ),
       cacheFile: _storage.fileFor(
         reciterId: remote.id,
         bitrate: bitrate,
-        surahNumber: _surah.number,
+        surahNumber: surahNumber,
         ayahNumber: ayah,
       ),
     );

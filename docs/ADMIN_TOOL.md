@@ -196,7 +196,9 @@ button **Reciter from a file of links** at the top right opens it. It needs
    and for the `000` of every surah whose basmala is a file of its own. The
    second answer is written into the manifest as `hasBasmala`: the host was not
    built to our layout, and this is the only way the app can know not to ask
-   for a basmala that is not there. One clip is fetched whole and timed with
+   for a basmala that is not there. Such a surah still opens with the
+   basmala: the app borrows the reciter's own recording of Al-Fatiha's first
+   ayah, which is the basmala. One clip is fetched whole and timed with
    ffmpeg to measure the bitrate; type it if that fails. A surah the host does
    not have is not offered.
 4. **Publish** — merges the entry into the manifest **as it is live** (the

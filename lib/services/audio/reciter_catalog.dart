@@ -74,6 +74,12 @@ class ReciterCatalog {
     final Map<int, int> ayahCounts = <int, int>{
       for (final Surah surah in text) surah.number: surah.ayahCount,
     };
+    // The surah whose ayah 1 is the basmala, read off the catalog: what a
+    // manifest reciter with no `000` files borrows theirs from.
+    final int? basmalaSurah = text
+        .where((Surah s) => s.bismillahMode == BismillahMode.countedAsAyah1)
+        .firstOrNull
+        ?.number;
     final Map<String, ManifestReciter> remote = <String, ManifestReciter>{};
     for (final ManifestReciter entry in manifest.reciters) {
       // A duplicated id keeps the first entry rather than the last, so the
@@ -99,6 +105,7 @@ class ReciterCatalog {
                 entry,
                 surahs: _playable(entry, ayahCounts),
                 imageUrl: portraitOf(entry),
+                basmalaAyahSurah: basmalaSurah,
               ),
       );
     }
@@ -110,7 +117,12 @@ class ReciterCatalog {
       // would leave every surah blocked with no way to tell why.
       if (surahs.isEmpty) continue;
       merged.add(
-        Reciter.remoteOnly(entry, surahs: surahs, imageUrl: portraitOf(entry)),
+        Reciter.remoteOnly(
+          entry,
+          surahs: surahs,
+          imageUrl: portraitOf(entry),
+          basmalaAyahSurah: basmalaSurah,
+        ),
       );
     }
     return List<Reciter>.unmodifiable(merged);

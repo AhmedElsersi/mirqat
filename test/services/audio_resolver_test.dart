@@ -492,6 +492,80 @@ void main() {
       expect(uriOf(audio.sourceFor(1)), endsWith('002001.mp3'));
     });
 
+    test('a surah that declares no basmala file borrows the reciter\'s own '
+        'recording of the ayah that is the basmala', () async {
+      const String borrows = '''
+{"schemaVersion":1,"baseUrl":"https://example.invalid/cdn/","mirrors":[],
+ "reciters":[{"id":"cdn","nameAr":"ق","nameEn":"Q","riwayah":"hafs",
+   "bitrate":128,"version":"1","audioPath":"https://host.invalid/q/{s3}{a3}.mp3",
+   "surahs":[{"n":1,"ayahs":3},{"n":2,"ayahs":3,"hasBasmala":false}]}]}
+''';
+      final Reciter reciter = Reciter.remoteOnly(
+        AudioManifest.fromJson(jsonDecode(borrows), 'test').reciters.single,
+        // What ReciterCatalog reads off quran.db: surah 1 is `first_ayah`.
+        basmalaAyahSurah: 1,
+      );
+      expect(reciter.borrowsBasmala, isTrue);
+      expect(reciter.hasBasmala(2), isTrue);
+      expect(
+        SessionPreambles.forSession(
+          surah: surah2,
+          reciter: reciter,
+          istiadhahEnabled: false,
+        ).bismillah,
+        isTrue,
+      );
+
+      final SurahAudio audio = await resolverFor(
+        manifest: borrows,
+      ).forSurah(reciter: reciter, surah: surah2);
+
+      // Streamed from the basmala ayah, not from a 002000 that is not there.
+      expect(uriOf(audio.basmala()!), 'https://host.invalid/q/001001.mp3');
+      expect(audio.isLocal(0), isFalse);
+      // The surah's own ayahs are untouched.
+      expect(uriOf(audio.sourceFor(1)), endsWith('002001.mp3'));
+
+      // Once that ayah is on disk — downloaded, or cached by a session that
+      // streamed it — the borrowed basmala plays from disk too.
+      final File local = downloadAyah(
+        reciterId: 'cdn',
+        bitrate: 128,
+        surah: 1,
+        ayah: 1,
+      );
+      final SurahAudio again = await resolverFor(
+        manifest: borrows,
+      ).forSurah(reciter: reciter, surah: surah2);
+      expect(uriOf(again.basmala()!), Uri.file(local.path).toString());
+      expect(again.isLocal(0), isTrue);
+    });
+
+    test('nothing is borrowed from a reciter who lacks the basmala ayah\'s '
+        'surah, or when the catalog names none', () async {
+      const String only2 = '''
+{"schemaVersion":1,"baseUrl":"https://example.invalid/cdn/","mirrors":[],
+ "reciters":[{"id":"cdn","nameAr":"ق","nameEn":"Q","riwayah":"hafs",
+   "bitrate":128,"version":"1","audioPath":"https://host.invalid/q/{s3}{a3}.mp3",
+   "surahs":[{"n":2,"ayahs":3,"hasBasmala":false}]}]}
+''';
+      final ManifestReciter entry = AudioManifest.fromJson(
+        jsonDecode(only2),
+        'test',
+      ).reciters.single;
+
+      final Reciter lacksSurah = Reciter.remoteOnly(entry, basmalaAyahSurah: 1);
+      expect(lacksSurah.borrowsBasmala, isFalse);
+      expect(lacksSurah.hasBasmala(2), isFalse);
+      final SurahAudio audio = await resolverFor(
+        manifest: only2,
+      ).forSurah(reciter: lacksSurah, surah: surah2);
+      expect(audio.basmala(), isNull);
+
+      final Reciter noCatalog = Reciter.remoteOnly(entry);
+      expect(noCatalog.hasBasmala(2), isFalse);
+    });
+
     test('a manifest that declares a basmala keeps it', () async {
       const String declaresOne = '''
 {"schemaVersion":1,"baseUrl":"https://example.invalid/cdn/","mirrors":[],

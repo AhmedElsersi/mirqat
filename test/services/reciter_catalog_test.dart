@@ -221,6 +221,27 @@ void main() {
     expect(mishary.imageUrl, 'https://example.invalid/cdn/images/mishary.jpg');
   });
 
+  test('a manifest reciter is told which surah\'s first ayah is the basmala, '
+      'read off the catalog, so a surah with no basmala file still opens '
+      'with one', () async {
+    final List<Reciter> reciters = await mergedWith(
+      manifestWith(<String>[
+        '''
+{"id":"links","nameAr":"ر","nameEn":"L","riwayah":"hafs",
+ "bitrate":128,"version":"1","audioPath":"https://host.invalid/l/{s3}{a3}.mp3",
+ "surahs":[{"n":1,"ayahs":3},{"n":2,"ayahs":3,"hasBasmala":false}]}
+''',
+      ]),
+    );
+
+    // Surah 1 of the fixture catalog is `first_ayah`.
+    final Reciter links = reciters.last;
+    expect(links.id, 'links');
+    expect(links.basmalaAyahSurah, 1);
+    expect(links.borrowsBasmala, isTrue);
+    expect(links.hasBasmala(2), isTrue);
+  });
+
   test('a manifest with no portrait leaves the bundled one standing', () async {
     final List<Reciter> reciters = await mergedWith(
       manifestWith(<String>[manifestReciter('a')]),

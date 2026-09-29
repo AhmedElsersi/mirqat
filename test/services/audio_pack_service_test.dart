@@ -54,13 +54,18 @@ List<int> ayahClip(String name) => <int>[0xFF, 0xFB, ...utf8.encode(name)];
 
 /// A manifest whose reciter `links` publishes no packs: an absolute
 /// `audioPath` on a host of its own, and no `packPath` at all.
-String manifestWithoutPacks({int surah = 2, int ayahs = 3, bool? hasBasmala}) =>
+String manifestWithoutPacks({
+  int surah = 2,
+  int ayahs = 3,
+  bool? hasBasmala,
+  String extraSurahs = '',
+}) =>
     '''
 {"schemaVersion":1,"baseUrl":"https://example.invalid/cdn/","mirrors":[],
  "reciters":[{"id":"links","nameAr":"ر","nameEn":"L","riwayah":"hafs",
    "bitrate":128,"version":"1",
    "audioPath":"https://host.invalid/links/{s3}{a3}.mp3","totalBytes":0,
-   "surahs":[{"n":$surah,"ayahs":$ayahs${hasBasmala == null ? '' : ',"hasBasmala":$hasBasmala'}}]}]}
+   "surahs":[{"n":$surah,"ayahs":$ayahs${hasBasmala == null ? '' : ',"hasBasmala":$hasBasmala'}}$extraSurahs]}]}
 ''';
 
 /// A pack zip holding [names] at the top level.
@@ -246,11 +251,18 @@ void main() {
   /// The service over a reciter without packs, with the fixture catalog so
   /// the basmala decision has a `basmala_mode` to read.
   Future<({AudioPackService service, Reciter reciter, FakePackFetcher fetcher})>
-  linksServiceFor({int surah = 2, int ayahs = 3, bool? hasBasmala}) async {
+  linksServiceFor({
+    int surah = 2,
+    int ayahs = 3,
+    bool? hasBasmala,
+    String extraSurahs = '',
+    int? basmalaAyahSurah,
+  }) async {
     final String manifestJson = manifestWithoutPacks(
       surah: surah,
       ayahs: ayahs,
       hasBasmala: hasBasmala,
+      extraSurahs: extraSurahs,
     );
     final FakePackFetcher fetcher = FakePackFetcher(const <int>[]);
     final AudioPackService service = AudioPackService(
@@ -267,7 +279,7 @@ void main() {
     ).reciters.single;
     return (
       service: service,
-      reciter: Reciter.remoteOnly(entry),
+      reciter: Reciter.remoteOnly(entry, basmalaAyahSurah: basmalaAyahSurah),
       fetcher: fetcher,
     );
   }
@@ -873,6 +885,59 @@ void main() {
       expect(result.isLeft(), isTrue);
       expect(linkFile(2, 3).existsSync(), isFalse);
       expect(linkFile(2, 2).existsSync(), isTrue);
+    });
+
+    test('a surah with no basmala file also fetches the borrowed basmala ayah, '
+        'into its own surah\'s place, and forgives its absence', () async {
+      final harness = await linksServiceFor(
+        hasBasmala: false,
+        extraSurahs: ',{"n":1,"ayahs":3}',
+        basmalaAyahSurah: 1,
+      );
+
+      final InstalledPack pack = (await harness.service.download(
+        reciter: harness.reciter,
+        surahNumber: 2,
+      )).getOrElse(() => throw StateError('download'));
+
+      expect(
+        requested(harness.fetcher),
+        containsAll(<String>[
+          'https://host.invalid/links/001001.mp3',
+          'https://host.invalid/links/002001.mp3',
+        ]),
+      );
+      expect(
+        requested(harness.fetcher),
+        isNot(contains('https://host.invalid/links/002000.mp3')),
+      );
+      expect(linkFile(1, 1).existsSync(), isTrue);
+      expect(linkFile(2, 0).existsSync(), isFalse);
+      // Recorded as surah 2 alone: the basmala ayah belongs to surah 1.
+      expect(pack.ayahs, 3);
+      expect(
+        pack.bytes,
+        linkFile(2, 1).lengthSync() +
+            linkFile(2, 2).lengthSync() +
+            linkFile(2, 3).lengthSync(),
+      );
+
+      // Not there on the host: the surah is still installed, and the basmala
+      // streams until it is.
+      linkFile(1, 1).deleteSync();
+      for (int ayah = 1; ayah <= 3; ayah++) {
+        linkFile(2, ayah).deleteSync();
+      }
+      final forgiven = await linksServiceFor(
+        hasBasmala: false,
+        extraSurahs: ',{"n":1,"ayahs":3}',
+        basmalaAyahSurah: 1,
+      );
+      forgiven.fetcher.missing = <String>{'001001.mp3'};
+      final Either<Failure, InstalledPack> result = await forgiven.service
+          .download(reciter: forgiven.reciter, surahNumber: 2);
+      expect(result.isRight(), isTrue);
+      expect(linkFile(1, 1).existsSync(), isFalse);
     });
 
     test('cancel reaches every file of the batch', () async {
