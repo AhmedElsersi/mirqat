@@ -271,4 +271,37 @@ void main() {
       'https://example.invalid/cdn/audio/cdn/64/001001.mp3',
     );
   });
+
+  test('a reciter with no packPath parses, says it has no packs, and resolves '
+      'an absolute audioPath to itself', () {
+    AudioManifest parse(String packPath) => AudioManifest.fromJson(
+      jsonDecode('''
+{"schemaVersion":1,"baseUrl":"https://example.invalid/cdn/","mirrors":[],
+ "reciters":[{"id":"r","nameAr":"ر","nameEn":"R","bitrate":128,"version":"1",
+   "audioPath":"https://host.invalid/r/{s3}{a3}.mp3"$packPath,
+   "surahs":[{"n":2,"ayahs":3,"hasBasmala":false}]}]}
+'''),
+      'test',
+    );
+
+    final AudioManifest manifest = parse('');
+    final ManifestReciter without = manifest.reciters.single;
+    expect(without.hasPacks, isFalse);
+    expect(without.packPath, isEmpty);
+    expect(without.surah(2)!.bytes, 0);
+    expect(without.surah(2)!.sha256, isEmpty);
+    expect(without.surah(2)!.hasBasmala, isFalse);
+    expect(
+      manifest.urlFor(without.audioPathFor(2, 1)).toString(),
+      'https://host.invalid/r/002001.mp3',
+    );
+
+    expect(parse(',"packPath":""').reciters.single.hasPacks, isFalse);
+
+    final ManifestReciter packed = parse(
+      ',"packPath":"packs/{id}/{s3}.zip"',
+    ).reciters.single;
+    expect(packed.hasPacks, isTrue);
+    expect(packed.packPathFor(2), 'packs/r/002.zip');
+  });
 }

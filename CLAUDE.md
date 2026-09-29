@@ -39,15 +39,16 @@ pair N times, and continues that pattern until the selected range is memorized.
    counts, no hardcoded reciter IDs, no switch on surah number anywhere. Surahs come from
    `quran.db`, reciters from `reciters.json` and the audio manifest; both are pure data.
 3. **Network: public HTTPS GETs only.** The app may fetch the audio manifest, ayah audio
-   and audio packs from the CDN; `app.json` from the same Pages site as the manifest, and
-   the one portrait it may name; and nothing else. No backend, no accounts, no Firebase,
-   no analytics, no crash reporting. `app.json` is the **only** remote config, and it is
-   deliberately narrow: what the app says about itself, and which versions the stores are
-   on (A.5). It is a static file anyone can read — nothing is sent, nothing identifies the
-   install, and no behaviour of the app is switched by it beyond the update prompt. Every
-   network failure degrades quietly to what is available offline — never an error dialog
-   for a failed fetch. Knowing whether an *audio* file is local or remote lives in
-   exactly one place: `AudioResolver`.
+   and audio packs from the CDN; ayah audio from the host a manifest reciter's `audioPath`
+   names in full (A.5, *a reciter without packs*); `app.json` from the same Pages site as
+   the manifest, and the one portrait it may name; and nothing else. No backend, no
+   accounts, no Firebase, no analytics, no crash reporting. `app.json` is the **only**
+   remote config, and it is deliberately narrow: what the app says about itself, and which
+   versions the stores are on (A.5). It is a static file anyone can read — nothing is
+   sent, nothing identifies the install, and no behaviour of the app is switched by it
+   beyond the update prompt. Every network failure degrades quietly to what is available
+   offline — never an error dialog for a failed fetch. Knowing whether an *audio* file is
+   local or remote lives in exactly one place: `AudioResolver`.
 4. **Arabic-first, RTL-first.** Default locale is `ar`. `EdgeInsetsDirectional`
    everywhere — never raw `EdgeInsets` with left/right assumptions. Layout, icons,
    sliders, and progress indicators must be RTL-correct. The mushaf turns pages the way a
@@ -263,9 +264,13 @@ initial rather than a hole. `reciters.json` is now only for reciters whose *prea
 ship, and no portrait ships at all.
 
 `audioPath` is a template: `audio/{id}/{bitrate}/{s3}{a3}.mp3`, with surah and ayah
-zero-padded to 3 digits. **The basmala of a `separate` surah is its own file inside that
-surah, ayah `000`** — `audio/shaheen/64/002000.mp3` — and is played once before ayah 1 when
-a session starts at ayah 1. A session that picks a surah up part-way opens with no
+zero-padded to 3 digits. It may also be a full `https://` address with the same
+placeholders, for a reciter served from a host of their own — the app resolves it as it
+resolves any path, and an absolute one resolves to itself.
+
+**The basmala of a `separate` surah is its own file inside that surah, ayah `000`** —
+`audio/shaheen/64/002000.mp3` — and is played once before ayah 1 when a session starts at
+ayah 1. A session that picks a surah up part-way opens with no
 basmala. A session that runs on into a later surah plays that surah's basmala once, ahead
 of the first time its ayah 1 is heard — a preamble in the queue, never a unit, so it is not
 drilled, joined or counted.
@@ -286,6 +291,20 @@ and a surah already on the device plays from disk whatever the selector now says
 `bytes` is the size of the pack zip, and it is checked **before** the digest and before
 anything is unzipped: a truncated download is the common failure and length is the cheap
 way to catch it.
+
+**A reciter without packs.** An entry with no `packPath` is a reciter whose audio is
+served ayah by ayah from a host that builds no zips — one added from a file of links,
+the way the admin tool adds a reciter whose recordings someone else already cut and
+hosts. Their surahs stream exactly as any other's. A *download* of one is one request
+per ayah, straight into the directory a pack would have unzipped to, so the resolver,
+delete and the stale check never know the difference. There is no `bytes` or `sha256`
+to check, so each file is held to the cheap truth a pack's entries are held to — not
+empty, and an mp3 by its first bytes — and a file that fails it is deleted and counted
+missing; what did arrive stays and plays from disk, the rest streams, and the surah is
+recorded only when every ayah is there. Such an entry **states `hasBasmala`** for every
+`separate` surah: the host was not built to the layout above, and the manifest is the
+only thing that can say whether a `000` exists there. It is written by the admin tool
+from the file of links, never by hand.
 
 A manifest reciter whose id matches a bundled reciter extends it: bundled surahs play from
 assets, the rest from the manifest.

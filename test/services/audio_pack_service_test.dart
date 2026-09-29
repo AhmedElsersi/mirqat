@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -47,6 +48,20 @@ const Reciter bundledOnly = Reciter(
 /// The bytes of one "recording". Content does not matter; length and digest
 /// do.
 List<int> clip(String name) => utf8.encode('mp3:$name');
+
+/// An ayah file as a host would serve it: a frame sync, then whatever.
+List<int> ayahClip(String name) => <int>[0xFF, 0xFB, ...utf8.encode(name)];
+
+/// A manifest whose reciter `links` publishes no packs: an absolute
+/// `audioPath` on a host of its own, and no `packPath` at all.
+String manifestWithoutPacks({int surah = 2, int ayahs = 3, bool? hasBasmala}) =>
+    '''
+{"schemaVersion":1,"baseUrl":"https://example.invalid/cdn/","mirrors":[],
+ "reciters":[{"id":"links","nameAr":"ر","nameEn":"L","riwayah":"hafs",
+   "bitrate":128,"version":"1",
+   "audioPath":"https://host.invalid/links/{s3}{a3}.mp3","totalBytes":0,
+   "surahs":[{"n":$surah,"ayahs":$ayahs${hasBasmala == null ? '' : ',"hasBasmala":$hasBasmala'}}]}]}
+''';
 
 /// A pack zip holding [names] at the top level.
 List<int> packZip(List<String> names) {
@@ -105,6 +120,51 @@ class FakePackFetcher implements PackFetcher {
 
   @override
   Future<void> cancel(String taskId) async => cancelled.add(taskId);
+
+  // Ayah-by-ayah downloads.
+  final List<FileRequest> batchRequests = <FileRequest>[];
+  final List<String> cancelledAll = <String>[];
+
+  /// File names the host answers 404 for.
+  Set<String> missing = <String>{};
+
+  /// File names served as something other than a recitation.
+  Map<String, List<int>> servedInstead = <String, List<int>>{};
+
+  /// Holds the batch until completed, so a test can cancel part-way.
+  Completer<void>? gate;
+
+  @override
+  Future<Map<String, String>> fetchAll({
+    required List<FileRequest> requests,
+    bool requiresWiFi = false,
+    void Function(double progress)? onProgress,
+  }) async {
+    batchRequests.addAll(requests);
+    if (gate != null) await gate!.future;
+    final Map<String, String> failures = <String, String>{};
+    int settled = 0;
+    for (final FileRequest request in requests) {
+      final String name = p.basename(request.destination.path);
+      if (cancelledAll.contains(request.taskId)) {
+        failures[request.taskId] = 'canceled';
+      } else if (missing.contains(name)) {
+        failures[request.taskId] = 'notFound';
+      } else {
+        request.destination.parent.createSync(recursive: true);
+        request.destination.writeAsBytesSync(
+          servedInstead[name] ?? ayahClip(name),
+          flush: true,
+        );
+      }
+      onProgress?.call(++settled / requests.length);
+    }
+    return failures;
+  }
+
+  @override
+  Future<void> cancelAll(List<String> taskIds) async =>
+      cancelledAll.addAll(taskIds);
 }
 
 void main() {
@@ -182,6 +242,45 @@ void main() {
       storage: audioStorage,
     );
   }
+
+  /// The service over a reciter without packs, with the fixture catalog so
+  /// the basmala decision has a `basmala_mode` to read.
+  Future<({AudioPackService service, Reciter reciter, FakePackFetcher fetcher})>
+  linksServiceFor({int surah = 2, int ayahs = 3, bool? hasBasmala}) async {
+    final String manifestJson = manifestWithoutPacks(
+      surah: surah,
+      ayahs: ayahs,
+      hasBasmala: hasBasmala,
+    );
+    final FakePackFetcher fetcher = FakePackFetcher(const <int>[]);
+    final AudioPackService service = AudioPackService(
+      manifestService: fixtureManifestService(bundled: manifestJson),
+      audioStorage: storage(),
+      downloadsRepository: await openDownloads(),
+      quranRepository: fixtureRepository(),
+      packFetcher: () => fetcher,
+    );
+    addTearDown(service.dispose);
+    final ManifestReciter entry = AudioManifest.fromJson(
+      jsonDecode(manifestJson),
+      'test',
+    ).reciters.single;
+    return (
+      service: service,
+      reciter: Reciter.remoteOnly(entry),
+      fetcher: fetcher,
+    );
+  }
+
+  File linkFile(int surah, int ayah) => File(
+    p.join(
+      storageRoot.path,
+      'audio',
+      'links',
+      '128',
+      '${surah.toString().padLeft(3, '0')}${ayah.toString().padLeft(3, '0')}.mp3',
+    ),
+  );
 
   File installedFile(int surah, int ayah, {int bitrate = 128}) => File(
     p.join(
@@ -611,4 +710,193 @@ void main() {
       expect(pack.state, PackState.complete);
     },
   );
+
+  group('a reciter without packs', () {
+    List<String> requested(FakePackFetcher fetcher) => <String>[
+      for (final FileRequest r in fetcher.batchRequests) r.url.toString(),
+    ];
+
+    test('is fetched ayah by ayah from its own host, into the layout the '
+        'resolver reads, and recorded', () async {
+      final harness = await linksServiceFor();
+
+      final Either<Failure, InstalledPack> result = await harness.service
+          .download(reciter: harness.reciter, surahNumber: 2);
+      final InstalledPack pack = result.getOrElse(
+        () => throw StateError('$result'),
+      );
+
+      // No pack was asked for; every ayah was, the basmala first, each at
+      // the absolute template the manifest gave.
+      expect(harness.fetcher.fetched, isEmpty);
+      expect(requested(harness.fetcher), <String>[
+        'https://host.invalid/links/002000.mp3',
+        'https://host.invalid/links/002001.mp3',
+        'https://host.invalid/links/002002.mp3',
+        'https://host.invalid/links/002003.mp3',
+      ]);
+      int bytes = 0;
+      for (int ayah = 0; ayah <= 3; ayah++) {
+        expect(linkFile(2, ayah).existsSync(), isTrue, reason: 'ayah $ayah');
+        bytes += linkFile(2, ayah).lengthSync();
+      }
+      expect(pack.reciterId, 'links');
+      expect(pack.surahNumber, 2);
+      expect(pack.bitrate, 128);
+      expect(pack.version, '1');
+      expect(pack.ayahs, 3);
+      expect(pack.bytes, bytes);
+      expect(pack.state, PackState.complete);
+      expect(
+        harness.service.stateFor(reciterId: 'links', surahNumber: 2).status,
+        PackStatus.installed,
+      );
+      final List<InstalledPack> installed = (await harness.service.installed())
+          .getOrElse(() => throw StateError('installed'));
+      expect(installed.map((InstalledPack p) => p.key), <String>['links:002']);
+    });
+
+    test('asks for no basmala where the manifest says there is none, nor '
+        'for a surah whose basmala is its first ayah', () async {
+      final declared = await linksServiceFor(hasBasmala: false);
+      await declared.service.download(
+        reciter: declared.reciter,
+        surahNumber: 2,
+      );
+      expect(
+        requested(declared.fetcher),
+        isNot(contains('https://host.invalid/links/002000.mp3')),
+      );
+      expect(declared.fetcher.batchRequests, hasLength(3));
+
+      // Surah 1 of the fixture catalog is `first_ayah`: nothing said in the
+      // manifest, and still no 000 requested.
+      final fatiha = await linksServiceFor(surah: 1);
+      await fatiha.service.download(reciter: fatiha.reciter, surahNumber: 1);
+      expect(requested(fatiha.fetcher), <String>[
+        'https://host.invalid/links/001001.mp3',
+        'https://host.invalid/links/001002.mp3',
+        'https://host.invalid/links/001003.mp3',
+      ]);
+    });
+
+    test(
+      'keeps a file already on disk rather than fetching it again',
+      () async {
+        final harness = await linksServiceFor();
+        linkFile(2, 1).parent.createSync(recursive: true);
+        linkFile(
+          2,
+          1,
+        ).writeAsBytesSync(ayahClip('already here, streamed once'));
+
+        final InstalledPack pack = (await harness.service.download(
+          reciter: harness.reciter,
+          surahNumber: 2,
+        )).getOrElse(() => throw StateError('download'));
+
+        expect(
+          requested(harness.fetcher),
+          isNot(contains('https://host.invalid/links/002001.mp3')),
+        );
+        expect(harness.fetcher.batchRequests, hasLength(3));
+        expect(
+          utf8.decode(linkFile(2, 1).readAsBytesSync().sublist(2)),
+          'already here, streamed once',
+        );
+        expect(pack.bytes, greaterThanOrEqualTo(linkFile(2, 1).lengthSync()));
+      },
+    );
+
+    test('a missing ayah fails the install, keeps what arrived, and is '
+        'recorded as a failure', () async {
+      final harness = await linksServiceFor();
+      harness.fetcher.missing = <String>{'002002.mp3'};
+
+      final Either<Failure, InstalledPack> result = await harness.service
+          .download(reciter: harness.reciter, surahNumber: 2);
+
+      expect(result.isLeft(), isTrue);
+      result.fold(
+        (Failure f) => expect(f, isA<DownloadFailure>()),
+        (_) => fail('installed with an ayah missing'),
+      );
+      expect(linkFile(2, 1).existsSync(), isTrue);
+      expect(linkFile(2, 3).existsSync(), isTrue);
+      expect(linkFile(2, 2).existsSync(), isFalse);
+      expect(
+        harness.service.stateFor(reciterId: 'links', surahNumber: 2).status,
+        PackStatus.failed,
+      );
+      final List<InstalledPack> failed = (await harness.service.failed())
+          .getOrElse(() => throw StateError('failed'));
+      expect(failed.map((InstalledPack p) => p.key), <String>['links:002']);
+      expect(
+        (await harness.service.installed()).getOrElse(
+          () => throw StateError(''),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('a basmala that does not arrive is forgiven unless the manifest '
+        'promised it', () async {
+      final unsaid = await linksServiceFor();
+      unsaid.fetcher.missing = <String>{'002000.mp3'};
+      final InstalledPack pack =
+          (await unsaid.service.download(
+            reciter: unsaid.reciter,
+            surahNumber: 2,
+          )).getOrElse(
+            () => throw StateError('a missing basmala was not forgiven'),
+          );
+      expect(pack.ayahs, 3);
+      expect(linkFile(2, 0).existsSync(), isFalse);
+
+      final promised = await linksServiceFor(hasBasmala: true);
+      promised.fetcher.missing = <String>{'002000.mp3'};
+      final Either<Failure, InstalledPack> refused = await promised.service
+          .download(reciter: promised.reciter, surahNumber: 2);
+      expect(refused.isLeft(), isTrue);
+    });
+
+    test("an error page saved under an ayah's name is deleted and counted "
+        'missing', () async {
+      final harness = await linksServiceFor();
+      harness.fetcher.servedInstead = <String, List<int>>{
+        '002003.mp3': utf8.encode('<html><body>Not Found</body></html>'),
+      };
+
+      final Either<Failure, InstalledPack> result = await harness.service
+          .download(reciter: harness.reciter, surahNumber: 2);
+
+      expect(result.isLeft(), isTrue);
+      expect(linkFile(2, 3).existsSync(), isFalse);
+      expect(linkFile(2, 2).existsSync(), isTrue);
+    });
+
+    test('cancel reaches every file of the batch', () async {
+      final harness = await linksServiceFor();
+      harness.fetcher.gate = Completer<void>();
+
+      final Future<Either<Failure, InstalledPack>> running = harness.service
+          .download(reciter: harness.reciter, surahNumber: 2);
+      for (int i = 0; i < 50 && harness.fetcher.batchRequests.isEmpty; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(harness.fetcher.batchRequests, hasLength(4));
+
+      await harness.service.cancel(reciterId: 'links', surahNumber: 2);
+      expect(harness.fetcher.cancelledAll, <String>[
+        'links:002/000',
+        'links:002/001',
+        'links:002/002',
+        'links:002/003',
+      ]);
+
+      harness.fetcher.gate!.complete();
+      expect((await running).isLeft(), isTrue);
+      expect(linkFile(2, 1).existsSync(), isFalse);
+    });
+  });
 }

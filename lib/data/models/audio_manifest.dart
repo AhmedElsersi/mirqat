@@ -100,8 +100,21 @@ class ManifestReciter extends Equatable {
   /// e.g. `audio/{id}/{bitrate}/{s3}{a3}.mp3`.
   final String audioPath;
 
-  /// e.g. `packs/{id}/{bitrate}/{s3}.zip`.
+  /// e.g. `packs/{id}/{bitrate}/{s3}.zip` — or empty, for a reciter published
+  /// without packs.
+  ///
+  /// A reciter whose audio is served ayah by ayah from a host that builds no
+  /// zips — an entry written from a file of links rather than from a tree of
+  /// our own — has no pack to fetch. Their surahs are downloaded file by file
+  /// instead (`AudioPackService`), into the very directory a pack would have
+  /// unzipped to, so nothing after the download can tell the two apart.
   final String packPath;
+
+  /// Whether this reciter publishes per-surah packs.
+  ///
+  /// Without them a download is one request per ayah, and each file is held
+  /// to its own shape rather than to a digest nobody computed.
+  bool get hasPacks => packPath.isNotEmpty;
 
   /// The reciter's portrait on the CDN, relative to the manifest's `baseUrl`
   /// — `images/<id>.jpg`.
@@ -256,7 +269,8 @@ class AudioManifest extends Equatable {
             bitrate: integer(r, 'bitrate'),
             version: '${r['version'] ?? ''}',
             audioPath: str(r, 'audioPath'),
-            packPath: str(r, 'packPath'),
+            // Absent or empty: a reciter without packs (see [hasPacks]).
+            packPath: r['packPath'] as String? ?? '',
             imagePath: switch (r['imagePath']) {
               final String path when path.isNotEmpty => path,
               _ => null,

@@ -95,6 +95,22 @@ class _Fetcher implements PackFetcher {
 
   @override
   Future<void> cancel(String taskId) async {}
+
+  @override
+  Future<Map<String, String>> fetchAll({
+    required List<FileRequest> requests,
+    bool requiresWiFi = false,
+    void Function(double progress)? onProgress,
+  }) async {
+    for (final FileRequest request in requests) {
+      request.destination.parent.createSync(recursive: true);
+      request.destination.writeAsBytesSync(bytes, flush: true);
+    }
+    return const <String, String>{};
+  }
+
+  @override
+  Future<void> cancelAll(List<String> taskIds) async {}
 }
 
 void main() {

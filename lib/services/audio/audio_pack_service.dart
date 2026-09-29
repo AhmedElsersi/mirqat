@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
@@ -59,6 +60,11 @@ class AudioPackService {
   final SettingsRepository? _settings;
 
   final Map<String, PackDownload> _state = <String, PackDownload>{};
+
+  /// The platform task ids of each ayah-by-ayah download in flight, so a
+  /// cancel can reach all of them. A pack is one task under its own key and
+  /// needs no entry here.
+  final Map<String, List<String>> _batches = <String, List<String>>{};
   final StreamController<PackDownload> _changes =
       StreamController<PackDownload>.broadcast();
 
@@ -211,6 +217,8 @@ class AudioPackService {
   }) async {
     final String key = InstalledPack.keyFor(reciterId, surahNumber);
     await _fetcher().cancel(key);
+    final List<String>? batch = _batches[key];
+    if (batch != null) await _fetcher().cancelAll(batch);
     final File? zip = _zipFile(reciterId, surahNumber);
     if (zip != null && zip.existsSync()) zip.deleteSync();
     _emit(reciterId, surahNumber, PackStatus.cancelled);
@@ -306,6 +314,17 @@ class AudioPackService {
     // `current` can still be the empty one and the pack url would come out
     // relative to nothing.
     await _manifest.load();
+
+    if (!remote.hasPacks) {
+      return _installAyahByAyah(
+        reciter: reciter,
+        remote: remote,
+        surah: surah,
+        variant: variant,
+        settings: settings,
+      );
+    }
+
     final Uri url = _manifest.current.urlFor(
       remote.packPathFor(surahNumber, bitrate: variant.bitrate),
     );
@@ -362,6 +381,139 @@ class AudioPackService {
       // surah costs on disk.
       if (zip.existsSync()) zip.deleteSync();
     }
+  }
+
+  /// The download for a reciter published without packs (CLAUDE.md A.5): one
+  /// request per ayah, straight into the directory a pack would have unzipped
+  /// to, so the resolver, delete and the stale check go on as before.
+  ///
+  /// There is no digest to check — nobody built a pack to digest — so each
+  /// file is held to the cheap truth a pack's entries are held to: not empty,
+  /// and an mp3 by its first bytes, which is what tells a recitation from a
+  /// host's error page saved under its name. A file already on disk is kept
+  /// rather than fetched again: it is an earlier attempt's, or one a session
+  /// streamed and cached, and both are whole — the cache writes beside the
+  /// file and renames only at the end. What does not arrive streams, as it
+  /// did before; the surah is recorded only when every ayah is here.
+  Future<InstalledPack> _installAyahByAyah({
+    required Reciter reciter,
+    required ManifestReciter remote,
+    required ManifestSurah surah,
+    required PackVariant variant,
+    required AppSettings settings,
+  }) async {
+    final String key = InstalledPack.keyFor(reciter.id, surah.number);
+    _requireSurahDirectory(
+      remote.id,
+      variant.bitrate,
+    ).createSync(recursive: true);
+    File fileFor(int ayah) => _storage.fileFor(
+      reciterId: remote.id,
+      bitrate: variant.bitrate,
+      surahNumber: surah.number,
+      ayahNumber: ayah,
+    )!;
+    String taskFor(int ayah) => '$key/${AssetPaths.pad3(ayah)}';
+
+    // Ayah 000 is the basmala, and only a `separate` surah has one. `false`
+    // in the manifest is authoritative and it is not asked for; `true` makes
+    // it required; nothing said means ask, and forgive its absence, as a
+    // missing local basmala is always forgiven (CLAUDE.md A.5).
+    final Surah? catalog = await _catalogSurah(surah.number);
+    final bool separate =
+        catalog == null ||
+        catalog.bismillahMode == BismillahMode.separatePreamble;
+    final bool wantsBasmala = separate && surah.hasBasmala != false;
+    final bool requiresBasmala = separate && surah.hasBasmala == true;
+    final List<int> wanted = <int>[
+      if (wantsBasmala) 0,
+      for (int ayah = 1; ayah <= surah.ayahs; ayah++) ayah,
+    ];
+
+    final List<FileRequest> requests = <FileRequest>[
+      for (final int ayah in wanted)
+        if (!_looksLikeMp3(fileFor(ayah)))
+          (
+            url: _manifest.current.urlFor(
+              remote.audioPathFor(surah.number, ayah, bitrate: variant.bitrate),
+            ),
+            destination: fileFor(ayah),
+            taskId: taskFor(ayah),
+          ),
+    ];
+
+    _emit(reciter.id, surah.number, PackStatus.downloading);
+    _batches[key] = <String>[for (final FileRequest r in requests) r.taskId];
+    final Map<String, String> failures;
+    try {
+      failures = await _fetcher().fetchAll(
+        requests: requests,
+        requiresWiFi: settings.downloadOverWifiOnly,
+        onProgress: (double progress) => _emit(
+          reciter.id,
+          surah.number,
+          PackStatus.downloading,
+          progress: progress.clamp(0, 1),
+        ),
+      );
+    } finally {
+      _batches.remove(key);
+    }
+
+    _emit(reciter.id, surah.number, PackStatus.verifying, progress: 1);
+    final List<int> missing = <int>[];
+    int bytes = 0;
+    for (final int ayah in wanted) {
+      final File file = fileFor(ayah);
+      if (_looksLikeMp3(file)) {
+        bytes += file.lengthSync();
+        continue;
+      }
+      // Whatever is there is not a recitation, and must not be found by the
+      // resolver as one.
+      if (file.existsSync()) file.deleteSync();
+      missing.add(ayah);
+    }
+
+    if (missing.remove(0)) {
+      if (requiresBasmala) {
+        throw DownloadException(
+          key,
+          'The basmala (000) the manifest promises did not arrive'
+          '${failures[taskFor(0)] == null ? '' : ': ${failures[taskFor(0)]}'}. '
+          'The surah was not installed.',
+        );
+      }
+      _warn(
+        '${reciter.id} surah ${surah.number}: no basmala file; the manifest '
+        'did not promise one, so the surah opens on ayah 1.',
+      );
+    }
+    if (missing.isNotEmpty) {
+      final String reason =
+          failures[taskFor(missing.first)] ?? 'the file was not a recitation';
+      throw DownloadException(
+        key,
+        '${missing.length} of ${surah.ayahs} ayahs did not arrive (ayah '
+        '${missing.take(8).join(', ')}: $reason). The ones that did stay on '
+        'the device; the rest streams.',
+      );
+    }
+
+    final InstalledPack pack = InstalledPack(
+      reciterId: reciter.id,
+      surahNumber: surah.number,
+      bitrate: variant.bitrate,
+      version: remote.version,
+      ayahs: surah.ayahs,
+      bytes: bytes,
+      installedAt: DateTime.now(),
+    );
+    final Either<Failure, Unit> recorded = await _downloads.record(pack);
+    return recorded.fold(
+      (Failure f) => throw StorageException(f.message),
+      (_) => pack,
+    );
   }
 
   /// Byte length, then sha256, both against the manifest and both **before**
@@ -532,6 +684,27 @@ class AudioPackService {
 
   static bool _isAyahOf(String path, int surahNumber) =>
       _ayahOf(p.basename(path), surahNumber) != null;
+
+  /// Not empty, and an mp3 by its first bytes — an ID3 tag or a frame sync.
+  ///
+  /// Not a decoder. It tells a recitation from a host's error page saved
+  /// under its name, which is the failure that actually happens.
+  static bool _looksLikeMp3(File file) {
+    if (!file.existsSync()) return false;
+    final RandomAccessFile handle = file.openSync();
+    try {
+      final Uint8List head = handle.readSync(3);
+      if (head.length == 3 &&
+          head[0] == 0x49 &&
+          head[1] == 0x44 &&
+          head[2] == 0x33) {
+        return true;
+      }
+      return head.length >= 2 && head[0] == 0xFF && (head[1] & 0xE0) == 0xE0;
+    } finally {
+      handle.closeSync();
+    }
+  }
 
   Directory? _surahDirectory(String reciterId, int bitrate) {
     final Directory? root = _storage.root;
