@@ -185,7 +185,9 @@ button **Reciter from a file of links** at the top right opens it. It needs
    so is a surah the file does not have at all. Counts come from `quran.db`,
    never from the file.
 2. **The reciter** — an id (lower-case, digits, underscores), the names in both
-   languages, the riwayah, a version, the bitrate, and optionally a portrait,
+   languages, the riwayah, an attribution in both languages (shown under the
+   name in the app: the library the audio is served through, or whoever asked
+   to be credited), a version, the bitrate, and optionally a portrait,
    which goes to the bucket under a name made from its own bytes. An id already
    in the manifest as a linked reciter fills these in, for re-publishing after
    the host changed; an id that belongs to a reciter published *with packs* is

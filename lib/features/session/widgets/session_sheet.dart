@@ -184,7 +184,14 @@ class _Reciters extends StatelessWidget {
                 contentPadding: EdgeInsetsDirectional.zero,
                 title: Text(_reciterName(context, reciter)),
                 subtitle: available.contains(reciter)
-                    ? null
+                    ? (reciter.attribution.isEmpty
+                          ? null
+                          : Text(
+                              reciter.attribution.of(
+                                context.locale.languageCode,
+                              ),
+                              style: theme.textTheme.labelSmall,
+                            ))
                     : Text(
                         LocaleKeys.sessionReciterLacksRange.tr(
                           args: <String>[_reciterName(context, reciter)],

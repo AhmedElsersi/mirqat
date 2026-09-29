@@ -180,6 +180,8 @@ void main() {
         id: id,
         nameAr: 'محمد',
         nameEn: 'Muhammad',
+        attributionAr: 'عبر مكتبة',
+        attributionEn: 'Via a library',
         riwayah: 'حفص',
       ),
     );
@@ -235,6 +237,10 @@ void main() {
     expect(row['nameAr'], 'محمد');
     expect(row['bitrate'], 128);
     expect(row['version'], '1');
+    expect(row['attribution'], <String, String>{
+      'ar': 'عبر مكتبة',
+      'en': 'Via a library',
+    });
     expect(row['surahs'], <Map<String, Object?>>[
       <String, Object?>{'n': 1, 'ayahs': 3},
       <String, Object?>{'n': 2, 'ayahs': 3, 'hasBasmala': false},
@@ -356,6 +362,7 @@ void main() {
     expect(d.version, '3');
     expect(d.bitrate, 96);
     expect(d.imagePath, 'images/links_old-abc.jpg');
+    expect(d.attributionAr, isEmpty);
     await cubit.useFile(write('export.json', exportFor(complete)).path);
     expect(
       cubit.state.warnings,

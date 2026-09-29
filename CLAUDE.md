@@ -250,6 +250,7 @@ unchanged surah produces the same bytes and the same digest.
 { "schemaVersion": 1, "baseUrl": "https://…", "mirrors": [],
   "reciters": [ { "id", "nameAr", "nameEn", "riwayah", "bitrate", "version",
                   "audioPath", "packPath", "imagePath?", "totalBytes",
+                  "attribution?": { "ar", "en" },
                   "surahs": [ { "n", "ayahs", "bytes", "sha256",
                                 "hasBasmala?",
                                 "qualities?": { "128": { "bytes", "sha256" } }
@@ -304,7 +305,9 @@ missing; what did arrive stays and plays from disk, the rest streams, and the su
 recorded only when every ayah is there. Such an entry **states `hasBasmala`** for every
 `separate` surah: the host was not built to the layout above, and the manifest is the
 only thing that can say whether a `000` exists there. It is written by the admin tool
-from the file of links, never by hand.
+from the file of links, never by hand. `attribution` is where such a reciter credits the
+library the audio is served through: shown under the reciter's name wherever it is
+listed, in the reader's language, and empty for a reciter with nothing to credit.
 
 A manifest reciter whose id matches a bundled reciter extends it: bundled surahs play from
 assets, the rest from the manifest.

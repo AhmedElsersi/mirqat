@@ -379,7 +379,12 @@ class _ReciterControl extends StatelessWidget {
                 contentPadding: EdgeInsetsDirectional.zero,
                 secondary: ReciterAvatar(reciter: reciter, diameter: 44),
                 title: Text(reciter.nameAr),
-                subtitle: Text(reciter.nameEn),
+                subtitle: Text(
+                  reciter.attribution.isEmpty
+                      ? reciter.nameEn
+                      : '${reciter.nameEn}\n'
+                            '${reciter.attribution.of(context.locale.languageCode)}',
+                ),
                 value: reciter.id,
               ),
           ],

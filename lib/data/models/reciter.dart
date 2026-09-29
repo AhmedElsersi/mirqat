@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/error/exceptions.dart';
+import 'app_info.dart';
 import 'audio_manifest.dart';
 
 /// How a reciter's audio is laid out on disk.
@@ -113,6 +114,10 @@ class Reciter extends Equatable {
   /// Held separately from [remote]'s own list so a surah recorded against the
   /// wrong ayah count is never reachable.
   final Set<int> remoteSurahs;
+
+  /// Who to credit for the recordings, from the manifest. Empty for a
+  /// bundled reciter and for most remote ones.
+  LocalizedText get attribution => remote?.attribution ?? LocalizedText.empty;
 
   bool hasSurah(int surahNumber) =>
       isBundledSurah(surahNumber) || remoteSurahs.contains(surahNumber);

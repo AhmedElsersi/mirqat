@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mirqat/data/models/audio_manifest.dart';
+import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/services/audio/manifest_service.dart';
 import 'package:path/path.dart' as p;
 
@@ -303,5 +304,31 @@ void main() {
     ).reciters.single;
     expect(packed.hasPacks, isTrue);
     expect(packed.packPathFor(2), 'packs/r/002.zip');
+  });
+
+  test('a reciter may carry an attribution in both languages, and one who '
+      'does not has an empty one', () {
+    AudioManifest parse(String extra) => AudioManifest.fromJson(
+      jsonDecode('''
+{"schemaVersion":1,"baseUrl":"https://example.invalid/","mirrors":[],
+ "reciters":[{"id":"r","nameAr":"ر","nameEn":"R","bitrate":128,"version":"1",
+   "audioPath":"https://host.invalid/r/{s3}{a3}.mp3"$extra,"surahs":[]}]}
+'''),
+      'test',
+    );
+    final ManifestReciter credited = parse(
+      ',"attribution":{"ar":"عبر مكتبة","en":"Via a library"}',
+    ).reciters.single;
+    expect(credited.attribution.ar, 'عبر مكتبة');
+    expect(credited.attribution.of('en'), 'Via a library');
+    expect(Reciter.remoteOnly(credited).attribution.of('ar'), 'عبر مكتبة');
+
+    expect(parse('').reciters.single.attribution.isEmpty, isTrue);
+    expect(
+      parse(
+        ',"attribution":"just a string"',
+      ).reciters.single.attribution.isEmpty,
+      isTrue,
+    );
   });
 }

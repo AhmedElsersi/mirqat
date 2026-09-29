@@ -107,6 +107,8 @@ class LinkedReciterDraft extends Equatable {
     this.version = '1',
     this.bitrate,
     this.imagePath,
+    this.attributionAr = '',
+    this.attributionEn = '',
   });
 
   final String id;
@@ -119,6 +121,10 @@ class LinkedReciterDraft extends Equatable {
   /// The portrait's path on the bucket, relative to the manifest's `baseUrl`.
   final String? imagePath;
 
+  /// Who to credit for the recordings, shown under the name in the app.
+  final String attributionAr;
+  final String attributionEn;
+
   LinkedReciterDraft copyWith({
     String? id,
     String? nameAr,
@@ -128,6 +134,8 @@ class LinkedReciterDraft extends Equatable {
     int? bitrate,
     String? imagePath,
     bool clearImage = false,
+    String? attributionAr,
+    String? attributionEn,
   }) => LinkedReciterDraft(
     id: id ?? this.id,
     nameAr: nameAr ?? this.nameAr,
@@ -136,6 +144,8 @@ class LinkedReciterDraft extends Equatable {
     version: version ?? this.version,
     bitrate: bitrate ?? this.bitrate,
     imagePath: clearImage ? null : (imagePath ?? this.imagePath),
+    attributionAr: attributionAr ?? this.attributionAr,
+    attributionEn: attributionEn ?? this.attributionEn,
   );
 
   static final RegExp idShape = RegExp(r'^[a-z0-9_]+$');
@@ -149,6 +159,8 @@ class LinkedReciterDraft extends Equatable {
     version,
     bitrate,
     imagePath,
+    attributionAr,
+    attributionEn,
   ];
 }
 
@@ -287,6 +299,12 @@ class LinkedReciterState extends Equatable {
       'version': draft.version.trim(),
       'audioPath': links.template,
       if (image != null && image.isNotEmpty) 'imagePath': image,
+      if (draft.attributionAr.trim().isNotEmpty ||
+          draft.attributionEn.trim().isNotEmpty)
+        'attribution': <String, String>{
+          'ar': draft.attributionAr.trim(),
+          'en': draft.attributionEn.trim(),
+        },
       'totalBytes': 0,
       'surahs': <Map<String, dynamic>>[
         for (final SurahPlan s in publishable)
@@ -500,6 +518,12 @@ class LinkedReciterCubit extends Cubit<LinkedReciterState> {
       version: '${row['version'] ?? draft.version}',
       bitrate: draft.bitrate ?? row['bitrate'] as int?,
       imagePath: draft.imagePath ?? row['imagePath'] as String?,
+      attributionAr: draft.attributionAr.isEmpty
+          ? '${(row['attribution'] as Map<String, dynamic>?)?['ar'] ?? ''}'
+          : null,
+      attributionEn: draft.attributionEn.isEmpty
+          ? '${(row['attribution'] as Map<String, dynamic>?)?['en'] ?? ''}'
+          : null,
     );
   }
 

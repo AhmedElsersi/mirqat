@@ -163,6 +163,23 @@ class _Form extends StatelessWidget {
                         (LinkedReciterDraft x) => x.copyWith(riwayah: v),
                       ),
                     ),
+                    _Field(
+                      label:
+                          'Attribution (Arabic) — shown under the name, '
+                          'e.g. the library the audio is served through',
+                      value: d.attributionAr,
+                      rtl: true,
+                      onChanged: (String v) => cubit.edit(
+                        (LinkedReciterDraft x) => x.copyWith(attributionAr: v),
+                      ),
+                    ),
+                    _Field(
+                      label: 'Attribution (English)',
+                      value: d.attributionEn,
+                      onChanged: (String v) => cubit.edit(
+                        (LinkedReciterDraft x) => x.copyWith(attributionEn: v),
+                      ),
+                    ),
                     Row(
                       children: <Widget>[
                         Expanded(

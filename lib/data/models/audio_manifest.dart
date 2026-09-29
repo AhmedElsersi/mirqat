@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/error/exceptions.dart';
+import 'app_info.dart';
 
 /// One surah's pack at one bitrate: what to expect before unzipping it.
 class PackVariant extends Equatable {
@@ -88,6 +89,7 @@ class ManifestReciter extends Equatable {
     required this.totalBytes,
     required this.surahs,
     this.imagePath,
+    this.attribution = LocalizedText.empty,
   });
 
   final String id;
@@ -125,6 +127,11 @@ class ManifestReciter extends Equatable {
   final String? imagePath;
   final int totalBytes;
   final List<ManifestSurah> surahs;
+
+  /// Who to credit for the recordings, shown under the reciter's name — a
+  /// library the audio is served through, a publisher that asked to be named.
+  /// Empty for most reciters, and optional in the manifest.
+  final LocalizedText attribution;
 
   ManifestSurah? surah(int number) =>
       surahs.where((ManifestSurah s) => s.number == number).firstOrNull;
@@ -191,6 +198,7 @@ class ManifestReciter extends Equatable {
     imagePath,
     totalBytes,
     surahs,
+    attribution,
   ];
 }
 
@@ -276,6 +284,7 @@ class AudioManifest extends Equatable {
               _ => null,
             },
             totalBytes: r['totalBytes'] as int? ?? 0,
+            attribution: LocalizedText.fromJson(r['attribution']),
             surahs: <ManifestSurah>[
               for (final Object? s
                   in (r['surahs'] as List<dynamic>? ?? <dynamic>[]))
