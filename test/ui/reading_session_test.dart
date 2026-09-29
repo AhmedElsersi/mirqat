@@ -166,7 +166,8 @@ void main() {
       );
       expect(sheet.ayah, const AyahRef(1, 1));
       expect(sheet.canPlay, isTrue);
-      expect(find.byType(ListTile), findsNWidgets(4));
+      // Mark, listen, memorize, range start, range end.
+      expect(find.byType(ListTile), findsNWidgets(5));
       expect(
         tester
             .widgetList<ListTile>(find.byType(ListTile))

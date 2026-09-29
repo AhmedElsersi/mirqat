@@ -1,8 +1,10 @@
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/desktop.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../domain/entities/playback_unit.dart';
@@ -10,6 +12,7 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/reading_position.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
 import '../../session/cubit/session_cubit.dart';
@@ -281,33 +284,66 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
               LoadStatus.failure => ErrorView(
                 message: state.errorMessage ?? '',
               ),
-              LoadStatus.ready => Stack(
-                children: <Widget>[
-                  Positioned.fill(child: _pages(context, state)),
-                  PositionedDirectional(
-                    start: 0,
-                    end: 0,
-                    bottom: 0,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        _BackToAyahChip(
-                          following: _following,
-                          onPressed: _followAgain,
+              // The keyboard turns pages on a desk: a mushaf's next page
+              // lies to the left, so the left arrow goes forward. Page Down
+              // and Page Up do what they say.
+              LoadStatus.ready => CallbackShortcuts(
+                bindings: <ShortcutActivator, VoidCallback>{
+                  const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+                      _turnPage(1),
+                  const SingleActivator(LogicalKeyboardKey.pageDown): () =>
+                      _turnPage(1),
+                  const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+                      _turnPage(-1),
+                  const SingleActivator(LogicalKeyboardKey.pageUp): () =>
+                      _turnPage(-1),
+                },
+                child: Focus(
+                  autofocus: true,
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned.fill(child: _pages(context, state)),
+                      PositionedDirectional(
+                        start: 0,
+                        end: 0,
+                        bottom: 0,
+                        child: DesktopWidth(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              _BackToAyahChip(
+                                following: _following,
+                                onPressed: _followAgain,
+                              ),
+                              SessionBar(
+                                visible: _chrome,
+                                onOpenSettings: _openSettings,
+                              ),
+                            ],
+                          ),
                         ),
-                        SessionBar(
-                          visible: _chrome,
-                          onOpenSettings: _openSettings,
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             },
           ),
         );
       },
+    );
+  }
+
+  /// One page on from here, or one back: what a key does. The pager clamps
+  /// the index itself, so the first and last pages simply stay.
+  void _turnPage(int by) {
+    final PageController? controller = _controller;
+    if (controller == null || !controller.hasClients) return;
+    final int current = controller.page?.round() ?? 0;
+    controller.animateToPage(
+      (current + by).clamp(0, 1 << 20),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
     );
   }
 
@@ -317,40 +353,46 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
     // is in. `reverse: true` puts it there only on an LTR axis — under the
     // Arabic locale's RTL it would flip back to the right — so the axis is
     // pinned to LTR here and each page restores RTL for its own content.
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (ScrollNotification n) {
-          // Only the pager's own scrolling, not a tall page scrolling inside
-          // it; and only a finger, not the session turning the page.
-          if (n.metrics.axis != Axis.horizontal) return false;
-          if (n is ScrollStartNotification) _dragging = n.dragDetails != null;
-          if (n is ScrollEndNotification) _dragging = false;
-          return false;
-        },
-        child: PageView.builder(
-          // Keyed by the run of pages, so that another surah or juz is a new
-          // page view on a new controller rather than the old one re-counted
-          // under the reader's thumb.
-          key: ValueKey<int>(state.epoch),
-          controller: _controllerFor(state),
-          reverse: true,
-          // One more leaf after a surah or a juz: where to go from here.
-          itemCount: state.visiblePageCount + (state.section == null ? 0 : 1),
-          onPageChanged: (int index) {
-            if (_dragging && _following) setState(() => _following = false);
-            if (index < state.visiblePageCount) {
-              cubit.onPageChanged(state.firstPage + index);
-            }
+    // On a desk the page is held to a printed page's width, centred; the
+    // font is sized to fit that width, so the text stays a reading size
+    // however wide the window is.
+    return DesktopWidth(
+      maxWidth: kDesktopPageWidth,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification n) {
+            // Only the pager's own scrolling, not a tall page scrolling inside
+            // it; and only a finger, not the session turning the page.
+            if (n.metrics.axis != Axis.horizontal) return false;
+            if (n is ScrollStartNotification) _dragging = n.dragDetails != null;
+            if (n is ScrollEndNotification) _dragging = false;
+            return false;
           },
-          itemBuilder: (BuildContext context, int index) => Directionality(
-            textDirection: TextDirection.rtl,
-            child: index < state.visiblePageCount
-                ? _PageSlot(
-                    pageNumber: state.firstPage + index,
-                    onTap: _toggleChrome,
-                  )
-                : _SectionEnd(section: state.section!, onTap: _toggleChrome),
+          child: PageView.builder(
+            // Keyed by the run of pages, so that another surah or juz is a new
+            // page view on a new controller rather than the old one re-counted
+            // under the reader's thumb.
+            key: ValueKey<int>(state.epoch),
+            controller: _controllerFor(state),
+            reverse: true,
+            // One more leaf after a surah or a juz: where to go from here.
+            itemCount: state.visiblePageCount + (state.section == null ? 0 : 1),
+            onPageChanged: (int index) {
+              if (_dragging && _following) setState(() => _following = false);
+              if (index < state.visiblePageCount) {
+                cubit.onPageChanged(state.firstPage + index);
+              }
+            },
+            itemBuilder: (BuildContext context, int index) => Directionality(
+              textDirection: TextDirection.rtl,
+              child: index < state.visiblePageCount
+                  ? _PageSlot(
+                      pageNumber: state.firstPage + index,
+                      onTap: _toggleChrome,
+                    )
+                  : _SectionEnd(section: state.section!, onTap: _toggleChrome),
+            ),
           ),
         ),
       ),
@@ -511,11 +553,22 @@ class _PageSlot extends StatelessWidget {
               AppSettings.defaultArabicFontSize,
         );
 
+        // The reader's mark, where it lands on this page.
+        final AyahRef? readingMark = context.select<SettingsCubit, AyahRef?>((
+          SettingsCubit c,
+        ) {
+          final ReadingPosition? mark = c.state.settings.readingMark;
+          return mark == null
+              ? null
+              : AyahRef(mark.surahNumber, mark.ayahNumber);
+        });
+
         return MushafPageView(
           page: page,
           linesPerFullPage: state.linesPerFullPage,
           textScale: textScale,
           highlighted: state.highlighted,
+          marked: readingMark,
           selected: state.selected,
           isSelected: marked == null
               ? null
@@ -539,11 +592,18 @@ class _PageSlot extends StatelessWidget {
     final Surah? surah = cubit.surahFor(word.surahNumber);
     if (surah == null) return;
     final SessionCubit session = context.read<SessionCubit>();
+    final SettingsCubit settings = context.read<SettingsCubit>();
     final AyahRef ayah = word.ref;
+    final ReadingPosition? mark = settings.state.settings.readingMark;
 
     cubit.selectWord(word);
     final AyahAction? action = await showModalBottomSheet<AyahAction>(
       context: context,
+      // Sized to its entries: six of them, with a chosen range, are more
+      // than a sheet's default height holds, and an action out of reach is
+      // an action that does not exist.
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => AyahActionsSheet(
         ayah: ayah,
         surah: surah,
@@ -551,12 +611,27 @@ class _PageSlot extends StatelessWidget {
           (r) => r.hasSurah(word.surahNumber),
         ),
         hasChosenRange: session.state.rangeChosen,
+        isMarked:
+            mark != null &&
+            mark.surahNumber == ayah.surah &&
+            mark.ayahNumber == ayah.ayah,
       ),
     );
     if (!cubit.isClosed) cubit.clearSelection();
     if (action == null || session.isClosed) return;
 
     switch (action) {
+      case AyahAction.markHere:
+        await settings.markReading(
+          ReadingPosition(
+            surahNumber: word.surahNumber,
+            ayahNumber: word.ayahNumber,
+            page: word.page,
+            at: DateTime.now(),
+          ),
+        );
+      case AyahAction.unmark:
+        await settings.clearReadingMark();
       case AyahAction.playFromHere:
         session.chooseRange(ayah, AyahRef(surah.number, surah.ayahCount));
         await session.start();

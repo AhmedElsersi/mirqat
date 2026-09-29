@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/error/failures.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/reading_position.dart';
 import '../../../data/models/ayah.dart';
 import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
@@ -129,6 +130,13 @@ class SettingsCubit extends Cubit<SettingsState> {
   /// a day.
   Future<void> markUpdatePrompted(DateTime at) =>
       _save(state.settings.copyWith(updatePromptedAt: at));
+
+  /// The reader says they stopped here. One mark; a new one replaces it.
+  Future<void> markReading(ReadingPosition position) =>
+      _save(state.settings.copyWith(readingMark: position));
+
+  Future<void> clearReadingMark() =>
+      _save(state.settings.copyWith(clearReadingMark: true));
 
   Future<void> setReciter(String reciterId) =>
       _save(state.settings.copyWith(reciterId: reciterId));

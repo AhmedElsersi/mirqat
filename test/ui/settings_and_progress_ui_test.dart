@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
 import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
@@ -62,6 +63,27 @@ void main() {
       expect(find.text('أحمد خليل شاهين'), findsOneWidget);
       // With the reciter's photo beside the name.
       expect(find.byType(ReciterAvatar), findsOneWidget);
+    });
+
+    testWidgets('the interface language is switched from the appearance card, '
+        'and the app follows at once', (WidgetTester tester) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+      expect(find.text('الإعدادات'), findsOneWidget);
+
+      await reveal(tester, find.text('English'));
+      await AppHarness.tapAndSettle(tester, find.text('English'));
+      expect(find.text('Settings'), findsOneWidget);
+      expect(
+        EasyLocalization.of(
+          tester.element(find.byType(SettingsScreen)),
+        )!.locale.languageCode,
+        'en',
+      );
+
+      await reveal(tester, find.text('العربية'));
+      await AppHarness.tapAndSettle(tester, find.text('العربية'));
+      expect(find.text('الإعدادات'), findsOneWidget);
     });
 
     testWidgets('opens the saved-recitations list, which starts empty', (

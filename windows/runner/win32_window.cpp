@@ -212,6 +212,16 @@ Win32Window::MessageHandler(HWND hwnd,
         SetFocus(child_content_);
       }
       return 0;
+    case WM_GETMINMAXINFO: {
+      // Below this the mushaf page has no room to be a page, and the lists
+      // no room for their rows. Scaled with the monitor, like the size the
+      // window opens at.
+      auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
+      double scale_factor = FlutterDesktopGetDpiForHWND(hwnd) / 96.0;
+      info->ptMinTrackSize.x = Scale(560, scale_factor);
+      info->ptMinTrackSize.y = Scale(600, scale_factor);
+      return 0;
+    }
 
     case WM_DWMCOLORIZATIONCOLORCHANGED:
       UpdateTheme(hwnd);

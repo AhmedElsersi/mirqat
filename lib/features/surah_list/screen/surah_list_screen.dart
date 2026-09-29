@@ -9,10 +9,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/di/injection.dart';
+import '../../../core/desktop.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/surah.dart';
+import '../../../data/models/reading_position.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../home/cubit/home_index_cubit.dart';
 import '../../home/cubit/home_index_state.dart';
@@ -150,22 +153,38 @@ class _SurahListViewState extends State<_SurahListView> {
             ],
           ),
         ),
-        body: Column(
-          children: <Widget>[
-            if (index.last case final PlaceItem last)
-              _ContinueCard(
-                place: last,
-                onTap: () => _openMushaf(context, page: last.position.page),
+        body: DesktopWidth(
+          child: Column(
+            children: <Widget>[
+              if (index.last case final PlaceItem last)
+                _ContinueCard(
+                  place: last,
+                  label: LocaleKeys.homeContinueReading.tr(),
+                  icon: Icons.bookmark,
+                  onTap: () => _openMushaf(context, page: last.position.page),
+                ),
+              // The mark the reader set by hand, apart from the history the
+              // app keeps by itself: "continue" is where they were, this is
+              // where they said they stopped.
+              if (settings.settings.readingMark case final ReadingPosition mark)
+                if (context.read<HomeIndexCubit>().surahOf(mark.surahNumber)
+                    case final Surah surah)
+                  _ContinueCard(
+                    place: PlaceItem(position: mark, surah: surah),
+                    label: LocaleKeys.homeReadingMark.tr(),
+                    icon: Icons.bookmark_added,
+                    onTap: () => _openMushaf(context, page: mark.page),
+                  ),
+              Expanded(
+                child: TabBarView(
+                  children: <Widget>[
+                    _surahs(context, grid: grid, mode: viewMode),
+                    _ajzaa(context, index, grid: grid, mode: viewMode),
+                  ],
+                ),
               ),
-            Expanded(
-              child: TabBarView(
-                children: <Widget>[
-                  _surahs(context, grid: grid, mode: viewMode),
-                  _ajzaa(context, index, grid: grid, mode: viewMode),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -267,9 +286,16 @@ class _SurahListViewState extends State<_SurahListView> {
 
 /// "Continue reading": the last place, one tap away, above both tabs.
 class _ContinueCard extends StatelessWidget {
-  const _ContinueCard({required this.place, required this.onTap});
+  const _ContinueCard({
+    required this.place,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   final PlaceItem place;
+  final String label;
+  final IconData icon;
   final VoidCallback onTap;
 
   @override
@@ -291,14 +317,14 @@ class _ContinueCard extends StatelessWidget {
             ),
             child: Row(
               children: <Widget>[
-                Icon(Icons.bookmark, color: theme.colorScheme.secondary),
+                Icon(icon, color: theme.colorScheme.secondary),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        LocaleKeys.homeContinueReading.tr(),
+                        label,
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.onPrimary.withValues(
                             alpha: 0.8,

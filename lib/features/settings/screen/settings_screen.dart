@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/widgets/ayah_text.dart';
 import '../../../data/models/ayah.dart';
+import '../../../core/desktop.dart';
+import '../../../core/localization/app_localization.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
@@ -42,118 +44,121 @@ class SettingsScreen extends StatelessWidget {
           final SettingsCubit cubit = context.read<SettingsCubit>();
           final AppSettings settings = state.settings;
 
-          return ListView(
-            padding: EdgeInsetsDirectional.all(16.r),
-            children: <Widget>[
-              SettingsCard(
-                title: LocaleKeys.settingsCardAppearance.tr(),
-                icon: Icons.palette_outlined,
-                children: <Widget>[
-                  _ThemeControl(settings: settings, cubit: cubit),
-                  _HomeViewControl(settings: settings, cubit: cubit),
-                  _FontSizeControl(
-                    settings: settings,
-                    cubit: cubit,
-                    previewAyah: state.previewAyah,
-                  ),
-                ],
-              ),
-              SettingsCard(
-                title: LocaleKeys.settingsSectionReciter.tr(),
-                icon: Icons.record_voice_over_outlined,
-                children: <Widget>[
-                  _ReciterControl(
-                    settings: settings,
-                    state: state,
-                    cubit: cubit,
-                  ),
-                ],
-              ),
-              SettingsCard(
-                title: LocaleKeys.settingsCardAudio.tr(),
-                icon: Icons.headphones_outlined,
-                children: <Widget>[
-                  _AudioQualityControl(settings: settings, cubit: cubit),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsetsDirectional.zero,
-                    title: Text(LocaleKeys.settingsWifiOnly.tr()),
-                    subtitle: Text(LocaleKeys.settingsWifiOnlyHint.tr()),
-                    value: settings.downloadOverWifiOnly,
-                    onChanged: cubit.setDownloadOverWifiOnly,
-                  ),
-                  SettingsLinkRow(
-                    icon: Icons.download_done_outlined,
-                    title: LocaleKeys.settingsSavedRecitations.tr(),
-                    subtitle: LocaleKeys.settingsSavedRecitationsHint.tr(),
-                    onTap: () => context.pushNamed(AppRoutes.downloadsName),
-                  ),
-                ],
-              ),
-              SettingsCard(
-                title: LocaleKeys.settingsCardSession.tr(),
-                icon: Icons.repeat,
-                children: <Widget>[
-                  SettingsLinkRow(
-                    icon: Icons.tune,
-                    title: LocaleKeys.settingsSectionSession.tr(),
-                    subtitle: LocaleKeys.settingsSectionSessionHint.tr(),
-                    onTap: () =>
-                        context.pushNamed(AppRoutes.sessionSettingsName),
-                  ),
-                ],
-              ),
-              SettingsCard(
-                title: LocaleKeys.settingsCardAbout.tr(),
-                icon: Icons.info_outline,
-                children: <Widget>[
-                  SettingsLinkRow(
-                    icon: Icons.menu_book_outlined,
-                    title: LocaleKeys.aboutHowToUse.tr(),
-                    onTap: () => context.pushNamed(AppRoutes.howToUseName),
-                  ),
-                  SettingsLinkRow(
-                    icon: Icons.flag_outlined,
-                    title: LocaleKeys.aboutGoal.tr(),
-                    onTap: () => context.pushNamed(AppRoutes.goalName),
-                  ),
-                  SettingsLinkRow(
-                    icon: Icons.groups_outlined,
-                    title: LocaleKeys.aboutUs.tr(),
-                    onTap: () => context.pushNamed(AppRoutes.aboutUsName),
-                  ),
-                  SettingsLinkRow(
-                    icon: Icons.person_outline,
-                    title: LocaleKeys.aboutDeveloper.tr(),
-                    onTap: () => context.pushNamed(AppRoutes.developerName),
-                  ),
-                ],
-              ),
-
-              if (state.appVersion case final InstalledVersion v)
-                Padding(
-                  padding: EdgeInsetsDirectional.only(top: 4.h, bottom: 12.h),
-                  child: Text(
-                    LocaleKeys.settingsVersion.tr(
-                      args: <String>[v.version, v.buildNumber],
+          return DesktopWidth(
+            child: ListView(
+              padding: EdgeInsetsDirectional.all(16.r),
+              children: <Widget>[
+                SettingsCard(
+                  title: LocaleKeys.settingsCardAppearance.tr(),
+                  icon: Icons.palette_outlined,
+                  children: <Widget>[
+                    _ThemeControl(settings: settings, cubit: cubit),
+                    const _LanguageControl(),
+                    _HomeViewControl(settings: settings, cubit: cubit),
+                    _FontSizeControl(
+                      settings: settings,
+                      cubit: cubit,
+                      previewAyah: state.previewAyah,
                     ),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ],
+                ),
+                SettingsCard(
+                  title: LocaleKeys.settingsSectionReciter.tr(),
+                  icon: Icons.record_voice_over_outlined,
+                  children: <Widget>[
+                    _ReciterControl(
+                      settings: settings,
+                      state: state,
+                      cubit: cubit,
                     ),
-                  ),
+                  ],
+                ),
+                SettingsCard(
+                  title: LocaleKeys.settingsCardAudio.tr(),
+                  icon: Icons.headphones_outlined,
+                  children: <Widget>[
+                    _AudioQualityControl(settings: settings, cubit: cubit),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsetsDirectional.zero,
+                      title: Text(LocaleKeys.settingsWifiOnly.tr()),
+                      subtitle: Text(LocaleKeys.settingsWifiOnlyHint.tr()),
+                      value: settings.downloadOverWifiOnly,
+                      onChanged: cubit.setDownloadOverWifiOnly,
+                    ),
+                    SettingsLinkRow(
+                      icon: Icons.download_done_outlined,
+                      title: LocaleKeys.settingsSavedRecitations.tr(),
+                      subtitle: LocaleKeys.settingsSavedRecitationsHint.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.downloadsName),
+                    ),
+                  ],
+                ),
+                SettingsCard(
+                  title: LocaleKeys.settingsCardSession.tr(),
+                  icon: Icons.repeat,
+                  children: <Widget>[
+                    SettingsLinkRow(
+                      icon: Icons.tune,
+                      title: LocaleKeys.settingsSectionSession.tr(),
+                      subtitle: LocaleKeys.settingsSectionSessionHint.tr(),
+                      onTap: () =>
+                          context.pushNamed(AppRoutes.sessionSettingsName),
+                    ),
+                  ],
+                ),
+                SettingsCard(
+                  title: LocaleKeys.settingsCardAbout.tr(),
+                  icon: Icons.info_outline,
+                  children: <Widget>[
+                    SettingsLinkRow(
+                      icon: Icons.menu_book_outlined,
+                      title: LocaleKeys.aboutHowToUse.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.howToUseName),
+                    ),
+                    SettingsLinkRow(
+                      icon: Icons.flag_outlined,
+                      title: LocaleKeys.aboutGoal.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.goalName),
+                    ),
+                    SettingsLinkRow(
+                      icon: Icons.groups_outlined,
+                      title: LocaleKeys.aboutUs.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.aboutUsName),
+                    ),
+                    SettingsLinkRow(
+                      icon: Icons.person_outline,
+                      title: LocaleKeys.aboutDeveloper.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.developerName),
+                    ),
+                  ],
                 ),
 
-              if (state.errorMessage != null)
-                Padding(
-                  padding: EdgeInsetsDirectional.only(top: 4.h),
-                  child: Text(
-                    state.errorMessage!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
+                if (state.appVersion case final InstalledVersion v)
+                  Padding(
+                    padding: EdgeInsetsDirectional.only(top: 4.h, bottom: 12.h),
+                    child: Text(
+                      LocaleKeys.settingsVersion.tr(
+                        args: <String>[v.version, v.buildNumber],
+                      ),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                ),
-            ],
+
+                if (state.errorMessage != null)
+                  Padding(
+                    padding: EdgeInsetsDirectional.only(top: 4.h),
+                    child: Text(
+                      state.errorMessage!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           );
         },
       ),
@@ -245,6 +250,42 @@ class _ThemeControl extends StatelessWidget {
     AppThemeMode.light => LocaleKeys.settingsThemeLight,
     AppThemeMode.dark => LocaleKeys.settingsThemeDark,
   };
+}
+
+/// The interface language. Kept by easy_localization itself, not in the
+/// settings map: it is read before anything else is, on the splash. The
+/// mushaf's own direction does not change with it (CLAUDE.md A.2 rule 4).
+class _LanguageControl extends StatelessWidget {
+  const _LanguageControl();
+
+  @override
+  Widget build(BuildContext context) {
+    return SetupSection(
+      label: LocaleKeys.settingsLanguage.tr(),
+      child: RadioGroup<Locale>(
+        groupValue: context.locale,
+        onChanged: (Locale? locale) {
+          if (locale != null) context.setLocale(locale);
+        },
+        child: Column(
+          children: <Widget>[
+            for (final Locale locale in AppLocalization.supportedLocales)
+              RadioListTile<Locale>(
+                contentPadding: EdgeInsetsDirectional.zero,
+                // Each language named in itself, so that whoever cannot read
+                // the current one can still find their own.
+                title: Text(
+                  locale == AppLocalization.arabic
+                      ? LocaleKeys.settingsLanguageAr.tr()
+                      : LocaleKeys.settingsLanguageEn.tr(),
+                ),
+                value: locale,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// How the home page is drawn — and, for the mushaf, how the app opens.

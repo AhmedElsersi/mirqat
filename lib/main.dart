@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/desktop.dart';
 import 'core/bootstrap.dart';
 import 'core/constants/app_constants.dart';
 import 'core/di/injection.dart';
@@ -90,7 +91,8 @@ class IqraWartaqApp extends StatefulWidget {
   State<IqraWartaqApp> createState() => _IqraWartaqAppState();
 }
 
-class _IqraWartaqAppState extends State<IqraWartaqApp> {
+class _IqraWartaqAppState extends State<IqraWartaqApp>
+    with WidgetsBindingObserver {
   /// Built once per app instance, not once per process, so navigation history
   /// never outlives the widget tree.
   late final GoRouter _router = AppRouter.create();
@@ -116,7 +118,22 @@ class _IqraWartaqAppState extends State<IqraWartaqApp> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// A desktop window is resized; a phone is not. The design size follows
+  /// the window (see `_designSizeFor`), so a resize has to rebuild with the
+  /// new one, or the scale drifts from 1:1 with every drag of the frame.
+  @override
+  void didChangeMetrics() {
+    if (isDesktop && mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _settingsSub?.cancel();
     super.dispose();
   }
@@ -162,6 +179,13 @@ class _IqraWartaqAppState extends State<IqraWartaqApp> {
           designSize: _designSizeFor(View.of(context)),
           minTextAdapt: true,
           builder: (BuildContext context, Widget? child) => MaterialApp.router(
+            // Keyed by the locale: a language chosen in Settings rebuilds the
+            // whole tree, so every screen is drawn again in the new language
+            // at once. A string translated at build time does not change by
+            // itself, and a rebuild is the only honest way to change all of
+            // them. The router keeps its place, so Settings stays open —
+            // now in the other language.
+            key: ValueKey<Locale>(context.locale),
             debugShowCheckedModeBanner: false,
             // onGenerateTitle rather than title: it runs inside a localised
             // context, so the task-switcher label follows the app locale
@@ -173,6 +197,7 @@ class _IqraWartaqAppState extends State<IqraWartaqApp> {
             locale: context.locale,
             supportedLocales: context.supportedLocales,
             localizationsDelegates: context.localizationDelegates,
+            scrollBehavior: const AppScrollBehavior(),
             routerConfig: _router,
             // Over every route, and under the localizations and the theme: the
             // update prompt is part of the app, not a page in it.
@@ -193,9 +218,11 @@ class _IqraWartaqAppState extends State<IqraWartaqApp> {
 
 /// The design the screen's dimensions are scaled from: a phone's, or — from
 /// [AppConstants.tabletShortestSide] up — a tablet's. See that constant for
-/// why a tablet must not be scaled from a phone.
+/// why a tablet must not be scaled from a phone. On a desktop the design is
+/// the window itself, so nothing is scaled at all (see `core/desktop.dart`).
 Size _designSizeFor(FlutterView view) {
   final Size screen = view.physicalSize / view.devicePixelRatio;
+  if (isDesktop && screen.width > 0 && screen.height > 0) return screen;
   return screen.shortestSide >= AppConstants.tabletShortestSide
       ? const Size(
           AppConstants.tabletDesignWidth,

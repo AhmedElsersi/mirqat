@@ -27,6 +27,7 @@ class MushafPageView extends StatefulWidget {
     required this.page,
     required this.linesPerFullPage,
     required this.highlighted,
+    this.marked,
     required this.selected,
     required this.onWordLongPress,
     this.onTap,
@@ -39,6 +40,9 @@ class MushafPageView extends StatefulWidget {
   final MushafPage page;
   final int linesPerFullPage;
   final AyahRef? highlighted;
+
+  /// The ayah the reader marked as where they stopped, if it is on this page.
+  final AyahRef? marked;
   final AyahRef? selected;
 
   /// A long press on a word, which is how an ayah is chosen. Not a tap: a
@@ -299,6 +303,7 @@ class _MushafPageViewState extends State<MushafPageView> {
     if (widget.isHeldBack?.call(w) ?? false) return WordTint.none;
     if (widget.selected?.contains(w) ?? false) return WordTint.selected;
     if (widget.highlighted?.contains(w) ?? false) return WordTint.highlighted;
+    if (widget.marked?.contains(w) ?? false) return WordTint.marked;
     if (widget.isSelected?.call(w) ?? false) return WordTint.ranged;
     return WordTint.none;
   }

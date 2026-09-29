@@ -71,6 +71,9 @@ class HomeIndexCubit extends Cubit<HomeIndexState> {
         PlaceItem(position: p, surah: s),
   ];
 
+  /// The surah with this number, as the catalog names it, or null.
+  Surah? surahOf(int surahNumber) => _surahs[surahNumber];
+
   /// The mushaf page a surah begins on, or null if the catalog cannot say.
   Future<int?> pageOfSurah(int surahNumber) async => (await _pages.pageForAyah(
     surahNumber,

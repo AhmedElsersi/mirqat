@@ -26,9 +26,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
-  // Portrait, like the mushaf page it opens on, and short enough for a
-  // 1080p screen at 150% scaling. The window can be resized or maximised.
-  Win32Window::Size size(430, 700);
+  // A desktop window: room for the mushaf page at a printed page's width
+  // beside its chrome, and still inside a 1080p screen at 150% scaling. The
+  // window can be resized (down to the minimum in win32_window.cpp) or
+  // maximised.
+  Win32Window::Size size(1100, 720);
   // The app name in Arabic (Iqra Wartaq), escaped: MSVC reads a source file
   // in the system code page, and /WX makes its warning about that fatal.
   if (!window.Create(L"\u0627\u0642\u0631\u0623 \u0648\u0627\u0631\u062a\u0642",

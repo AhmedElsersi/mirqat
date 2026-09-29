@@ -128,7 +128,9 @@ lib/
   printed line fits, so `reflowPage` re-breaks the page's lines at the bigger size and the
   page scrolls — **where the lines break changes and nothing else does**: the same `Word`
   objects, in the same order, on the same page, a word and its ayah marker never parted
-  (A.2 rule 1 is about the bytes, and they are untouched).
+  (A.2 rule 1 is about the bytes, and they are untouched). **On a desktop the design is
+  the window** (`core/desktop.dart`): nothing is scaled, the mushaf page is held to a
+  printed page's width, lists to a column, the keyboard turns pages and a mouse drags.
 - **Colors:** `Theme.of(context)` / `AppColors` tokens only — no raw `Colors.*` literals.
 - **Strings:** `easy_localization`, both `ar.json` and `en.json` populated with accurate
   Arabic. No hardcoded user-facing strings.
@@ -433,7 +435,10 @@ screens and gestures, so they live in the translations and change in the same co
 the screens they describe.
 
 **The settings are one map with several writers** — the settings screen, a session saving
-its values as defaults, the update prompt noting when it last spoke. `SettingsRepository`
+its values as defaults, the update prompt noting when it last spoke, the reader marking
+where they stopped (the *reading mark*: one ayah, set from the ayah's own menu, tinted on
+the page in the bookmark's colour and offered on the home page beside "continue reading",
+apart from the history the app keeps by itself). `SettingsRepository`
 broadcasts every save and `SettingsCubit` takes it up, and a writer that is not the
 settings cubit reads the stored map afresh before changing its one field. Without both, the
 next save writes a stale copy over what the others changed.

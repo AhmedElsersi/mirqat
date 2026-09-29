@@ -28,6 +28,10 @@ enum WordTint {
   /// Inside the range chosen for a session: marked, but quieter than the
   /// ayah being recited, which has to stand out from it.
   ranged,
+
+  /// The ayah the reader marked as where they stopped. Its own colour, the
+  /// bookmark's, so it is never mistaken for a session's highlight.
+  marked,
 }
 
 /// One ayah inside a flowing block, for [AyahText.flowing].
@@ -168,6 +172,7 @@ class AyahText extends StatefulWidget {
     WordTint.ranged => colors.primary.withValues(alpha: 0.08),
     WordTint.highlighted => colors.primary.withValues(alpha: 0.2),
     WordTint.selected => colors.primary.withValues(alpha: 0.26),
+    WordTint.marked => colors.secondary.withValues(alpha: 0.28),
   };
 
   /// Width of [text] as [AyahText.word] draws it at [fontSize].

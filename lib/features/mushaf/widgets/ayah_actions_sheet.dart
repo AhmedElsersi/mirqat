@@ -9,6 +9,10 @@ import '../cubit/mushaf_page.dart';
 
 /// What can be done with an ayah that has been long-pressed.
 enum AyahAction {
+  /// Mark this ayah as where the reader stopped — or take that mark off it.
+  markHere,
+  unmark,
+
   /// A session from this ayah to the end of its surah, started at once.
   playFromHere,
 
@@ -32,6 +36,7 @@ class AyahActionsSheet extends StatelessWidget {
     required this.surah,
     required this.canPlay,
     required this.hasChosenRange,
+    this.isMarked = false,
     super.key,
   });
 
@@ -43,6 +48,10 @@ class AyahActionsSheet extends StatelessWidget {
   final bool canPlay;
 
   final bool hasChosenRange;
+
+  /// Whether this ayah carries the reader's mark, so the sheet offers to
+  /// take it off rather than to set it again.
+  final bool isMarked;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +67,7 @@ class AyahActionsSheet extends StatelessWidget {
     );
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsetsDirectional.symmetric(vertical: 8.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -76,6 +85,18 @@ class AyahActionsSheet extends StatelessWidget {
                 style: theme.textTheme.titleMedium,
               ),
             ),
+            // First, because it is what a reader closing the mushaf wants.
+            isMarked
+                ? action(
+                    AyahAction.unmark,
+                    Icons.bookmark_remove_outlined,
+                    LocaleKeys.mushafUnmark.tr(),
+                  )
+                : action(
+                    AyahAction.markHere,
+                    Icons.bookmark_add_outlined,
+                    LocaleKeys.mushafMarkHere.tr(),
+                  ),
             if (canPlay) ...<Widget>[
               action(
                 AyahAction.playFromHere,

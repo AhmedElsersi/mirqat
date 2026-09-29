@@ -72,8 +72,10 @@
     "theme_system": "حسب النظام",
     "theme_light": "فاتح",
     "theme_dark": "داكن",
-    "arabic_font_size": "حجم الخط العربي",
     "language": "اللغة",
+    "language_ar": "العربية",
+    "language_en": "English",
+    "arabic_font_size": "حجم الخط العربي",
     "section_general": "عام",
     "section_reciter": "القارئ",
     "section_session": "إعدادات الجلسة",
@@ -133,7 +135,9 @@
     "memorize_ayah": "حفظ هذه الآية وحدها",
     "set_range_start": "اجعلها بداية النطاق",
     "set_range_end": "اجعلها نهاية النطاق",
-    "clear_range": "إلغاء النطاق المحدد"
+    "clear_range": "إلغاء النطاق المحدد",
+    "mark_here": "علِّم هنا: انتهيت عند هذه الآية",
+    "unmark": "أزِل علامة القراءة"
   },
   "downloads": {
     "section": "الصوت دون إنترنت",
@@ -168,7 +172,8 @@
     "page": "صفحة {}",
     "continue_reading": "تابع القراءة",
     "place": "سورة {} · الآية {} · صفحة {}",
-    "history": "سجل القراءة"
+    "history": "سجل القراءة",
+    "reading_mark": "علامة القراءة"
   },
   "history": {
     "title": "سجل القراءة",

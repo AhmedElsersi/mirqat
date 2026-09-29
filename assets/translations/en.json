@@ -72,8 +72,10 @@
     "theme_system": "System",
     "theme_light": "Light",
     "theme_dark": "Dark",
-    "arabic_font_size": "Arabic font size",
     "language": "Language",
+    "language_ar": "العربية",
+    "language_en": "English",
+    "arabic_font_size": "Arabic font size",
     "section_general": "General",
     "section_reciter": "Reciter",
     "section_session": "Session settings",
@@ -133,7 +135,9 @@
     "memorize_ayah": "Memorize this ayah alone",
     "set_range_start": "Make it the start of the range",
     "set_range_end": "Make it the end of the range",
-    "clear_range": "Clear the chosen range"
+    "clear_range": "Clear the chosen range",
+    "mark_here": "Mark: I stopped at this ayah",
+    "unmark": "Remove the reading mark"
   },
   "downloads": {
     "section": "Offline audio",
@@ -168,7 +172,8 @@
     "page": "Page {}",
     "continue_reading": "Continue reading",
     "place": "Surah {} · Ayah {} · Page {}",
-    "history": "Reading history"
+    "history": "Reading history",
+    "reading_mark": "Your reading mark"
   },
   "history": {
     "title": "Reading history",

@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'reading_position.dart';
+
 import '../../domain/entities/session_config.dart';
 
 /// Theme preference. A local enum rather than Flutter's ThemeMode so the data
@@ -120,6 +122,7 @@ class AppSettings extends Equatable {
     this.homeViewMode = HomeViewMode.list,
     this.arabicFontSize = defaultArabicFontSize,
     this.audioQuality = AudioQuality.standard,
+    this.readingMark,
     this.downloadOverWifiOnly = true,
     this.onboardingSeen = false,
     this.updatePromptedAt,
@@ -170,6 +173,11 @@ class AppSettings extends Equatable {
   /// choice.
   final AudioQuality audioQuality;
 
+  /// Where the reader said they stopped: the ayah they marked, on its page.
+  /// One mark, set by hand from the ayah's own menu, distinct from the
+  /// history the app keeps by itself. Null: nothing marked.
+  final ReadingPosition? readingMark;
+
   /// Whether a pack may be fetched over mobile data.
   ///
   /// True by default: a surah is tens of megabytes, and someone on a metered
@@ -209,6 +217,8 @@ class AppSettings extends Equatable {
     HomeViewMode? homeViewMode,
     double? arabicFontSize,
     AudioQuality? audioQuality,
+    ReadingPosition? readingMark,
+    bool clearReadingMark = false,
     bool? downloadOverWifiOnly,
     bool? onboardingSeen,
     DateTime? updatePromptedAt,
@@ -234,6 +244,7 @@ class AppSettings extends Equatable {
     homeViewMode: homeViewMode ?? this.homeViewMode,
     arabicFontSize: arabicFontSize ?? this.arabicFontSize,
     audioQuality: audioQuality ?? this.audioQuality,
+    readingMark: clearReadingMark ? null : (readingMark ?? this.readingMark),
     downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
     onboardingSeen: onboardingSeen ?? this.onboardingSeen,
     updatePromptedAt: updatePromptedAt ?? this.updatePromptedAt,
@@ -266,6 +277,7 @@ class AppSettings extends Equatable {
     // and every path use, so a stored 64 stays meaningful even if these cases
     // are ever renamed.
     'audioQuality': audioQuality.bitrate,
+    'readingMark': readingMark?.toMap(),
     'downloadOverWifiOnly': downloadOverWifiOnly,
     'onboardingSeen': onboardingSeen,
     'updatePromptedAt': updatePromptedAt?.millisecondsSinceEpoch,
@@ -305,6 +317,12 @@ class AppSettings extends Equatable {
     arabicFontSize:
         (map['arabicFontSize'] as num?)?.toDouble() ?? defaultArabicFontSize,
     audioQuality: AudioQuality.fromStorage(map['audioQuality']),
+    readingMark: switch (map['readingMark']) {
+      final Map<dynamic, dynamic> m
+          when m['surah'] is int && m['ayah'] is int && m['page'] is int =>
+        ReadingPosition.fromMap(<dynamic, dynamic>{...m, 'at': m['at'] ?? 0}),
+      _ => null,
+    },
     downloadOverWifiOnly: map['downloadOverWifiOnly'] as bool? ?? true,
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
     updatePromptedAt: map['updatePromptedAt'] is int
@@ -348,6 +366,7 @@ class AppSettings extends Equatable {
     homeViewMode,
     arabicFontSize,
     audioQuality,
+    readingMark,
     downloadOverWifiOnly,
     onboardingSeen,
     updatePromptedAt,

@@ -529,6 +529,10 @@ class AppHarness {
     startLocale: locale,
     fallbackLocale: AppLocalization.fallbackLocale,
     assetLoader: const FileTranslationLoader(),
+    // The app remembers the chosen language through shared_preferences, a
+    // platform channel a test has no host for. The choice still applies
+    // for the run; it is only not written down.
+    saveLocale: false,
     child: const IqraWartaqApp(),
   );
 }

@@ -75,6 +75,7 @@ class LocaleKeys {
   static const String homeJuzStarts = 'home.juz_starts';
   static const String homePage = 'home.page';
   static const String homePlace = 'home.place';
+  static const String homeReadingMark = 'home.reading_mark';
   static const String homeTabAjzaa = 'home.tab_ajzaa';
   static const String homeTabSurahs = 'home.tab_surahs';
 
@@ -99,6 +100,7 @@ class LocaleKeys {
   static const String mushafHintLongPress = 'mushaf.hint_long_press';
   static const String mushafHizbLabel = 'mushaf.hizb_label';
   static const String mushafJuzLabel = 'mushaf.juz_label';
+  static const String mushafMarkHere = 'mushaf.mark_here';
   static const String mushafMemorizeAyah = 'mushaf.memorize_ayah';
   static const String mushafOpen = 'mushaf.open';
   static const String mushafPage = 'mushaf.page';
@@ -110,6 +112,7 @@ class LocaleKeys {
   static const String mushafSetRangeStart = 'mushaf.set_range_start';
   static const String mushafSurahLabel = 'mushaf.surah_label';
   static const String mushafTitle = 'mushaf.title';
+  static const String mushafUnmark = 'mushaf.unmark';
 
   static const String onboardingControlBody = 'onboarding.control_body';
   static const String onboardingControlTitle = 'onboarding.control_title';
@@ -207,6 +210,8 @@ class LocaleKeys {
   static const String settingsHomeViewMushaf = 'settings.home_view_mushaf';
   static const String settingsHomeViewMushafHint = 'settings.home_view_mushaf_hint';
   static const String settingsLanguage = 'settings.language';
+  static const String settingsLanguageAr = 'settings.language_ar';
+  static const String settingsLanguageEn = 'settings.language_en';
   static const String settingsRangeLastUsed = 'settings.range_last_used';
   static const String settingsRangeWholeSurah = 'settings.range_whole_surah';
   static const String settingsReciter = 'settings.reciter';

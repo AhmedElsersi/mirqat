@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
+import 'package:mirqat/data/models/reading_position.dart';
+import 'package:mirqat/core/localization/locale_keys.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
 import 'package:mirqat/core/widgets/islamic_frame.dart';
@@ -304,6 +308,68 @@ void main() {
         find.byType(AyahActionsSheet),
       );
       expect(sheet.ayah, const AyahRef(1, 1));
+    });
+
+    testWidgets('an ayah can be marked as where the reader stopped: the sheet '
+        'offers it, the page tints it in its own colour, and the sheet then '
+        'offers to take it off', (WidgetTester tester) async {
+      await openMushaf(tester);
+      final SettingsCubit settings = BlocProvider.of<SettingsCubit>(
+        tester.element(find.byType(MushafView)),
+      );
+      expect(settings.state.settings.readingMark, isNull);
+
+      // Closed the way a swipe down would: with no action chosen, so the
+      // screen writes nothing.
+      Future<void> closeSheet() async {
+        Navigator.of(tester.element(find.byType(AyahActionsSheet))).pop();
+        // The slide out, then the frame that takes the route off the tree.
+        for (int i = 0; i < 5; i++) {
+          await tester.pump(const Duration(milliseconds: 150));
+        }
+        expect(find.byType(AyahActionsSheet), findsNothing);
+      }
+
+      await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text(LocaleKeys.mushafMarkHere.tr()), findsOneWidget);
+      expect(find.text(LocaleKeys.mushafUnmark.tr()), findsNothing);
+      await closeSheet();
+
+      // The write itself, in real time: a store write begun under the
+      // test's fake clock never lands, and the harness would wait on it.
+      await tester.runAsync(
+        () => settings.markReading(
+          ReadingPosition(
+            surahNumber: 1,
+            ayahNumber: 1,
+            page: 1,
+            at: DateTime(2026, 9, 30),
+          ),
+        ),
+      );
+      await frames(tester);
+
+      // Every word of ayah 1 wears the mark's tint — and only ayah 1.
+      final List<AyahText> words = renderedWords(tester, 1);
+      final Iterable<AyahText> marked = words.where(
+        (AyahText w) => w.tint == WordTint.marked,
+      );
+      expect(marked, isNotEmpty);
+      expect(marked.length, lessThan(words.length));
+
+      await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text(LocaleKeys.mushafUnmark.tr()), findsOneWidget);
+      expect(find.text(LocaleKeys.mushafMarkHere.tr()), findsNothing);
+      await closeSheet();
+
+      await tester.runAsync(settings.clearReadingMark);
+      await frames(tester);
+      expect(
+        renderedWords(tester, 1).any((AyahText w) => w.tint == WordTint.marked),
+        isFalse,
+      );
     });
 
     testWidgets('a tap shows the reading bar, a second tap puts it away, and '

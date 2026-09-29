@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/features/surah_list/screen/surah_list_screen.dart';
+import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
+import 'package:mirqat/core/localization/locale_keys.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:mirqat/core/di/injection.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/data/models/reading_position.dart';
@@ -29,6 +33,38 @@ void main() {
           ),
         ),
       );
+
+  group('the reading mark', () {
+    testWidgets('is offered on the home page beside "continue reading", and '
+        'goes when it is cleared', (WidgetTester tester) async {
+      await remember(tester, 2);
+      await harness.pumpApp(tester);
+      expect(find.text(LocaleKeys.homeContinueReading.tr()), findsOneWidget);
+      expect(find.text(LocaleKeys.homeReadingMark.tr()), findsNothing);
+
+      final SettingsCubit settings = BlocProvider.of<SettingsCubit>(
+        tester.element(find.byType(SurahListScreen)),
+      );
+      await tester.runAsync(
+        () => settings.markReading(
+          ReadingPosition(
+            surahNumber: 1,
+            ayahNumber: 3,
+            page: 1,
+            at: DateTime(2026, 9, 30),
+          ),
+        ),
+      );
+      await AppHarness.settle(tester);
+      expect(find.text(LocaleKeys.homeReadingMark.tr()), findsOneWidget);
+      expect(find.text(LocaleKeys.homeContinueReading.tr()), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_added), findsOneWidget);
+
+      await tester.runAsync(settings.clearReadingMark);
+      await AppHarness.settle(tester);
+      expect(find.text(LocaleKeys.homeReadingMark.tr()), findsNothing);
+    });
+  });
 
   group('the home bar', () {
     testWidgets('carries the way back and the settings, and nothing about '
