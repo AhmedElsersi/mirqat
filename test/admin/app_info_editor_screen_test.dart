@@ -143,4 +143,24 @@ void main() {
     expect(puts, hasLength(1));
     expect(find.textContaining('Published (abc123)'), findsOneWidget);
   });
+
+  testWidgets('the maintenance platform chips toggle the draft', (
+    WidgetTester tester,
+  ) async {
+    final AppInfoEditorCubit cubit = await pump(tester);
+    final Finder ios = find.widgetWithText(FilterChip, 'iOS');
+    await tester.ensureVisible(ios);
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilterChip>(ios).selected, isFalse);
+
+    await tester.tap(ios);
+    await tester.pumpAndSettle();
+    expect(cubit.state.draft.maintenance.platforms, <String>{'ios'});
+    expect(tester.widget<FilterChip>(ios).selected, isTrue);
+
+    await tester.tap(ios);
+    await tester.pumpAndSettle();
+    expect(cubit.state.draft.maintenance.platforms, isEmpty);
+    expect(tester.widget<FilterChip>(ios).selected, isFalse);
+  });
 }

@@ -282,20 +282,25 @@ class _Form extends StatelessWidget {
                       child: FilterChip(
                         label: Text(platform == 'ios' ? 'iOS' : 'Android'),
                         selected: d.maintenance.platforms.contains(platform),
-                        onSelected: (bool on) => cubit.edit(
-                          (AppInfo i) => i.copyWith(
+                        // A block, not a conditional with a cascade: `..`
+                        // binds more loosely than `? :`, so `a ? x : y..f()`
+                        // runs f on both branches — and un-ticked the
+                        // platform in the same breath as ticking it.
+                        onSelected: (bool on) => cubit.edit((AppInfo i) {
+                          final Set<String> next = <String>{
+                            ...i.maintenance.platforms,
+                          };
+                          if (on) {
+                            next.add(platform);
+                          } else {
+                            next.remove(platform);
+                          }
+                          return i.copyWith(
                             maintenance: i.maintenance.copyWith(
-                              platforms:
-                                  on
-                                        ? <String>{
-                                            ...i.maintenance.platforms,
-                                            platform,
-                                          }
-                                        : <String>{...i.maintenance.platforms}
-                                    ..remove(platform),
+                              platforms: next,
                             ),
-                          ),
-                        ),
+                          );
+                        }),
                       ),
                     ),
                   Text(
