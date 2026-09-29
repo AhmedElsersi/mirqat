@@ -15,6 +15,10 @@ abstract class AdminFilePicker {
 
   /// A reciter's portrait, or null when the operator cancelled.
   Future<String?> pickImage();
+
+  /// A file of links — a QUL recitation export — or null when the operator
+  /// cancelled.
+  Future<String?> pickLinkFile();
 }
 
 class NativeAdminFilePicker implements AdminFilePicker {
@@ -28,4 +32,8 @@ class NativeAdminFilePicker implements AdminFilePicker {
 
   @override
   Future<String?> pickImage() => _channel.invokeMethod<String>('pickImage');
+
+  @override
+  Future<String?> pickLinkFile() =>
+      _channel.invokeMethod<String>('pickLinkFile');
 }

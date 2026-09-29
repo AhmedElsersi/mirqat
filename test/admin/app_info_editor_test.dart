@@ -49,6 +49,9 @@ class _Bundle implements AssetReader {
 }
 
 class _Picker implements AdminFilePicker {
+  @override
+  Future<String?> pickLinkFile() async => null;
+
   _Picker(this.image);
 
   final String? image;

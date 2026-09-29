@@ -47,6 +47,16 @@ class MainFlutterWindow: NSWindow {
         panel.canChooseFiles = true
         panel.allowedFileTypes = ["jpg", "jpeg", "png", "webp"]
         result(panel.runModal() == .OK ? panel.url?.path : nil)
+      case "pickLinkFile":
+        // A QUL recitation export: one audio address per ayah, for a reciter
+        // whose recordings someone else already cut and hosts.
+        let panel = NSOpenPanel()
+        panel.title = "Choose a file of links (a QUL recitation export)"
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedFileTypes = ["json"]
+        result(panel.runModal() == .OK ? panel.url?.path : nil)
       default:
         result(FlutterMethodNotImplemented)
       }

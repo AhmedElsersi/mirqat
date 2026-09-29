@@ -167,6 +167,49 @@ same JSON into this checkout's `assets/data/app.json` — **commit that file**, 
 that a fresh install, offline, starts from the same words. (**Copy JSON** puts
 it on the clipboard, for a tool started some other way.)
 
+## A reciter from a file of links
+
+The other way a reciter comes in. Some recitations are already cut, ayah by
+ayah, and hosted by someone else — QUL (Quran.com's library) exports one as a
+JSON file with an audio address per ayah. With the owner's agreement, the app
+can stream and download straight from that host: nothing is cut here, nothing
+but a portrait goes into the bucket, and the split flow above is untouched. The
+button **Reciter from a file of links** at the top right opens it. It needs
+`GITHUB_TOKEN` and `GITHUB_REPO`, like publishing the manifest.
+
+1. **Choose file…** — the export. The tool reduces every address in it to one
+   template (`https://host/…/{s3}{a3}.mp3`); a file whose addresses do not all
+   fit one is refused, and the ones that broke the pattern are named. The
+   ayahs listed for each surah are laid against `quran.db`: a surah with an
+   ayah missing or one too many is shown in the table and **not offered**, and
+   so is a surah the file does not have at all. Counts come from `quran.db`,
+   never from the file.
+2. **The reciter** — an id (lower-case, digits, underscores), the names in both
+   languages, the riwayah, a version, the bitrate, and optionally a portrait,
+   which goes to the bucket under a name made from its own bytes. An id already
+   in the manifest as a linked reciter fills these in, for re-publishing after
+   the host changed; an id that belongs to a reciter published *with packs* is
+   refused, because a linked entry would take their packs away.
+3. **Probe host** — asks the host for the first ayah of every complete surah,
+   and for the `000` of every surah whose basmala is a file of its own. The
+   second answer is written into the manifest as `hasBasmala`: the host was not
+   built to our layout, and this is the only way the app can know not to ask
+   for a basmala that is not there. One clip is fetched whole and timed with
+   ffmpeg to measure the bitrate; type it if that fails. A surah the host does
+   not have is not offered.
+4. **Publish** — merges the entry into the manifest **as it is live** (the
+   bucket's address is kept as it is) and commits it to the Pages site. The
+   entry has no `packPath`: the app streams it as any other reciter, and
+   downloads it one ayah at a time into the same place a pack would unzip to
+   (CLAUDE.md A.5, *a reciter without packs*). Started through
+   `./run_admin.sh`, the tool also writes the manifest into this checkout's
+   `assets/data/manifest.json` — commit it.
+
+What the app cannot check for such a reciter is said plainly: there is no
+digest, so a downloaded file is only held to being a non-empty mp3; the quality
+selector has nothing to choose from; and the audio stays on a host that is not
+ours. If it moves, the fix is this screen again, not a release.
+
 ## What it cannot do
 
 - **It does not judge the recitation**, only lengths: a clip can be the right

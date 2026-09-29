@@ -21,6 +21,9 @@ class _Unused implements AssetReader {
 
 class _NoPicker implements AdminFilePicker {
   @override
+  Future<String?> pickLinkFile() async => null;
+
+  @override
   Future<String?> pickImage() async => null;
 
   @override

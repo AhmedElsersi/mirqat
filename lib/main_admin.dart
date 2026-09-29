@@ -7,10 +7,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'admin/config/admin_config.dart';
 import 'admin/cubit/admin_cubit.dart';
 import 'admin/cubit/app_info_editor_cubit.dart';
+import 'admin/cubit/linked_reciter_cubit.dart';
 import 'admin/screen/admin_screen.dart';
 import 'admin/screen/app_info_editor_screen.dart';
+import 'admin/screen/linked_reciter_screen.dart';
 import 'admin/services/admin_file_picker.dart';
 import 'admin/services/ffmpeg_runner.dart';
+import 'admin/services/pack_publisher.dart';
 import 'admin/services/pages_publisher.dart';
 import 'admin/services/r2_client.dart';
 import 'core/constants/app_constants.dart';
@@ -94,6 +97,23 @@ class AdminApp extends StatelessWidget {
                     : File('${config.projectDir}/${AssetPaths.bundledAppInfo}'),
               )..load(),
               child: const AppInfoEditorScreen(),
+            ),
+            linkedReciter: (_) => BlocProvider<LinkedReciterCubit>(
+              create: (_) => LinkedReciterCubit(
+                pagesPublisher: PagesPublisher(adminConfig: config),
+                packPublisher: PackPublisher(),
+                r2Client: R2Client(adminConfig: config),
+                filePicker: const NativeAdminFilePicker(),
+                quranRepository: quran,
+                ffmpegRunner: FfmpegRunner(),
+                adminConfig: config,
+                bundledCopy: config.projectDir.isEmpty
+                    ? null
+                    : File(
+                        '${config.projectDir}/${AssetPaths.bundledManifest}',
+                      ),
+              )..load(),
+              child: const LinkedReciterScreen(),
             ),
           ),
         ),

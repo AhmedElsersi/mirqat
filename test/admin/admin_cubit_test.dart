@@ -127,6 +127,9 @@ class _Preview implements SegmentPreview {
 
 /// Stands in for the macOS open panel.
 class _Picker implements AdminFilePicker {
+  @override
+  Future<String?> pickLinkFile() async => null;
+
   _Picker(this.answer);
 
   /// A path, null for a cancelled panel, or a thrown error.

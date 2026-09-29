@@ -554,6 +554,14 @@ is confirmed by typing that version**, for the same reason a short split is expl
 words: it is the one edit that locks people out of the app, and a checkbox would not stop a
 slip of a digit.
 
+**It also adds a reciter from a file of links** (A.5, *a reciter without packs*): a QUL
+export of a recitation someone else cut and hosts is reduced to one `audioPath`
+template — a file whose addresses do not all fit one is refused, naming them — laid
+against `quran.db` for completeness, and the host is asked for each complete surah's first
+ayah and for each `separate` surah's `000`, which is what the entry's `hasBasmala` says.
+Nothing is cut and nothing but a portrait is uploaded; the entry is merged into the live
+manifest and published the same way as the rest. `LinkedReciterCubit` and `LinkFile`.
+
 **A split whose count does not match is never published silently.** The operator either
 fixes the split or types a reason, which is recorded in the log beside the upload. A
 checkbox would not do: a surah published one segment short files every later ayah under the

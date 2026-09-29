@@ -19,13 +19,17 @@ import '../services/timecode.dart';
 /// every minute spent styling it is a minute not spent on the app people
 /// actually use.
 class AdminScreen extends StatelessWidget {
-  const AdminScreen({this.appInfoEditor, super.key});
+  const AdminScreen({this.appInfoEditor, this.linkedReciter, super.key});
 
   /// Builds the `app.json` editor, with whatever it needs already provided.
   /// Handed in rather than built here, because what it needs — the Pages
   /// publisher, the R2 client — is made where the credentials are, in
   /// `main_admin.dart`. Null leaves the button out.
   final WidgetBuilder? appInfoEditor;
+
+  /// Builds the "reciter from a file of links" screen, likewise. Null leaves
+  /// the button out.
+  final WidgetBuilder? linkedReciter;
 
   @override
   Widget build(BuildContext context) => BlocBuilder<AdminCubit, AdminState>(
@@ -36,6 +40,14 @@ class AdminScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Mirqat — audio admin'),
           actions: <Widget>[
+            if (linkedReciter != null)
+              TextButton.icon(
+                onPressed: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute<void>(builder: linkedReciter!)),
+                icon: const Icon(Icons.link),
+                label: const Text('Reciter from a file of links'),
+              ),
             if (appInfoEditor != null)
               TextButton.icon(
                 onPressed: () => Navigator.of(
