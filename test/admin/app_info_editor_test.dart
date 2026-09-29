@@ -393,7 +393,7 @@ void main() {
       expect(github.where((http.Request r) => r.method == 'PUT'), hasLength(1));
       expect(
         (jsonDecode(github.last.body) as Map<String, dynamic>)['message'],
-        contains('minimum raised: Android 10.0.0'),
+        contains('locks out: Android 10.0.0'),
       );
     });
 
@@ -478,6 +478,151 @@ void main() {
         isNot(contains(kToken)),
       );
       expect(cubit.json, isNot(contains(kToken)));
+    });
+  });
+
+  group('builds, force and maintenance', () {
+    test('a build number only refines a version: a build with no version is '
+        'refused', () {
+      expect(
+        validateAppInfo(
+          good.copyWith(
+            update: good.update.copyWith(
+              android: good.update.android.copyWith(
+                min: '',
+                latest: '',
+                minBuild: 20,
+              ),
+            ),
+          ),
+        ),
+        contains(contains('a minimum build with no minimum version')),
+      );
+    });
+
+    test('a minimum build above the latest build of the same version', () {
+      expect(
+        validateAppInfo(
+          withAndroid(min: '1.2.0', latest: '1.2.0').copyWith(
+            update: good.update.copyWith(
+              android: good.update.android.copyWith(
+                min: '1.2.0',
+                latest: '1.2.0',
+                minBuild: 30,
+                latestBuild: 25,
+              ),
+            ),
+          ),
+        ),
+        contains(contains('minimum build (30) is above the latest build (25)')),
+      );
+    });
+
+    test('force with nothing to force', () {
+      expect(
+        validateAppInfo(
+          good.copyWith(
+            update: good.update.copyWith(
+              android: good.update.android.copyWith(latest: '', force: true),
+            ),
+          ),
+        ),
+        contains(contains('"force" is on but there is no latest version')),
+      );
+    });
+
+    test('a maintenance sign needs its message in both languages, and an '
+        '"until" still to come', () {
+      final AppInfo up = good.copyWith(
+        maintenance: const Maintenance(
+          enabled: true,
+          message: LocalizedText(ar: 'صيانة', en: ''),
+        ),
+      );
+      expect(
+        validateAppInfo(up),
+        contains(contains('The maintenance message has no English')),
+      );
+      final AppInfo expired = good.copyWith(
+        maintenance: Maintenance(
+          enabled: true,
+          message: const LocalizedText(ar: 'صيانة', en: 'Maintenance'),
+          until: DateTime.utc(2026, 1, 1),
+        ),
+      );
+      expect(
+        validateAppInfo(expired, now: DateTime.utc(2026, 6, 1)),
+        contains(contains('has already passed')),
+      );
+      // Off, it may say anything or nothing.
+      expect(
+        validateAppInfo(good.copyWith(maintenance: Maintenance.off)),
+        isEmpty,
+      );
+    });
+
+    test('what locks people out is typed: a higher build of the same minimum, '
+        'a forced latest, the sign going up', () {
+      final AppInfo before = withAndroid(min: '1.2.0', latest: '1.3.0');
+      final AppInfo buildRaised = before.copyWith(
+        update: before.update.copyWith(
+          android: before.update.android.copyWith(minBuild: 25),
+        ),
+      );
+      expect(raisedMinimums(before, buildRaised), <String, String>{
+        'Android': '1.2.0+25',
+      });
+
+      final AppInfo forced = before.copyWith(
+        update: before.update.copyWith(
+          android: before.update.android.copyWith(force: true),
+        ),
+      );
+      expect(raisedMinimums(before, forced), <String, String>{
+        'Android forced update': 'force-android-1.3.0',
+      });
+      // Already forced: no re-typing for an unrelated edit.
+      expect(
+        raisedMinimums(forced, forced.copyWith(goal: good.about)),
+        isEmpty,
+      );
+
+      final AppInfo closed = before.copyWith(
+        maintenance: const Maintenance(
+          enabled: true,
+          message: LocalizedText(ar: 'صيانة', en: 'Maintenance'),
+        ),
+      );
+      expect(raisedMinimums(before, closed), <String, String>{
+        'Maintenance': 'maintenance',
+      });
+      expect(confirmationFor(raisedMinimums(before, closed)), 'maintenance');
+      // Taking it down, narrowing it, or leaving it up needs nothing.
+      expect(raisedMinimums(closed, before), isEmpty);
+      expect(raisedMinimums(closed, closed), isEmpty);
+      expect(
+        raisedMinimums(
+          closed,
+          closed.copyWith(
+            maintenance: closed.maintenance.copyWith(
+              platforms: <String>{'ios'},
+            ),
+          ),
+        ),
+        isEmpty,
+      );
+      // Widening it to a platform it was not up for does.
+      expect(
+        raisedMinimums(
+          closed.copyWith(
+            maintenance: closed.maintenance.copyWith(
+              platforms: <String>{'ios'},
+            ),
+          ),
+          closed,
+        ),
+        <String, String>{'Maintenance': 'maintenance'},
+      );
     });
   });
 }

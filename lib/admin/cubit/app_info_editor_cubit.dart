@@ -303,10 +303,12 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
       if (before.goal != after.goal) 'goal',
       if (before.developer != after.developer) 'developer',
       if (before.update != after.update) 'update rules',
+      if (before.maintenance != after.maintenance)
+        after.maintenance.enabled ? 'maintenance ON' : 'maintenance off',
     ];
     final String minimums = raised.isEmpty
         ? ''
-        : ' — minimum raised: '
+        : ' — locks out: '
               '${raised.entries.map((MapEntry<String, String> e) => '${e.key} ${e.value}').join(', ')}';
     return 'Publish app.json: '
         '${changed.isEmpty ? 'no change' : changed.join(', ')}$minimums';

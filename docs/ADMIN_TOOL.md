@@ -142,24 +142,40 @@ bundled with the app, and says which). Four sections:
   without `https://`. **Photo…** uploads the picture to the bucket under a name
   made from its own bytes, so a new photo is a new address and nothing already
   published is ever overwritten.
-- **Updates** — for each store, a **minimum** version, a **latest** version and
-  the **store page**; and an optional "what is new" in both languages.
+- **Updates** — for each store, a **minimum** release, a **latest** release, a
+  **Force** switch and the **store page**; an optional "what is new" in both
+  languages; and how many days "later" holds.
+  - A release is a version and, optionally, a build number — `1.4.0` build
+    `25`. Versions decide first; the build only tells two uploads of one
+    version apart. The build number is `pubspec.yaml`'s `+N` (what
+    `bump-build-number.yml` moves on every push).
   - Below the *minimum*, the app shows a page asking to be updated and does
     nothing else.
   - Below the *latest*, it mentions the update over a dimmed app, with
-    "later", and not again for a day.
-  - Blank means no rule. Until there is an App Store page, leave iOS blank.
+    "later", and not again for the days given (one, by default). With
+    **Force** on, the latest is mandatory too: no "later".
+  - Blank means no rule. A build ahead of the store is left alone.
+- **Maintenance** — the closed sign. While it is up, the app shows the title
+  and message (or its own wording where they are blank) with a *try again*
+  button and nothing else, on every platform or only the ones ticked. **Until**
+  (UTC) takes the sign down by itself at that time and is shown to people as
+  when to expect the app back — so a switch nobody remembered cannot keep them
+  out for good. *Try again* re-fetches the file, so taking the sign down here
+  reaches an open app without a restart.
 
 What is wrong is listed at the foot in red and **Publish** stays off until it is
 fixed: a page with one language missing, a link a phone cannot open, a version
 that is not a version, a minimum newer than the latest, a rule with no `https`
 store page.
 
-**Raising a minimum has to be typed.** It is the one edit that locks people out
-of the app, and a slip of a digit — `10.0.0` for `1.0.0` — locks out everyone.
-The tool says which minimum is being raised and to what, and Publish stays off
-until that version is typed into **Confirm**. Lowering or clearing a minimum
-only ever lets more people in, and needs nothing.
+**Whatever locks people out has to be typed.** Raising a minimum (a version, or
+a build of the same version), forcing the latest, and putting the maintenance
+sign up each lock every install they apply to, and a slip of a digit — `10.0.0`
+for `1.0.0` — locks out everyone. The tool says what is being locked and to
+what, and Publish stays off until the values it names are typed into
+**Confirm**: the version (`1.2.0`, or `1.2.0+25` with a build), `force-android-1.2.0`,
+`maintenance`. Lowering, clearing, un-forcing or taking the sign down only ever
+lets more people in, and needs nothing.
 
 After publishing, the app picks the file up on its next launch (Pages can take a
 minute to serve it). Started through `./run_admin.sh`, the tool also writes the

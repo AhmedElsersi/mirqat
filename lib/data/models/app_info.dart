@@ -177,16 +177,31 @@ class AppVersion extends Equatable implements Comparable<AppVersion> {
   String toString() => parts.join('.');
 }
 
-/// Which versions one platform's store is on.
+/// Which releases one platform's store is on, and how firmly to ask.
+///
+/// A release is a version *and* a build number, as the stores see it: two
+/// uploads of 1.2.0 are builds 24 and 25, and a rule may need to tell them
+/// apart. The build number is optional on every rule — a version alone
+/// compares by version alone.
 class PlatformUpdate extends Equatable {
-  const PlatformUpdate({this.min = '', this.latest = '', this.storeUrl = ''});
+  const PlatformUpdate({
+    this.min = '',
+    this.minBuild,
+    this.latest = '',
+    this.latestBuild,
+    this.force = false,
+    this.storeUrl = '',
+  });
 
   static const PlatformUpdate none = PlatformUpdate();
 
   factory PlatformUpdate.fromJson(Object? json) => json is Map<String, dynamic>
       ? PlatformUpdate(
           min: _text(json['min']),
+          minBuild: _build(json['minBuild']),
           latest: _text(json['latest']),
+          latestBuild: _build(json['latestBuild']),
+          force: json['force'] == true,
           storeUrl: _text(json['storeUrl']),
         )
       : none;
@@ -195,28 +210,82 @@ class PlatformUpdate extends Equatable {
   /// updated and does nothing else. Blank: every version is welcome.
   final String min;
 
+  /// With [min]: the oldest build of that version still allowed. Null: any
+  /// build of [min] is allowed.
+  final int? minBuild;
+
   /// The newest version in the store. Below it, the app mentions the update
-  /// and can be told "later". Blank: nothing to mention.
+  /// and can be told "later" — unless [force]. Blank: nothing to mention.
   final String latest;
+
+  /// With [latest]: the build the store is on. Null: any build of [latest]
+  /// counts as current.
+  final int? latestBuild;
+
+  /// Whether the latest release is mandatory: everything below it is treated
+  /// as below the minimum, and there is no "later". The switch for a release
+  /// that fixes something that cannot wait, without moving the minimum.
+  final bool force;
 
   /// The store page the update button opens.
   final String storeUrl;
 
-  PlatformUpdate copyWith({String? min, String? latest, String? storeUrl}) =>
-      PlatformUpdate(
-        min: min ?? this.min,
-        latest: latest ?? this.latest,
-        storeUrl: storeUrl ?? this.storeUrl,
-      );
+  /// The release the prompt asks for, as a label: the latest where there is
+  /// one, else the minimum, with the build in brackets when it is named.
+  String get target {
+    final String version = latest.isNotEmpty ? latest : min;
+    final int? build = latest.isNotEmpty ? latestBuild : minBuild;
+    if (version.isEmpty) return '';
+    return build == null ? version : '$version ($build)';
+  }
+
+  PlatformUpdate copyWith({
+    String? min,
+    int? minBuild,
+    bool clearMinBuild = false,
+    String? latest,
+    int? latestBuild,
+    bool clearLatestBuild = false,
+    bool? force,
+    String? storeUrl,
+  }) => PlatformUpdate(
+    min: min ?? this.min,
+    minBuild: clearMinBuild ? null : (minBuild ?? this.minBuild),
+    latest: latest ?? this.latest,
+    latestBuild: clearLatestBuild ? null : (latestBuild ?? this.latestBuild),
+    force: force ?? this.force,
+    storeUrl: storeUrl ?? this.storeUrl,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'min': min,
+    'minBuild': minBuild,
     'latest': latest,
+    'latestBuild': latestBuild,
+    'force': force,
     'storeUrl': storeUrl,
   };
 
   @override
-  List<Object?> get props => <Object?>[min, latest, storeUrl];
+  List<Object?> get props => <Object?>[
+    min,
+    minBuild,
+    latest,
+    latestBuild,
+    force,
+    storeUrl,
+  ];
+}
+
+/// A build number as it might be written: a number, or digits in a string.
+/// Anything else, and a zero or less, is no build number.
+int? _build(Object? value) {
+  final int? n = switch (value) {
+    final int v => v,
+    final String v => int.tryParse(v.trim()),
+    _ => null,
+  };
+  return n == null || n <= 0 ? null : n;
 }
 
 /// The update rules, one set per store, and an optional word on what is new.
@@ -225,15 +294,21 @@ class UpdateRules extends Equatable {
     this.android = PlatformUpdate.none,
     this.ios = PlatformUpdate.none,
     this.notes = LocalizedText.empty,
+    this.remindAfterDays = defaultRemindAfterDays,
   });
 
   static const UpdateRules none = UpdateRules();
+
+  /// How long "later" holds by default: a day.
+  static const int defaultRemindAfterDays = 1;
 
   factory UpdateRules.fromJson(Object? json) => json is Map<String, dynamic>
       ? UpdateRules(
           android: PlatformUpdate.fromJson(json['android']),
           ios: PlatformUpdate.fromJson(json['ios']),
           notes: LocalizedText.fromJson(json['notes']),
+          remindAfterDays:
+              _build(json['remindAfterDays']) ?? defaultRemindAfterDays,
         )
       : none;
 
@@ -243,24 +318,130 @@ class UpdateRules extends Equatable {
   /// "What's new", shown under the fixed wording of the prompt. Optional.
   final LocalizedText notes;
 
+  /// How many days "later" buys before an optional update is mentioned
+  /// again. Never less than one: a prompt on every launch is nagging.
+  final int remindAfterDays;
+
+  PlatformUpdate forPlatform(String platform) => switch (platform) {
+    'android' => android,
+    'ios' => ios,
+    _ => PlatformUpdate.none,
+  };
+
   UpdateRules copyWith({
     PlatformUpdate? android,
     PlatformUpdate? ios,
     LocalizedText? notes,
+    int? remindAfterDays,
   }) => UpdateRules(
     android: android ?? this.android,
     ios: ios ?? this.ios,
     notes: notes ?? this.notes,
+    remindAfterDays: remindAfterDays ?? this.remindAfterDays,
   );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'android': android.toJson(),
     'ios': ios.toJson(),
     'notes': notes.toJson(),
+    'remindAfterDays': remindAfterDays,
   };
 
   @override
-  List<Object?> get props => <Object?>[android, ios, notes];
+  List<Object?> get props => <Object?>[android, ios, notes, remindAfterDays];
+}
+
+/// A closed sign: the app shows a page saying so, with a way to try again,
+/// and nothing else, for as long as the sign is up.
+///
+/// It is the one thing in this file that stops every install at once, and
+/// it is read as forgivingly as the rest: a sign whose `until` has passed is
+/// down, so a switch nobody remembered to turn off cannot keep people out
+/// for good.
+class Maintenance extends Equatable {
+  const Maintenance({
+    this.enabled = false,
+    this.title = LocalizedText.empty,
+    this.message = LocalizedText.empty,
+    this.platforms = const <String>{},
+    this.until,
+  });
+
+  static const Maintenance off = Maintenance();
+
+  /// The platforms a sign may name. Empty names them all.
+  static const Set<String> knownPlatforms = <String>{'android', 'ios'};
+
+  factory Maintenance.fromJson(Object? json) {
+    if (json is! Map<String, dynamic>) return off;
+    final Object? rawPlatforms = json['platforms'];
+    return Maintenance(
+      enabled: json['enabled'] == true,
+      title: LocalizedText.fromJson(json['title']),
+      message: LocalizedText.fromJson(json['message']),
+      platforms: <String>{
+        if (rawPlatforms is List)
+          for (final Object? p in rawPlatforms)
+            if (p is String && knownPlatforms.contains(p.trim().toLowerCase()))
+              p.trim().toLowerCase(),
+      },
+      until: switch (json['until']) {
+        final String s when s.trim().isNotEmpty => DateTime.tryParse(s.trim()),
+        _ => null,
+      },
+    );
+  }
+
+  final bool enabled;
+
+  /// The heading and the words on the page. Blank: the app's own wording.
+  final LocalizedText title;
+  final LocalizedText message;
+
+  /// Which stores the sign is up for. Empty: every platform.
+  final Set<String> platforms;
+
+  /// When the sign comes down by itself, if a time was given. Shown on the
+  /// page as when to expect the app back.
+  final DateTime? until;
+
+  /// Whether the sign is up for [platform] at [now].
+  bool isActive({required String platform, required DateTime now}) =>
+      enabled &&
+      (platforms.isEmpty || platforms.contains(platform)) &&
+      (until == null || now.isBefore(until!));
+
+  Maintenance copyWith({
+    bool? enabled,
+    LocalizedText? title,
+    LocalizedText? message,
+    Set<String>? platforms,
+    DateTime? until,
+    bool clearUntil = false,
+  }) => Maintenance(
+    enabled: enabled ?? this.enabled,
+    title: title ?? this.title,
+    message: message ?? this.message,
+    platforms: platforms ?? this.platforms,
+    until: clearUntil ? null : (until ?? this.until),
+  );
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'enabled': enabled,
+    'title': title.toJson(),
+    'message': message.toJson(),
+    'platforms': platforms.toList()..sort(),
+    'until': until?.toUtc().toIso8601String() ?? '',
+  };
+
+  @override
+  List<Object?> get props => <Object?>[
+    enabled,
+    title,
+    message,
+    platforms,
+    until,
+  ];
 }
 
 /// What the app says about itself: `app.json`.
@@ -275,6 +456,7 @@ class AppInfo extends Equatable {
     this.goal = LocalizedText.empty,
     this.developer = DeveloperInfo.empty,
     this.update = UpdateRules.none,
+    this.maintenance = Maintenance.off,
   });
 
   static const AppInfo empty = AppInfo();
@@ -284,6 +466,7 @@ class AppInfo extends Equatable {
     goal: LocalizedText.fromJson(json['goal']),
     developer: DeveloperInfo.fromJson(json['developer']),
     update: UpdateRules.fromJson(json['update']),
+    maintenance: Maintenance.fromJson(json['maintenance']),
   );
 
   /// Parses [source], or answers [empty] for anything that is not an object.
@@ -303,6 +486,9 @@ class AppInfo extends Equatable {
   final DeveloperInfo developer;
   final UpdateRules update;
 
+  /// The closed sign, up or down.
+  final Maintenance maintenance;
+
   /// The file as it is published. [schemaVersion] leads, so that a future
   /// build can tell a shape it does not know from one it does.
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -311,6 +497,7 @@ class AppInfo extends Equatable {
     'goal': goal.toJson(),
     'developer': developer.toJson(),
     'update': update.toJson(),
+    'maintenance': maintenance.toJson(),
   };
 
   static const int schemaVersion = 1;
@@ -320,15 +507,23 @@ class AppInfo extends Equatable {
     LocalizedText? goal,
     DeveloperInfo? developer,
     UpdateRules? update,
+    Maintenance? maintenance,
   }) => AppInfo(
     about: about ?? this.about,
     goal: goal ?? this.goal,
     developer: developer ?? this.developer,
     update: update ?? this.update,
+    maintenance: maintenance ?? this.maintenance,
   );
 
   @override
-  List<Object?> get props => <Object?>[about, goal, developer, update];
+  List<Object?> get props => <Object?>[
+    about,
+    goal,
+    developer,
+    update,
+    maintenance,
+  ];
 }
 
 String _text(Object? value) => value is String ? value.trim() : '';

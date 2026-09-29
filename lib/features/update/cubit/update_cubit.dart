@@ -14,20 +14,44 @@ class UpdateState extends Equatable {
     this.kind = UpdateKind.none,
     this.storeUrl = '',
     this.latest = '',
+    this.target = '',
     this.notes = LocalizedText.empty,
+    this.maintenance,
+    this.retrying = false,
   });
 
   final UpdateKind kind;
   final String storeUrl;
   final String latest;
+
+  /// The release the prompt asks for, as a label — `1.2.0 (25)`.
+  final String target;
   final LocalizedText notes;
 
+  /// The closed sign, when it is up for this platform right now. Shown over
+  /// everything, ahead of any update prompt.
+  final Maintenance? maintenance;
+
+  /// Asking the site again, from the maintenance page.
+  final bool retrying;
+
+  bool get underMaintenance => maintenance != null;
+
   @override
-  List<Object?> get props => <Object?>[kind, storeUrl, latest, notes];
+  List<Object?> get props => <Object?>[
+    kind,
+    storeUrl,
+    latest,
+    target,
+    notes,
+    maintenance,
+    retrying,
+  ];
 }
 
-/// Whether to say anything about updating, for this platform and this
-/// install. App-wide: the prompt sits over whatever screen is up.
+/// Whether to say anything about updating — or that the app is closed for
+/// maintenance — for this platform and this install. App-wide: the prompt
+/// sits over whatever screen is up.
 class UpdateCubit extends Cubit<UpdateState> {
   UpdateCubit({
     required AppInfoService appInfoService,
@@ -59,27 +83,47 @@ class UpdateCubit extends Cubit<UpdateState> {
     await _evaluate(await _info.load());
   }
 
-  Future<void> _evaluate(AppInfo info) async {
-    final InstalledVersion? installed = await _version.read();
-    if (isClosed || installed == null) return;
+  /// The platform as `app.json` names it. No store, no update rules for the
+  /// desktop builds — the macOS build is the admin tool, the Windows build a
+  /// zip handed out by hand — but a maintenance sign with no platforms named
+  /// is up for them too.
+  String get _platformName => switch (_platform ?? defaultTargetPlatform) {
+    TargetPlatform.android => 'android',
+    TargetPlatform.iOS => 'ios',
+    TargetPlatform.macOS => 'macos',
+    TargetPlatform.windows => 'windows',
+    TargetPlatform.linux => 'linux',
+    TargetPlatform.fuchsia => 'fuchsia',
+  };
 
-    final PlatformUpdate rules = switch (_platform ?? defaultTargetPlatform) {
-      TargetPlatform.android => info.update.android,
-      TargetPlatform.iOS => info.update.ios,
-      // No store, no rules: the macOS build is the admin tool, and the
-      // Windows build is a zip handed out by hand.
-      _ => PlatformUpdate.none,
-    };
+  Future<void> _evaluate(AppInfo info) async {
+    if (isClosed) return;
+    final DateTime now = _now();
+    // The closed sign comes first: it needs no version to be read, and it
+    // says more than any update prompt could while it is up.
+    if (info.maintenance.isActive(platform: _platformName, now: now)) {
+      emit(UpdateState(maintenance: info.maintenance));
+      return;
+    }
+
+    final InstalledVersion? installed = await _version.read();
+    if (isClosed) return;
+    if (installed == null) {
+      emit(const UpdateState());
+      return;
+    }
+    final PlatformUpdate rules = info.update.forPlatform(_platformName);
     final UpdateKind kind = decideUpdate(
       installed: installed.version,
+      installedBuild: installed.buildNumber,
       rules: rules,
       lastPrompted: _lastPrompted,
-      now: _now(),
+      now: now,
+      remindAfter: Duration(days: info.update.remindAfterDays),
     );
     // "Later" holds for the rest of this run, whatever arrives — but it was
     // only ever an answer to an update that could wait.
     if (_dismissed && kind == UpdateKind.optional) return;
-
     emit(
       kind == UpdateKind.none
           ? const UpdateState()
@@ -87,9 +131,20 @@ class UpdateCubit extends Cubit<UpdateState> {
               kind: kind,
               storeUrl: rules.storeUrl,
               latest: rules.latest,
+              target: rules.target,
               notes: info.update.notes,
             ),
     );
+  }
+
+  /// From the maintenance page: ask the site again, now. A sign that has
+  /// been taken down comes down here without a restart.
+  Future<void> retry() async {
+    if (state.retrying) return;
+    emit(UpdateState(maintenance: state.maintenance, retrying: true));
+    final AppInfo info = await _info.refresh();
+    if (isClosed) return;
+    await _evaluate(info);
   }
 
   /// "Later". Only an optional update can be put off.

@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/bootstrap.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../data/models/app_info.dart';
 import '../../../services/link_opener.dart';
 import '../../../services/update_policy.dart';
 import '../../settings/cubit/settings_cubit.dart';
@@ -20,7 +21,9 @@ import '../cubit/update_cubit.dart';
 ///    is why the rule that raises it is so hard to raise by accident (see
 ///    `decideUpdate`).
 ///  * **optional** — a newer version is out. A card over a dimmed app, with
-///    "later", and not again for a day.
+///    "later", and not again for a day (or as long as the rules say).
+///  * **maintenance** — the closed sign is up. A page over everything, with
+///    the words the sign carries and a way to ask again. Ahead of both.
 ///
 /// Drawn here, in the app's own tree, rather than as a route: it has to sit
 /// over whichever screen is up, the splash aside, and must not be something a
@@ -73,6 +76,10 @@ class _UpdateGateState extends State<UpdateGate> {
           ],
           if (state.kind == UpdateKind.required)
             Positioned.fill(child: _RequiredPage(state: state)),
+          if (state.maintenance case final Maintenance sign)
+            Positioned.fill(
+              child: _MaintenancePage(sign: sign, state: state),
+            ),
         ],
       ),
     );
@@ -225,6 +232,18 @@ class _RequiredPage extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
                 ),
+                if (state.target.isNotEmpty) ...<Widget>[
+                  SizedBox(height: 8.h),
+                  Text(
+                    LocaleKeys.updateTargetVersion.tr(
+                      args: <String>[state.target],
+                    ),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 _Notes(state: state),
                 SizedBox(height: 28.h),
                 SizedBox(
@@ -240,5 +259,88 @@ class _RequiredPage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The closed sign: the words it carries, when to expect the app back if a
+/// time was given, and a way to ask again. Like the required page, not a
+/// route, so nothing pops it.
+class _MaintenancePage extends StatelessWidget {
+  const _MaintenancePage({required this.sign, required this.state});
+
+  final Maintenance sign;
+  final UpdateState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final String lang = context.locale.languageCode;
+    final String title = sign.title.of(lang).trim();
+    final String message = sign.message.of(lang).trim();
+    return Material(
+      color: theme.scaffoldBackgroundColor,
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsetsDirectional.all(32.r),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(
+                  Icons.construction_outlined,
+                  size: 64.r,
+                  color: theme.colorScheme.primary,
+                ),
+                SizedBox(height: 24.h),
+                Text(
+                  title.isEmpty
+                      ? LocaleKeys.updateMaintenanceTitle.tr()
+                      : title,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall,
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  message.isEmpty
+                      ? LocaleKeys.updateMaintenanceBody.tr()
+                      : message,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
+                ),
+                if (sign.until case final DateTime until) ...<Widget>[
+                  SizedBox(height: 12.h),
+                  Text(
+                    LocaleKeys.updateMaintenanceUntil.tr(
+                      args: <String>[_clock(until.toLocal())],
+                    ),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                SizedBox(height: 28.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: state.retrying
+                        ? null
+                        : () => context.read<UpdateCubit>().retry(),
+                    child: Text(LocaleKeys.updateRetry.tr()),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// `2026-10-01 02:00`, in the phone's own zone. Written by hand rather
+  /// than through a formatting package the app does not depend on.
+  static String _clock(DateTime t) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
   }
 }

@@ -20,14 +20,15 @@ class _Bundle implements AssetReader {
 }
 
 class _Version implements AppVersionService {
-  _Version(this.version);
+  _Version(this.version, {this.build = '1'});
 
   final String? version;
+  final String build;
 
   @override
   Future<InstalledVersion?> read() async => version == null
       ? null
-      : InstalledVersion(version: version!, buildNumber: '1');
+      : InstalledVersion(version: version!, buildNumber: build);
 }
 
 String rules({
@@ -73,11 +74,12 @@ void main() {
   UpdateCubit cubitFor(
     AppInfoService service, {
     String? installed = '1.0.0',
+    String build = '1',
     TargetPlatform platform = TargetPlatform.android,
   }) {
     final UpdateCubit cubit = UpdateCubit(
       appInfoService: service,
-      appVersionService: _Version(installed),
+      appVersionService: _Version(installed, build: build),
       platformOverride: platform,
       clock: () => DateTime(2026, 9, 20, 12),
     );
@@ -177,5 +179,112 @@ void main() {
     );
     await cubit.check(lastPrompted: null);
     expect(cubit.state.kind, UpdateKind.none);
+  });
+
+  group('builds, force and the closed sign', () {
+    String withAndroid(
+      Map<String, dynamic> android, {
+      Map<String, dynamic>? maintenance,
+    }) => jsonEncode(<String, dynamic>{
+      'schemaVersion': 1,
+      'update': <String, dynamic>{
+        'android': <String, dynamic>{
+          'storeUrl': 'https://play.example/app',
+          ...android,
+        },
+      },
+      'maintenance': ?maintenance,
+    });
+
+    test('the install\'s own build number is weighed', () async {
+      final UpdateCubit old = cubitFor(
+        serviceWith(
+          withAndroid(<String, dynamic>{'min': '1.0.0', 'minBuild': 20}),
+        ),
+        build: '19',
+      );
+      await old.check(lastPrompted: null);
+      expect(old.state.kind, UpdateKind.required);
+      expect(old.state.target, '1.0.0 (20)');
+
+      final UpdateCubit current = cubitFor(
+        serviceWith(
+          withAndroid(<String, dynamic>{'min': '1.0.0', 'minBuild': 20}),
+        ),
+        build: '20',
+      );
+      await current.check(lastPrompted: null);
+      expect(current.state.kind, UpdateKind.none);
+    });
+
+    test('a forced latest is required', () async {
+      final UpdateCubit cubit = cubitFor(
+        serviceWith(
+          withAndroid(<String, dynamic>{'latest': '1.1.0', 'force': true}),
+        ),
+      );
+      await cubit.check(lastPrompted: DateTime(2026, 9, 20, 11));
+      expect(cubit.state.kind, UpdateKind.required);
+      cubit.dismiss();
+      expect(cubit.state.kind, UpdateKind.required, reason: 'no "later"');
+    });
+
+    test('the closed sign is shown ahead of everything, for its platforms, '
+        'and comes down on retry when the site says so', () async {
+      const Map<String, dynamic> up = <String, dynamic>{
+        'enabled': true,
+        'title': <String, String>{'ar': 'صيانة', 'en': 'Maintenance'},
+        'message': <String, String>{'ar': 'نعود قريبًا', 'en': 'Back soon'},
+        'platforms': <String>['android'],
+        'until': '',
+      };
+      final String bundled = withAndroid(<String, dynamic>{
+        'min': '9.0.0',
+        'latest': '9.0.0',
+      }, maintenance: up);
+      // The network answers with the sign taken down.
+      final String published = withAndroid(
+        <String, dynamic>{'min': '9.0.0', 'latest': '9.0.0'},
+        maintenance: <String, dynamic>{...up, 'enabled': false},
+      );
+      final AppInfoService service = AppInfoService(
+        _Bundle(bundled),
+        client: MockClient(
+          (_) async => http.Response.bytes(utf8.encode(published), 200),
+        ),
+        storageDirectory: () => throw UnsupportedError('no cache'),
+      );
+      addTearDown(service.dispose);
+
+      final UpdateCubit ios = cubitFor(service, platform: TargetPlatform.iOS);
+      await ios.check(lastPrompted: null);
+      expect(ios.state.underMaintenance, isFalse, reason: 'Android only');
+      expect(ios.state.kind, UpdateKind.none, reason: 'no iOS rule here');
+
+      final UpdateCubit android = cubitFor(
+        AppInfoService(
+          _Bundle(bundled),
+          client: MockClient((_) async => http.Response('', 404)),
+          storageDirectory: () => throw UnsupportedError('no cache'),
+        ),
+      );
+      await android.check(lastPrompted: null);
+      expect(android.state.underMaintenance, isTrue);
+      expect(android.state.maintenance!.message.en, 'Back soon');
+      expect(
+        android.state.kind,
+        UpdateKind.none,
+        reason: 'the sign, not the prompt',
+      );
+
+      final UpdateCubit reopened = cubitFor(service);
+      await reopened.check(lastPrompted: null);
+      await settle();
+      // The refresh that check kicked off has already brought the sign down;
+      // retry is what the page offers, and it lands on the same answer.
+      await reopened.retry();
+      expect(reopened.state.underMaintenance, isFalse);
+      expect(reopened.state.kind, UpdateKind.required);
+    });
   });
 }

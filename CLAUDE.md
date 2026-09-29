@@ -389,9 +389,11 @@ hosting error page must not be able to blank a screen or lift an update rule.
   "about": { "ar", "en" }, "goal": { "ar", "en" },
   "developer": { "name": { "ar", "en" }, "photo", "email",
                  "github", "linkedin", "whatsapp", "facebook" },
-  "update": { "android": { "min", "latest", "storeUrl" },
-              "ios":     { "min", "latest", "storeUrl" },
-              "notes":   { "ar", "en" } } }
+  "update": { "android": { "min", "minBuild?", "latest", "latestBuild?", "force", "storeUrl" },
+              "ios":     { "min", "minBuild?", "latest", "latestBuild?", "force", "storeUrl" },
+              "notes":   { "ar", "en" }, "remindAfterDays" },
+  "maintenance": { "enabled", "title": { "ar", "en" }, "message": { "ar", "en" },
+                   "platforms": [], "until" } }
 ```
 
 About us, Our goal and the developer's card are read from here through
@@ -402,14 +404,29 @@ are typed by hand, so they are read the way people type them — an email withou
 a WhatsApp number with spaces and a plus, a profile without `https://`. `photo` is an
 address, or a path relative to the file itself.
 
-**The update rules are per store.** Below `min` the app shows a page asking to be updated
-and nothing else; below `latest` it mentions the update over a dimmed app, with "later",
-and not again for a day. The wording is fixed and localized; `notes` adds an optional word
-on what is new. `decideUpdate` resolves **every doubt towards saying nothing**, because the
-other direction locks people out: a rule with no `storeUrl` is ignored, a version that
-cannot be read — on either side — is no rule at all, and a build *ahead* of the store (a
-tester's, a reviewer's) is left alone. A required update cannot be put off; an optional
-one that was put off stays away for the rest of the run, unless a required one arrives.
+**The update rules are per store, and a release is a version and a build.** `min` and
+`latest` are versions as the store writes them; `minBuild` and `latestBuild` are optional
+and only tell two uploads of one version apart — versions decide first, and a build decides
+only when the versions are equal and both sides name one. Below the minimum the app shows a
+page asking to be updated and nothing else; below the latest it mentions the update over a
+dimmed app, with "later", and not again for `remindAfterDays` (one, unless said). `force`
+makes the latest mandatory: below it is treated as below the minimum, with no "later" — the
+switch for a release that cannot wait, without moving the minimum. The wording is fixed and
+localized; `notes` adds an optional word on what is new. `decideUpdate` resolves **every
+doubt towards saying nothing**, because the other direction locks people out: a rule with no
+`storeUrl` is ignored, a version that cannot be read — on either side — is no rule at all
+whatever build it names, and a build *ahead* of the store (a tester's, a reviewer's) is
+left alone. A required update cannot be put off; an optional one that was put off stays
+away for the rest of the run, unless a required one arrives.
+
+**`maintenance` is the closed sign.** While `enabled`, the app shows `title` and `message`
+(or its own wording where they are blank) with a *try again* button, and nothing else —
+ahead of any update prompt. `platforms` narrows it to `android` and/or `ios`; empty means
+every platform, desktop builds included. `until`, when given, takes the sign down by itself
+at that time and is shown as when to expect the app back, so a switch nobody remembered
+cannot keep people out for good. *Try again* re-fetches `app.json`, so a sign taken down is
+gone without a restart. Putting the sign up, like raising a minimum or forcing a release, is
+confirmed by typing in the admin tool.
 
 **How to use and the introduction are not in this file.** They describe this build's own
 screens and gestures, so they live in the translations and change in the same commit as

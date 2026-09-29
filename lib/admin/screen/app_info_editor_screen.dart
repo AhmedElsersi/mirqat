@@ -181,10 +181,12 @@ class _Form extends StatelessWidget {
             title: 'Updates',
             children: <Widget>[
               Text(
-                'Below the minimum, the app shows a page asking to be updated '
-                'and nothing else. Below the latest, it mentions the update and '
-                'can be told "later". Blank means no rule. Versions are the '
-                'store\'s: 1.4.0.',
+                'A release is a version and, optionally, a build number: '
+                '1.4.0 build 25. Below the minimum, the app shows a page '
+                'asking to be updated and nothing else. Below the latest, it '
+                'mentions the update and can be told "later" — unless Force '
+                'is on, which makes the latest mandatory too. Blank means no '
+                'rule. A build ahead of the store is left alone.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
@@ -212,6 +214,116 @@ class _Form extends StatelessWidget {
                 onChanged: (LocalizedText t) => cubit.edit(
                   (AppInfo i) =>
                       i.copyWith(update: i.update.copyWith(notes: t)),
+                ),
+              ),
+              SizedBox(
+                width: 260,
+                child: _Field(
+                  label: 'Remind again after (days)',
+                  hint: 'How long "later" holds. At least 1.',
+                  value: '${d.update.remindAfterDays}',
+                  onChanged: (String v) => cubit.edit(
+                    (AppInfo i) => i.copyWith(
+                      update: i.update.copyWith(
+                        remindAfterDays: int.tryParse(v.trim()) ?? 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          _Section(
+            title: 'Maintenance',
+            children: <Widget>[
+              Text(
+                'While the sign is up, the app shows the title and message '
+                'below with a "try again" button, and nothing else. It comes '
+                'down when you turn it off here — or by itself at "until", '
+                'if a time is given, so a forgotten switch cannot keep '
+                'people out. Putting it up is confirmed by typing.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Maintenance sign is up'),
+                value: d.maintenance.enabled,
+                onChanged: (bool on) => cubit.edit(
+                  (AppInfo i) => i.copyWith(
+                    maintenance: i.maintenance.copyWith(enabled: on),
+                  ),
+                ),
+              ),
+              _Bilingual(
+                value: d.maintenance.title,
+                label: 'Title (blank: the app\'s own)',
+                onChanged: (LocalizedText t) => cubit.edit(
+                  (AppInfo i) =>
+                      i.copyWith(maintenance: i.maintenance.copyWith(title: t)),
+                ),
+              ),
+              _Bilingual(
+                value: d.maintenance.message,
+                label: 'Message',
+                lines: 3,
+                onChanged: (LocalizedText t) => cubit.edit(
+                  (AppInfo i) => i.copyWith(
+                    maintenance: i.maintenance.copyWith(message: t),
+                  ),
+                ),
+              ),
+              Row(
+                children: <Widget>[
+                  Text('For:', style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(width: 12),
+                  for (final String platform in Maintenance.knownPlatforms)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(platform == 'ios' ? 'iOS' : 'Android'),
+                        selected: d.maintenance.platforms.contains(platform),
+                        onSelected: (bool on) => cubit.edit(
+                          (AppInfo i) => i.copyWith(
+                            maintenance: i.maintenance.copyWith(
+                              platforms:
+                                  on
+                                        ? <String>{
+                                            ...i.maintenance.platforms,
+                                            platform,
+                                          }
+                                        : <String>{...i.maintenance.platforms}
+                                    ..remove(platform),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Text(
+                    d.maintenance.platforms.isEmpty
+                        ? 'none ticked: every platform'
+                        : '',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: 360,
+                child: _Field(
+                  label: 'Until (UTC, optional)',
+                  hint: 'e.g. 2026-10-01T02:00:00Z — the sign comes down then.',
+                  value: d.maintenance.until?.toUtc().toIso8601String() ?? '',
+                  onChanged: (String v) => cubit.edit(
+                    (AppInfo i) => i.copyWith(
+                      maintenance: v.trim().isEmpty
+                          ? i.maintenance.copyWith(clearUntil: true)
+                          : i.maintenance.copyWith(
+                              until:
+                                  DateTime.tryParse(v.trim()) ??
+                                  i.maintenance.until,
+                            ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -300,40 +412,96 @@ class _Platform extends StatelessWidget {
   final ValueChanged<PlatformUpdate> onChanged;
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
-      SizedBox(
-        width: 72,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Text(name, style: Theme.of(context).textTheme.titleSmall),
-        ),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          SizedBox(
+            width: 72,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Text(name, style: Theme.of(context).textTheme.titleSmall),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: _Field(
+              label: 'Minimum version (blocks below it)',
+              value: value.min,
+              onChanged: (String v) => onChanged(value.copyWith(min: v.trim())),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: _Field(
+              label: 'Min build',
+              value: value.minBuild?.toString() ?? '',
+              onChanged: (String v) {
+                final int? b = int.tryParse(v.trim());
+                onChanged(
+                  b != null && b > 0
+                      ? value.copyWith(minBuild: b)
+                      : value.copyWith(clearMinBuild: true),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
+            child: _Field(
+              label: 'Latest version (mentions below it)',
+              value: value.latest,
+              onChanged: (String v) =>
+                  onChanged(value.copyWith(latest: v.trim())),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: _Field(
+              label: 'Latest build',
+              value: value.latestBuild?.toString() ?? '',
+              onChanged: (String v) {
+                final int? b = int.tryParse(v.trim());
+                onChanged(
+                  b != null && b > 0
+                      ? value.copyWith(latestBuild: b)
+                      : value.copyWith(clearLatestBuild: true),
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      Expanded(
-        child: _Field(
-          label: 'Minimum (blocks below it)',
-          value: value.min,
-          onChanged: (String v) => onChanged(value.copyWith(min: v.trim())),
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: _Field(
-          label: 'Latest (mentions below it)',
-          value: value.latest,
-          onChanged: (String v) => onChanged(value.copyWith(latest: v.trim())),
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        flex: 3,
-        child: _Field(
-          label: 'Store page (https)',
-          value: value.storeUrl,
-          onChanged: (String v) =>
-              onChanged(value.copyWith(storeUrl: v.trim())),
-        ),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const SizedBox(width: 72),
+          SizedBox(
+            width: 220,
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: const Text('Force the latest'),
+              subtitle: const Text('no "later" below it'),
+              value: value.force,
+              onChanged: (bool on) => onChanged(value.copyWith(force: on)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _Field(
+              label: 'Store page (https)',
+              value: value.storeUrl,
+              onChanged: (String v) =>
+                  onChanged(value.copyWith(storeUrl: v.trim())),
+            ),
+          ),
+        ],
       ),
     ],
   );
@@ -441,10 +609,11 @@ class _FooterState extends State<_Footer> {
                 children: <Widget>[
                   Expanded(
                     child: SelectableText(
-                      'This raises a minimum: '
-                      '${raised.entries.map((MapEntry<String, String> e) => '${e.key} to ${e.value}').join(', ')}. '
-                      'Every install below it will be able to do nothing but '
-                      'update. Type ${confirmationFor(raised)} to confirm.',
+                      'This locks people out: '
+                      '${raised.entries.map((MapEntry<String, String> e) => '${e.key} → ${e.value}').join(', ')}. '
+                      'Every install it applies to will be able to do nothing '
+                      'but what the page says. Type ${confirmationFor(raised)} '
+                      'to confirm.',
                       style: TextStyle(color: theme.colorScheme.error),
                     ),
                   ),

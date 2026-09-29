@@ -122,7 +122,7 @@ void main() {
     await pump(tester);
     final Finder min = find.widgetWithText(
       TextField,
-      'Minimum (blocks below it)',
+      'Minimum version (blocks below it)',
     );
     await tester.ensureVisible(min.first);
     await tester.enterText(min.first, '1.1.0');

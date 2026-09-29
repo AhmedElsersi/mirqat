@@ -91,6 +91,48 @@ void main() {
       expect(info.developer.links.keys, <DeveloperLink>[DeveloperLink.github]);
     });
 
+    test(
+      'builds, force, the remind interval and the sign are read forgivingly, '
+      'and written back',
+      () {
+        final AppInfo info = AppInfo.parse(
+          jsonEncode(<String, dynamic>{
+            'update': <String, dynamic>{
+              'android': <String, dynamic>{
+                'min': '1.2.0',
+                'minBuild': '25',
+                'latest': '1.3.0',
+                'latestBuild': 0,
+                'force': 'yes',
+                'storeUrl': 'https://play.example/app',
+              },
+              'remindAfterDays': 3,
+            },
+            'maintenance': <String, dynamic>{
+              'enabled': true,
+              'message': <String, String>{'ar': 'صيانة', 'en': 'Maintenance'},
+              'platforms': <Object?>['iOS', 'web', 7],
+              'until': '2026-10-01T02:00:00Z',
+            },
+          }),
+        );
+        final PlatformUpdate android = info.update.android;
+        expect(android.minBuild, 25, reason: 'digits in a string still count');
+        expect(android.latestBuild, isNull, reason: 'zero is no build');
+        expect(android.force, isFalse, reason: 'only true is true');
+        expect(android.target, '1.3.0');
+        expect(info.update.remindAfterDays, 3);
+        expect(info.maintenance.enabled, isTrue);
+        expect(info.maintenance.platforms, <String>{'ios'});
+        expect(info.maintenance.until, DateTime.utc(2026, 10, 1, 2));
+        expect(AppInfo.empty.maintenance, Maintenance.off);
+        expect(AppInfo.empty.update.remindAfterDays, 1);
+
+        final AppInfo again = AppInfo.parse(jsonEncode(info.toJson()));
+        expect(again, info, reason: 'what is written is what is read');
+      },
+    );
+
     test('a language left blank falls back to the other one', () {
       const LocalizedText onlyArabic = LocalizedText(ar: 'نص', en: '  ');
       expect(onlyArabic.of('en'), 'نص');

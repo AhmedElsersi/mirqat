@@ -147,4 +147,133 @@ void main() {
       );
     });
   });
+
+  group('a release is a version and a build', () {
+    UpdateKind decideBuild(
+      String installed,
+      String build, {
+      String min = '',
+      int? minBuild,
+      String latest = '',
+      int? latestBuild,
+      bool force = false,
+    }) => decideUpdate(
+      installed: installed,
+      installedBuild: build,
+      rules: PlatformUpdate(
+        min: min,
+        minBuild: minBuild,
+        latest: latest,
+        latestBuild: latestBuild,
+        force: force,
+        storeUrl: kStore,
+      ),
+      lastPrompted: null,
+      now: DateTime(2026, 9, 20, 12),
+    );
+
+    test('versions decide first; the build only tells two uploads of one '
+        'version apart', () {
+      expect(
+        decideBuild('1.2.0', '24', min: '1.2.0', minBuild: 25),
+        UpdateKind.required,
+      );
+      expect(
+        decideBuild('1.2.0', '25', min: '1.2.0', minBuild: 25),
+        UpdateKind.none,
+      );
+      expect(
+        decideBuild('1.3.0', '1', min: '1.2.0', minBuild: 25),
+        UpdateKind.none,
+        reason: 'a newer version, whatever its build',
+      );
+      expect(
+        decideBuild('1.2.0', '24', latest: '1.2.0', latestBuild: 25),
+        UpdateKind.optional,
+      );
+    });
+
+    test('an install whose build is unknown compares by version alone', () {
+      expect(
+        decideBuild('1.2.0', '', min: '1.2.0', minBuild: 25),
+        UpdateKind.none,
+      );
+      expect(
+        decideBuild('1.2.0', 'x', min: '1.2.0', minBuild: 25),
+        UpdateKind.none,
+      );
+    });
+
+    test('a forced latest is required, with no "later"', () {
+      expect(
+        decideBuild('1.2.0', '1', latest: '1.3.0', force: true),
+        UpdateKind.required,
+      );
+      expect(
+        decideUpdate(
+          installed: '1.2.0',
+          rules: const PlatformUpdate(
+            latest: '1.3.0',
+            force: true,
+            storeUrl: kStore,
+          ),
+          lastPrompted: DateTime(2026, 9, 20, 11),
+          now: DateTime(2026, 9, 20, 12),
+        ),
+        UpdateKind.required,
+        reason: '"later" an hour ago does not silence a forced update',
+      );
+      expect(
+        decideBuild('1.3.0', '1', latest: '1.3.0', force: true),
+        UpdateKind.none,
+        reason: 'at the latest there is nothing to force',
+      );
+    });
+
+    test('"later" holds for as long as the rules say', () {
+      UpdateKind after(Duration ago, Duration remindAfter) => decideUpdate(
+        installed: '1.0.0',
+        rules: const PlatformUpdate(latest: '1.1.0', storeUrl: kStore),
+        lastPrompted: DateTime(2026, 9, 20, 12).subtract(ago),
+        now: DateTime(2026, 9, 20, 12),
+        remindAfter: remindAfter,
+      );
+      expect(
+        after(const Duration(days: 2), const Duration(days: 7)),
+        UpdateKind.none,
+      );
+      expect(
+        after(const Duration(days: 8), const Duration(days: 7)),
+        UpdateKind.optional,
+      );
+    });
+  });
+
+  group('the closed sign', () {
+    test('is up for the platforms it names, or all, until its time', () {
+      const Maintenance all = Maintenance(enabled: true);
+      final DateTime now = DateTime.utc(2026, 9, 29, 12);
+      expect(all.isActive(platform: 'android', now: now), isTrue);
+      expect(all.isActive(platform: 'windows', now: now), isTrue);
+
+      const Maintenance iosOnly = Maintenance(
+        enabled: true,
+        platforms: <String>{'ios'},
+      );
+      expect(iosOnly.isActive(platform: 'ios', now: now), isTrue);
+      expect(iosOnly.isActive(platform: 'android', now: now), isFalse);
+
+      final Maintenance timed = Maintenance(
+        enabled: true,
+        until: DateTime.utc(2026, 9, 29, 14),
+      );
+      expect(timed.isActive(platform: 'android', now: now), isTrue);
+      expect(
+        timed.isActive(platform: 'android', now: DateTime.utc(2026, 9, 29, 14)),
+        isFalse,
+        reason: 'comes down by itself at "until"',
+      );
+      expect(Maintenance.off.isActive(platform: 'android', now: now), isFalse);
+    });
+  });
 }

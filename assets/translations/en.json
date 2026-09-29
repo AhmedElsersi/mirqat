@@ -250,6 +250,11 @@
     "required_body": "This version is no longer supported. Update the app from the store to carry on reading and memorizing.",
     "later": "Later",
     "now": "Update",
-    "whats_new": "What is new"
+    "whats_new": "What is new",
+    "maintenance_title": "Under maintenance",
+    "maintenance_body": "We are doing some short maintenance. Please check back in a little while; sorry for the interruption.",
+    "maintenance_until": "Expected back: {}",
+    "retry": "Try again",
+    "target_version": "Required version: {}"
   }
 }
