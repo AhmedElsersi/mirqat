@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/core/widgets/reciter_avatar.dart';
 import 'package:mirqat/core/di/injection.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
@@ -144,6 +145,48 @@ void main() {
       expect(sessionOf(tester).state.phase, SessionPhase.failed);
       expect(find.textContaining('Source error'), findsNothing);
       expect(find.text('إعادة المحاولة'), findsOneWidget);
+    });
+  });
+
+  group('the reciter field', () {
+    testWidgets('is a dropdown that shows the portrait and both names, and '
+        'lists everyone the same way', (WidgetTester tester) async {
+      await openFatiha(tester);
+      await AppHarness.openSessionSheet(tester);
+
+      final Finder field = find.byType(DropdownButtonFormField<String>);
+      expect(field, findsOneWidget);
+      // The field writes both names on one line.
+      expect(
+        find.descendant(
+          of: field,
+          matching: find.textContaining('أحمد خليل شاهين'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: field,
+          matching: find.textContaining('Ahmed Khalil Shaheen'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: field, matching: find.byType(ReciterAvatar)),
+        findsOneWidget,
+      );
+      // No list of radio rows to scroll past any more.
+      expect(find.byType(RadioListTile<String>), findsNothing);
+
+      await tester.tap(field);
+      await AppHarness.frames(tester, 400);
+      // The menu draws the entry on two lines, with both names.
+      expect(find.text('Ahmed Khalil Shaheen'), findsOneWidget);
+      expect(find.text('أحمد خليل شاهين'), findsOneWidget);
+      await tester.tap(find.text('أحمد خليل شاهين'));
+      await AppHarness.frames(tester, 400);
+      expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 

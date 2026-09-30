@@ -158,48 +158,144 @@ class _Reciters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final SessionCubit cubit = context.read<SessionCubit>();
     final List<Reciter> available = state.availableReciters;
     final Reciter? current = state.reciter ?? state.chosenReciter;
 
+    // One field, not a list: ten reciters as radio rows are a screen of
+    // scrolling before the settings that matter, and the next reciter added
+    // on the CDN would make it longer still. The field shows who is chosen,
+    // portrait and both names; the menu shows everyone the same way.
     return SetupSection(
       label: LocaleKeys.settingsReciter.tr(),
-      child: RadioGroup<String>(
-        groupValue: current?.id,
+      child: DropdownButtonFormField<String>(
+        // Keyed by the choice, so a reciter picked elsewhere — the settings
+        // default, a session that switched — is what the field shows.
+        key: ValueKey<String?>(current?.id),
+        initialValue: current?.id,
+        isExpanded: true,
+        // Entries size to their two lines, and to a third for the reason a
+        // reciter cannot be picked.
+        itemHeight: null,
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          contentPadding: EdgeInsetsDirectional.symmetric(
+            horizontal: 12.w,
+            vertical: 8.h,
+          ),
+        ),
+        items: <DropdownMenuItem<String>>[
+          for (final Reciter reciter in state.reciters)
+            DropdownMenuItem<String>(
+              value: reciter.id,
+              // A reciter who has not recorded the whole range cannot be
+              // picked for it; they stay listed so it is clear why.
+              enabled: available.contains(reciter),
+              child: _ReciterEntry(
+                reciter: reciter,
+                enabled: available.contains(reciter),
+              ),
+            ),
+        ],
+        // What the closed field shows: the chosen one, without the reason
+        // line, which only belongs in the menu.
+        selectedItemBuilder: (BuildContext context) => <Widget>[
+          for (final Reciter reciter in state.reciters)
+            _ReciterEntry(reciter: reciter, enabled: true, inField: true),
+        ],
         onChanged: (String? id) {
           final Reciter? picked = state.reciters
               .where((Reciter r) => r.id == id)
               .firstOrNull;
           if (picked != null) cubit.setReciter(picked);
         },
-        child: Column(
-          children: <Widget>[
-            for (final Reciter reciter in state.reciters)
-              RadioListTile<String>(
-                value: reciter.id,
-                // A reciter who has not recorded the whole range cannot be
-                // picked for it; they stay listed so it is clear why.
-                enabled: available.contains(reciter),
-                contentPadding: EdgeInsetsDirectional.zero,
-                title: Text(_reciterName(context, reciter)),
-                subtitle: available.contains(reciter)
-                    ? (reciter.attribution.isEmpty
-                          ? null
-                          : Text(
-                              reciter.attribution.of(
-                                context.locale.languageCode,
-                              ),
-                              style: theme.textTheme.labelSmall,
-                            ))
-                    : Text(
-                        LocaleKeys.sessionReciterLacksRange.tr(
-                          args: <String>[_reciterName(context, reciter)],
-                        ),
-                        style: theme.textTheme.labelSmall,
-                      ),
-                secondary: ReciterAvatar(reciter: reciter, diameter: 36),
+      ),
+    );
+  }
+}
+
+/// A reciter as the field and its menu draw them: the portrait, the Arabic
+/// name over the English one, and — in the menu, for one who cannot be
+/// picked — why.
+class _ReciterEntry extends StatelessWidget {
+  const _ReciterEntry({
+    required this.reciter,
+    required this.enabled,
+    this.inField = false,
+  });
+
+  final Reciter reciter;
+  final bool enabled;
+  final bool inField;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color muted = theme.colorScheme.onSurfaceVariant;
+    // In the field, one line: the input has a single line's height, and
+    // both names still read — Arabic first, English after it, smaller.
+    if (inField) {
+      return Row(
+        children: <Widget>[
+          ReciterAvatar(reciter: reciter, diameter: 28),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                text: reciter.nameAr,
+                style: theme.textTheme.titleSmall,
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: '  ${reciter.nameEn}',
+                    style: theme.textTheme.labelSmall?.copyWith(color: muted),
+                  ),
+                ],
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
+    }
+    return Opacity(
+      opacity: enabled ? 1 : 0.55,
+      child: Padding(
+        padding: EdgeInsetsDirectional.symmetric(vertical: 6.h),
+        child: Row(
+          children: <Widget>[
+            ReciterAvatar(reciter: reciter, diameter: 40),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    reciter.nameAr,
+                    style: theme.textTheme.titleSmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    reciter.nameEn,
+                    style: theme.textTheme.labelSmall?.copyWith(color: muted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (!enabled)
+                    Text(
+                      LocaleKeys.sessionReciterLacksRange.tr(
+                        args: <String>[_reciterName(context, reciter)],
+                      ),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                      maxLines: 2,
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
