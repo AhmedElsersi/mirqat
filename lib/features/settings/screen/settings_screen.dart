@@ -12,7 +12,7 @@ import '../../../core/localization/app_localization.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
-import '../../../core/widgets/reciter_avatar.dart';
+import '../../../core/widgets/reciter_dropdown.dart';
 import '../../../core/widgets/session_controls.dart';
 import '../../../core/widgets/settings_card.dart';
 import '../../../data/models/app_settings.dart';
@@ -402,34 +402,16 @@ class _ReciterControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // No label of its own: the card it sits in is already headed «القارئ».
+    // The same field as the session sheet's, so a reciter is picked the same
+    // way everywhere (CLAUDE.md A.2 rule 2: a list of data, never of code).
     return Padding(
       padding: EdgeInsetsDirectional.only(bottom: 8.h),
-      child: RadioGroup<String>(
-        groupValue:
+      child: ReciterDropdown(
+        reciters: state.reciters,
+        currentId:
             settings.reciterId ??
             (state.reciters.isEmpty ? null : state.reciters.first.id),
-        onChanged: (String? id) {
-          if (id != null) cubit.setReciter(id);
-        },
-        child: Column(
-          children: <Widget>[
-            // A list even with one entry, so a second reciter needs no UI
-            // change (CLAUDE.md A.2 rule 2).
-            for (final Reciter reciter in state.reciters)
-              RadioListTile<String>(
-                contentPadding: EdgeInsetsDirectional.zero,
-                secondary: ReciterAvatar(reciter: reciter, diameter: 44),
-                title: Text(reciter.nameAr),
-                subtitle: Text(
-                  reciter.attribution.isEmpty
-                      ? reciter.nameEn
-                      : '${reciter.nameEn}\n'
-                            '${reciter.attribution.of(context.locale.languageCode)}',
-                ),
-                value: reciter.id,
-              ),
-          ],
-        ),
+        onChanged: (Reciter picked) => cubit.setReciter(picked.id),
       ),
     );
   }

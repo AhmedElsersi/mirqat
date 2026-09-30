@@ -55,12 +55,20 @@ void main() {
       await openSettings(tester);
 
       expect(find.byType(SettingsScreen), findsOneWidget);
-      await reveal(tester, find.byType(RadioListTile<String>));
+      await reveal(tester, find.byType(DropdownButton<String>));
 
-      // A radio list even with one entry, so a second reciter needs no UI
-      // change.
-      expect(find.byType(RadioListTile<String>), findsOneWidget);
-      expect(find.text('أحمد خليل شاهين'), findsOneWidget);
+      // The same dropdown as the session sheet's, fed from the catalogue,
+      // so a second reciter needs no UI change.
+      final Finder field = find.byType(DropdownButton<String>);
+      expect(field, findsOneWidget);
+      expect(
+        find.descendant(of: field, matching: find.text('أحمد خليل شاهين')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: field, matching: find.text('Ahmed Khalil Shaheen')),
+        findsOneWidget,
+      );
       // With the reciter's photo beside the name.
       expect(find.byType(ReciterAvatar), findsOneWidget);
     });

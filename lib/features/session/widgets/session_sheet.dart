@@ -6,7 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/extensions/duration_extensions.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
-import '../../../core/widgets/reciter_avatar.dart';
+import '../../../core/widgets/reciter_dropdown.dart';
 import '../../../core/widgets/session_controls.dart';
 import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
@@ -158,203 +158,23 @@ class _Reciters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colors = theme.colorScheme;
     final SessionCubit cubit = context.read<SessionCubit>();
     final List<Reciter> available = state.availableReciters;
     final Reciter? current = state.reciter ?? state.chosenReciter;
 
-    // One field, not a list: ten reciters as radio rows are a screen of
-    // scrolling before the settings that matter, and the next reciter added
-    // on the CDN would make it longer still. The field is drawn as the
-    // sheet's other controls are — a filled pill — and shows who is chosen,
-    // portrait and both names; the menu shows everyone the same way, ticks
-    // the one chosen, and says why one cannot be picked.
     return SetupSection(
       label: LocaleKeys.settingsReciter.tr(),
-      // A plain dropdown button in the pill, not a form field: the form
-      // field's decorator sizes itself from one line of text whatever is in
-      // it, and two names beside a round portrait need their own height.
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 8.w, 8.h),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              // Keyed by the choice, so a reciter picked elsewhere — the
-              // settings default, a session that switched — is what the
-              // field shows.
-              key: ValueKey<String?>(current?.id),
-              value: current?.id,
-              isExpanded: true,
-              // Entries size to their lines: two, a third for an attribution
-              // or for the reason a reciter cannot be picked.
-              itemHeight: null,
-              icon: Icon(Icons.expand_more_rounded, color: colors.primary),
-              dropdownColor: colors.surface,
-              borderRadius: BorderRadius.circular(16.r),
-              elevation: 3,
-              menuMaxHeight: 0.6.sh,
-              items: <DropdownMenuItem<String>>[
-                for (final Reciter reciter in state.reciters)
-                  DropdownMenuItem<String>(
-                    value: reciter.id,
-                    // A reciter who has not recorded the whole range cannot
-                    // be picked for it; they stay listed so it is clear why.
-                    enabled: available.contains(reciter),
-                    child: _ReciterEntry(
-                      reciter: reciter,
-                      enabled: available.contains(reciter),
-                      chosen: reciter.id == current?.id,
-                    ),
-                  ),
-              ],
-              // What the closed field shows: the chosen one, without the
-              // tick or the reason line, which belong to the menu.
-              selectedItemBuilder: (BuildContext context) => <Widget>[
-                for (final Reciter reciter in state.reciters)
-                  _ReciterEntry(reciter: reciter, enabled: true, inField: true),
-              ],
-              onChanged: (String? id) {
-                final Reciter? picked = state.reciters
-                    .where((Reciter r) => r.id == id)
-                    .firstOrNull;
-                if (picked != null) cubit.setReciter(picked);
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A reciter as the field and its menu draw them: the portrait in a thin
-/// gold ring, the Arabic name over the English one, and — in the menu — the
-/// attribution, a tick on the one chosen, and for one who cannot be picked,
-/// why.
-class _ReciterEntry extends StatelessWidget {
-  const _ReciterEntry({
-    required this.reciter,
-    required this.enabled,
-    this.chosen = false,
-    this.inField = false,
-  });
-
-  final Reciter reciter;
-  final bool enabled;
-  final bool chosen;
-  final bool inField;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme colors = theme.colorScheme;
-    final Color muted = colors.onSurfaceVariant;
-    final Widget portrait = _Portrait(
-      reciter: reciter,
-      diameter: 40,
-      ringed: chosen || inField,
-    );
-
-    // In the field: the portrait, and the Arabic name over the English
-    // one, as the menu writes them.
-    if (inField) {
-      return Row(
-        children: <Widget>[
-          portrait,
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  reciter.nameAr,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colors.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  reciter.nameEn,
-                  style: theme.textTheme.labelMedium?.copyWith(color: muted),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-
-    final String attribution = reciter.attribution.of(
-      context.locale.languageCode,
-    );
-    return Opacity(
-      opacity: enabled ? 1 : 0.5,
-      child: Padding(
-        padding: EdgeInsetsDirectional.symmetric(vertical: 8.h),
-        child: Row(
-          children: <Widget>[
-            portrait,
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    reciter.nameAr,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: chosen ? colors.primary : colors.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    reciter.nameEn,
-                    style: theme.textTheme.labelMedium?.copyWith(color: muted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (enabled && attribution.isNotEmpty)
-                    Text(
-                      attribution,
-                      style: theme.textTheme.labelSmall?.copyWith(color: muted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  if (!enabled)
-                    Text(
-                      LocaleKeys.sessionReciterLacksRange.tr(
-                        args: <String>[_reciterName(context, reciter)],
-                      ),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colors.error,
-                      ),
-                      maxLines: 2,
-                    ),
-                ],
+      child: ReciterDropdown(
+        reciters: state.reciters,
+        currentId: current?.id,
+        // A reciter who has not recorded the whole range cannot be picked
+        // for it; they stay listed so it is clear why.
+        unavailable: (Reciter r) => available.contains(r)
+            ? null
+            : LocaleKeys.sessionReciterLacksRange.tr(
+                args: <String>[_reciterName(context, r)],
               ),
-            ),
-            if (chosen) ...<Widget>[
-              SizedBox(width: 8.w),
-              Icon(
-                Icons.check_circle_rounded,
-                color: colors.primary,
-                size: 22.r,
-              ),
-            ],
-          ],
-        ),
+        onChanged: (Reciter picked) => cubit.setReciter(picked),
       ),
     );
   }
@@ -713,34 +533,4 @@ class PendingChangeActions extends StatelessWidget {
       ),
     ],
   );
-}
-
-/// The portrait in a thin ring: gold for the reciter chosen, the outline
-/// tone for the rest.
-class _Portrait extends StatelessWidget {
-  const _Portrait({
-    required this.reciter,
-    required this.diameter,
-    required this.ringed,
-  });
-
-  final Reciter reciter;
-  final double diameter;
-  final bool ringed;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.all(2.r),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: ringed ? colors.secondary : colors.outline,
-          width: 1.5,
-        ),
-      ),
-      child: ReciterAvatar(reciter: reciter, diameter: diameter),
-    );
-  }
 }
