@@ -463,7 +463,7 @@ class _SurahHeader extends StatelessWidget {
 
 /// The reading mark's ribbon: a tall band of the bookmark's gold hung down
 /// the page's opening edge with a notched foot, the way a ribbon marks a
-/// printed mushaf. Translucent, so the letters under it stay legible, and
+/// printed mushaf. A light wash, so the letters under it stay legible, and
 /// deaf to touch, so a press on the page beneath still opens its ayah.
 class ReadingRibbon extends StatelessWidget {
   const ReadingRibbon({required this.width, required this.height, super.key});
@@ -477,20 +477,18 @@ class ReadingRibbon extends StatelessWidget {
     return IgnorePointer(
       child: CustomPaint(
         size: Size(width, height),
-        painter: _RibbonPainter(
-          fill: colors.secondary.withValues(alpha: 0.42),
-          edge: colors.primary.withValues(alpha: 0.55),
-        ),
+        painter: _RibbonPainter(fill: colors.secondary.withValues(alpha: 0.25)),
       ),
     );
   }
 }
 
+/// A wash of colour and nothing more: no edge, so the ribbon reads as a
+/// tint on the page rather than a thing laid on it.
 class _RibbonPainter extends CustomPainter {
-  const _RibbonPainter({required this.fill, required this.edge});
+  const _RibbonPainter({required this.fill});
 
   final Color fill;
-  final Color edge;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -503,16 +501,8 @@ class _RibbonPainter extends CustomPainter {
       ..lineTo(0, size.height)
       ..close();
     canvas.drawPath(ribbon, Paint()..color = fill);
-    canvas.drawPath(
-      ribbon,
-      Paint()
-        ..color = edge
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2,
-    );
   }
 
   @override
-  bool shouldRepaint(_RibbonPainter old) =>
-      old.fill != fill || old.edge != edge;
+  bool shouldRepaint(_RibbonPainter old) => old.fill != fill;
 }
