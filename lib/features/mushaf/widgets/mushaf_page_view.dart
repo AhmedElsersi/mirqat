@@ -205,7 +205,7 @@ class _MushafPageViewState extends State<MushafPageView> {
                           start: fontSize * 0.35,
                           child: ReadingRibbon(
                             width: fontSize * 1.7,
-                            height: pitch * slots * 0.3,
+                            height: pitch * slots * 0.18,
                           ),
                         ),
                       ],
