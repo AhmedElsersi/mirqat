@@ -35,12 +35,15 @@ void main() {
       );
 
   group('the reading mark', () {
-    testWidgets('is offered on the home page beside "continue reading", and '
-        'goes when it is cleared', (WidgetTester tester) async {
+    testWidgets('is where "continue reading" goes while it is set, and the '
+        'remembered page again when it is cleared', (
+      WidgetTester tester,
+    ) async {
       await remember(tester, 2);
       await harness.pumpApp(tester);
       expect(find.text(LocaleKeys.homeContinueReading.tr()), findsOneWidget);
-      expect(find.text(LocaleKeys.homeReadingMark.tr()), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_added), findsNothing);
 
       final SettingsCubit settings = BlocProvider.of<SettingsCubit>(
         tester.element(find.byType(SurahListScreen)),
@@ -56,13 +59,18 @@ void main() {
         ),
       );
       await AppHarness.settle(tester);
-      expect(find.text(LocaleKeys.homeReadingMark.tr()), findsOneWidget);
+      // Still one card, now the mark's: the icon says so, and the place
+      // is the marked ayah rather than the remembered page.
       expect(find.text(LocaleKeys.homeContinueReading.tr()), findsOneWidget);
       expect(find.byIcon(Icons.bookmark_added), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark), findsNothing);
+      expect(find.textContaining('٣'), findsWidgets);
 
       await tester.runAsync(settings.clearReadingMark);
       await AppHarness.settle(tester);
-      expect(find.text(LocaleKeys.homeReadingMark.tr()), findsNothing);
+      expect(find.text(LocaleKeys.homeContinueReading.tr()), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_added), findsNothing);
+      expect(find.byIcon(Icons.bookmark), findsOneWidget);
     });
   });
 

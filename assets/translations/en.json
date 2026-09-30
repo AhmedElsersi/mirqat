@@ -172,8 +172,7 @@
     "page": "Page {}",
     "continue_reading": "Continue reading",
     "place": "Surah {} · Ayah {} · Page {}",
-    "history": "Reading history",
-    "reading_mark": "Your reading mark"
+    "history": "Reading history"
   },
   "history": {
     "title": "Reading history",

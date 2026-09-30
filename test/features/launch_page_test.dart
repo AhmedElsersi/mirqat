@@ -15,6 +15,7 @@ ReadingPosition at(int page) => ReadingPosition(
 /// its first database read, and leaves the connection stuck for every test
 /// after it. The launch itself is checked on a device.
 void main() {
+  _lastPlaceRule();
   test('the mushaf view opens straight onto the last page read', () {
     expect(launchPage(mode: HomeViewMode.mushaf, last: at(77)), 77);
   });
@@ -43,5 +44,21 @@ void main() {
     for (final HomeViewMode mode in HomeViewMode.values) {
       expect(() => launchPage(mode: mode, last: at(3)), returnsNormally);
     }
+  });
+}
+
+void _lastPlaceRule() {
+  group('lastPlace', () {
+    test('is the mark the reader set, when there is one', () {
+      expect(lastPlace(mark: at(3), history: at(77)), at(3));
+    });
+
+    test('is the remembered page without a mark', () {
+      expect(lastPlace(mark: null, history: at(77)), at(77));
+    });
+
+    test('is nothing on a fresh install', () {
+      expect(lastPlace(mark: null, history: null), isNull);
+    });
   });
 }

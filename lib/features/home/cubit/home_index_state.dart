@@ -68,3 +68,15 @@ class HomeIndexState extends Equatable {
 /// checkable without starting a mushaf to check it.
 int? launchPage({required HomeViewMode mode, required ReadingPosition? last}) =>
     mode == HomeViewMode.mushaf ? (last?.page ?? 1) : null;
+
+/// Where the reader left off — one place, whichever way it was set.
+///
+/// A mark the reader set by hand says where they stopped, and it wins over
+/// what the app kept by itself. Without one, it is the first ayah of the
+/// last page read, which the mushaf records as it is turned. A function of
+/// its own for the same reason [launchPage] is: it is the rule, checkable
+/// without a screen.
+ReadingPosition? lastPlace({
+  required ReadingPosition? mark,
+  required ReadingPosition? history,
+}) => mark ?? history;

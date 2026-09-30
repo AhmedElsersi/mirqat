@@ -103,14 +103,32 @@ class _SurahListViewState extends State<_SurahListView> {
   /// In mushaf mode the app opens on the last page read, with this screen
   /// underneath it as the index — so "back" from the mushaf lands here, and
   /// there is always a way to another surah, the history and the settings.
-  void _decideLaunch(HomeViewMode mode, HomeIndexState index) {
-    if (_launchDecided || !index.loaded) return;
+  void _decideLaunch(HomeViewMode mode, PlaceItem? last, bool loaded) {
+    if (_launchDecided || !loaded) return;
     _launchDecided = true;
-    final int? page = launchPage(mode: mode, last: index.last?.position);
+    final int? page = launchPage(mode: mode, last: last?.position);
     if (page == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _openMushaf(context, page: page);
     });
+  }
+
+  /// Where the reader left off — the mark they set, or the page the app
+  /// kept — with the surah's names looked up. Null before anything is read.
+  PlaceItem? _lastPlace(
+    BuildContext context,
+    SettingsState settings,
+    HomeIndexState index,
+  ) {
+    final ReadingPosition? position = lastPlace(
+      mark: settings.settings.readingMark,
+      history: index.last?.position,
+    );
+    if (position == null) return null;
+    final Surah? surah = context.read<HomeIndexCubit>().surahOf(
+      position.surahNumber,
+    );
+    return surah == null ? null : PlaceItem(position: position, surah: surah);
   }
 
   @override
@@ -118,7 +136,8 @@ class _SurahListViewState extends State<_SurahListView> {
     final SettingsState settings = context.watch<SettingsCubit>().state;
     final HomeViewMode viewMode = settings.settings.homeViewMode;
     final HomeIndexState index = context.watch<HomeIndexCubit>().state;
-    if (settings.status.isReady) _decideLaunch(viewMode, index);
+    final PlaceItem? last = _lastPlace(context, settings, index);
+    if (settings.status.isReady) _decideLaunch(viewMode, last, index.loaded);
     _checkForUpdate(settings);
 
     // The mushaf has no list shape of its own; its index is the plain list.
@@ -156,25 +175,17 @@ class _SurahListViewState extends State<_SurahListView> {
         body: DesktopWidth(
           child: Column(
             children: <Widget>[
-              if (index.last case final PlaceItem last)
+              if (last != null)
                 _ContinueCard(
                   place: last,
                   label: LocaleKeys.homeContinueReading.tr(),
-                  icon: Icons.bookmark,
+                  // The icon says which it is: a mark the reader set, or
+                  // the page the app remembered.
+                  icon: settings.settings.readingMark == null
+                      ? Icons.bookmark
+                      : Icons.bookmark_added,
                   onTap: () => _openMushaf(context, page: last.position.page),
                 ),
-              // The mark the reader set by hand, apart from the history the
-              // app keeps by itself: "continue" is where they were, this is
-              // where they said they stopped.
-              if (settings.settings.readingMark case final ReadingPosition mark)
-                if (context.read<HomeIndexCubit>().surahOf(mark.surahNumber)
-                    case final Surah surah)
-                  _ContinueCard(
-                    place: PlaceItem(position: mark, surah: surah),
-                    label: LocaleKeys.homeReadingMark.tr(),
-                    icon: Icons.bookmark_added,
-                    onTap: () => _openMushaf(context, page: mark.page),
-                  ),
               Expanded(
                 child: TabBarView(
                   children: <Widget>[

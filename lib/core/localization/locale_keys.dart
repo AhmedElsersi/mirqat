@@ -75,7 +75,6 @@ class LocaleKeys {
   static const String homeJuzStarts = 'home.juz_starts';
   static const String homePage = 'home.page';
   static const String homePlace = 'home.place';
-  static const String homeReadingMark = 'home.reading_mark';
   static const String homeTabAjzaa = 'home.tab_ajzaa';
   static const String homeTabSurahs = 'home.tab_surahs';
 
