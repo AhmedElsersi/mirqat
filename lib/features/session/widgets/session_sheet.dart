@@ -172,62 +172,61 @@ class _Reciters extends StatelessWidget {
     // the one chosen, and says why one cannot be picked.
     return SetupSection(
       label: LocaleKeys.settingsReciter.tr(),
-      child: DropdownButtonFormField<String>(
-        // Keyed by the choice, so a reciter picked elsewhere — the settings
-        // default, a session that switched — is what the field shows.
-        key: ValueKey<String?>(current?.id),
-        initialValue: current?.id,
-        isExpanded: true,
-        // Entries size to their lines: two, a third for an attribution or
-        // for the reason a reciter cannot be picked.
-        itemHeight: null,
-        icon: Icon(Icons.expand_more_rounded, color: colors.primary),
-        dropdownColor: colors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        elevation: 3,
-        menuMaxHeight: 0.6.sh,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: colors.surfaceContainerHighest,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: BorderSide(color: colors.primary, width: 1.5),
-          ),
-          contentPadding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 8.w, 8.h),
+      // A plain dropdown button in the pill, not a form field: the form
+      // field's decorator sizes itself from one line of text whatever is in
+      // it, and two names beside a round portrait need their own height.
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12.r),
         ),
-        items: <DropdownMenuItem<String>>[
-          for (final Reciter reciter in state.reciters)
-            DropdownMenuItem<String>(
-              value: reciter.id,
-              // A reciter who has not recorded the whole range cannot be
-              // picked for it; they stay listed so it is clear why.
-              enabled: available.contains(reciter),
-              child: _ReciterEntry(
-                reciter: reciter,
-                enabled: available.contains(reciter),
-                chosen: reciter.id == current?.id,
-              ),
+        child: Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 8.w, 8.h),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              // Keyed by the choice, so a reciter picked elsewhere — the
+              // settings default, a session that switched — is what the
+              // field shows.
+              key: ValueKey<String?>(current?.id),
+              value: current?.id,
+              isExpanded: true,
+              // Entries size to their lines: two, a third for an attribution
+              // or for the reason a reciter cannot be picked.
+              itemHeight: null,
+              icon: Icon(Icons.expand_more_rounded, color: colors.primary),
+              dropdownColor: colors.surface,
+              borderRadius: BorderRadius.circular(16.r),
+              elevation: 3,
+              menuMaxHeight: 0.6.sh,
+              items: <DropdownMenuItem<String>>[
+                for (final Reciter reciter in state.reciters)
+                  DropdownMenuItem<String>(
+                    value: reciter.id,
+                    // A reciter who has not recorded the whole range cannot
+                    // be picked for it; they stay listed so it is clear why.
+                    enabled: available.contains(reciter),
+                    child: _ReciterEntry(
+                      reciter: reciter,
+                      enabled: available.contains(reciter),
+                      chosen: reciter.id == current?.id,
+                    ),
+                  ),
+              ],
+              // What the closed field shows: the chosen one, without the
+              // tick or the reason line, which belong to the menu.
+              selectedItemBuilder: (BuildContext context) => <Widget>[
+                for (final Reciter reciter in state.reciters)
+                  _ReciterEntry(reciter: reciter, enabled: true, inField: true),
+              ],
+              onChanged: (String? id) {
+                final Reciter? picked = state.reciters
+                    .where((Reciter r) => r.id == id)
+                    .firstOrNull;
+                if (picked != null) cubit.setReciter(picked);
+              },
             ),
-        ],
-        // What the closed field shows: the chosen one on a line.
-        selectedItemBuilder: (BuildContext context) => <Widget>[
-          for (final Reciter reciter in state.reciters)
-            _ReciterEntry(reciter: reciter, enabled: true, inField: true),
-        ],
-        onChanged: (String? id) {
-          final Reciter? picked = state.reciters
-              .where((Reciter r) => r.id == id)
-              .firstOrNull;
-          if (picked != null) cubit.setReciter(picked);
-        },
+          ),
+        ),
       ),
     );
   }
@@ -255,42 +254,40 @@ class _ReciterEntry extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final ColorScheme colors = theme.colorScheme;
     final Color muted = colors.onSurfaceVariant;
-    final Widget portrait = Container(
-      padding: EdgeInsets.all(2.r),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: chosen || inField ? colors.secondary : colors.outline,
-          width: 1.5,
-        ),
-      ),
-      child: ReciterAvatar(reciter: reciter, diameter: inField ? 28 : 40),
+    final Widget portrait = _Portrait(
+      reciter: reciter,
+      diameter: 40,
+      ringed: chosen || inField,
     );
 
-    // In the field, one line: the input has a single line's height, and
-    // both names still read — Arabic first, English after it, smaller.
+    // In the field: the portrait, and the Arabic name over the English
+    // one, as the menu writes them.
     if (inField) {
       return Row(
         children: <Widget>[
           portrait,
-          SizedBox(width: 10.w),
+          SizedBox(width: 12.w),
           Expanded(
-            child: Text.rich(
-              TextSpan(
-                text: reciter.nameAr,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: colors.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
-                children: <InlineSpan>[
-                  TextSpan(
-                    text: '   ${reciter.nameEn}',
-                    style: theme.textTheme.labelMedium?.copyWith(color: muted),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  reciter.nameAr,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colors.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  reciter.nameEn,
+                  style: theme.textTheme.labelMedium?.copyWith(color: muted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
         ],
@@ -716,4 +713,34 @@ class PendingChangeActions extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// The portrait in a thin ring: gold for the reciter chosen, the outline
+/// tone for the rest.
+class _Portrait extends StatelessWidget {
+  const _Portrait({
+    required this.reciter,
+    required this.diameter,
+    required this.ringed,
+  });
+
+  final Reciter reciter;
+  final double diameter;
+  final bool ringed;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.all(2.r),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: ringed ? colors.secondary : colors.outline,
+          width: 1.5,
+        ),
+      ),
+      child: ReciterAvatar(reciter: reciter, diameter: diameter),
+    );
+  }
 }

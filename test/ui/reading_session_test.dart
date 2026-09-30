@@ -154,21 +154,15 @@ void main() {
       await openFatiha(tester);
       await AppHarness.openSessionSheet(tester);
 
-      final Finder field = find.byType(DropdownButtonFormField<String>);
+      final Finder field = find.byType(DropdownButton<String>);
       expect(field, findsOneWidget);
-      // The field writes both names on one line.
+      // The field writes the Arabic name over the English one.
       expect(
-        find.descendant(
-          of: field,
-          matching: find.textContaining('أحمد خليل شاهين'),
-        ),
+        find.descendant(of: field, matching: find.text('أحمد خليل شاهين')),
         findsOneWidget,
       );
       expect(
-        find.descendant(
-          of: field,
-          matching: find.textContaining('Ahmed Khalil Shaheen'),
-        ),
+        find.descendant(of: field, matching: find.text('Ahmed Khalil Shaheen')),
         findsOneWidget,
       );
       expect(
@@ -180,12 +174,12 @@ void main() {
 
       await tester.tap(field);
       await AppHarness.frames(tester, 400);
-      // The menu draws the entry on two lines, with both names.
-      expect(find.text('Ahmed Khalil Shaheen'), findsOneWidget);
-      expect(find.text('أحمد خليل شاهين'), findsOneWidget);
-      await tester.tap(find.text('أحمد خليل شاهين'));
+      // The menu draws the entry the same way: both names, once more.
+      expect(find.text('Ahmed Khalil Shaheen'), findsNWidgets(2));
+      expect(find.text('أحمد خليل شاهين'), findsNWidgets(2));
+      await tester.tap(find.text('أحمد خليل شاهين').last);
       await AppHarness.frames(tester, 400);
-      expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+      expect(find.byType(DropdownButton<String>), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
