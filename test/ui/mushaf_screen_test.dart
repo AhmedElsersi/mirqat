@@ -350,6 +350,9 @@ void main() {
       );
       await frames(tester);
 
+      // The page hangs the ribbon, so the mark is seen before it is read.
+      expect(find.byIcon(Icons.bookmark), findsWidgets);
+
       // Every word of ayah 1 wears the mark's tint — and only ayah 1.
       final List<AyahText> words = renderedWords(tester, 1);
       final Iterable<AyahText> marked = words.where(
@@ -370,6 +373,7 @@ void main() {
         renderedWords(tester, 1).any((AyahText w) => w.tint == WordTint.marked),
         isFalse,
       );
+      expect(find.byIcon(Icons.bookmark), findsNothing);
     });
 
     testWidgets('a tap shows the reading bar, a second tap puts it away, and '

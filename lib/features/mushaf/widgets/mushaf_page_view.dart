@@ -160,6 +160,7 @@ class _MushafPageViewState extends State<MushafPageView> {
 
           final Widget page = IslamicFrame(
             labels: labels,
+            bookmark: _holdsMark,
             child: SizedBox(
               width: width,
               height: pitch * slots,
@@ -298,6 +299,22 @@ class _MushafPageViewState extends State<MushafPageView> {
           ),
         ),
   ];
+
+  /// Whether the reader's mark is on this page: a word of the marked ayah
+  /// is printed here.
+  bool get _holdsMark {
+    final AyahRef? mark = widget.marked;
+    if (mark == null) return false;
+    for (final PageLine line in widget.page.lines) {
+      final List<Word> words = switch (line) {
+        AyahLine(:final List<Word> words) => words,
+        BasmalaLine(:final List<Word> words) => words,
+        SurahHeaderLine() => const <Word>[],
+      };
+      if (words.any(mark.contains)) return true;
+    }
+    return false;
+  }
 
   WordTint _tintFor(Word w) {
     if (widget.isHeldBack?.call(w) ?? false) return WordTint.none;

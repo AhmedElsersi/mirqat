@@ -16,9 +16,21 @@ import '../theme/app_colors.dart';
 /// It only ever surrounds Quranic text and never overlaps it
 /// (A.2 rule 7): the child is laid out strictly inside the inner rule.
 class IslamicFrame extends StatelessWidget {
-  const IslamicFrame({required this.child, this.band, this.labels, super.key});
+  const IslamicFrame({
+    required this.child,
+    this.band,
+    this.labels,
+    this.bookmark = false,
+    super.key,
+  });
 
   final Widget child;
+
+  /// Whether to hang a ribbon from the top of the frame — the mark of the
+  /// page the reader stopped on, seen at a glance the way a ribbon in a
+  /// printed mushaf is. It hangs on the band, at the page's opening edge,
+  /// and never over a word (CLAUDE.md A.2 rule 7).
+  final bool bookmark;
 
   /// Width of the ornamented band at the sides. Defaults to a fraction of the
   /// frame's own width, held between 18 and 30 logical pixels: wide enough for
@@ -75,6 +87,16 @@ class IslamicFrame extends StatelessWidget {
               child: child,
             ),
           ),
+          // The ribbon hangs down the side band from under the top band,
+          // where the hizb plaque leaves room — the mushaf's right-hand
+          // edge, which is where a page opens.
+          if (bookmark)
+            Positioned(
+              top: cross * 0.55,
+              right: 0,
+              width: b,
+              child: _Ribbon(size: b * 1.15),
+            ),
           // The labels sit on the band and nowhere else: never over the page,
           // and so never over a word of it (CLAUDE.md A.2 rule 7).
           if (labelled) ...<Widget>[
@@ -189,6 +211,27 @@ class _Plaque extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The bookmark ribbon: the gold of the plaques, edged in the forest green
+/// so it stands off the lattice.
+class _Ribbon extends StatelessWidget {
+  const _Ribbon({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Center(
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Icon(Icons.bookmark, size: size * 1.2, color: AppColors.forest),
+          Icon(Icons.bookmark, size: size, color: AppColors.gold),
+        ],
+      ),
+    ),
+  );
 }
 
 class _FramePainter extends CustomPainter {
