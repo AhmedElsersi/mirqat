@@ -350,8 +350,15 @@ void main() {
       );
       await frames(tester);
 
-      // The page hangs the ribbon, so the mark is seen before it is read.
-      expect(find.byIcon(Icons.bookmark), findsWidgets);
+      // The page hangs the ribbon, so the mark is seen before it is read —
+      // unless the reader has turned it off.
+      expect(find.byType(ReadingRibbon), findsOneWidget);
+      await tester.runAsync(() => settings.setShowReadingRibbon(false));
+      await frames(tester);
+      expect(find.byType(ReadingRibbon), findsNothing);
+      await tester.runAsync(() => settings.setShowReadingRibbon(true));
+      await frames(tester);
+      expect(find.byType(ReadingRibbon), findsOneWidget);
 
       // Every word of ayah 1 wears the mark's tint — and only ayah 1.
       final List<AyahText> words = renderedWords(tester, 1);
@@ -373,7 +380,7 @@ void main() {
         renderedWords(tester, 1).any((AyahText w) => w.tint == WordTint.marked),
         isFalse,
       );
-      expect(find.byIcon(Icons.bookmark), findsNothing);
+      expect(find.byType(ReadingRibbon), findsNothing);
     });
 
     testWidgets('a tap shows the reading bar, a second tap puts it away, and '

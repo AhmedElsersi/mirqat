@@ -28,6 +28,7 @@ class MushafPageView extends StatefulWidget {
     required this.linesPerFullPage,
     required this.highlighted,
     this.marked,
+    this.ribbon = true,
     required this.selected,
     required this.onWordLongPress,
     this.onTap,
@@ -43,6 +44,9 @@ class MushafPageView extends StatefulWidget {
 
   /// The ayah the reader marked as where they stopped, if it is on this page.
   final AyahRef? marked;
+
+  /// Whether the page that holds [marked] hangs a ribbon down its edge.
+  final bool ribbon;
   final AyahRef? selected;
 
   /// A long press on a word, which is how an ayah is chosen. Not a tap: a
@@ -158,28 +162,54 @@ class _MushafPageViewState extends State<MushafPageView> {
           final int slots = math.max(widget.linesPerFullPage, lines.length);
           final double pitch = math.max(room / slots, fontSize * _lineHeight);
 
+          final Widget text = Column(
+            // A page with a neighbour's lines left out starts at the top,
+            // like the opening of a chapter. A page that is simply short
+            // stays centred, as the mushaf prints it.
+            mainAxisAlignment: widget.page.partial
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.center,
+            children: <Widget>[
+              for (final PageLine line in lines)
+                SizedBox(
+                  height: pitch,
+                  width: width,
+                  child: _line(context, line, fontSize),
+                ),
+            ],
+          );
+          // The breath of bare page between the band and the first letter:
+          // the ribbon hangs from there, as though tucked under the band.
+          final double breath =
+              insets.top -
+              IslamicFrame.crossBandFor(
+                IslamicFrame.bandFor(box.maxWidth),
+                labelled: true,
+              );
           final Widget page = IslamicFrame(
             labels: labels,
-            bookmark: _holdsMark,
             child: SizedBox(
               width: width,
               height: pitch * slots,
-              child: Column(
-                // A page with a neighbour's lines left out starts at the top,
-                // like the opening of a chapter. A page that is simply short
-                // stays centred, as the mushaf prints it.
-                mainAxisAlignment: widget.page.partial
-                    ? MainAxisAlignment.start
-                    : MainAxisAlignment.center,
-                children: <Widget>[
-                  for (final PageLine line in lines)
-                    SizedBox(
-                      height: pitch,
-                      width: width,
-                      child: _line(context, line, fontSize),
+              child: !(widget.ribbon && _holdsMark)
+                  ? text
+                  : Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        text,
+                        PositionedDirectional(
+                          top: -breath,
+                          // A mushaf opens from the right whatever the
+                          // interface language: the ribbon hangs at the
+                          // page's opening edge.
+                          start: fontSize * 0.35,
+                          child: ReadingRibbon(
+                            width: fontSize * 1.7,
+                            height: pitch * slots * 0.3,
+                          ),
+                        ),
+                      ],
                     ),
-                ],
-              ),
             ),
           );
 
@@ -429,4 +459,60 @@ class _SurahHeader extends StatelessWidget {
           SurahCartouche(name: name, height: box.maxHeight),
     ),
   );
+}
+
+/// The reading mark's ribbon: a tall band of the bookmark's gold hung down
+/// the page's opening edge with a notched foot, the way a ribbon marks a
+/// printed mushaf. Translucent, so the letters under it stay legible, and
+/// deaf to touch, so a press on the page beneath still opens its ayah.
+class ReadingRibbon extends StatelessWidget {
+  const ReadingRibbon({required this.width, required this.height, super.key});
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return IgnorePointer(
+      child: CustomPaint(
+        size: Size(width, height),
+        painter: _RibbonPainter(
+          fill: colors.secondary.withValues(alpha: 0.42),
+          edge: colors.primary.withValues(alpha: 0.55),
+        ),
+      ),
+    );
+  }
+}
+
+class _RibbonPainter extends CustomPainter {
+  const _RibbonPainter({required this.fill, required this.edge});
+
+  final Color fill;
+  final Color edge;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double notch = size.width * 0.45;
+    final Path ribbon = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(size.width / 2, size.height - notch)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(ribbon, Paint()..color = fill);
+    canvas.drawPath(
+      ribbon,
+      Paint()
+        ..color = edge
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RibbonPainter old) =>
+      old.fill != fill || old.edge != edge;
 }

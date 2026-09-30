@@ -105,7 +105,9 @@
     "card_about": "About",
     "session_page_hint": "The values every new session starts from. What you change during a session stays with that session.",
     "version": "Version {} ({})",
-    "arabic_font_size_hint": "At the default size (24) the page is as it is printed, line for line. Larger, the page's lines are re-filled at the bigger size and the page scrolls; the words, their order and their page do not change."
+    "arabic_font_size_hint": "At the default size (24) the page is as it is printed, line for line. Larger, the page's lines are re-filled at the bigger size and the page scrolls; the words, their order and their page do not change.",
+    "reading_ribbon": "Bookmark ribbon",
+    "reading_ribbon_hint": "A translucent ribbon hung on the page you stopped at"
   },
   "duration": {
     "minutes": "{} min",

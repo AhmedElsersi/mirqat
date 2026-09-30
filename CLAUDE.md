@@ -437,8 +437,8 @@ the screens they describe.
 **The settings are one map with several writers** — the settings screen, a session saving
 its values as defaults, the update prompt noting when it last spoke, the reader marking
 where they stopped (the *reading mark*: one ayah, set from the ayah's own menu, tinted on
-the page in the bookmark's colour, with a ribbon hung on the frame of its page, on the band and
-never over a word. On the home page it *is* "continue reading" while it is
+the page in the bookmark's colour, and a tall translucent ribbon hung down the opening edge of
+its page — the one thing drawn over the page, by the reader's leave: a setting hides it. On the home page it *is* "continue reading" while it is
 set — `lastPlace`: the mark wins over the history the app keeps by itself, and without one
 the card is the first ayah of the last page read, as before). `SettingsRepository`
 broadcasts every save and `SettingsCubit` takes it up, and a writer that is not the

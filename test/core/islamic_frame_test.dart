@@ -42,41 +42,6 @@ void main() {
       expect(child.bottom, lessThan(frame.bottom - band));
     });
 
-    testWidgets('a bookmark ribbon hangs on the band, never over the page', (
-      WidgetTester tester,
-    ) async {
-      const Key inside = Key('inside');
-      await pump(
-        tester,
-        const SizedBox(
-          width: 360,
-          height: 640,
-          child: IslamicFrame(
-            bookmark: true,
-            child: SizedBox.expand(key: inside),
-          ),
-        ),
-      );
-      final Rect child = tester.getRect(find.byKey(inside));
-      final Iterable<Rect> ribbon = tester
-          .widgetList(find.byIcon(Icons.bookmark))
-          .map((Widget w) => tester.getRect(find.byWidget(w)));
-      expect(ribbon, isNotEmpty);
-      for (final Rect r in ribbon) {
-        expect(r.overlaps(child), isFalse);
-      }
-
-      await pump(
-        tester,
-        const SizedBox(
-          width: 360,
-          height: 640,
-          child: IslamicFrame(child: SizedBox.expand(key: inside)),
-        ),
-      );
-      expect(find.byIcon(Icons.bookmark), findsNothing);
-    });
-
     test('the band has presence, and still leaves the page to the text', () {
       // Wide enough for the woven lattice and its guard stripes to read; the
       // owner asked for that after seeing a band half this width. It grows

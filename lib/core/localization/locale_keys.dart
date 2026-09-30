@@ -47,7 +47,8 @@ class LocaleKeys {
   static const String downloadsInstalling = 'downloads.installing';
   static const String downloadsOnDevice = 'downloads.on_device';
   static const String downloadsQueued = 'downloads.queued';
-  static const String downloadsRedownloadReciter = 'downloads.redownload_reciter';
+  static const String downloadsRedownloadReciter =
+      'downloads.redownload_reciter';
   static const String downloadsRetryFailed = 'downloads.retry_failed';
   static const String downloadsSavedEmpty = 'downloads.saved_empty';
   static const String downloadsSavedTitle = 'downloads.saved_title';
@@ -170,56 +171,76 @@ class LocaleKeys {
   static const String sessionSurah = 'session.surah';
   static const String sessionUsePageRange = 'session.use_page_range';
 
-  static const String sessionSetupBetweenRepeatPause = 'session_setup.between_repeat_pause';
-  static const String sessionSetupBetweenStepsPause = 'session_setup.between_steps_pause';
-  static const String sessionSetupConnectContinuous = 'session_setup.connect_continuous';
-  static const String sessionSetupConnectContinuousHint = 'session_setup.connect_continuous_hint';
-  static const String sessionSetupConnectCumulative = 'session_setup.connect_cumulative';
-  static const String sessionSetupConnectCumulativeHint = 'session_setup.connect_cumulative_hint';
+  static const String sessionSetupBetweenRepeatPause =
+      'session_setup.between_repeat_pause';
+  static const String sessionSetupBetweenStepsPause =
+      'session_setup.between_steps_pause';
+  static const String sessionSetupConnectContinuous =
+      'session_setup.connect_continuous';
+  static const String sessionSetupConnectContinuousHint =
+      'session_setup.connect_continuous_hint';
+  static const String sessionSetupConnectCumulative =
+      'session_setup.connect_cumulative';
+  static const String sessionSetupConnectCumulativeHint =
+      'session_setup.connect_cumulative_hint';
   static const String sessionSetupConnectMode = 'session_setup.connect_mode';
   static const String sessionSetupConnectNone = 'session_setup.connect_none';
-  static const String sessionSetupConnectNoneHint = 'session_setup.connect_none_hint';
-  static const String sessionSetupFinalFullPass = 'session_setup.final_full_pass';
+  static const String sessionSetupConnectNoneHint =
+      'session_setup.connect_none_hint';
+  static const String sessionSetupFinalFullPass =
+      'session_setup.final_full_pass';
   static const String sessionSetupFrom = 'session_setup.from';
-  static const String sessionSetupIntraBlockPause = 'session_setup.intra_block_pause';
+  static const String sessionSetupIntraBlockPause =
+      'session_setup.intra_block_pause';
   static const String sessionSetupMilliseconds = 'session_setup.milliseconds';
-  static const String sessionSetupPlayIstiadhah = 'session_setup.play_istiadhah';
-  static const String sessionSetupPlaybackSpeed = 'session_setup.playback_speed';
+  static const String sessionSetupPlayIstiadhah =
+      'session_setup.play_istiadhah';
+  static const String sessionSetupPlaybackSpeed =
+      'session_setup.playback_speed';
   static const String sessionSetupRange = 'session_setup.range';
   static const String sessionSetupRepeatCount = 'session_setup.repeat_count';
   static const String sessionSetupSummary = 'session_setup.summary';
   static const String sessionSetupTo = 'session_setup.to';
 
   static const String settingsArabicFontSize = 'settings.arabic_font_size';
-  static const String settingsArabicFontSizeHint = 'settings.arabic_font_size_hint';
+  static const String settingsArabicFontSizeHint =
+      'settings.arabic_font_size_hint';
   static const String settingsAudioQuality = 'settings.audio_quality';
   static const String settingsAudioQualityHigh = 'settings.audio_quality_high';
   static const String settingsAudioQualityHint = 'settings.audio_quality_hint';
   static const String settingsAudioQualityLow = 'settings.audio_quality_low';
-  static const String settingsAudioQualityStandard = 'settings.audio_quality_standard';
+  static const String settingsAudioQualityStandard =
+      'settings.audio_quality_standard';
   static const String settingsCardAbout = 'settings.card_about';
   static const String settingsCardAppearance = 'settings.card_appearance';
   static const String settingsCardAudio = 'settings.card_audio';
   static const String settingsCardSession = 'settings.card_session';
   static const String settingsDefaultPauses = 'settings.default_pauses';
-  static const String settingsDefaultRangeBehaviour = 'settings.default_range_behaviour';
+  static const String settingsDefaultRangeBehaviour =
+      'settings.default_range_behaviour';
   static const String settingsHomeViewGrid = 'settings.home_view_grid';
   static const String settingsHomeViewList = 'settings.home_view_list';
   static const String settingsHomeViewMode = 'settings.home_view_mode';
   static const String settingsHomeViewMushaf = 'settings.home_view_mushaf';
-  static const String settingsHomeViewMushafHint = 'settings.home_view_mushaf_hint';
+  static const String settingsHomeViewMushafHint =
+      'settings.home_view_mushaf_hint';
   static const String settingsLanguage = 'settings.language';
   static const String settingsLanguageAr = 'settings.language_ar';
   static const String settingsLanguageEn = 'settings.language_en';
   static const String settingsRangeLastUsed = 'settings.range_last_used';
   static const String settingsRangeWholeSurah = 'settings.range_whole_surah';
+  static const String settingsReadingRibbon = 'settings.reading_ribbon';
+  static const String settingsReadingRibbonHint =
+      'settings.reading_ribbon_hint';
   static const String settingsReciter = 'settings.reciter';
   static const String settingsSavedRecitations = 'settings.saved_recitations';
-  static const String settingsSavedRecitationsHint = 'settings.saved_recitations_hint';
+  static const String settingsSavedRecitationsHint =
+      'settings.saved_recitations_hint';
   static const String settingsSectionGeneral = 'settings.section_general';
   static const String settingsSectionReciter = 'settings.section_reciter';
   static const String settingsSectionSession = 'settings.section_session';
-  static const String settingsSectionSessionHint = 'settings.section_session_hint';
+  static const String settingsSectionSessionHint =
+      'settings.section_session_hint';
   static const String settingsSectionStorage = 'settings.section_storage';
   static const String settingsSessionPageHint = 'settings.session_page_hint';
   static const String settingsTheme = 'settings.theme';

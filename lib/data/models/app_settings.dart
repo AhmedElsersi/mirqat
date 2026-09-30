@@ -124,6 +124,7 @@ class AppSettings extends Equatable {
     this.audioQuality = AudioQuality.standard,
     this.readingMark,
     this.downloadOverWifiOnly = true,
+    this.showReadingRibbon = true,
     this.onboardingSeen = false,
     this.updatePromptedAt,
   });
@@ -184,6 +185,11 @@ class AppSettings extends Equatable {
   /// plan should have to say so rather than find out afterwards.
   final bool downloadOverWifiOnly;
 
+  /// Whether the page the reading mark is on hangs a ribbon down its edge.
+  /// On by default; the ribbon lies over the page's margin, translucent, and
+  /// a reader who would rather have the page bare turns it off.
+  final bool showReadingRibbon;
+
   /// Whether the introduction has been shown. False for a fresh install —
   /// and for one updating from before there was an introduction, which is
   /// deliberate: that update is also when the player screen went away, and
@@ -220,6 +226,7 @@ class AppSettings extends Equatable {
     ReadingPosition? readingMark,
     bool clearReadingMark = false,
     bool? downloadOverWifiOnly,
+    bool? showReadingRibbon,
     bool? onboardingSeen,
     DateTime? updatePromptedAt,
   }) => AppSettings(
@@ -246,6 +253,7 @@ class AppSettings extends Equatable {
     audioQuality: audioQuality ?? this.audioQuality,
     readingMark: clearReadingMark ? null : (readingMark ?? this.readingMark),
     downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
+    showReadingRibbon: showReadingRibbon ?? this.showReadingRibbon,
     onboardingSeen: onboardingSeen ?? this.onboardingSeen,
     updatePromptedAt: updatePromptedAt ?? this.updatePromptedAt,
   );
@@ -279,6 +287,7 @@ class AppSettings extends Equatable {
     'audioQuality': audioQuality.bitrate,
     'readingMark': readingMark?.toMap(),
     'downloadOverWifiOnly': downloadOverWifiOnly,
+    'showReadingRibbon': showReadingRibbon,
     'onboardingSeen': onboardingSeen,
     'updatePromptedAt': updatePromptedAt?.millisecondsSinceEpoch,
   };
@@ -324,6 +333,7 @@ class AppSettings extends Equatable {
       _ => null,
     },
     downloadOverWifiOnly: map['downloadOverWifiOnly'] as bool? ?? true,
+    showReadingRibbon: map['showReadingRibbon'] as bool? ?? true,
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
     updatePromptedAt: map['updatePromptedAt'] is int
         ? DateTime.fromMillisecondsSinceEpoch(map['updatePromptedAt'] as int)
@@ -368,6 +378,7 @@ class AppSettings extends Equatable {
     audioQuality,
     readingMark,
     downloadOverWifiOnly,
+    showReadingRibbon,
     onboardingSeen,
     updatePromptedAt,
   ];

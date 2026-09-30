@@ -60,6 +60,14 @@ class SettingsScreen extends StatelessWidget {
                       cubit: cubit,
                       previewAyah: state.previewAyah,
                     ),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsetsDirectional.zero,
+                      secondary: const Icon(Icons.bookmark_outline),
+                      title: Text(LocaleKeys.settingsReadingRibbon.tr()),
+                      subtitle: Text(LocaleKeys.settingsReadingRibbonHint.tr()),
+                      value: settings.showReadingRibbon,
+                      onChanged: cubit.setShowReadingRibbon,
+                    ),
                   ],
                 ),
                 SettingsCard(

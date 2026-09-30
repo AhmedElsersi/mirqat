@@ -563,12 +563,17 @@ class _PageSlot extends StatelessWidget {
               : AyahRef(mark.surahNumber, mark.ayahNumber);
         });
 
+        final bool ribbon = context.select<SettingsCubit, bool>(
+          (SettingsCubit c) => c.state.settings.showReadingRibbon,
+        );
+
         return MushafPageView(
           page: page,
           linesPerFullPage: state.linesPerFullPage,
           textScale: textScale,
           highlighted: state.highlighted,
           marked: readingMark,
+          ribbon: ribbon,
           selected: state.selected,
           isSelected: marked == null
               ? null
