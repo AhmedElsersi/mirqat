@@ -1,8 +1,51 @@
 #include "flutter_window.h"
 
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
+
+#include <memory>
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "window_chrome.h"
+
+namespace {
+
+// The app's own channel, not a plugin: the one thing Flutter cannot reach on
+// Windows is the frame Windows draws around it. See window_chrome.h.
+constexpr const char kWindowChannel[] = "mirqat/window";
+
+// Reads an int out of the method's argument map. Flutter sends a colour as an
+// int32 or an int64 depending on its size, so both are accepted; anything
+// else leaves |fallback| standing.
+int64_t IntArg(const flutter::EncodableMap& args,
+               const char* name,
+               int64_t fallback) {
+  auto it = args.find(flutter::EncodableValue(name));
+  if (it == args.end()) {
+    return fallback;
+  }
+  if (const auto* small = std::get_if<int32_t>(&it->second)) {
+    return *small;
+  }
+  if (const auto* big = std::get_if<int64_t>(&it->second)) {
+    return *big;
+  }
+  return fallback;
+}
+
+bool BoolArg(const flutter::EncodableMap& args,
+             const char* name,
+             bool fallback) {
+  auto it = args.find(flutter::EncodableValue(name));
+  if (it == args.end()) {
+    return fallback;
+  }
+  const auto* value = std::get_if<bool>(&it->second);
+  return value == nullptr ? fallback : *value;
+}
+
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -27,6 +70,33 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
+  // The frame follows the theme inside it. Registered here because this is
+  // where the engine and the window handle are both in hand.
+  window_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), kWindowChannel,
+          &flutter::StandardMethodCodec::GetInstance());
+  window_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name() != "applyTheme") {
+          result->NotImplemented();
+          return;
+        }
+        const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
+        if (args == nullptr) {
+          result->Error("bad_args", "applyTheme wants a map.");
+          return;
+        }
+        window_chrome::Apply(
+            GetHandle(), BoolArg(*args, "dark", false),
+            static_cast<uint32_t>(IntArg(*args, "caption", 0)),
+            static_cast<uint32_t>(IntArg(*args, "text", 0)),
+            static_cast<uint32_t>(IntArg(*args, "border", 0)));
+        result->Success();
+      });
+
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
   });
@@ -40,6 +110,10 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  // Before the controller: the channel speaks to the engine's messenger, and
+  // must not outlive it.
+  window_channel_ = nullptr;
+
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

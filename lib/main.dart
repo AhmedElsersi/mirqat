@@ -17,6 +17,7 @@ import 'core/localization/app_localization.dart';
 import 'core/localization/locale_keys.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/window_chrome.dart';
 import 'data/models/app_settings.dart';
 import 'features/settings/cubit/settings_cubit.dart';
 import 'features/update/cubit/update_cubit.dart';
@@ -201,8 +202,15 @@ class _IqraWartaqAppState extends State<IqraWartaqApp>
             routerConfig: _router,
             // Over every route, and under the localizations and the theme: the
             // update prompt is part of the app, not a page in it.
-            builder: (BuildContext context, Widget? child) =>
-                UpdateGate(child: child ?? const SizedBox.shrink()),
+            builder: (BuildContext context, Widget? child) {
+              // The one place the resolved theme is in hand — light or dark
+              // is settled here, not where the two are declared — so it is
+              // where the window's own frame is told what it is sitting on.
+              // A no-op off Windows, and deduplicated, so the resize rebuilds
+              // cost nothing.
+              WindowChrome.follow(Theme.of(context));
+              return UpdateGate(child: child ?? const SizedBox.shrink());
+            },
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'windows_design.dart';
 
 /// Builds the light and dark [ThemeData] from the [AppColors] tokens.
 class AppTheme {
@@ -64,18 +65,20 @@ class AppTheme {
       outline: outline,
     );
 
-    return ThemeData(
-      useMaterial3: true,
-      brightness: brightness,
-      colorScheme: colorScheme,
-      scaffoldBackgroundColor: background,
-      appBarTheme: AppBarTheme(
-        backgroundColor: background,
-        foregroundColor: textPrimary,
-        elevation: 0,
-        centerTitle: true,
+    return WindowsDesign.apply(
+      ThemeData(
+        useMaterial3: true,
+        brightness: brightness,
+        colorScheme: colorScheme,
+        scaffoldBackgroundColor: background,
+        appBarTheme: AppBarTheme(
+          backgroundColor: background,
+          foregroundColor: textPrimary,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        dividerTheme: DividerThemeData(color: outline, space: 1, thickness: 1),
       ),
-      dividerTheme: DividerThemeData(color: outline, space: 1, thickness: 1),
     );
   }
 }
