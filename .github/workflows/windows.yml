@@ -6,20 +6,31 @@ name: Windows
 # the DLLs and data/ folder it needs beside it. Unzip it anywhere and run
 # mirqat.exe; nothing is installed.
 #
-# Two architectures, and only two. `flutter build windows` takes its
-# architecture from the machine it runs on — there is no cross-compile flag —
-# so each one needs a runner of its own. There is no 32-bit build: Flutter's
-# Windows targets are windows-x64 and windows-arm64 and there has never been an
-# x86 one, so a 32-bit Windows cannot run this app at all. x64 covers every
-# Intel and AMD PC; arm64 is for Windows on Arm machines, which until now ran
-# the x64 zip under emulation.
+# One architecture, x64, and not by choice. Both other Windows architectures
+# were tried and neither can be built, for two different reasons worth writing
+# down so they are not re-attempted blind:
 #
-# The zips are always kept on the run's page. They are also published as a
-# release of the public site repo — on every version tag, and on a manual run
-# with "publish" ticked — because the website's Windows button downloads
+#   32-bit (x86): Flutter has no such target. `TargetPlatform` offers
+#   windows-x64 and windows-arm64 and has never offered x86, so no 32-bit
+#   Windows can run a Flutter app at all. Nothing in CI can change that.
+#
+#   arm64: Flutter publishes no Windows arm64 SDK — releases_windows.json
+#   contains x64 entries only, zero arm64, at every version — and the tool
+#   picks the architecture from `Abi.current()`, the ABI of the running Dart
+#   process, with no flag to override it. So the x64 SDK on an arm64 runner
+#   (windows-11-arm) produces an x64 build, and an arm64 SDK to produce an
+#   arm64 one does not exist. Attempted on 2026-10-09 in run 37990981247: the
+#   setup step refused with "Unable to determine Flutter version for channel:
+#   stable version: 3.44.0 architecture: arm64". Windows on Arm machines run
+#   the x64 zip under emulation, which is what they do today. The day Flutter
+#   ships a Windows arm64 SDK, this becomes a two-runner matrix and the
+#   publish step below already handles a second asset.
+#
+# The zip is always kept on the run's page. It is also published as a release
+# of the public site repo — on every version tag, and on a manual run with
+# "publish" ticked — because the website's Windows button downloads
 # releases/latest/download/iqra-wartaq-windows-x64.zip from there. That file
-# name must not change, or the button breaks; the arm64 asset sits beside it
-# under its own name.
+# name must not change, or the button breaks.
 #
 # Publishing needs the SITE_RELEASE_TOKEN secret: a fine-grained token with
 # Contents read/write on AhmedElsersi/iqra-wartaq and nothing else. This
@@ -41,16 +52,15 @@ env:
 jobs:
   build:
     strategy:
-      # One architecture failing must not take the other's zip down with it:
-      # an arm64 runner is newer and rarer than the x64 one, and an x64 build
-      # that worked is still worth having.
+      # A matrix of one, kept as a matrix: the architecture travels with the
+      # zip's name and the output directory, so adding the second one back is
+      # a line here rather than an edit of every step. One failing must not
+      # take another's zip down with it.
       fail-fast: false
       matrix:
         include:
           - arch: x64
             runner: windows-latest
-          - arch: arm64
-            runner: windows-11-arm
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4

@@ -2,6 +2,8 @@
 
 #include <dwmapi.h>
 
+#include <cstdint>
+
 namespace {
 
 // Redefined when the build machine's Windows SDK predates 10.0.22000.0, the

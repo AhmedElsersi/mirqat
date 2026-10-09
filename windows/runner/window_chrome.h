@@ -3,6 +3,8 @@
 
 #include <windows.h>
 
+#include <cstdint>
+
 // Paints the part of the window Windows draws — the caption, its text and the
 // frame's border — in the colours of the Flutter theme inside it, and tells
 // the frame whether it is a light or a dark app.

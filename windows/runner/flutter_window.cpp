@@ -3,8 +3,10 @@
 #include <flutter/method_channel.h>
 #include <flutter/standard_method_codec.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
+#include <variant>
 
 #include "flutter/generated_plugin_registrant.h"
 #include "window_chrome.h"
@@ -25,11 +27,14 @@ int64_t IntArg(const flutter::EncodableMap& args,
   if (it == args.end()) {
     return fallback;
   }
-  if (const auto* small = std::get_if<int32_t>(&it->second)) {
-    return *small;
+  // Not `small` and `big`: <rpcndr.h>, which arrives with <windows.h>,
+  // defines `small` as `char`, so `const auto* small` compiles as
+  // `const auto* char` and the error lands three lines away from the cause.
+  if (const auto* narrow = std::get_if<int32_t>(&it->second)) {
+    return *narrow;
   }
-  if (const auto* big = std::get_if<int64_t>(&it->second)) {
-    return *big;
+  if (const auto* wide = std::get_if<int64_t>(&it->second)) {
+    return *wide;
   }
   return fallback;
 }
