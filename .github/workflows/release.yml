@@ -18,10 +18,21 @@ on:
     # holds that line), the macOS target only hosts it, and tool/ is the
     # desk beside it. The build number still moves on for these pushes, so
     # no two builds ever share a number.
+    #
+    # pubspec.yaml is ignored for a sharper reason: a build number alone is
+    # not a release. Every release uploads the number the pushed commit
+    # carries, and bump-build-number.yml then moves main on by one — so main
+    # must always be left holding a number no store has seen. A bump pushed
+    # by hand used to break that: it released the number it had just written
+    # (build 25, 2026-09-30) and then skipped its own bump, so the next real
+    # push collided on both stores. Ignored here, a bump can no longer spend
+    # the number it is reserving. Use the Run-workflow button to ship the
+    # same code as a new build.
     paths-ignore:
       - "docs/**"
       - "store/**"
       - "**.md"
+      - "pubspec.yaml"
       - "lib/admin/**"
       - "lib/main_admin.dart"
       - "test/admin/**"
