@@ -13,6 +13,7 @@ import '../../features/progress/screen/progress_screen.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/settings/cubit/settings_state.dart';
 import '../../features/settings/screen/downloads_screen.dart';
+import '../../features/settings/screen/mushaf_download_screen.dart';
 import '../../features/settings/screen/session_settings_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/splash/screen/splash_screen.dart';
@@ -136,6 +137,12 @@ class AppRouter {
             name: AppRoutes.downloadsName,
             builder: (BuildContext context, GoRouterState state) =>
                 const DownloadsScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.mushafDownloadPath,
+            name: AppRoutes.mushafDownloadName,
+            builder: (BuildContext context, GoRouterState state) =>
+                const MushafDownloadScreen(),
           ),
         ],
       ),

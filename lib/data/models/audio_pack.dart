@@ -204,3 +204,146 @@ class PackDownload extends Equatable {
     message,
   ];
 }
+
+/// Where a whole-mushaf download has got to.
+///
+/// Its own state rather than a count derived from the `downloads` table: a run
+/// is a thing with a beginning — the surahs it set out to fetch — and that
+/// number cannot be recovered afterwards from what landed. [failed] is kept so
+/// the screen can say which surahs did not arrive without the user re-reading
+/// 114 rows to find them.
+enum BulkStatus {
+  /// Nothing has been asked for.
+  idle,
+  running,
+
+  /// Every surah in the run was attempted.
+  finished,
+
+  /// Stopped by the user, or abandoned after too many failures in a row.
+  cancelled,
+}
+
+/// One reciter's whole-mushaf download, as the UI sees it.
+class BulkDownload extends Equatable {
+  const BulkDownload({
+    required this.reciterId,
+    required this.status,
+    this.total = 0,
+    this.done = 0,
+    this.failed = const <int>[],
+    this.currentSurah,
+    this.message,
+  });
+
+  const BulkDownload.idle(this.reciterId)
+    : status = BulkStatus.idle,
+      total = 0,
+      done = 0,
+      failed = const <int>[],
+      currentSurah = null,
+      message = null;
+
+  final String reciterId;
+  final BulkStatus status;
+
+  /// How many surahs the run set out to fetch.
+  final int total;
+
+  /// How many of them arrived.
+  final int done;
+
+  /// The surahs that did not, in the order they were attempted.
+  final List<int> failed;
+
+  /// The surah being fetched right now, or the last one attempted.
+  final int? currentSurah;
+
+  /// Developer-facing detail for the last failure. User-facing copy comes
+  /// from the translation files (CLAUDE.md A.3, Errors).
+  final String? message;
+
+  bool get isRunning => status == BulkStatus.running;
+
+  /// How far through the run, counting a failure as attempted: the bar
+  /// measures the queue, not the successes, or it would stall on a surah the
+  /// CDN does not have.
+  double get progress =>
+      total == 0 ? 0 : ((done + failed.length) / total).clamp(0, 1);
+
+  BulkDownload copyWith({
+    BulkStatus? status,
+    int? total,
+    int? done,
+    List<int>? failed,
+    int? currentSurah,
+    String? message,
+  }) => BulkDownload(
+    reciterId: reciterId,
+    status: status ?? this.status,
+    total: total ?? this.total,
+    done: done ?? this.done,
+    failed: failed ?? this.failed,
+    currentSurah: currentSurah ?? this.currentSurah,
+    message: message ?? this.message,
+  );
+
+  @override
+  List<Object?> get props => <Object?>[
+    reciterId,
+    status,
+    total,
+    done,
+    failed,
+    currentSurah,
+    message,
+  ];
+}
+
+/// What a whole-mushaf download for one reciter would still cost.
+///
+/// [bytes] is 0 where the manifest does not say — a reciter published without
+/// packs has no size to add up — and the screen then offers the download
+/// without a figure rather than inventing one.
+class PendingDownloads extends Equatable {
+  const PendingDownloads({
+    required this.reciterId,
+    required this.surahs,
+    required this.bytes,
+    required this.offered,
+    required this.onDevice,
+  });
+
+  const PendingDownloads.none(this.reciterId)
+    : surahs = const <int>[],
+      bytes = 0,
+      offered = 0,
+      onDevice = 0;
+
+  final String reciterId;
+
+  /// The surahs left to fetch, ascending: everything the reciter offers that
+  /// is not already playable offline.
+  final List<int> surahs;
+
+  /// What fetching them costs, in bytes, as the manifest declares it.
+  final int bytes;
+
+  /// How many surahs this reciter has at all.
+  final int offered;
+
+  /// How many of them already play from the device — downloaded, or bundled.
+  final int onDevice;
+
+  /// Nothing left to fetch, and something there to begin with.
+  bool get isComplete => offered > 0 && surahs.isEmpty;
+
+  @override
+  List<Object?> get props => <Object?>[
+    reciterId,
+    surahs,
+    bytes,
+    offered,
+    onDevice,
+  ];
+}

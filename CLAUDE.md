@@ -101,8 +101,9 @@ lib/
     session/         cubit + widgets            (the session set up and played over
                                                  the reading view: bar, settings sheet)
     progress/        cubit + screen + widgets
-    settings/        cubit + screens            (settings in cards; session settings
-                                                 and saved recitations as pages)
+    settings/        cubit + screens            (settings in cards; session settings,
+                                                 saved recitations, and the whole
+                                                 mushaf for one reciter, as pages)
     about/           cubit + screens            (how to use, our goal, about us,
                                                  the developer)
     onboarding/      screen                     (the introduction, first launch)

@@ -58,6 +58,26 @@ class LocaleKeys {
   static const String downloadsStale = 'downloads.stale';
   static const String downloadsStreaming = 'downloads.streaming';
   static const String downloadsVerifying = 'downloads.verifying';
+  static const String downloadsWholeCancelled = 'downloads.whole_cancelled';
+  static const String downloadsWholeComplete = 'downloads.whole_complete';
+  static const String downloadsWholeConfirmBody =
+      'downloads.whole_confirm_body';
+  static const String downloadsWholeConfirmBodyUnsized =
+      'downloads.whole_confirm_body_unsized';
+  static const String downloadsWholeConfirmCta = 'downloads.whole_confirm_cta';
+  static const String downloadsWholeConfirmTitle =
+      'downloads.whole_confirm_title';
+  static const String downloadsWholeDownload = 'downloads.whole_download';
+  static const String downloadsWholeFinished = 'downloads.whole_finished';
+  static const String downloadsWholeIntro = 'downloads.whole_intro';
+  static const String downloadsWholeNone = 'downloads.whole_none';
+  static const String downloadsWholeOnDevice = 'downloads.whole_on_device';
+  static const String downloadsWholeRemaining = 'downloads.whole_remaining';
+  static const String downloadsWholeRemainingUnsized =
+      'downloads.whole_remaining_unsized';
+  static const String downloadsWholeRunFailed = 'downloads.whole_run_failed';
+  static const String downloadsWholeRunning = 'downloads.whole_running';
+  static const String downloadsWholeTitle = 'downloads.whole_title';
 
   static const String durationMinutes = 'duration.minutes';
   static const String durationMinutesSeconds = 'duration.minutes_seconds';
@@ -249,6 +269,8 @@ class LocaleKeys {
   static const String settingsThemeSystem = 'settings.theme_system';
   static const String settingsTitle = 'settings.title';
   static const String settingsVersion = 'settings.version';
+  static const String settingsWholeMushaf = 'settings.whole_mushaf';
+  static const String settingsWholeMushafHint = 'settings.whole_mushaf_hint';
   static const String settingsWifiOnly = 'settings.wifi_only';
   static const String settingsWifiOnlyHint = 'settings.wifi_only_hint';
 

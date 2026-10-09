@@ -47,6 +47,11 @@ class AppRoutes {
   static const String downloadsPath = 'downloads';
   static const String downloadsName = 'downloads';
 
+  /// The whole-mushaf download, a child of the saved-recitations route's
+  /// parent for the same reason: back returns to settings.
+  static const String mushafDownloadPath = 'download-mushaf';
+  static const String mushafDownloadName = 'mushaf_download';
+
   /// Path parameter shared by the surah-scoped routes.
   static const String surahNumberParam = 'surahNumber';
 }

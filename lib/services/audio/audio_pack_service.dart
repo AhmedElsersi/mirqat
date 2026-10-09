@@ -71,6 +71,17 @@ class AudioPackService {
   /// Every state change of every download this process has started.
   Stream<PackDownload> get changes => _changes.stream;
 
+  /// Whole-mushaf runs, keyed by reciter, and the ids of the ones asked to
+  /// stop. A run is one reciter at a time; two at once would split a phone's
+  /// connection for no gain.
+  final Map<String, BulkDownload> _runs = <String, BulkDownload>{};
+  final Set<String> _stopped = <String>{};
+  final StreamController<BulkDownload> _runChanges =
+      StreamController<BulkDownload>.broadcast();
+
+  /// Every state change of every whole-mushaf run this process has started.
+  Stream<BulkDownload> get runChanges => _runChanges.stream;
+
   /// What a download is doing right now — [PackStatus.idle] when nothing has
   /// been asked for.
   PackDownload stateFor({
@@ -186,6 +197,183 @@ class AudioPackService {
       changed += count;
     }
     return Right<Failure, int>(changed);
+  }
+
+  /// What a whole-mushaf download for [reciter] would still have to fetch.
+  ///
+  /// Everything they offer that does not already play from the device: a
+  /// surah bundled in the app is there, a surah downloaded and complete is
+  /// there, and a stale one is not — a superseded take plays, but a run
+  /// asking for the whole mushaf is asking for the current reading of it.
+  Future<Either<Failure, PendingDownloads>> pending(Reciter reciter) async {
+    final Either<Failure, List<InstalledPack>> result = await installed();
+    final List<InstalledPack>? packs = result.fold(
+      (Failure _) => null,
+      (List<InstalledPack> p) => p,
+    );
+    if (packs == null) {
+      return result.map(
+        (List<InstalledPack> _) => PendingDownloads.none(reciter.id),
+      );
+    }
+
+    final Set<int> complete = <int>{
+      for (final InstalledPack pack in packs)
+        if (pack.reciterId == reciter.id && pack.isComplete) pack.surahNumber,
+    };
+    final ManifestReciter? remote = reciter.remote;
+    final List<int> offered = <int>[
+      ...<int>{
+        ...reciter.remoteSurahs,
+        if (reciter.bundled) ...reciter.availableSurahs,
+      },
+    ]..sort();
+    final List<int> wanted = <int>[
+      for (final int surah in offered)
+        if (!complete.contains(surah) && !reciter.isBundledSurah(surah)) surah,
+    ];
+
+    final AppSettings settings = await _readSettings();
+    int bytes = 0;
+    for (final int surah in wanted) {
+      bytes +=
+          remote
+              ?.variantFor(
+                surah,
+                preferredBitrate: settings.audioQuality.bitrate,
+              )
+              ?.bytes ??
+          0;
+    }
+
+    return Right<Failure, PendingDownloads>(
+      PendingDownloads(
+        reciterId: reciter.id,
+        surahs: List<int>.unmodifiable(wanted),
+        bytes: bytes,
+        offered: offered.length,
+        onDevice: offered.length - wanted.length,
+      ),
+    );
+  }
+
+  /// What a whole-mushaf run is doing right now — [BulkStatus.idle] when
+  /// nothing has been asked for.
+  BulkDownload runFor(String reciterId) =>
+      _runs[reciterId] ?? BulkDownload.idle(reciterId);
+
+  /// Downloads every surah [reciter] offers that is not already on the
+  /// device, one after another.
+  ///
+  /// Sequential, like every other download here and for the same reason, and
+  /// through [download] surah by surah rather than around it: the quality
+  /// preference, the Wi-Fi rule, the digest, the `downloads` row and the
+  /// progress stream are all that method's, and a second path through them
+  /// would be a second set of bugs.
+  ///
+  /// A surah that fails is counted and the run goes on — one surah the CDN
+  /// has not published must not cost the other hundred and thirteen. But a
+  /// run that keeps failing has lost the network rather than found a gap, and
+  /// carrying on would write a failed row for all 114 and tell the user
+  /// nothing: [maxConsecutiveFailures] in a row stops it, and what arrived
+  /// stays.
+  Future<Either<Failure, BulkDownload>> downloadWhole({
+    required Reciter reciter,
+  }) async {
+    if (runFor(reciter.id).isRunning) {
+      return Left<Failure, BulkDownload>(
+        DownloadFailure(
+          reciter.id,
+          'A whole-mushaf download for "${reciter.id}" is already running.',
+        ),
+      );
+    }
+
+    final Either<Failure, PendingDownloads> queued = await pending(reciter);
+    final PendingDownloads? plan = queued.fold(
+      (Failure _) => null,
+      (PendingDownloads p) => p,
+    );
+    if (plan == null) {
+      return queued.map((PendingDownloads _) => BulkDownload.idle(reciter.id));
+    }
+
+    _stopped.remove(reciter.id);
+    BulkDownload run = BulkDownload(
+      reciterId: reciter.id,
+      status: BulkStatus.running,
+      total: plan.surahs.length,
+    );
+    _emitRun(run);
+
+    int refusals = 0;
+    for (final int surah in plan.surahs) {
+      if (_stopped.contains(reciter.id)) {
+        run = run.copyWith(status: BulkStatus.cancelled);
+        break;
+      }
+      run = run.copyWith(currentSurah: surah);
+      _emitRun(run);
+
+      final Either<Failure, InstalledPack> result = await download(
+        reciter: reciter,
+        surahNumber: surah,
+      );
+      run = result.fold(
+        (Failure f) {
+          refusals++;
+          return run.copyWith(
+            failed: <int>[...run.failed, surah],
+            message: f.message,
+          );
+        },
+        (InstalledPack _) {
+          refusals = 0;
+          return run.copyWith(done: run.done + 1);
+        },
+      );
+      _emitRun(run);
+
+      if (refusals >= maxConsecutiveFailures) {
+        run = run.copyWith(status: BulkStatus.cancelled);
+        break;
+      }
+    }
+
+    _stopped.remove(reciter.id);
+    if (run.status == BulkStatus.running) {
+      run = run.copyWith(status: BulkStatus.finished);
+    }
+    _emitRun(run);
+    return Right<Failure, BulkDownload>(run);
+  }
+
+  /// Stops a whole-mushaf run, and the surah it is on.
+  ///
+  /// The surahs already fetched stay: they play from disk, and throwing them
+  /// away because the rest was interrupted would be the opposite of what was
+  /// asked for.
+  Future<void> cancelWhole(String reciterId) async {
+    final BulkDownload run = runFor(reciterId);
+    if (!run.isRunning) return;
+    _stopped.add(reciterId);
+    final int? surah = run.currentSurah;
+    if (surah != null) {
+      await cancel(reciterId: reciterId, surahNumber: surah);
+    }
+  }
+
+  /// How many surahs in a row may fail before a whole-mushaf run gives up.
+  ///
+  /// Three, not one: a gap in a reciter's publishing is a real thing and the
+  /// run should step over it. Not a hundred: by the third refusal in a row
+  /// the connection is gone, and the next hundred would fail just as fast.
+  static const int maxConsecutiveFailures = 3;
+
+  void _emitRun(BulkDownload run) {
+    if (_runs[run.reciterId] == run) return;
+    _runs[run.reciterId] = run;
+    if (!_runChanges.isClosed) _runChanges.add(run);
   }
 
   Future<void> _recordFailure(
@@ -806,7 +994,10 @@ class AudioPackService {
     if (!_changes.isClosed) _changes.add(next);
   }
 
-  Future<void> dispose() => _changes.close();
+  Future<void> dispose() async {
+    await _changes.close();
+    await _runChanges.close();
+  }
 }
 
 /// How the service gets a fetcher.

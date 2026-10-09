@@ -24,6 +24,7 @@ import '../../features/progress/cubit/progress_cubit.dart';
 import '../../features/session/cubit/audio_pack_cubit.dart';
 import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
+import '../../features/settings/cubit/mushaf_download_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
 import '../../features/update/cubit/update_cubit.dart';
@@ -226,6 +227,12 @@ Future<void> configureDependencies() async {
     () => DownloadsCubit(
       packService: sl<AudioPackService>(),
       quranRepository: sl<QuranRepository>(),
+      reciterCatalog: sl<ReciterCatalog>(),
+    ),
+  );
+  sl.registerFactory<MushafDownloadCubit>(
+    () => MushafDownloadCubit(
+      packService: sl<AudioPackService>(),
       reciterCatalog: sl<ReciterCatalog>(),
     ),
   );

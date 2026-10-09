@@ -99,6 +99,13 @@ class SettingsScreen extends StatelessWidget {
                       subtitle: LocaleKeys.settingsSavedRecitationsHint.tr(),
                       onTap: () => context.pushNamed(AppRoutes.downloadsName),
                     ),
+                    SettingsLinkRow(
+                      icon: Icons.download_for_offline_outlined,
+                      title: LocaleKeys.settingsWholeMushaf.tr(),
+                      subtitle: LocaleKeys.settingsWholeMushafHint.tr(),
+                      onTap: () =>
+                          context.pushNamed(AppRoutes.mushafDownloadName),
+                    ),
                   ],
                 ),
                 SettingsCard(

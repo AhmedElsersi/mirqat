@@ -10,6 +10,7 @@ import 'package:mirqat/core/widgets/session_controls.dart';
 import 'package:mirqat/features/progress/screen/progress_screen.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/features/settings/screen/downloads_screen.dart';
+import 'package:mirqat/features/settings/screen/mushaf_download_screen.dart';
 import 'package:mirqat/core/widgets/settings_card.dart';
 import 'package:mirqat/features/about/screen/developer_screen.dart';
 import 'package:mirqat/features/about/screen/how_to_use_screen.dart';
@@ -112,6 +113,36 @@ void main() {
       // list.
       expect(find.textContaining('لا توجد تسجيلات محفوظة'), findsOneWidget);
       expect(find.byIcon(Icons.delete_outline), findsNothing);
+    });
+
+    testWidgets('offers the whole mushaf for a reciter, and asks first', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+      await reveal(tester, find.text('تنزيل المصحف كاملًا'));
+
+      await AppHarness.tapAndSettle(
+        tester,
+        find.text('تنزيل المصحف كاملًا').last,
+      );
+
+      expect(find.byType(MushafDownloadScreen), findsOneWidget);
+      // The reciter the test CDN offers, and what is left of them to fetch.
+      expect(find.text('أحمد خليل شاهين'), findsOneWidget);
+      expect(find.textContaining('المتبقي'), findsOneWidget);
+
+      // Hundreds of megabytes is not a thing to start on one tap, so the
+      // size is in a question first — and a question can be declined.
+      await AppHarness.tapAndSettle(
+        tester,
+        find.byIcon(Icons.download_for_offline_outlined),
+      );
+      expect(find.text('تنزيل كل السور؟'), findsOneWidget);
+
+      await AppHarness.tapAndSettle(tester, find.text('إلغاء'));
+      expect(find.text('تنزيل كل السور؟'), findsNothing);
+      expect(find.byType(MushafDownloadScreen), findsOneWidget);
     });
 
     testWidgets('the storage group offers a quality and a Wi-Fi-only rule', (
