@@ -23,26 +23,23 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check whether pubspec.yaml's version was already changed by hand
-        id: guard
-        run: |
-          # If the merge that triggered this run already touched the version
-          # line itself (e.g. a manual 1.0.0 -> 1.1.0 marketing bump), whoever
-          # did that has already chosen the build number for this merge — an
-          # automatic bump on top would be a second, unwanted change.
-          if git diff HEAD^ HEAD -- pubspec.yaml | grep -q '^\+version:'; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
+      # Always, with no guard on what the push changed.
+      #
+      # There used to be one: a push that touched the `version:` line itself
+      # was left alone, on the grounds that whoever wrote it had chosen the
+      # number. That reasoning had the invariant backwards. The number in a
+      # commit is the number release.yml *uploads*, so once that push has
+      # landed the number is spent, and main must be moved past it or the next
+      # merge offers both stores a build they have already seen — which is
+      # exactly what happened to 1.1.0 build 25 and refused the merge after
+      # it. Moving on always is the only state in which main is never holding
+      # a spent number. A push that releases nothing (docs, a version-only
+      # push) simply skips a build number, and build numbers are free.
       - name: Bump build number
-        if: steps.guard.outputs.skip == 'false'
         id: bump
         run: tool/bump_build_number.sh
 
       - name: Commit
-        if: steps.guard.outputs.skip == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

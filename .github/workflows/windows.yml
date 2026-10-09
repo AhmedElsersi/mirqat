@@ -2,15 +2,24 @@ name: Windows
 
 # Flutter builds a Windows app only on Windows, so the .exe is made here and
 # not on a developer's Mac. Run by hand from the Actions tab, or on a version
-# tag beside release.yml. The result is a zip: mirqat.exe with the DLLs and
-# data/ folder it needs beside it. Unzip it anywhere and run mirqat.exe;
-# nothing is installed.
+# tag beside release.yml. The result is a zip per architecture: mirqat.exe with
+# the DLLs and data/ folder it needs beside it. Unzip it anywhere and run
+# mirqat.exe; nothing is installed.
 #
-# The zip is always kept on the run's page. It is also published as a release
-# of the public site repo — on every version tag, and on a manual run with
-# "publish" ticked — because the website's Windows button downloads
+# Two architectures, and only two. `flutter build windows` takes its
+# architecture from the machine it runs on — there is no cross-compile flag —
+# so each one needs a runner of its own. There is no 32-bit build: Flutter's
+# Windows targets are windows-x64 and windows-arm64 and there has never been an
+# x86 one, so a 32-bit Windows cannot run this app at all. x64 covers every
+# Intel and AMD PC; arm64 is for Windows on Arm machines, which until now ran
+# the x64 zip under emulation.
+#
+# The zips are always kept on the run's page. They are also published as a
+# release of the public site repo — on every version tag, and on a manual run
+# with "publish" ticked — because the website's Windows button downloads
 # releases/latest/download/iqra-wartaq-windows-x64.zip from there. That file
-# name must not change, or the button breaks.
+# name must not change, or the button breaks; the arm64 asset sits beside it
+# under its own name.
 #
 # Publishing needs the SITE_RELEASE_TOKEN secret: a fine-grained token with
 # Contents read/write on AhmedElsersi/iqra-wartaq and nothing else. This
@@ -28,11 +37,21 @@ on:
 
 env:
   SITE_REPO: AhmedElsersi/iqra-wartaq
-  ASSET_NAME: iqra-wartaq-windows-x64.zip
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      # One architecture failing must not take the other's zip down with it:
+      # an arm64 runner is newer and rarer than the x64 one, and an x64 build
+      # that worked is still worth having.
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+          - arch: arm64
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,8 +73,15 @@ jobs:
         run: |
           $full = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value
           $version = $full -replace '\+', '-'
-          $name = "iqra-wartaq-windows-x64-$version"
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "$name.zip"
+          $name = "iqra-wartaq-windows-${{ matrix.arch }}-$version"
+          # The output directory is named for the architecture the build was
+          # made for, so it is read rather than assumed: a wrong guess here
+          # would zip nothing and publish an empty download.
+          $out = "build/windows/${{ matrix.arch }}/runner/Release"
+          if (!(Test-Path $out)) {
+            throw "No build output at $out. Flutter built for another architecture."
+          }
+          Compress-Archive -Path "$out/*" -DestinationPath "$name.zip"
           "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
@@ -65,9 +91,14 @@ jobs:
           path: ${{ steps.zip.outputs.name }}.zip
           if-no-files-found: error
 
-    outputs:
-      zip: ${{ steps.zip.outputs.name }}
-      version: ${{ steps.zip.outputs.version }}
+      - name: Remember the version
+        shell: bash
+        run: echo "${{ steps.zip.outputs.version }}" > version.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: version-${{ matrix.arch }}
+          path: version.txt
 
   # On Linux rather than the Windows runner: the release title and notes are
   # Arabic, and a Linux shell hands them to gh as they are.
@@ -80,22 +111,54 @@ jobs:
         with:
           sparse-checkout: .github
 
+      # Every zip the matrix produced, each in its own directory.
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ needs.build.outputs.zip }}
+          path: artifacts
 
       - name: Publish to the website
         env:
           GH_TOKEN: ${{ secrets.SITE_RELEASE_TOKEN }}
-          ZIP: ${{ needs.build.outputs.zip }}.zip
-          VERSION: ${{ needs.build.outputs.version }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::SITE_RELEASE_TOKEN is not set, so the site's release cannot be written. The zip is on this run's page."
+            echo "::error::SITE_RELEASE_TOKEN is not set, so the site's release cannot be written. The zips are on this run's page."
             exit 1
           fi
 
-          tag="windows-$VERSION"
+          version="$(cat artifacts/version-*/version.txt | head -1)"
+          if [ -z "$version" ]; then
+            echo "::error::No build reported its version, so there is nothing to publish."
+            exit 1
+          fi
+
+          # The x64 asset keeps the exact name the website's button asks for.
+          # arm64 sits beside it; a machine that needs it is told so in the
+          # notes, because the button can only point at one file.
+          declare -A asset_for=(
+            [x64]="iqra-wartaq-windows-x64.zip"
+            [arm64]="iqra-wartaq-windows-arm64.zip"
+          )
+
+          assets=()
+          digests=()
+          for arch in x64 arm64; do
+            zip="$(find artifacts -name "iqra-wartaq-windows-$arch-*.zip" | head -1)"
+            if [ -z "$zip" ]; then
+              echo "::warning::No $arch build to publish; it is missing from this release."
+              continue
+            fi
+            cp "$zip" "${asset_for[$arch]}"
+            assets+=("${asset_for[$arch]}")
+            sha="$(sha256sum "${asset_for[$arch]}" | cut -d' ' -f1)"
+            digests+=("${asset_for[$arch]} — SHA-256: $sha")
+          done
+
+          if [ ${#assets[@]} -eq 0 ]; then
+            echo "::error::Neither architecture produced a zip."
+            exit 1
+          fi
+
+          tag="windows-$version"
           # A published build is never replaced: someone may already have
           # downloaded it and checked its digest. Every push to main moves the
           # build number, so a new build always has a new tag.
@@ -104,15 +167,19 @@ jobs:
             exit 1
           fi
 
-          mv "$ZIP" "$ASSET_NAME"
-          sha=$(sha256sum "$ASSET_NAME" | cut -d' ' -f1)
-          sed "s/{{SHA256}}/$sha/" .github/windows-release-notes.md > notes.md
+          # The template holds one placeholder line; there is a digest per
+          # architecture, so the line is dropped and the digests appended.
+          # Appended rather than substituted because a multi-line value in a
+          # sed replacement is a quoting trap, and the digests are the last
+          # thing in the notes anyway.
+          grep -v '{{SHA256}}' .github/windows-release-notes.md > notes.md
+          printf '%s\n' "${digests[@]}" >> notes.md
 
           # 1.1.0-4 -> "1.1.0 (4)", as the first release was titled.
-          label=$(echo "$VERSION" | sed -E 's/-([0-9]+)$/ (\1)/')
+          label=$(echo "$version" | sed -E 's/-([0-9]+)$/ (\1)/')
 
           # --latest is what moves the website's button to this build.
-          gh release create "$tag" "$ASSET_NAME" \
+          gh release create "$tag" "${assets[@]}" \
             -R "$SITE_REPO" \
             --title "اقرأ وارتق لـ Windows — $label" \
             --notes-file notes.md \
