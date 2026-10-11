@@ -114,3 +114,38 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# === The C++ runtime, beside the executable ===
+#
+# A Flutter Windows app is a C++ program linked against the Visual C++
+# runtime, and a machine that has never run one does not have that runtime:
+# Windows then refuses to start the app with "The code execution cannot
+# proceed because MSVCP140.dll was not found", which tells a reader nothing
+# they can act on. It was reported from a real machine on 2026-10-11.
+#
+# The download is a zip that promises nothing is installed, so the runtime
+# travels inside it — app-local deployment, which is how Microsoft licenses
+# these DLLs to be redistributed. Roughly 2 MB in a 20 MB zip.
+#
+# UCRT is deliberately left out: it has been part of Windows itself since
+# Windows 10, which is the oldest Windows this app is offered for.
+#
+# _SKIP tells InstallRequiredSystemLibraries to work out which DLLs are
+# needed without installing them where it would choose (a bin/ directory);
+# the install rule below then puts them beside mirqat.exe.
+set(CMAKE_INSTALL_UCRT_LIBRARIES FALSE)
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+include(InstallRequiredSystemLibraries)
+if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+  install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+else()
+  # Not fatal — a developer's machine has the runtime and runs the app
+  # anyway — but a release built here would hand that error to a reader, so
+  # the Windows workflow fails on a zip with no msvcp140.dll in it.
+  message(WARNING
+    "No Visual C++ runtime DLLs were found to ship beside the app. A zip "
+    "built from here will not run on a machine without the Visual C++ "
+    "redistributable installed.")
+endif()

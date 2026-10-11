@@ -132,6 +132,14 @@ lib/
   (A.2 rule 1 is about the bytes, and they are untouched). **On a desktop the design is
   the window** (`core/desktop.dart`): nothing is scaled, the mushaf page is held to a
   printed page's width, lists to a column, the keyboard turns pages and a mouse drags.
+  **A window wide enough lies open at two facing pages** (`spreadFits`,
+  `kDesktopSpreadWidth`), as a printed mushaf does: the pager's items become *leaves* of
+  two pages with the fold between them, the earlier page on the right whatever the
+  interface language, and one swipe or one arrow key turns both. Leaves are paired from
+  the first page on show — page 1 for the whole mushaf, so the first leaf is Al-Fatiha
+  facing the opening of Al-Baqarah, as the mushaf is bound; a surah or juz read on its
+  own pairs from its own first page, so no half of a leaf is a page it does not hold.
+  Below that width, and on every phone and tablet, one page at a time as before.
 - **Colors:** `Theme.of(context)` / `AppColors` tokens only — no raw `Colors.*` literals.
 - **Strings:** `easy_localization`, both `ar.json` and `en.json` populated with accurate
   Arabic. No hardcoded user-facing strings.

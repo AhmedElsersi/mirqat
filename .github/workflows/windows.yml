@@ -91,6 +91,25 @@ jobs:
           if (!(Test-Path $out)) {
             throw "No build output at $out. Flutter built for another architecture."
           }
+
+          # The Visual C++ runtime the app is linked against (windows/
+          # CMakeLists.txt installs it beside the exe). Without it the app
+          # does not start on a machine that has never run a C++ program:
+          # "MSVCP140.dll was not found", reported from a real machine on
+          # 2026-10-11. A silent failure to ship it would only be found by
+          # whoever downloads the zip, so it is checked here instead.
+          foreach ($dll in @('msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll')) {
+            if (!(Test-Path (Join-Path $out $dll))) {
+              throw "$dll is missing from the build output. The zip would not run on a machine without the Visual C++ redistributable."
+            }
+          }
+
+          # How to run it, in both languages, each under its own name, at the
+          # top of the zip beside mirqat.exe — the first thing seen on
+          # opening it, and the only instructions a reader gets before the
+          # SmartScreen warning or a missing runtime.
+          Copy-Item ".github/windows-package/*" -Destination $out -Force
+
           Compress-Archive -Path "$out/*" -DestinationPath "$name.zip"
           "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append

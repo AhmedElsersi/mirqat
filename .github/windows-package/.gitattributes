@@ -1,0 +1,6 @@
+# These two files are shipped to Windows readers exactly as they are written:
+# UTF-8 with a BOM and CRLF line endings, which is what Notepad needs to show
+# Arabic, and to show line breaks at all. No end-of-line conversion, in either
+# direction, on any machine that checks them out — including the runner that
+# packs them into the zip.
+* -text

@@ -417,6 +417,22 @@ class AppHarness {
     return mushaf;
   }
 
+  /// Lets the database reads a page turn started actually finish.
+  ///
+  /// A page turned by a key or a swipe runs under the test's fake clock, and
+  /// the read it starts cannot complete there. Left in flight it holds the
+  /// sqflite connection — and every later test in the file then waits out the
+  /// ten-minute timeout trying to read the same database. Real time is all
+  /// those reads need, so a test that turns pages ends with this.
+  static Future<void> settleReads(WidgetTester tester) async {
+    await tester.runAsync(() async {
+      for (int i = 0; i < 60; i++) {
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    });
+  }
+
   /// Runs frames for [total] ms, one at a time. A single long pump is a
   /// single frame, which starts an animation without ever advancing it.
   static Future<void> frames(WidgetTester tester, [int total = 700]) async {

@@ -32,6 +32,26 @@ const double kDesktopContentWidth = 760;
 /// a comfortable reading size, with its frame.
 const double kDesktopPageWidth = 640;
 
+/// The narrowest window that lies open at two facing pages, the way a printed
+/// mushaf does.
+///
+/// Below it the window turns one page at a time. The number is not taste: a
+/// mushaf line sets its own font size from the width of the page it is
+/// printed on (A.3), so two pages in a 900-pixel window would be two
+/// 450-pixel pages and the script would come out half the size the same
+/// window shows it at now. At 1000 each page is 500 wide — a printed page's
+/// proportions at a size that is still read rather than squinted at.
+const double kDesktopSpreadWidth = 1000;
+
+/// The widest an open spread is drawn: two pages at [kDesktopPageWidth], and
+/// no wider however far the window is dragged.
+const double kDesktopSpreadMaxWidth = 2 * kDesktopPageWidth;
+
+/// Whether a window [width] wide lies open at two facing pages. False on a
+/// phone whatever its width: a tablet held in two hands is not a book on a
+/// desk, and its pages are turned with a thumb.
+bool spreadFits(double width) => isDesktop && width >= kDesktopSpreadWidth;
+
 /// [child] at the width a desk can read, centred; on a phone, as it is.
 class DesktopWidth extends StatelessWidget {
   const DesktopWidth({
