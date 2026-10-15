@@ -224,21 +224,24 @@ jobs:
       # `flutter build ipa` cannot take one.
       - run: flutter build ios --release --no-codesign
 
-      # The archive keeps the project's automatic signing, with the API key
-      # standing in for an Apple ID. The profile is *not* forced on here: a
-      # build setting on the command line reaches every target, and the pods
-      # and Swift packages refuse a provisioning profile. The export below is
-      # where the archive is re-signed by hand with the profile.
+      # The archive is not signed at all. It used to keep the project's
+      # automatic signing, with the API key standing in for an Apple ID — but
+      # on a throwaway runner that mints a new development certificate every
+      # run, its private key dying with the runner, until the account hits
+      # Apple's certificate cap and the archive fails asking for one to
+      # revoke (run 38769445267, 2026-10-15). Nothing needs a signature this
+      # early: the export below signs the whole archive by hand with the
+      # distribution certificate and profile installed above, and creates
+      # nothing on the account. Turning signing *off* reaches every target
+      # too, but unlike a forced profile, the pods and Swift packages take no
+      # offence at not being signed.
       - name: Archive
         run: |
           set -o pipefail
           xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
             -configuration Release -destination "generic/platform=iOS" \
             -archivePath build/ios/Runner.xcarchive archive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$AUTH_KEY" \
-            -authenticationKeyID "$APPSTORE_KEY_ID" \
-            -authenticationKeyIssuerID "$APPSTORE_ISSUER_ID"
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 
       - name: Upload to App Store Connect
         run: |
