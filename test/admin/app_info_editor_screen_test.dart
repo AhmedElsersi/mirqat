@@ -24,6 +24,9 @@ class _NoPicker implements AdminFilePicker {
   Future<String?> pickLinkFile() async => null;
 
   @override
+  Future<String?> pickFolder() async => null;
+
+  @override
   Future<String?> pickImage() async => null;
 
   @override

@@ -20,6 +20,14 @@ abstract class SegmentPreview {
   /// True while something is playing; false when it stops or runs out.
   Stream<bool> get playing;
 
+  /// Where playback has reached, measured from the start of the stretch
+  /// being played — zero at [play]'s `from`, and `to - from` at its end.
+  ///
+  /// Within the stretch and not within the recording, because that is what
+  /// the player actually reports once a clip is set, and the one real device
+  /// this runs on is the measure of what the fakes must do.
+  Stream<Duration> get position;
+
   Future<void> dispose();
 }
 
@@ -38,26 +46,65 @@ class JustAudioSegmentPreview implements SegmentPreview {
   final AudioPlayer _player;
   String? _loadedPath;
 
+  /// Every operation on [_player] runs through this chain, one at a time.
+  ///
+  /// The player is one shared device and its methods are long `await`
+  /// sequences. Two [play] calls close together — an operator stepping down
+  /// the review list faster than a clip loads — used to interleave: the
+  /// first tap's `setClip` could land *after* the second's, and from then on
+  /// every row replayed the first row's stretch while the screen named
+  /// another. Serialised, the later tap always acts last.
+  Future<void> _serial = Future<void>.value();
+
+  /// Which request is the newest. A queued operation that is no longer the
+  /// newest does nothing: the tap it belonged to has been overtaken.
+  int _generation = 0;
+
   @override
   Future<void> play(
     File source, {
     required Duration from,
     required Duration to,
-  }) async {
-    await _player.stop();
-    if (_loadedPath != source.path) {
-      await _player.setFilePath(source.path);
-      _loadedPath = source.path;
-    }
-    await _player.setClip(start: from, end: to);
-    await _player.seek(Duration.zero);
-    // Not awaited: `play` completes when playback ends, and the caller wants
-    // to get on with showing that something is playing.
-    unawaited(_player.play());
+  }) {
+    final int mine = ++_generation;
+    return _serial = _serial.then((_) async {
+      if (mine != _generation) return;
+      // Pause, never stop: `stop` tears the platform player down, and
+      // `setClip` after it races the rebuild — which is exactly the state
+      // a stale clip gets stuck in. A paused player keeps its decoder and
+      // takes the new clip deterministically.
+      await _player.pause();
+      try {
+        if (_loadedPath != source.path) {
+          await _player.setFilePath(source.path);
+          _loadedPath = source.path;
+        }
+        await _player.setClip(start: from, end: to);
+        await _player.seek(Duration.zero);
+      } on Object {
+        // Whatever state the player was left in, it is not the state the
+        // cache claims: the next play must load afresh.
+        _loadedPath = null;
+        rethrow;
+      }
+      if (mine != _generation) return;
+      // Not awaited: `play` completes when playback ends, and the caller
+      // wants to get on with showing that something is playing.
+      unawaited(_player.play());
+    });
   }
 
   @override
-  Future<void> stop() => _player.stop();
+  Future<void> stop() {
+    final int mine = ++_generation;
+    return _serial = _serial.then((_) async {
+      if (mine != _generation) return;
+      await _player.pause();
+    });
+  }
+
+  @override
+  Stream<Duration> get position => _player.positionStream;
 
   @override
   Stream<bool> get playing => _player.playerStateStream

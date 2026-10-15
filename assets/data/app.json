@@ -8,11 +8,31 @@
     "ar": "أن يكون حفظ القرآن متاحًا لكل من أراده، في أي وقت وفي أي مكان: طريقة حِلَق التحفيظ بين يديك، بصوت قارئ متقن، وبالقدر الذي تختاره أنت من التكرار والوصل.\n\nنسأل الله أن يجعله عونًا على حفظ كتابه، وأن يتقبّله منّا ومنكم.",
     "en": "To put memorizing the Quran within reach of anyone who wants it, at any time and in any place: the halaqa's method in your hands, in the voice of a careful reciter, with as much repetition and joining as you choose.\n\nWe ask Allah to make it a help in memorizing His Book, and to accept it from us and from you."
   },
+  "idea": {
+    "text": {
+      "ar": "فكرة هذا التطبيق — حفظ القرآن الكريم بالتلقين والتكرار والوصل، كما تفعل حِلَق التحفيظ — هي فكرة الأستاذ سعيد العكش، جزاه الله خيرًا، وعلى هديها بُني التطبيق.",
+      "en": "The idea of this app — memorizing the Quran by talqeen, repetition and joining, the way a halaqa does — belongs to Mr. Saied Eloksh, may Allah reward him. The app was built upon it."
+    },
+    "owner": {
+      "name": {
+        "ar": "سعيد العكش",
+        "en": "Saied Eloksh"
+      },
+      "photo": "",
+      "email": "",
+      "phone": "",
+      "github": "",
+      "linkedin": "",
+      "whatsapp": "",
+      "facebook": ""
+    }
+  },
   "developer": {
     "name": {
       "ar": "Ahmed Elsersi",
       "en": "Ahmed Elsersi"
     },
+    "phone": "",
     "photo": "",
     "email": "ahmed.elsersi3@gmail.com",
     "github": "https://github.com/ahmedelsersi",
@@ -23,9 +43,9 @@
   "update": {
     "android": {
       "min": "1.1.0",
-      "minBuild": 18,
+      "minBuild": 24,
       "latest": "1.1.0",
-      "latestBuild": 19,
+      "latestBuild": 25,
       "force": true,
       "storeUrl": "https://play.google.com/store/apps/details?id=com.mirqat.app"
     },

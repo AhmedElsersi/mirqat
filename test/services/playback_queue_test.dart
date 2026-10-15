@@ -81,8 +81,18 @@ void main() {
     late PlaybackQueue queue;
 
     setUp(() {
+      // The worked example's pauses, spelled out: the product defaults are
+      // zero (owner decision, October 2026), and this example is about where
+      // the silences land when there are some.
       plan = planFor(
-        const SessionConfig(surahNumber: 1, startAyah: 1, endAyah: 3),
+        const SessionConfig(
+          surahNumber: 1,
+          startAyah: 1,
+          endAyah: 3,
+          intraBlockPauseMs: 300,
+          betweenRepeatPauseMs: 800,
+          betweenStepsPauseMs: 1500,
+        ),
       );
       queue = builder.build(plan: plan);
     });
@@ -224,6 +234,9 @@ void main() {
             endAyah: 2,
             repeatCount: 3,
             connectMode: mode,
+            // Explicit: a preamble's trailing gap is cut from
+            // betweenStepsPauseMs, and the product default is now zero.
+            betweenStepsPauseMs: 1500,
           ),
           ayahCounts: const <int, int>{112: 4, 113: 5},
         );

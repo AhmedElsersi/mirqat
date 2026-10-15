@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the share FileProvider exposes: only the cache dir's share/ folder,
+     which is where ShareService writes the image it is about to hand on.
+     Nothing else on the device is reachable through this authority. -->
+<paths>
+    <cache-path name="share" path="share/" />
+</paths>

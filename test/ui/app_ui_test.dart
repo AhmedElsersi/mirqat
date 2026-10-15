@@ -299,13 +299,14 @@ void main() {
       await openReader(tester);
       await openSheet(tester);
 
-      // Full Al-Fatiha, N=3, continuous — the fresh-install default: one
-      // step, 7 * 3 = 21 recitations.
+      // Full Al-Fatiha, N=3, cumulative — the fresh-install default (owner
+      // decision, October 2026): 7 learn steps and 6 joins, and
+      // 3·7 + 3·(2+3+4+5+6+7) = 102 recitations.
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
       );
-      expect(summary.stepCount, 1);
-      expect(summary.unitCount, 21);
+      expect(summary.stepCount, 13);
+      expect(summary.unitCount, 102);
       expect(summary.duration, isNotEmpty);
     });
 
@@ -337,9 +338,10 @@ void main() {
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
       );
-      // N=4 over 7 ayahs, continuous: still one step, 28 recitations.
-      expect(summary.stepCount, 1);
-      expect(summary.unitCount, 28);
+      // N=4 over 7 ayahs, cumulative: the same 13 steps,
+      // 4·7 + 4·(2+3+4+5+6+7) = 136 recitations.
+      expect(summary.stepCount, 13);
+      expect(summary.unitCount, 136);
     });
 
     testWidgets('a range set in the sheet is the range the bar offers', (
@@ -356,8 +358,8 @@ void main() {
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
       );
-      // 5 ayahs x 3 passes.
-      expect(summary.unitCount, 15);
+      // 5 ayahs, N=3, cumulative: 3·5 + 3·(2+3+4+5) = 57 recitations.
+      expect(summary.unitCount, 57);
 
       await AppHarness.tapAndRun(tester, find.byIcon(Icons.close));
 

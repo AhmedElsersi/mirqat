@@ -48,13 +48,19 @@ void main() {
 
     expect(settings.reciterId, isNull);
     expect(settings.defaultRepeatCount, SessionConfig.defaultRepeatCount);
-    // Continuous is the product default for a new reader (owner decision).
-    expect(settings.defaultConnectMode, ConnectMode.continuous);
+    // Cumulative is the product default for a new reader (owner decision,
+    // October 2026 — it was continuous before).
+    expect(settings.defaultConnectMode, ConnectMode.cumulative);
     expect(settings.defaultFinalFullPass, isNull);
+    // All three pauses default to zero (owner decision, October 2026).
+    expect(settings.defaultIntraBlockPauseMs, 0);
+    expect(settings.defaultBetweenRepeatPauseMs, 0);
+    expect(settings.defaultBetweenStepsPauseMs, 0);
     expect(settings.defaultRangeBehaviour, RangeBehaviour.wholeSurah);
     expect(settings.lastRanges, isEmpty);
     expect(settings.themeMode, AppThemeMode.system);
-    expect(settings.homeViewMode, HomeViewMode.list);
+    // The app opens as a mushaf (owner decision, October 2026).
+    expect(settings.homeViewMode, HomeViewMode.mushaf);
     expect(settings.arabicFontSize, AppSettings.defaultArabicFontSize);
   });
 
@@ -115,7 +121,7 @@ void main() {
     expect(settings.themeMode, AppThemeMode.dark);
     expect(settings.arabicFontSize, 30.0);
     // Absent, so the defaults apply rather than throwing.
-    expect(settings.homeViewMode, HomeViewMode.list);
+    expect(settings.homeViewMode, HomeViewMode.mushaf);
     expect(settings.defaultPlaybackSpeed, SessionConfig.defaultPlaybackSpeed);
     expect(settings.lastRanges, isEmpty);
   });
@@ -128,7 +134,7 @@ void main() {
 
     // Falls back to the fresh-install default, which is what an unreadable
     // value and an absent one both mean.
-    expect(settings.defaultConnectMode, ConnectMode.continuous);
+    expect(settings.defaultConnectMode, ConnectMode.cumulative);
     expect(settings.themeMode, AppThemeMode.system);
   });
 
@@ -226,8 +232,8 @@ void main() {
       await seedRaw(<String, dynamic>{'defaultConnectMode': 'telepathy'});
 
       final SettingsLocalDataSource source = await openSource();
-      expect((await source.read()).defaultConnectMode, ConnectMode.continuous);
-      expect((await readRaw())?['defaultConnectMode'], 'continuous');
+      expect((await source.read()).defaultConnectMode, ConnectMode.cumulative);
+      expect((await readRaw())?['defaultConnectMode'], 'cumulative');
     });
 
     test('decodeStored reports how each value was read', () {

@@ -141,6 +141,11 @@ class SettingsScreen extends StatelessWidget {
                       onTap: () => context.pushNamed(AppRoutes.aboutUsName),
                     ),
                     SettingsLinkRow(
+                      icon: Icons.lightbulb_outline,
+                      title: LocaleKeys.aboutIdea.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.ideaName),
+                    ),
+                    SettingsLinkRow(
                       icon: Icons.person_outline,
                       title: LocaleKeys.aboutDeveloper.tr(),
                       onTap: () => context.pushNamed(AppRoutes.developerName),

@@ -19,6 +19,10 @@ abstract class AdminFilePicker {
   /// A file of links — a QUL recitation export — or null when the operator
   /// cancelled.
   Future<String?> pickLinkFile();
+
+  /// A folder holding one recording per surah, for the batch splitter, or
+  /// null when the operator cancelled.
+  Future<String?> pickFolder();
 }
 
 class NativeAdminFilePicker implements AdminFilePicker {
@@ -36,4 +40,7 @@ class NativeAdminFilePicker implements AdminFilePicker {
   @override
   Future<String?> pickLinkFile() =>
       _channel.invokeMethod<String>('pickLinkFile');
+
+  @override
+  Future<String?> pickFolder() => _channel.invokeMethod<String>('pickFolder');
 }

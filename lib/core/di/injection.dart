@@ -21,6 +21,7 @@ import '../../features/about/cubit/app_info_cubit.dart';
 import '../../features/home/cubit/home_index_cubit.dart';
 import '../../features/mushaf/cubit/mushaf_cubit.dart';
 import '../../features/progress/cubit/progress_cubit.dart';
+import '../../features/search/cubit/search_cubit.dart';
 import '../../features/session/cubit/audio_pack_cubit.dart';
 import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
@@ -42,6 +43,7 @@ import '../../services/audio/reciter_catalog.dart';
 import '../../services/keep_awake_service.dart';
 import '../../services/link_opener.dart';
 import '../../services/reciter_image_cache.dart';
+import '../../services/share_service.dart';
 
 /// The service locator.
 final GetIt sl = GetIt.instance;
@@ -113,6 +115,7 @@ Future<void> configureDependencies() async {
 
   // --- Services ---
   sl.registerLazySingleton<KeepAwakeService>(KeepAwakeService.new);
+  sl.registerLazySingleton<ShareService>(ShareService.new);
   // Both hold something that outlives a screen — a broadcast controller and
   // its subscription — so both are closed when the locator is reset.
   sl.registerLazySingleton<ManifestService>(
@@ -166,6 +169,9 @@ Future<void> configureDependencies() async {
   );
 
   // --- Cubits ---
+  sl.registerFactory<SearchCubit>(
+    () => SearchCubit(sl<QuranRepository>(), sl<QuranPagesRepository>()),
+  );
   sl.registerFactory<SurahListCubit>(
     () => SurahListCubit(
       quranRepository: sl<QuranRepository>(),

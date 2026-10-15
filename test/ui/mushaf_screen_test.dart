@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -13,6 +16,7 @@ import 'package:mirqat/features/mushaf/cubit/mushaf_cubit.dart';
 import 'package:mirqat/features/mushaf/cubit/mushaf_page.dart';
 import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_actions_sheet.dart';
+import 'package:mirqat/features/mushaf/widgets/ayah_share_dialog.dart';
 import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -308,6 +312,77 @@ void main() {
         find.byType(AyahActionsSheet),
       );
       expect(sheet.ayah, const AyahRef(1, 1));
+    });
+
+    testWidgets('a long-pressed ayah can be shared: the dialog shows the '
+        'verbatim text in the frame, and the platform is handed a png', (
+      WidgetTester tester,
+    ) async {
+      await openMushaf(tester);
+
+      final List<MethodCall> calls = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('com.mirqat.app/share'),
+        (MethodCall call) async {
+          calls.add(call);
+          return null;
+        },
+      );
+
+      await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text(LocaleKeys.mushafShareAyah.tr()), findsOneWidget);
+
+      // The tap starts a quran.db read, which only completes in the real
+      // zone — same reasoning as every other real-zone block here.
+      await tester.runAsync(() async {
+        await tester.tap(find.text(LocaleKeys.mushafShareAyah.tr()));
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await frames(tester);
+
+      // The card renders quran.db's bytes for 1:1, untouched, through
+      // AyahText and nothing else.
+      final String expected =
+          (await real(
+                tester,
+                () => db.query(
+                  'ayahs',
+                  columns: <String>['text'],
+                  where: 'surah = 1 AND ayah = 1',
+                ),
+              )).single['text']!
+              as String;
+      final AyahText rendered = tester.widget(
+        find.descendant(
+          of: find.byType(AyahShareCard),
+          matching: find.byType(AyahText),
+        ),
+      );
+      expect(rendered.ayahs!.single.text, expected);
+
+      // The share itself — the capture, the file write and the channel call
+      // are all real I/O.
+      await tester.runAsync(() async {
+        await tester.tap(find.text(LocaleKeys.mushafShare.tr()));
+        await tester.pump();
+        for (int i = 0; i < 200 && calls.isEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      });
+      await frames(tester);
+
+      expect(calls, hasLength(1));
+      expect(calls.single.method, 'shareFile');
+      final Map<Object?, Object?> args =
+          calls.single.arguments as Map<Object?, Object?>;
+      expect(args['mimeType'], 'image/png');
+      final String path = args['path']! as String;
+      expect(path, endsWith('ayah_1_1.png'));
+      expect(File(path).lengthSync(), greaterThan(0));
+      // Handed over, so the dialog has closed.
+      expect(find.byType(AyahShareDialog), findsNothing);
     });
 
     testWidgets('an ayah can be marked as where the reader stopped: the sheet '

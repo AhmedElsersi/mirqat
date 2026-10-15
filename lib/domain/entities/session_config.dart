@@ -162,9 +162,12 @@ class SessionConfig extends Equatable {
   /// of recitations in it. Three digits is also the width of the input field.
   static const int maxRepeatCount = 999;
 
-  static const int defaultIntraBlockPauseMs = 300;
-  static const int defaultBetweenRepeatPauseMs = 800;
-  static const int defaultBetweenStepsPauseMs = 1500;
+  // All three pauses default to zero per the owner's decision: the recitation
+  // runs on with no gaps until the reader asks for them. A zero pause inserts
+  // no spacer clips at all (see PlaybackQueueBuilder.spacerCount).
+  static const int defaultIntraBlockPauseMs = 0;
+  static const int defaultBetweenRepeatPauseMs = 0;
+  static const int defaultBetweenStepsPauseMs = 0;
 
   static const double defaultPlaybackSpeed = 1.0;
   static const double minPlaybackSpeed = 0.5;

@@ -22,6 +22,10 @@ class AppRoutes {
   static const String historyPath = '/history';
   static const String historyName = 'history';
 
+  /// Search: a surah by name, an ayah by its words, a page by its number.
+  static const String searchPath = '/search';
+  static const String searchName = 'search';
+
   static const String settingsPath = '/settings';
   static const String settingsName = 'settings';
 
@@ -39,6 +43,8 @@ class AppRoutes {
   static const String goalName = 'goal';
   static const String aboutUsPath = 'about';
   static const String aboutUsName = 'about_us';
+  static const String ideaPath = 'idea';
+  static const String ideaName = 'app_idea';
   static const String developerPath = 'developer';
   static const String developerName = 'developer';
 

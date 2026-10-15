@@ -10,14 +10,17 @@ import 'package:mirqat/admin/config/admin_config.dart';
 import 'package:mirqat/admin/cubit/admin_cubit.dart';
 import 'package:mirqat/admin/cubit/admin_state.dart';
 import 'package:mirqat/admin/services/admin_file_picker.dart';
+import 'package:mirqat/admin/services/batch_split.dart';
 import 'package:mirqat/admin/services/ffmpeg_runner.dart';
 import 'package:mirqat/admin/services/pack_publisher.dart';
 import 'package:mirqat/admin/services/pages_publisher.dart';
 import 'package:mirqat/admin/services/publish_guard.dart';
+import 'package:mirqat/admin/services/recitation_weight.dart';
 import 'package:mirqat/admin/services/r2_client.dart';
 import 'package:mirqat/admin/services/segment_planner.dart';
 import 'package:mirqat/admin/services/segment_preview.dart';
 import 'package:mirqat/core/state/load_status.dart';
+import 'package:mirqat/data/models/ayah.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/data/repositories/quran_repository.dart';
 
@@ -122,13 +125,31 @@ class _Preview implements SegmentPreview {
   Stream<bool> get playing => _playing.stream;
 
   @override
-  Future<void> dispose() => _playing.close();
+  Stream<Duration> get position => _position.stream;
+  final StreamController<Duration> _position =
+      StreamController<Duration>.broadcast();
+
+  /// The playhead reached [at], measured from the start of the stretch
+  /// being played — which is how the real player reports a clip.
+  void reached(Duration at) => _position.add(at);
+
+  @override
+  Future<void> dispose() async {
+    await _position.close();
+    await _playing.close();
+  }
 }
 
 /// Stands in for the macOS open panel.
 class _Picker implements AdminFilePicker {
   @override
   Future<String?> pickLinkFile() async => null;
+
+  /// What the folder panel answers; null for a cancelled panel.
+  String? folder;
+
+  @override
+  Future<String?> pickFolder() async => folder;
 
   _Picker(this.answer);
 
@@ -638,6 +659,178 @@ void main() {
       );
     });
 
+    test(
+      'across the start is the seconds either side of the first cut',
+      () async {
+        final _Preview preview = _Preview();
+        final AdminCubit cubit = await splitSurah2(preview);
+
+        await cubit.previewSegment(2, part: PreviewPart.acrossStart);
+
+        expect(preview.played.single, (
+          const Duration(seconds: 1),
+          const Duration(seconds: 7),
+        ));
+      },
+    );
+
+    test(
+      'the playhead is reported as a fraction of the clip being heard',
+      () async {
+        final _Preview preview = _Preview();
+        final AdminCubit cubit = await splitSurah2(preview);
+
+        // Segment 2 runs 4–8 s, a four-second clip. The player reports
+        // positions within the clip, not within the recording — that is what
+        // just_audio does once a clip is set, and the first playhead shipped
+        // was mapped from recording positions, so the bar on the real device
+        // sat at zero while the clip played.
+        await cubit.previewSegment(2);
+        final Future<List<double>> seen = cubit.previewProgress
+            .take(3)
+            .toList();
+        preview
+          ..reached(Duration.zero)
+          ..reached(const Duration(seconds: 2))
+          // Past the end of the clip — a position stream does not stop dead on
+          // the boundary, and a bar must not run past its track.
+          ..reached(const Duration(seconds: 5));
+
+        expect(await seen, <double>[0, 0.5, 1]);
+      },
+    );
+
+    test('a cut lands where the ear said, at the playhead', () async {
+      final _Preview preview = _Preview();
+      final AdminCubit cubit = await splitSurah2(preview);
+
+      // Listening to segment 2 (4–8 s); playback is 1.5 s in, so the moment
+      // being heard is 5.5 s into the recording.
+      await cubit.previewSegment(2);
+      preview.reached(const Duration(milliseconds: 1500));
+      await Future<void>.delayed(Duration.zero);
+
+      await cubit.cutAtPlayhead();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.plan!.actualCount, 5);
+      expect(
+        cubit.state.plan!.segments[2].end,
+        const Duration(milliseconds: 5500),
+      );
+      expect(
+        cubit.state.plan!.segments[3].start,
+        const Duration(milliseconds: 5500),
+      );
+      // The two halves are for listening to next, not for talking over.
+      expect(cubit.state.previewingIndex, isNull);
+    });
+
+    test('a boundary can be set to the playhead, by ear', () async {
+      final _Preview preview = _Preview();
+      final AdminCubit cubit = await splitSurah2(preview);
+
+      // Listening across segment 2's start: the window runs 1–7 s. The
+      // right opening turns out to be 2.5 s into the window — 3.5 s in the
+      // recording.
+      await cubit.previewSegment(2, part: PreviewPart.acrossStart);
+      preview.reached(const Duration(milliseconds: 2500));
+      await Future<void>.delayed(Duration.zero);
+
+      await cubit.setEdgeToPlayhead(2, SegmentEdge.start);
+      await Future<void>.delayed(Duration.zero);
+
+      const Duration at = Duration(milliseconds: 3500);
+      expect(cubit.state.plan!.segments[2].start, at);
+      // Joined, as the editor defaults: the neighbour's end came along.
+      expect(cubit.state.plan!.segments[1].end, at);
+    });
+
+    test('with nothing playing there is no playhead to cut at', () async {
+      final AdminCubit cubit = await splitSurah2(_Preview());
+      final SegmentPlan before = cubit.state.plan!;
+
+      await cubit.cutAtPlayhead();
+      await cubit.setEdgeToPlayhead(2, SegmentEdge.start);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.plan, before);
+    });
+
+    test('two halves of one ayah can be joined back together', () async {
+      final AdminCubit cubit = await splitSurah2(_Preview());
+
+      // 0–3 basmala, 3–4 ayah 1, 4–8 ayah 2, 8–12 ayah 3: join the two that
+      // the splitter would have cut from one.
+      cubit.mergeSegment(1);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.plan!.actualCount, 3);
+      expect(cubit.state.plan!.segments[1].start, const Duration(seconds: 3));
+      expect(cubit.state.plan!.segments[1].end, const Duration(seconds: 8));
+      // One ayah short of the catalog now, and the guard says so.
+      expect(cubit.state.decision, isA<PublishBlocked>());
+    });
+
+    test('the last clip has nothing after it to join', () async {
+      final AdminCubit cubit = await splitSurah2(_Preview());
+      final SegmentPlan before = cubit.state.plan!;
+
+      cubit.mergeSegment(3);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.plan, before);
+    });
+
+    test('undo takes back a join, a drop and a nudge, newest first', () async {
+      final AdminCubit cubit = await splitSurah2(_Preview());
+      final SegmentPlan split = cubit.state.plan!;
+      expect(cubit.state.canUndo, isFalse);
+
+      cubit.mergeSegment(1);
+      await Future<void>.delayed(Duration.zero);
+      final SegmentPlan merged = cubit.state.plan!;
+      cubit.removeSegment(0);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.canUndo, isTrue);
+
+      await cubit.undo();
+      expect(cubit.state.plan, merged);
+
+      await cubit.undo();
+      expect(cubit.state.plan, split);
+      // Back at the start, with nothing left to undo.
+      expect(cubit.state.canUndo, isFalse);
+      await cubit.undo();
+      expect(cubit.state.plan, split);
+    });
+
+    test('undo puts the clip check back as it was', () async {
+      final AdminCubit cubit = await splitSurah2(_Preview());
+      final List<int> before = cubit.state.suspects;
+
+      cubit.mergeSegment(1);
+      await Future<void>.delayed(Duration.zero);
+      await cubit.undo();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.suspects, before);
+    });
+
+    test('a fresh split is not undone into the one before it', () async {
+      final AdminCubit cubit = await splitSurah2(_Preview());
+
+      cubit.removeSegment(0);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.canUndo, isTrue);
+
+      await cubit.split();
+
+      // Those edits belonged to segments that no longer exist.
+      expect(cubit.state.canUndo, isFalse);
+      expect(cubit.state.plan!.actualCount, 4);
+    });
+
     test('a new split stops whatever was playing', () async {
       final _Preview preview = _Preview();
       final AdminCubit cubit = await splitSurah2(preview);
@@ -768,6 +961,214 @@ void main() {
 
       expect(cubit.state.sourcePath, isNull);
       expect(cubit.state.errorMessage, contains('run_admin.sh'));
+    });
+  });
+
+  group('the batch — a folder of recordings, split one after another', () {
+    late Directory folder;
+
+    setUp(() {
+      folder = Directory.systemTemp.createTempSync('mirqat_batch');
+    });
+
+    tearDown(() {
+      if (folder.existsSync()) folder.deleteSync(recursive: true);
+    });
+
+    /// A folder for the fixture catalog: surah 1 splits clean, surah 2 comes
+    /// out with one clip that does not fit its text, and two files are not
+    /// recordings the tool can place.
+    void fillFolder() {
+      File('${folder.path}/001.mp3').writeAsStringSync('surah one');
+      File('${folder.path}/002.mp3').writeAsStringSync('surah two');
+      File('${folder.path}/999.mp3').writeAsStringSync('no such surah');
+      File('${folder.path}/notes.txt').writeAsStringSync('not audio');
+      File('${folder.path}/.DS_Store').writeAsStringSync('finder noise');
+    }
+
+    Future<AdminCubit> run() async {
+      final AdminCubit cubit = open();
+      await cubit.load();
+      cubit.setReciterId('shaheen');
+      await cubit.runBatchOn(folder.path);
+      return cubit;
+    }
+
+    test('every recording is split and judged; what is not a recording is '
+        'reported, not skipped', () async {
+      fillFolder();
+      final AdminCubit cubit = await run();
+
+      expect(cubit.state.batchRunning, isFalse);
+      expect(cubit.state.batch, hasLength(3));
+
+      final BatchEntry one = cubit.state.batch.firstWhere(
+        (BatchEntry e) => e.surahNumber == 1,
+      );
+      // Surah 1's basmala is its first ayah, so three segments are expected
+      // and the threshold split gives exactly that, every clip in line.
+      expect(one.status, BatchStatus.clean);
+      expect(one.plan!.actualCount, 3);
+
+      final BatchEntry two = cubit.state.batch.firstWhere(
+        (BatchEntry e) => e.surahNumber == 2,
+      );
+      // Aligned to four, but the one-second clip cannot be three equal
+      // ayahs' worth — the ear is asked for, not presumed.
+      expect(two.status, BatchStatus.suspect);
+      expect(two.detail, contains('listen'));
+      expect(two.suspects, isNotEmpty);
+
+      final BatchEntry stray = cubit.state.batch.firstWhere(
+        (BatchEntry e) => e.surahNumber == 0,
+      );
+      expect(stray.status, BatchStatus.failed);
+      expect(stray.fileName, '999.mp3');
+    });
+
+    test(
+      'the folder gets a README naming exactly what needs attention',
+      () async {
+        fillFolder();
+        await run();
+
+        final String readme = File(
+          '${folder.path}/README.md',
+        ).readAsStringSync();
+        expect(readme, contains('1 clean'));
+        expect(readme, contains('002.mp3'));
+        expect(readme, contains('999.mp3'));
+        // The clean recording is a count, not a to-do line.
+        expect(readme, isNot(contains('001.mp3')));
+      },
+    );
+
+    test('a batch entry opens in the review list, split and all', () async {
+      fillFolder();
+      final AdminCubit cubit = await run();
+
+      final int index = cubit.state.batch.indexWhere(
+        (BatchEntry e) => e.surahNumber == 2,
+      );
+      await cubit.openBatchEntry(index);
+
+      expect(cubit.state.surah!.number, 2);
+      expect(cubit.state.sourcePath, '${folder.path}/002.mp3');
+      expect(cubit.state.stage, AdminStage.reviewing);
+      expect(cubit.state.plan!.actualCount, 4);
+      expect(cubit.state.suspects, isNotEmpty);
+      // The ayah text beside the segments is the opened surah's.
+      expect(cubit.state.ayahs, hasLength(3));
+    });
+
+    test('nothing uploads until the operator says publish; then only the '
+        'clean surahs go, under their own numbers', () async {
+      fillFolder();
+      final AdminCubit cubit = await run();
+      expect(uploaded, isEmpty, reason: 'the batch itself never uploads');
+
+      await cubit.publishBatch();
+
+      // Surah 1 alone: its basmala is ayah 1, so three clips and one pack.
+      expect(
+        uploaded.where((String p) => p.contains('/audio/shaheen/')).toList(),
+        <String>[
+          '/iqra-cdn/audio/shaheen/64/001001.mp3',
+          '/iqra-cdn/audio/shaheen/64/001002.mp3',
+          '/iqra-cdn/audio/shaheen/64/001003.mp3',
+        ],
+      );
+      expect(
+        uploaded.where((String p) => p.contains('packs')).toList(),
+        hasLength(1),
+      );
+      expect(
+        cubit.state.batch
+            .firstWhere((BatchEntry e) => e.surahNumber == 1)
+            .status,
+        BatchStatus.published,
+      );
+      // The suspect stayed put.
+      expect(
+        cubit.state.batch
+            .firstWhere((BatchEntry e) => e.surahNumber == 2)
+            .status,
+        BatchStatus.suspect,
+      );
+      // The manifest that names the published surah is written beside the
+      // recordings, where the operator is working.
+      expect(File('${folder.path}/manifest.json').existsSync(), isTrue);
+    });
+
+    test('a suspect fixed by ear turns its chip clean, and the batch publish '
+        'then takes it', () async {
+      fillFolder();
+      final AdminCubit cubit = await run();
+      final int index = cubit.state.batch.indexWhere(
+        (BatchEntry e) => e.surahNumber == 2,
+      );
+      await cubit.openBatchEntry(index);
+      expect(cubit.state.batch[index].status, BatchStatus.suspect);
+
+      // Boundaries laid exactly where the text says they should fall —
+      // the same arithmetic the clip check uses, so nothing is suspect.
+      final List<int> weights = segmentWeights(
+        ayahTexts: <String>[
+          for (final Ayah ayah in cubit.state.ayahs) ayah.text,
+        ],
+        basmalaText: (await fixtureRepository().getAyahRange(
+          1,
+          startAyah: 1,
+          endAyah: 1,
+        )).getOrElse(() => const <Ayah>[]).first.text,
+        hasBasmala: true,
+        hasIstiadhah: false,
+      );
+      final int sum = weights.fold(0, (int a, int w) => a + w);
+      int acc = 0;
+      for (int boundary = 1; boundary < weights.length; boundary++) {
+        acc += weights[boundary - 1];
+        cubit.moveBoundary(
+          boundary,
+          Duration(milliseconds: (12000 * acc / sum).round()),
+        );
+        await Future<void>.delayed(Duration.zero);
+      }
+      // The clip re-check reads the fixture database on the real clock.
+      for (
+        int i = 0;
+        i < 100 && cubit.state.batch[index].status != BatchStatus.clean;
+        i++
+      ) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+
+      expect(cubit.state.suspects, isEmpty);
+      expect(cubit.state.batch[index].status, BatchStatus.clean);
+      expect(cubit.state.batch[index].plan, cubit.state.plan);
+
+      await cubit.publishBatch();
+      expect(
+        uploaded,
+        contains('/iqra-cdn/audio/shaheen/64/002000.mp3'),
+        reason: 'the fixed surah publishes with the batch, basmala as 000',
+      );
+      expect(cubit.state.batch[index].status, BatchStatus.published);
+      // And the folder's README no longer lists it as a to-do.
+      expect(
+        File('${folder.path}/README.md').readAsStringSync(),
+        isNot(contains('002.mp3')),
+      );
+    });
+
+    test('an empty folder is an answer, not a hang', () async {
+      final AdminCubit cubit = open();
+      await cubit.load();
+
+      await cubit.runBatchOn(folder.path);
+
+      expect(cubit.state.batch, isEmpty);
+      expect(cubit.state.errorMessage, contains('No recordings'));
     });
   });
 

@@ -203,8 +203,8 @@ void main() {
       );
       expect(sheet.ayah, const AyahRef(1, 1));
       expect(sheet.canPlay, isTrue);
-      // Mark, listen, memorize, range start, range end.
-      expect(find.byType(ListTile), findsNWidgets(5));
+      // Mark, share, listen, memorize, range start, range end.
+      expect(find.byType(ListTile), findsNWidgets(6));
       expect(
         tester
             .widgetList<ListTile>(find.byType(ListTile))

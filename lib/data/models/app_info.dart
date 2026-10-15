@@ -35,9 +35,10 @@ class LocalizedText extends Equatable {
   List<Object?> get props => <Object?>[ar, en];
 }
 
-/// The ways to reach the developer. Every one is optional, and an empty one
-/// is simply not shown.
-enum DeveloperLink { email, github, linkedin, whatsapp, facebook }
+/// The ways to reach a person named in `app.json` — the developer, the owner
+/// of the app's idea. Every one is optional, and an empty one is simply not
+/// shown.
+enum DeveloperLink { email, phone, github, linkedin, whatsapp, facebook }
 
 class DeveloperInfo extends Equatable {
   const DeveloperInfo({
@@ -81,6 +82,15 @@ class DeveloperInfo extends Equatable {
         return address.contains('@')
             ? Uri(scheme: 'mailto', path: address)
             : null;
+      case DeveloperLink.phone:
+        // A number as people write it: spaces, dashes, a leading plus. The
+        // dialler gets the digits, with the plus kept for the country code.
+        final String number =
+            (raw.startsWith('+') ? '+' : '') +
+            raw.replaceAll(RegExp(r'\D'), '');
+        return number.replaceFirst('+', '').isEmpty
+            ? null
+            : Uri(scheme: 'tel', path: number);
       case DeveloperLink.whatsapp:
         if (raw.startsWith('http')) return Uri.tryParse(raw);
         final String digits = raw.replaceAll(RegExp(r'\D'), '');
@@ -131,6 +141,49 @@ class DeveloperInfo extends Equatable {
 
   @override
   List<Object?> get props => <Object?>[name, photo, links];
+}
+
+/// Where the app's idea came from, and the word of credit that goes with it.
+///
+/// The idea of this app belongs to Mr. Saied Eloksh (سعيد العكش); this
+/// section is what the «فكرة التطبيق» page shows, and it lives in `app.json`
+/// so its words — and how to reach him — can change without a release. The
+/// [owner] is the same shape as the developer's card and is read just as
+/// forgivingly: a link left blank is simply not shown, and a missing photo
+/// shows the name's initial.
+class IdeaInfo extends Equatable {
+  const IdeaInfo({
+    this.text = LocalizedText.empty,
+    this.owner = DeveloperInfo.empty,
+  });
+
+  static const IdeaInfo empty = IdeaInfo();
+
+  factory IdeaInfo.fromJson(Object? json) => json is Map<String, dynamic>
+      ? IdeaInfo(
+          text: LocalizedText.fromJson(json['text']),
+          owner: DeveloperInfo.fromJson(json['owner']),
+        )
+      : empty;
+
+  /// The word on where the idea came from, in both languages.
+  final LocalizedText text;
+
+  /// Whose idea it is: name, photo, and the ways to reach them.
+  final DeveloperInfo owner;
+
+  bool get isEmpty => this == empty;
+
+  IdeaInfo copyWith({LocalizedText? text, DeveloperInfo? owner}) =>
+      IdeaInfo(text: text ?? this.text, owner: owner ?? this.owner);
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'text': text.toJson(),
+    'owner': owner.toJson(),
+  };
+
+  @override
+  List<Object?> get props => <Object?>[text, owner];
 }
 
 /// A version as the stores write it: `1.4.0`. Compared number by number, so
@@ -454,6 +507,7 @@ class AppInfo extends Equatable {
   const AppInfo({
     this.about = LocalizedText.empty,
     this.goal = LocalizedText.empty,
+    this.idea = IdeaInfo.empty,
     this.developer = DeveloperInfo.empty,
     this.update = UpdateRules.none,
     this.maintenance = Maintenance.off,
@@ -464,6 +518,7 @@ class AppInfo extends Equatable {
   factory AppInfo.fromJson(Map<String, dynamic> json) => AppInfo(
     about: LocalizedText.fromJson(json['about']),
     goal: LocalizedText.fromJson(json['goal']),
+    idea: IdeaInfo.fromJson(json['idea']),
     developer: DeveloperInfo.fromJson(json['developer']),
     update: UpdateRules.fromJson(json['update']),
     maintenance: Maintenance.fromJson(json['maintenance']),
@@ -483,6 +538,10 @@ class AppInfo extends Equatable {
 
   final LocalizedText about;
   final LocalizedText goal;
+
+  /// The app's idea and whose it is — Mr. Saied Eloksh's, by default.
+  final IdeaInfo idea;
+
   final DeveloperInfo developer;
   final UpdateRules update;
 
@@ -495,6 +554,7 @@ class AppInfo extends Equatable {
     'schemaVersion': schemaVersion,
     'about': about.toJson(),
     'goal': goal.toJson(),
+    'idea': idea.toJson(),
     'developer': developer.toJson(),
     'update': update.toJson(),
     'maintenance': maintenance.toJson(),
@@ -505,12 +565,14 @@ class AppInfo extends Equatable {
   AppInfo copyWith({
     LocalizedText? about,
     LocalizedText? goal,
+    IdeaInfo? idea,
     DeveloperInfo? developer,
     UpdateRules? update,
     Maintenance? maintenance,
   }) => AppInfo(
     about: about ?? this.about,
     goal: goal ?? this.goal,
+    idea: idea ?? this.idea,
     developer: developer ?? this.developer,
     update: update ?? this.update,
     maintenance: maintenance ?? this.maintenance,
@@ -520,6 +582,7 @@ class AppInfo extends Equatable {
   List<Object?> get props => <Object?>[
     about,
     goal,
+    idea,
     developer,
     update,
     maintenance,

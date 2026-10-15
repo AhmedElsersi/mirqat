@@ -47,6 +47,16 @@ class MainFlutterWindow: NSWindow {
         panel.canChooseFiles = true
         panel.allowedFileTypes = ["jpg", "jpeg", "png", "webp"]
         result(panel.runModal() == .OK ? panel.url?.path : nil)
+      case "pickFolder":
+        // A whole folder of recordings — one file per surah — for the batch
+        // splitter. Directories only: a single recording goes through
+        // pickRecording.
+        let panel = NSOpenPanel()
+        panel.title = "Choose the folder holding one recording per surah"
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        result(panel.runModal() == .OK ? panel.url?.path : nil)
       case "pickLinkFile":
         // A QUL recitation export: one audio address per ayah, for a reciter
         // whose recordings someone else already cut and hosts.

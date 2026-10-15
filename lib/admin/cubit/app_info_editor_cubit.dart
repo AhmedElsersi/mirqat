@@ -17,6 +17,9 @@ import '../services/app_info_validator.dart';
 import '../services/pages_publisher.dart';
 import '../services/r2_client.dart';
 
+/// Whose portrait a photo upload is for.
+enum PhotoTarget { developer, idea }
+
 /// Where the text in the editor came from.
 enum AppInfoSource {
   /// What is live on the Pages site right now.
@@ -168,12 +171,12 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
   /// Puts the draft back to what it was loaded as.
   void revert() => emit(state.copyWith(draft: state.published));
 
-  /// Uploads a portrait to the bucket and points the card at it.
+  /// Uploads a portrait to the bucket and points [target]'s card at it.
   ///
   /// Named by its own contents, so a new photo is a new path and an old
   /// address never starts showing a different face — and so that the tool's
   /// rule against overwriting a published path is kept without an exception.
-  Future<void> choosePhoto() async {
+  Future<void> choosePhoto([PhotoTarget target = PhotoTarget.developer]) async {
     final String? path;
     try {
       path = await _files.pickImage();
@@ -188,7 +191,7 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
       final File file = File(path);
       final List<int> bytes = await file.readAsBytes();
       final String key =
-          'images/developer-${sha256.convert(bytes).toString().substring(0, 12)}'
+          'images/${target.name}-${sha256.convert(bytes).toString().substring(0, 12)}'
           '${p.extension(path).toLowerCase()}';
       final UploadResult uploaded = await _r2.putObject(
         key: key,
@@ -198,9 +201,7 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
       emit(
         state.copyWith(
           busy: false,
-          draft: state.draft.copyWith(
-            developer: state.draft.developer.copyWith(photo: '${uploaded.url}'),
-          ),
+          draft: _withPhoto(state.draft, target, '${uploaded.url}'),
           message: 'Photo uploaded. Publish to put it on the card.',
         ),
       );
@@ -213,9 +214,20 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
     }
   }
 
-  void removePhoto() => edit(
-    (AppInfo d) => d.copyWith(developer: d.developer.copyWith(photo: '')),
-  );
+  void removePhoto([PhotoTarget target = PhotoTarget.developer]) =>
+      edit((AppInfo d) => _withPhoto(d, target, ''));
+
+  static AppInfo _withPhoto(AppInfo draft, PhotoTarget target, String photo) =>
+      switch (target) {
+        PhotoTarget.developer => draft.copyWith(
+          developer: draft.developer.copyWith(photo: photo),
+        ),
+        PhotoTarget.idea => draft.copyWith(
+          idea: draft.idea.copyWith(
+            owner: draft.idea.owner.copyWith(photo: photo),
+          ),
+        ),
+      };
 
   /// Publishes the draft.
   ///
@@ -301,6 +313,7 @@ class AppInfoEditorCubit extends Cubit<AppInfoEditorState> {
     final List<String> changed = <String>[
       if (before.about != after.about) 'about',
       if (before.goal != after.goal) 'goal',
+      if (before.idea != after.idea) 'idea',
       if (before.developer != after.developer) 'developer',
       if (before.update != after.update) 'update rules',
       if (before.maintenance != after.maintenance)

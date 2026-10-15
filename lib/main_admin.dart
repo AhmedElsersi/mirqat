@@ -9,6 +9,7 @@ import 'admin/cubit/admin_cubit.dart';
 import 'admin/cubit/app_info_editor_cubit.dart';
 import 'admin/cubit/linked_reciter_cubit.dart';
 import 'admin/screen/admin_screen.dart';
+import 'admin/screen/admin_text_scale.dart';
 import 'admin/screen/app_info_editor_screen.dart';
 import 'admin/screen/linked_reciter_screen.dart';
 import 'admin/services/admin_file_picker.dart';
@@ -78,6 +79,10 @@ class AdminApp extends StatelessWidget {
         title: 'Mirqat admin',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        // Above the Navigator, so the operator's text size and its ⌘-chords
+        // reach every screen of the tool, pushed routes included.
+        builder: (BuildContext context, Widget? child) =>
+            AdminTextScaleScope(child: child!),
         home: BlocProvider<AdminCubit>(
           create: (_) => AdminCubit(
             quranRepository: quran,

@@ -129,11 +129,7 @@ class _MushafPageViewState extends State<MushafPageView> {
                     args: <String>[p.juz!.toLocalisedString()],
                   ),
             bottom: p.number.toLocalisedString(),
-            side: p.hizb == null
-                ? null
-                : LocaleKeys.mushafHizbLabel.tr(
-                    args: <String>[p.hizb!.toLocalisedString()],
-                  ),
+            side: _hizbLabel(p.hizb, p.rub),
           );
           final EdgeInsets insets = IslamicFrame.insetsFor(
             box.maxWidth,
@@ -222,6 +218,23 @@ class _MushafPageViewState extends State<MushafPageView> {
         },
       ),
     );
+  }
+
+  /// The side border's words: the hizb, and — where the page opens past its
+  /// start — which quarter of it, the way a printed mushaf marks the rub',
+  /// the nisf and the three-quarters in its margin. The rub' number runs
+  /// 1..240 over the whole mushaf, four to a hizb, so `(rub - 1) % 4` is the
+  /// quarter the page opens in.
+  static String? _hizbLabel(int? hizb, int? rub) {
+    if (hizb == null) return null;
+    final String n = hizb.toLocalisedString();
+    final String key = switch (rub == null ? 0 : (rub - 1) % 4) {
+      1 => LocaleKeys.mushafHizbQuarterLabel,
+      2 => LocaleKeys.mushafHizbHalfLabel,
+      3 => LocaleKeys.mushafHizbThreeQuartersLabel,
+      _ => LocaleKeys.mushafHizbLabel,
+    };
+    return key.tr(args: <String>[n]);
   }
 
   /// The largest size at which every line of this page fits across [width].

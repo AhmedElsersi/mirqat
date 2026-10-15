@@ -315,6 +315,7 @@ class MushafCubit extends Cubit<MushafState> {
           surah: info == null ? null : _surahs[info.surahNumber],
           juz: info?.juz,
           hizb: info?.hizb,
+          rub: info?.rub,
           lines: shown,
           partial: partial,
         ),

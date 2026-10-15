@@ -67,5 +67,5 @@ class AppConstants {
   /// deletes any other `quran_v*.db` it finds, so bumping this is what makes
   /// an app update replace a stale copy instead of opening it read-only
   /// forever.
-  static const int quranDatabaseSchemaVersion = 2;
+  static const int quranDatabaseSchemaVersion = 3;
 }

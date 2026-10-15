@@ -9,6 +9,9 @@ import UIKit
   /// Matches the channel name in AudioStorage.
   private static let storageChannel = "mirqat/storage"
 
+  /// Matches the channel name in ShareService.
+  private static let shareChannel = "com.mirqat.app/share"
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -76,6 +79,73 @@ import UIKit
             )
           )
         }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
+    // A long-pressed ayah shared as an image: the file ShareService wrote is
+    // handed to the system share sheet. Done with UIActivityViewController
+    // rather than a package, keeping the approved dependency list untouched
+    // (CLAUDE.md A.4). Nothing is uploaded by the app itself.
+    let share = FlutterMethodChannel(
+      name: AppDelegate.shareChannel,
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    share.setMethodCallHandler { call, result in
+      switch call.method {
+      case "shareFile":
+        guard
+          let arguments = call.arguments as? [String: Any],
+          let path = arguments["path"] as? String
+        else {
+          result(
+            FlutterError(
+              code: "bad_arguments",
+              message: "shareFile needs a \"path\".",
+              details: nil
+            )
+          )
+          return
+        }
+        var items: [Any] = [URL(fileURLWithPath: path)]
+        if let text = arguments["text"] as? String {
+          items.append(text)
+        }
+        let scenes = UIApplication.shared.connectedScenes
+          .compactMap { $0 as? UIWindowScene }
+        let window =
+          scenes.flatMap { $0.windows }.first { $0.isKeyWindow }
+          ?? scenes.first?.windows.first
+        guard let root = window?.rootViewController else {
+          result(
+            FlutterError(
+              code: "no_window",
+              message: "No window to present the share sheet from.",
+              details: nil
+            )
+          )
+          return
+        }
+        let activity = UIActivityViewController(
+          activityItems: items,
+          applicationActivities: nil
+        )
+        // On an iPad the sheet is a popover and must be anchored, or UIKit
+        // throws. Centred with no arrow: the press that asked for it is long
+        // gone from the screen by now.
+        if let popover = activity.popoverPresentationController {
+          popover.sourceView = root.view
+          popover.sourceRect = CGRect(
+            x: root.view.bounds.midX,
+            y: root.view.bounds.midY,
+            width: 0,
+            height: 0
+          )
+          popover.permittedArrowDirections = []
+        }
+        root.present(activity, animated: true)
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }

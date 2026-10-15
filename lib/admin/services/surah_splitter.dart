@@ -71,26 +71,42 @@ class SurahSplitter {
     bool recordingHasIstiadhah = false,
     Duration candidateMinimum = const Duration(milliseconds: 180),
   }) async {
-    final Duration total = await ffmpeg.durationOf(source);
+    // Every ffmpeg pass this split could need, started at once. Each one
+    // decodes the whole recording, and they used to run in single file: the
+    // operator's threshold first, then up to eight sweep passes one after
+    // another — minutes of wall clock for an hour-long surah, nearly all of
+    // it the same decode repeated. The passes are independent, so the wall
+    // time is now one decode, not nine.
+    final Future<Duration> totalFuture = ffmpeg.durationOf(source);
+    final Future<List<AudioSegment>> primary = ffmpeg.detectSilences(
+      source,
+      threshold: thresholdDb,
+      minimumSilence: minimumSilence,
+    );
+    final Future<List<List<AudioSegment>>> sweep =
+        Future.wait(<Future<List<AudioSegment>>>[
+          for (final double threshold in _sweep)
+            ffmpeg.detectSilences(
+              source,
+              threshold: threshold,
+              minimumSilence: candidateMinimum,
+            ),
+        ]);
 
+    final Duration total = await totalFuture;
     SegmentPlan plan = SegmentPlan(
       surah: surah,
       recordingHasBasmala: recordingHasBasmala,
       recordingHasIstiadhah: recordingHasIstiadhah,
       segments: planner.segmentsFrom(
         totalDuration: total,
-        silences: await ffmpeg.detectSilences(
-          source,
-          threshold: thresholdDb,
-          minimumSilence: minimumSilence,
-        ),
+        silences: await primary,
       ),
     );
 
     final bool comparable = weights.length == plan.expectedCount;
-    final List<AudioSegment> candidates = await candidatesFor(
-      source: source,
-      minimum: candidateMinimum,
+    final List<AudioSegment> candidates = chooseCandidates(
+      bySweep: await sweep,
       needed: plan.expectedCount - 1,
       total: total,
     );
@@ -112,6 +128,74 @@ class SurahSplitter {
       );
     }
 
+    final SplitResult resolved = _alignedOrThreshold(
+      plan: plan,
+      candidates: candidates,
+      total: total,
+      weights: weights,
+      plainSuspects: plainSuspects,
+    );
+    if (resolved.plan.countMatches && resolved.suspects.isEmpty) {
+      return resolved;
+    }
+
+    // A second look with finer ears. A reciter who barely breathes between
+    // ayahs leaves pauses shorter than [candidateMinimum], and at the default
+    // that reads as "nowhere to cut": the split comes back short, or fused
+    // clips read as suspects. Halving the minimum is exactly the fix an
+    // operator used to apply by hand from the command line, so it is tried
+    // here before anything is reported — but the finer cut only replaces the
+    // first when it is strictly better, so a recording the first pass served
+    // well is untouched. Below 60 ms a "pause" is the gap inside a word, and
+    // no cut belongs there.
+    final Duration finerMinimum = candidateMinimum ~/ 2;
+    if (finerMinimum < const Duration(milliseconds: 60)) return resolved;
+
+    final List<List<AudioSegment>> finerSweep =
+        await Future.wait(<Future<List<AudioSegment>>>[
+          for (final double threshold in _sweep)
+            ffmpeg.detectSilences(
+              source,
+              threshold: threshold,
+              minimumSilence: finerMinimum,
+            ),
+        ]);
+    final List<AudioSegment> finerCandidates = chooseCandidates(
+      bySweep: finerSweep,
+      needed: plan.expectedCount - 1,
+      total: total,
+    );
+    final List<AudioSegment> finerAligned = planner.alignToWeights(
+      totalDuration: total,
+      silences: finerCandidates,
+      weights: weights,
+    );
+    if (finerAligned.isEmpty) return resolved;
+
+    final List<int> finerSuspects = suspectsIn(finerAligned, weights);
+    final bool better =
+        !resolved.plan.countMatches ||
+        finerSuspects.length < resolved.suspects.length;
+    if (!better) return resolved;
+
+    return SplitResult(
+      plan: plan.copyWith(segments: finerAligned),
+      method: SplitMethod.aligned,
+      candidates: finerCandidates,
+      total: total,
+      suspects: finerSuspects,
+    );
+  }
+
+  /// The aligner's verdict at one set of candidates: the aligned cut when it
+  /// earns its place, the threshold cut otherwise.
+  SplitResult _alignedOrThreshold({
+    required SegmentPlan plan,
+    required List<AudioSegment> candidates,
+    required Duration total,
+    required List<int> weights,
+    required List<int> plainSuspects,
+  }) {
     final List<AudioSegment> aligned = planner.alignToWeights(
       totalDuration: total,
       silences: candidates,
@@ -141,9 +225,8 @@ class SurahSplitter {
       );
     }
 
-    plan = plan.copyWith(segments: aligned);
     return SplitResult(
-      plan: plan,
+      plan: plan.copyWith(segments: aligned),
       method: SplitMethod.aligned,
       candidates: candidates,
       total: total,
@@ -160,12 +243,15 @@ class SurahSplitter {
   /// had a seventeen-minute stretch with none in it, so seventeen minutes of
   /// recitation came out as a single ayah. What matters is that no stretch is
   /// left without a pause, so that is what is measured here.
-  Future<List<AudioSegment>> candidatesFor({
-    required File source,
-    required Duration minimum,
+  ///
+  /// [bySweep] is one detection result per [_sweep] threshold, in [_sweep]'s
+  /// order — detected in parallel by [split], judged here in the same strict
+  /// to lenient order the sequential sweep used, so the choice is unchanged.
+  static List<AudioSegment> chooseCandidates({
+    required List<List<AudioSegment>> bySweep,
     required int needed,
     required Duration total,
-  }) async {
+  }) {
     // Twice the average segment. Erring towards more candidates is the safe
     // direction: a spurious pause only offers the aligner a cut it can
     // decline, while a missing one forces a fusion it cannot avoid.
@@ -177,12 +263,7 @@ class SurahSplitter {
     List<AudioSegment> largest = const <AudioSegment>[];
     Duration bestHole = total;
 
-    for (final double threshold in _sweep) {
-      final List<AudioSegment> found = await ffmpeg.detectSilences(
-        source,
-        threshold: threshold,
-        minimumSilence: minimum,
-      );
+    for (final List<AudioSegment> found in bySweep) {
       if (found.length > largest.length) largest = found;
       if (found.length < needed) continue;
 

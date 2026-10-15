@@ -9,6 +9,7 @@
     "retry": "إعادة المحاولة",
     "cancel": "إلغاء",
     "close": "إغلاق",
+    "clear": "مسح",
     "done": "تم",
     "ayah_number": "الآية {}",
     "ayah_range": "الآيات {} - {}"
@@ -122,6 +123,16 @@
     "save_as_default": "حفظ كافتراضي",
     "saved_as_default": "حُفظت كإعدادات افتراضية"
   },
+  "search": {
+    "title": "البحث",
+    "hint": "اسم سورة، أو كلمة، أو رقم صفحة",
+    "prompt": "ابحث باسم السورة، أو بكلمة من المصحف، أو برقم الصفحة",
+    "no_results": "لا نتائج",
+    "surahs": "السور",
+    "ayahs": "الآيات",
+    "open_page": "فتح الصفحة {}",
+    "more_results": "هناك نتائج أخرى — أضِف كلمة لتضييق البحث"
+  },
   "mushaf": {
     "title": "المصحف",
     "open": "فتح المصحف",
@@ -131,6 +142,9 @@
     "surah_label": "سورة {}",
     "juz_label": "الجزء {}",
     "hizb_label": "الحزب {}",
+    "hizb_quarter_label": "ربع الحزب {}",
+    "hizb_half_label": "نصف الحزب {}",
+    "hizb_three_quarters_label": "ثلاثة أرباع الحزب {}",
     "back": "رجوع",
     "hint_long_press": "اضغط مطولًا على آية لخياراتها",
     "section_end": "انتهت {}",
@@ -141,7 +155,9 @@
     "set_range_end": "اجعلها نهاية النطاق",
     "clear_range": "إلغاء النطاق المحدد",
     "mark_here": "علِّم هنا: انتهيت عند هذه الآية",
-    "unmark": "أزِل علامة القراءة"
+    "unmark": "أزِل علامة القراءة",
+    "share_ayah": "مشاركة الآية صورةً",
+    "share": "مشاركة"
   },
   "downloads": {
     "section": "الصوت دون إنترنت",
@@ -228,10 +244,13 @@
     "us": "من نحن",
     "developer": "عن المطوّر",
     "developer_role": "مطوّر التطبيق",
+    "idea": "فكرة التطبيق",
+    "idea_owner_role": "صاحب فكرة التطبيق",
     "contact": "للتواصل",
     "link_email": "البريد الإلكتروني",
     "link_github": "GitHub",
     "link_linkedin": "LinkedIn",
+    "link_phone": "الهاتف",
     "link_whatsapp": "واتساب",
     "link_facebook": "فيسبوك",
     "link_failed": "تعذّر فتح الرابط",

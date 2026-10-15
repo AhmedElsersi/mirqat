@@ -9,6 +9,7 @@ import 'package:mirqat/data/datasources/asset_reader.dart';
 import 'package:mirqat/data/repositories/settings_repository.dart';
 import 'package:mirqat/features/about/screen/developer_screen.dart';
 import 'package:mirqat/features/about/screen/how_to_use_screen.dart';
+import 'package:mirqat/features/about/screen/idea_screen.dart';
 import 'package:mirqat/features/onboarding/screen/onboarding_screen.dart';
 import 'package:mirqat/features/settings/screen/settings_screen.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
@@ -286,6 +287,68 @@ void main() {
       expect(find.text('مطوّر التطبيق'), findsOneWidget);
       expect(find.text('للتواصل'), findsNothing);
       expect(tester.takeException(), isNull);
+    });
+
+    group('the app idea', () {
+      Future<void> openIdea(WidgetTester tester) async {
+        await harness.pumpApp(tester);
+        await AppHarness.tapAndSettle(
+          tester,
+          find.byIcon(Icons.settings_outlined),
+        );
+        await tester.scrollUntilVisible(
+          find.text('فكرة التطبيق'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.ensureVisible(find.text('فكرة التطبيق'));
+        await tester.pumpAndSettle();
+        await AppHarness.tapAndSettle(tester, find.text('فكرة التطبيق'));
+        expect(find.byType(IdeaScreen), findsOneWidget);
+      }
+
+      testWidgets('credits its owner from the copy that ships', (
+        WidgetTester tester,
+      ) async {
+        await openIdea(tester);
+
+        expect(find.text('سعيد العكش'), findsOneWidget);
+        expect(find.text('صاحب فكرة التطبيق'), findsOneWidget);
+        expect(
+          find.textContaining('سعيد العكش', findRichText: true),
+          findsWidgets,
+        );
+        // The shipped copy fills in no links, so there is no empty section.
+        expect(find.text('للتواصل'), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('shows the facebook and phone that were filled in, and a '
+          'tap on the phone opens the dialler', (WidgetTester tester) async {
+        final _Links links = useLinks();
+        useAppInfo(<String, dynamic>{
+          'idea': <String, dynamic>{
+            'text': <String, String>{'ar': 'الفكرة', 'en': 'The idea'},
+            'owner': <String, dynamic>{
+              'name': <String, String>{
+                'ar': 'سعيد العكش',
+                'en': 'Saied Eloksh',
+              },
+              'phone': '+20 100 123 4567',
+              'facebook': 'facebook.com/someone',
+            },
+          },
+        });
+        await openIdea(tester);
+
+        expect(find.text('فيسبوك'), findsOneWidget);
+        expect(find.text('الهاتف'), findsOneWidget);
+        expect(find.text('البريد الإلكتروني'), findsNothing);
+
+        await AppHarness.tapAndSettle(tester, find.text('الهاتف'));
+        expect(links.opened.single.scheme, 'tel');
+        expect(links.opened.single.path, '+201001234567');
+      });
     });
   });
 }

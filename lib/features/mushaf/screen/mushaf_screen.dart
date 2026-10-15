@@ -12,9 +12,12 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_position.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
+import '../../../data/repositories/quran_repository.dart';
+import '../../../services/share_service.dart';
 import '../../session/cubit/session_cubit.dart';
 import '../../session/cubit/session_state.dart';
 import '../../session/default_range.dart';
@@ -28,6 +31,7 @@ import '../cubit/mushaf_state.dart';
 import '../mushaf_args.dart';
 import '../reading_section.dart';
 import '../widgets/ayah_actions_sheet.dart';
+import '../widgets/ayah_share_dialog.dart';
 import '../widgets/mushaf_fold.dart';
 import '../widgets/mushaf_page_view.dart';
 
@@ -464,7 +468,9 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
       // Across an open spread that panel would be a box two pages wide: it is
       // held to one page's width, in the middle of the leaf.
       return _spread
-          ? Center(child: SizedBox(width: kDesktopPageWidth, child: end))
+          ? Center(
+              child: SizedBox(width: kDesktopPageWidth, child: end),
+            )
           : end;
     }
 
@@ -709,6 +715,7 @@ class _PageSlot extends StatelessWidget {
           (r) => r.hasSurah(word.surahNumber),
         ),
         hasChosenRange: session.state.rangeChosen,
+        canShare: sl<ShareService>().isSupported,
         isMarked:
             mark != null &&
             mark.surahNumber == ayah.surah &&
@@ -730,6 +737,8 @@ class _PageSlot extends StatelessWidget {
         );
       case AyahAction.unmark:
         await settings.clearReadingMark();
+      case AyahAction.share:
+        if (context.mounted) await _shareAyah(context, surah, ayah);
       case AyahAction.playFromHere:
         session.chooseRange(ayah, AyahRef(surah.number, surah.ayahCount));
         await session.start();
@@ -743,5 +752,33 @@ class _PageSlot extends StatelessWidget {
       case AyahAction.clearRange:
         session.clearRange();
     }
+  }
+
+  /// The ayah's verbatim text, fetched afresh from `quran.db` — never joined
+  /// back together from the page's words (A.2 rule 1) — and offered as an
+  /// image in the illuminated frame.
+  static Future<void> _shareAyah(
+    BuildContext context,
+    Surah surah,
+    AyahRef ayah,
+  ) async {
+    final List<Ayah>? fetched = (await sl<QuranRepository>().getAyahRange(
+      ayah.surah,
+      startAyah: ayah.ayah,
+      endAyah: ayah.ayah,
+    )).fold((_) => null, (List<Ayah> ayahs) => ayahs);
+    if (!context.mounted) return;
+
+    if (fetched == null || fetched.length != 1) {
+      // Text that cannot be read is reported, never papered over.
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(LocaleKeys.commonError.tr())));
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AyahShareDialog(ayah: fetched.single, surah: surah),
+    );
   }
 }

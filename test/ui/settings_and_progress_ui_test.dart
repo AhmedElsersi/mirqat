@@ -336,12 +336,13 @@ void main() {
       await AppHarness.showReadingBar(tester);
       await AppHarness.openSessionSheet(tester);
 
-      // N=5 over all 7 ayahs, continuous: one step, 35 recitations.
+      // N=5 over all 7 ayahs, cumulative: 13 steps,
+      // 5·7 + 5·(2+3+4+5+6+7) = 170 recitations.
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
       );
-      expect(summary.stepCount, 1);
-      expect(summary.unitCount, 35);
+      expect(summary.stepCount, 13);
+      expect(summary.unitCount, 170);
     });
   });
 

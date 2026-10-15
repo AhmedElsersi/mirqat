@@ -187,6 +187,30 @@ void main() {
       );
     });
 
+    test(
+      'a phone number however it was written, with its country code kept',
+      () {
+        expect(
+          withLink(
+            DeveloperLink.phone,
+            '+20 100 123-4567',
+          ).uriFor(DeveloperLink.phone),
+          Uri(scheme: 'tel', path: '+201001234567'),
+        );
+        expect(
+          withLink(
+            DeveloperLink.phone,
+            '01001234567',
+          ).uriFor(DeveloperLink.phone),
+          Uri(scheme: 'tel', path: '01001234567'),
+        );
+        expect(
+          withLink(DeveloperLink.phone, 'call me').uriFor(DeveloperLink.phone),
+          isNull,
+        );
+      },
+    );
+
     test('a profile with or without https://', () {
       for (final DeveloperLink link in <DeveloperLink>[
         DeveloperLink.github,
@@ -211,6 +235,41 @@ void main() {
       );
       expect(DeveloperInfo.fromJson(dev.toJson()), dev);
       expect(dev.toJson()['facebook'], '');
+    });
+  });
+
+  group('the app idea', () {
+    test('the copy that ships credits its owner, in both languages', () {
+      final AppInfo info = AppInfo.parse(
+        File(AssetPaths.bundledAppInfo).readAsStringSync(),
+      );
+      expect(info.idea.text.ar, contains('سعيد العكش'));
+      expect(info.idea.text.en.trim(), isNotEmpty);
+      expect(info.idea.owner.name.ar, 'سعيد العكش');
+    });
+
+    test('its owner reads like the developer, and round-trips', () {
+      final AppInfo info = AppInfo.fromJson(<String, dynamic>{
+        'idea': <String, dynamic>{
+          'text': <String, String>{'ar': 'الفكرة', 'en': 'The idea'},
+          'owner': <String, dynamic>{
+            'name': <String, String>{'ar': 'سعيد العكش', 'en': 'Saied Eloksh'},
+            'phone': '+20 100 123 4567',
+            'facebook': 'facebook.com/someone',
+          },
+        },
+      });
+      expect(info.idea.owner.links[DeveloperLink.phone], '+20 100 123 4567');
+      expect(
+        info.idea.owner.uriFor(DeveloperLink.facebook),
+        Uri.parse('https://facebook.com/someone'),
+      );
+      expect(AppInfo.parse(jsonEncode(info.toJson())), info);
+    });
+
+    test('absent altogether is empty, never an error', () {
+      expect(AppInfo.fromJson(<String, dynamic>{}).idea, IdeaInfo.empty);
+      expect(IdeaInfo.empty.isEmpty, isTrue);
     });
   });
 }
