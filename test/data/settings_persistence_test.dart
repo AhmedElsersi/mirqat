@@ -61,6 +61,8 @@ void main() {
     expect(settings.themeMode, AppThemeMode.system);
     // The app opens as a mushaf (owner decision, October 2026).
     expect(settings.homeViewMode, HomeViewMode.mushaf);
+    // The paper fold is opt-in (owner decision, October 2026).
+    expect(settings.pageTurnStyle, PageTurnStyle.slide);
     expect(settings.arabicFontSize, AppSettings.defaultArabicFontSize);
   });
 
@@ -78,6 +80,7 @@ void main() {
       lastRanges: <int, AyahRange>{1: AyahRange(startAyah: 2, endAyah: 5)},
       themeMode: AppThemeMode.dark,
       homeViewMode: HomeViewMode.grid,
+      pageTurnStyle: PageTurnStyle.paper,
       arabicFontSize: 32,
     );
 
@@ -98,6 +101,7 @@ void main() {
       defaultConnectMode: ConnectMode.none,
       themeMode: AppThemeMode.light,
       homeViewMode: HomeViewMode.grid,
+      pageTurnStyle: PageTurnStyle.paper,
       arabicFontSize: 26,
     );
 
@@ -122,6 +126,7 @@ void main() {
     expect(settings.arabicFontSize, 30.0);
     // Absent, so the defaults apply rather than throwing.
     expect(settings.homeViewMode, HomeViewMode.mushaf);
+    expect(settings.pageTurnStyle, PageTurnStyle.slide);
     expect(settings.defaultPlaybackSpeed, SessionConfig.defaultPlaybackSpeed);
     expect(settings.lastRanges, isEmpty);
   });

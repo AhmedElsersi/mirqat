@@ -34,6 +34,7 @@ import '../widgets/ayah_actions_sheet.dart';
 import '../widgets/ayah_share_dialog.dart';
 import '../widgets/mushaf_fold.dart';
 import '../widgets/mushaf_page_view.dart';
+import '../widgets/paper_turn.dart';
 
 class MushafScreen extends StatelessWidget {
   const MushafScreen({this.args = const MushafArgs(), super.key});
@@ -319,10 +320,13 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
         if ((target - (controller.page ?? 0)).abs() > _animatedPageSpan) {
           controller.jumpToPage(target);
         } else {
+          // A folding leaf needs longer on the air than a slide, or the
+          // paper reads as flicked rather than turned.
+          final bool paper = _paperTurns(context);
           controller.animateToPage(
             target,
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeInOut,
+            duration: Duration(milliseconds: paper ? 550 : 350),
+            curve: paper ? Curves.easeInOutCubic : Curves.easeInOut,
           );
         }
       },
@@ -402,15 +406,32 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
     final PageController? controller = _controller;
     if (controller == null || !controller.hasClients) return;
     final int current = controller.page?.round() ?? 0;
+    final bool paper = _paperTurns(context);
     controller.animateToPage(
       (current + by).clamp(0, 1 << 20),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
+      // Longer and softer when the page folds like paper: a key press should
+      // still show the whole leaf lifting and landing, not a flick.
+      duration: Duration(milliseconds: paper ? 550 : 250),
+      curve: paper ? Curves.easeInOutCubic : Curves.easeOut,
     );
   }
 
+  /// Whether the reader has the paper fold turned on.
+  static bool _paperTurns(BuildContext context) =>
+      context.read<SettingsCubit>().state.settings.pageTurnStyle ==
+      PageTurnStyle.paper;
+
   Widget _pages(BuildContext context, MushafState state) {
     final MushafCubit cubit = context.read<MushafCubit>();
+    // How a turned page leaves the screen — folding like paper, or the plain
+    // slide. Selected, so flipping the setting re-dresses the pager in place.
+    final bool paper =
+        context.select<SettingsCubit, PageTurnStyle>(
+          (SettingsCubit c) => c.state.settings.pageTurnStyle,
+        ) ==
+        PageTurnStyle.paper;
+    // One more leaf after a surah or a juz: where to go from here.
+    final int leaves = _leafCount(state) + (state.section == null ? 0 : 1);
     // A mushaf's next page lies to the left whatever language the interface
     // is in. `reverse: true` puts it there only on an LTR axis — under the
     // Arabic locale's RTL it would flip back to the right — so the axis is
@@ -440,17 +461,29 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
             controller: _controllerFor(state),
             reverse: true,
             // One more leaf after a surah or a juz: where to go from here.
-            itemCount: _leafCount(state) + (state.section == null ? 0 : 1),
+            itemCount: leaves,
             onPageChanged: (int index) {
               if (_dragging && _following) setState(() => _following = false);
               if (index < _leafCount(state)) {
                 cubit.onPageChanged(_firstPageOf(index, state));
               }
             },
-            itemBuilder: (BuildContext context, int index) => Directionality(
-              textDirection: TextDirection.rtl,
-              child: _leafAt(index, state),
-            ),
+            itemBuilder: (BuildContext context, int index) {
+              Widget leafFor(int i) => Directionality(
+                textDirection: TextDirection.rtl,
+                child: _leafAt(i, state),
+              );
+              if (!paper) return leafFor(index);
+              return PaperTurn(
+                controller: _controllerFor(state),
+                index: index,
+                spread: _spread,
+                // What this leaf lifts off: the next leaf's face, drawn flat
+                // beneath it while it turns. The last leaf has none.
+                under: index + 1 < leaves ? () => leafFor(index + 1) : null,
+                child: leafFor(index),
+              );
+            },
           ),
         ),
       ),

@@ -18,6 +18,8 @@ import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_actions_sheet.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_share_dialog.dart';
 import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
+import 'package:mirqat/features/mushaf/widgets/paper_turn.dart';
+import 'package:mirqat/data/models/app_settings.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../app_harness.dart';
@@ -312,6 +314,24 @@ void main() {
         find.byType(AyahActionsSheet),
       );
       expect(sheet.ayah, const AyahRef(1, 1));
+    });
+
+    testWidgets('pages slide by default, and the setting folds them like '
+        'paper', (WidgetTester tester) async {
+      await openMushaf(tester);
+      expect(find.byType(PaperTurn), findsNothing);
+      expect(find.byType(MushafPageView), findsWidgets);
+
+      // The store write has to land in the real zone, like every other
+      // settings write in these tests.
+      final SettingsCubit settings = BlocProvider.of<SettingsCubit>(
+        tester.element(find.byType(MushafView)),
+      );
+      await tester.runAsync(
+        () => settings.setPageTurnStyle(PageTurnStyle.paper),
+      );
+      await frames(tester);
+      expect(find.byType(PaperTurn), findsWidgets);
     });
 
     testWidgets('a long-pressed ayah can be shared: the dialog shows the '

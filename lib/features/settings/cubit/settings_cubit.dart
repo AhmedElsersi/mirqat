@@ -204,6 +204,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setHomeViewMode(HomeViewMode mode) =>
       _save(state.settings.copyWith(homeViewMode: mode));
 
+  Future<void> setPageTurnStyle(PageTurnStyle style) =>
+      _save(state.settings.copyWith(pageTurnStyle: style));
+
   /// Remembers the range a session was actually started with, so
   /// [RangeBehaviour.lastUsed] has something to offer next time.
   Future<void> rememberRange(

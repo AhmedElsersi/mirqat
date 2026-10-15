@@ -254,6 +254,9 @@ class LocaleKeys {
   static const String settingsHomeViewMushaf = 'settings.home_view_mushaf';
   static const String settingsHomeViewMushafHint =
       'settings.home_view_mushaf_hint';
+  static const String settingsPageTurn = 'settings.page_turn';
+  static const String settingsPageTurnNormal = 'settings.page_turn_normal';
+  static const String settingsPageTurnPaper = 'settings.page_turn_paper';
   static const String settingsLanguage = 'settings.language';
   static const String settingsLanguageAr = 'settings.language_ar';
   static const String settingsLanguageEn = 'settings.language_en';
