@@ -120,6 +120,58 @@ class _Form extends StatelessWidget {
             ],
           ),
           _Section(
+            title: 'The app idea',
+            children: <Widget>[
+              Text(
+                'The «فكرة التطبيق» page: whose idea the app is, a word of '
+                'credit, and the ways to reach them. Anything left blank is '
+                'simply not shown — like the developer\'s card.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              _Bilingual(
+                value: d.idea.text,
+                label: 'The credit',
+                lines: 4,
+                onChanged: (LocalizedText t) => cubit.edit(
+                  (AppInfo i) => i.copyWith(idea: i.idea.copyWith(text: t)),
+                ),
+              ),
+              _Bilingual(
+                value: d.idea.owner.name,
+                label: 'Owner\'s name',
+                onChanged: (LocalizedText t) => cubit.edit(
+                  (AppInfo i) => i.copyWith(
+                    idea: i.idea.copyWith(
+                      owner: i.idea.owner.copyWith(name: t),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _PhotoRow(
+                target: PhotoTarget.idea,
+                photo: d.idea.owner.photo,
+                state: state,
+                cubit: cubit,
+              ),
+              const SizedBox(height: 8),
+              for (final DeveloperLink link in DeveloperLink.values)
+                _Field(
+                  label: _linkLabel(link),
+                  hint: 'Left blank, it is not shown.',
+                  value: d.idea.owner.links[link] ?? '',
+                  onChanged: (String v) => cubit.edit(
+                    (AppInfo i) => i.copyWith(
+                      idea: i.idea.copyWith(
+                        owner: i.idea.owner.withLink(link, v),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          _Section(
             title: 'The developer',
             children: <Widget>[
               _Bilingual(
@@ -131,43 +183,16 @@ class _Form extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: <Widget>[
-                  OutlinedButton.icon(
-                    onPressed: state.busy ? null : cubit.choosePhoto,
-                    icon: const Icon(Icons.image_outlined),
-                    label: Text(
-                      d.developer.photo.isEmpty ? 'Photo…' : 'Change photo…',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SelectableText(
-                      d.developer.photo.isEmpty
-                          ? 'No photo — the card shows the name\'s first letter.'
-                          : d.developer.photo,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  if (d.developer.photo.isNotEmpty)
-                    IconButton(
-                      onPressed: cubit.removePhoto,
-                      tooltip: 'Remove the photo',
-                      icon: const Icon(Icons.close),
-                    ),
-                ],
+              _PhotoRow(
+                target: PhotoTarget.developer,
+                photo: d.developer.photo,
+                state: state,
+                cubit: cubit,
               ),
               const SizedBox(height: 8),
               for (final DeveloperLink link in DeveloperLink.values)
                 _Field(
-                  label: switch (link) {
-                    DeveloperLink.email => 'Email',
-                    DeveloperLink.github => 'GitHub',
-                    DeveloperLink.linkedin => 'LinkedIn',
-                    DeveloperLink.whatsapp =>
-                      'WhatsApp (number, or wa.me link)',
-                    DeveloperLink.facebook => 'Facebook',
-                  },
+                  label: _linkLabel(link),
                   hint: 'Left blank, it is not shown.',
                   value: d.developer.links[link] ?? '',
                   onChanged: (String v) => cubit.edit(
@@ -337,6 +362,56 @@ class _Form extends StatelessWidget {
       ),
     );
   }
+}
+
+String _linkLabel(DeveloperLink link) => switch (link) {
+  DeveloperLink.email => 'Email',
+  DeveloperLink.phone => 'Phone (opens the dialler)',
+  DeveloperLink.github => 'GitHub',
+  DeveloperLink.linkedin => 'LinkedIn',
+  DeveloperLink.whatsapp => 'WhatsApp (number, or wa.me link)',
+  DeveloperLink.facebook => 'Facebook',
+};
+
+/// The choose/remove row of a person's portrait, wired to [target].
+class _PhotoRow extends StatelessWidget {
+  const _PhotoRow({
+    required this.target,
+    required this.photo,
+    required this.state,
+    required this.cubit,
+  });
+
+  final PhotoTarget target;
+  final String photo;
+  final AppInfoEditorState state;
+  final AppInfoEditorCubit cubit;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: <Widget>[
+      OutlinedButton.icon(
+        onPressed: state.busy ? null : () => cubit.choosePhoto(target),
+        icon: const Icon(Icons.image_outlined),
+        label: Text(photo.isEmpty ? 'Photo…' : 'Change photo…'),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: SelectableText(
+          photo.isEmpty
+              ? 'No photo — the card shows the name\'s first letter.'
+              : photo,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ),
+      if (photo.isNotEmpty)
+        IconButton(
+          onPressed: () => cubit.removePhoto(target),
+          tooltip: 'Remove the photo',
+          icon: const Icon(Icons.close),
+        ),
+    ],
+  );
 }
 
 class _Section extends StatelessWidget {

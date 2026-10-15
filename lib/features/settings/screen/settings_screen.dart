@@ -55,6 +55,7 @@ class SettingsScreen extends StatelessWidget {
                     _ThemeControl(settings: settings, cubit: cubit),
                     const _LanguageControl(),
                     _HomeViewControl(settings: settings, cubit: cubit),
+                    _PageTurnControl(settings: settings, cubit: cubit),
                     _FontSizeControl(
                       settings: settings,
                       cubit: cubit,
@@ -139,6 +140,11 @@ class SettingsScreen extends StatelessWidget {
                       icon: Icons.groups_outlined,
                       title: LocaleKeys.aboutUs.tr(),
                       onTap: () => context.pushNamed(AppRoutes.aboutUsName),
+                    ),
+                    SettingsLinkRow(
+                      icon: Icons.lightbulb_outline,
+                      title: LocaleKeys.aboutIdea.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.ideaName),
                     ),
                     SettingsLinkRow(
                       icon: Icons.person_outline,
@@ -353,6 +359,39 @@ class _HomeViewControl extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// How the mushaf's pages turn: folding over like paper, or the plain slide.
+class _PageTurnControl extends StatelessWidget {
+  const _PageTurnControl({required this.settings, required this.cubit});
+
+  final AppSettings settings;
+  final SettingsCubit cubit;
+
+  @override
+  Widget build(BuildContext context) {
+    return SetupSection(
+      label: LocaleKeys.settingsPageTurn.tr(),
+      child: SegmentedButton<PageTurnStyle>(
+        segments: <ButtonSegment<PageTurnStyle>>[
+          ButtonSegment<PageTurnStyle>(
+            value: PageTurnStyle.paper,
+            icon: const Icon(Icons.menu_book_outlined),
+            label: Text(LocaleKeys.settingsPageTurnPaper.tr()),
+          ),
+          ButtonSegment<PageTurnStyle>(
+            value: PageTurnStyle.slide,
+            icon: const Icon(Icons.swap_horiz),
+            label: Text(LocaleKeys.settingsPageTurnNormal.tr()),
+          ),
+        ],
+        selected: <PageTurnStyle>{settings.pageTurnStyle},
+        showSelectedIcon: false,
+        onSelectionChanged: (Set<PageTurnStyle> s) =>
+            cubit.setPageTurnStyle(s.first),
       ),
     );
   }

@@ -4,6 +4,7 @@ import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
 import '../datasources/quran_local_data_source.dart';
 import '../models/ayah.dart';
+import '../models/ayah_search_hit.dart';
 import '../models/ayah_timing.dart';
 import '../models/reciter.dart';
 import '../models/surah.dart';
@@ -22,6 +23,13 @@ abstract class QuranRepository {
     int surahNumber, {
     required int startAyah,
     required int endAyah,
+  });
+
+  /// Ayahs whose search text contains [needle] (already in search form — see
+  /// `searchableQuery()`), in mushaf order, at most [limit] of them.
+  Future<Either<Failure, List<AyahSearchHit>>> searchAyahs(
+    String needle, {
+    required int limit,
   });
 
   Future<Either<Failure, List<Reciter>>> getReciters();
@@ -77,6 +85,12 @@ class QuranRepositoryImpl implements QuranRepository {
     final List<Ayah> all = await _local.getAyahs(surahNumber);
     return List<Ayah>.unmodifiable(all.sublist(startAyah - 1, endAyah));
   });
+
+  @override
+  Future<Either<Failure, List<AyahSearchHit>>> searchAyahs(
+    String needle, {
+    required int limit,
+  }) => _guard(() => _local.searchAyahs(needle, limit: limit));
 
   @override
   Future<Either<Failure, List<Reciter>>> getReciters() =>

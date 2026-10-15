@@ -67,6 +67,7 @@ class MushafPage extends Equatable {
     this.surah,
     this.juz,
     this.hizb,
+    this.rub,
     this.partial = false,
   });
 
@@ -79,12 +80,16 @@ class MushafPage extends Equatable {
   /// first two — keeps its lines centred, as they are printed.
   final bool partial;
 
-  /// The surah, juz and hizb the page opens in — what the frame writes in its
-  /// borders. Null when the catalog could not say; the border then simply
-  /// carries no label there.
+  /// The surah, juz, hizb and rub' the page opens in — what the frame writes
+  /// in its borders. Null when the catalog could not say; the border then
+  /// simply carries no label there.
   final Surah? surah;
   final int? juz;
   final int? hizb;
+
+  /// The rub' al-hizb, 1..240; `(rub - 1) % 4` is which quarter of [hizb]
+  /// the page opens in.
+  final int? rub;
 
   @override
   List<Object?> get props => <Object?>[
@@ -93,6 +98,7 @@ class MushafPage extends Equatable {
     surah,
     juz,
     hizb,
+    rub,
     partial,
   ];
 }

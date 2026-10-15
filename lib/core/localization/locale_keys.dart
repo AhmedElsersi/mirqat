@@ -13,11 +13,14 @@ class LocaleKeys {
   static const String aboutEmpty = 'about.empty';
   static const String aboutGoal = 'about.goal';
   static const String aboutHowToUse = 'about.how_to_use';
+  static const String aboutIdea = 'about.idea';
+  static const String aboutIdeaOwnerRole = 'about.idea_owner_role';
   static const String aboutLinkEmail = 'about.link_email';
   static const String aboutLinkFacebook = 'about.link_facebook';
   static const String aboutLinkFailed = 'about.link_failed';
   static const String aboutLinkGithub = 'about.link_github';
   static const String aboutLinkLinkedin = 'about.link_linkedin';
+  static const String aboutLinkPhone = 'about.link_phone';
   static const String aboutLinkWhatsapp = 'about.link_whatsapp';
   static const String aboutShowIntro = 'about.show_intro';
   static const String aboutUs = 'about.us';
@@ -29,6 +32,7 @@ class LocaleKeys {
   static const String commonAyahNumber = 'common.ayah_number';
   static const String commonAyahRange = 'common.ayah_range';
   static const String commonCancel = 'common.cancel';
+  static const String commonClear = 'common.clear';
   static const String commonClose = 'common.close';
   static const String commonDone = 'common.done';
   static const String commonError = 'common.error';
@@ -119,6 +123,10 @@ class LocaleKeys {
   static const String mushafClearRange = 'mushaf.clear_range';
   static const String mushafHintLongPress = 'mushaf.hint_long_press';
   static const String mushafHizbLabel = 'mushaf.hizb_label';
+  static const String mushafHizbQuarterLabel = 'mushaf.hizb_quarter_label';
+  static const String mushafHizbHalfLabel = 'mushaf.hizb_half_label';
+  static const String mushafHizbThreeQuartersLabel =
+      'mushaf.hizb_three_quarters_label';
   static const String mushafJuzLabel = 'mushaf.juz_label';
   static const String mushafMarkHere = 'mushaf.mark_here';
   static const String mushafMemorizeAyah = 'mushaf.memorize_ayah';
@@ -130,6 +138,8 @@ class LocaleKeys {
   static const String mushafSectionPrevious = 'mushaf.section_previous';
   static const String mushafSetRangeEnd = 'mushaf.set_range_end';
   static const String mushafSetRangeStart = 'mushaf.set_range_start';
+  static const String mushafShare = 'mushaf.share';
+  static const String mushafShareAyah = 'mushaf.share_ayah';
   static const String mushafSurahLabel = 'mushaf.surah_label';
   static const String mushafTitle = 'mushaf.title';
   static const String mushafUnmark = 'mushaf.unmark';
@@ -244,6 +254,9 @@ class LocaleKeys {
   static const String settingsHomeViewMushaf = 'settings.home_view_mushaf';
   static const String settingsHomeViewMushafHint =
       'settings.home_view_mushaf_hint';
+  static const String settingsPageTurn = 'settings.page_turn';
+  static const String settingsPageTurnNormal = 'settings.page_turn_normal';
+  static const String settingsPageTurnPaper = 'settings.page_turn_paper';
   static const String settingsLanguage = 'settings.language';
   static const String settingsLanguageAr = 'settings.language_ar';
   static const String settingsLanguageEn = 'settings.language_en';
@@ -267,6 +280,15 @@ class LocaleKeys {
   static const String settingsThemeDark = 'settings.theme_dark';
   static const String settingsThemeLight = 'settings.theme_light';
   static const String settingsThemeSystem = 'settings.theme_system';
+  static const String searchAyahs = 'search.ayahs';
+  static const String searchHint = 'search.hint';
+  static const String searchMoreResults = 'search.more_results';
+  static const String searchNoResults = 'search.no_results';
+  static const String searchOpenPage = 'search.open_page';
+  static const String searchPrompt = 'search.prompt';
+  static const String searchSurahs = 'search.surahs';
+  static const String searchTitle = 'search.title';
+
   static const String settingsTitle = 'settings.title';
   static const String settingsVersion = 'settings.version';
   static const String settingsWholeMushaf = 'settings.whole_mushaf';

@@ -35,6 +35,14 @@ pair N times, and continues that pattern until the selected range is memorized.
    widget, repository, or loader. If text is missing or looks malformed, **STOP and
    report** — do not fill the gap. If marks render oddly, the answer is a font change,
    never a text change.
+   **Search does not breach this.** Word search compares against `ayahs.text_search`,
+   a derived column `tool/build_quran_data.py` computes at build time; the `text`
+   column is untouched and is what every hit renders. The app normalizes only the
+   *query* (and surah names, which are labels): `searchableQuery()` in
+   `lib/core/search/search_text.dart`, kept byte-identical in effect to the build
+   tool's `searchable()` by `test/core/search_text_db_test.dart`, which replays it
+   over every ayah of the built database. Neither function is ever handed ayah text
+   anywhere in `lib/`.
 2. **No surah-specific or reciter-specific code.** No `if (surah == 1)`, no hardcoded ayah
    counts, no hardcoded reciter IDs, no switch on surah number anywhere. Surahs come from
    `quran.db`, reciters from `reciters.json` and the audio manifest; both are pure data.
@@ -101,6 +109,8 @@ lib/
     session/         cubit + widgets            (the session set up and played over
                                                  the reading view: bar, settings sheet)
     progress/        cubit + screen + widgets
+    search/          cubit + screen               (a surah by name, an ayah by its
+                                                  words, a page by its number)
     settings/        cubit + screens            (settings in cards; session settings,
                                                  saved recitations, and the whole
                                                  mushaf for one reciter, as pages)
@@ -132,6 +142,14 @@ lib/
   (A.2 rule 1 is about the bytes, and they are untouched). **On a desktop the design is
   the window** (`core/desktop.dart`): nothing is scaled, the mushaf page is held to a
   printed page's width, lists to a column, the keyboard turns pages and a mouse drags.
+  **A window wide enough lies open at two facing pages** (`spreadFits`,
+  `kDesktopSpreadWidth`), as a printed mushaf does: the pager's items become *leaves* of
+  two pages with the fold between them, the earlier page on the right whatever the
+  interface language, and one swipe or one arrow key turns both. Leaves are paired from
+  the first page on show — page 1 for the whole mushaf, so the first leaf is Al-Fatiha
+  facing the opening of Al-Baqarah, as the mushaf is bound; a surah or juz read on its
+  own pairs from its own first page, so no half of a leaf is a page it does not hold.
+  Below that width, and on every phone and tablet, one page at a time as before.
 - **Colors:** `Theme.of(context)` / `AppColors` tokens only — no raw `Colors.*` literals.
 - **Strings:** `easy_localization`, both `ar.json` and `en.json` populated with accurate
   Arabic. No hardcoded user-facing strings.
@@ -196,11 +214,18 @@ Read-only SQLite, built by `tool/build_quran_data.py` from the QUL sources in
 
 ```
 surahs(id, name_ar, name_translit, ayah_count, revelation, start_page, basmala_mode)
-ayahs (id, surah, ayah, text, page, juz, hizb, sajda, sajda_type, first_word_id, last_word_id)
+ayahs (id, surah, ayah, text, page, juz, hizb, rub, text_search,
+       sajda, sajda_type, first_word_id, last_word_id)
 words (id, surah, ayah, position, text, is_marker, page, line)
 lines (page, line, line_type, is_centered, surah_number, first_word_id, last_word_id)
 meta  (key, value)
 ```
+
+- `rub` is the rub' al-hizb, 1..240 — four to a hizb, from Tanzil's quarter starts
+  (`data/sources/quran-metadata-rub.json`), verified at build time to agree with QUL's
+  hizb boundaries. It is what lets the page's frame say *ربع/نصف/ثلاثة أرباع الحزب*.
+- `text_search` is the search comparison key (A.2 rule 1 note), derived at build time,
+  never rendered.
 
 - `basmala_mode` ∈ `first_ayah` (Al-Fatiha: the basmala **is** ayah 1) | `separate` (the
   basmala precedes ayah 1 and is not part of it) | `none` (At-Tawba).

@@ -13,6 +13,10 @@ enum AyahAction {
   markHere,
   unmark,
 
+  /// Share this ayah as an image: the verbatim text in the illuminated frame,
+  /// handed to the platform's share sheet.
+  share,
+
   /// A session from this ayah to the end of its surah, started at once.
   playFromHere,
 
@@ -37,6 +41,7 @@ class AyahActionsSheet extends StatelessWidget {
     required this.canPlay,
     required this.hasChosenRange,
     this.isMarked = false,
+    this.canShare = false,
     super.key,
   });
 
@@ -52,6 +57,10 @@ class AyahActionsSheet extends StatelessWidget {
   /// Whether this ayah carries the reader's mark, so the sheet offers to
   /// take it off rather than to set it again.
   final bool isMarked;
+
+  /// Whether this platform can share at all — a desktop without a share
+  /// sheet is not offered a button that would do nothing.
+  final bool canShare;
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +106,12 @@ class AyahActionsSheet extends StatelessWidget {
                     Icons.bookmark_add_outlined,
                     LocaleKeys.mushafMarkHere.tr(),
                   ),
+            if (canShare)
+              action(
+                AyahAction.share,
+                Icons.adaptive.share,
+                LocaleKeys.mushafShareAyah.tr(),
+              ),
             if (canPlay) ...<Widget>[
               action(
                 AyahAction.playFromHere,

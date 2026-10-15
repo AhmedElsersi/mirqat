@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../core/state/load_status.dart';
 import '../../data/models/ayah.dart';
 import '../../data/models/surah.dart';
+import '../services/batch_split.dart';
 import '../services/publish_guard.dart';
 import '../services/segment_planner.dart';
 
@@ -68,6 +69,8 @@ class AdminState extends Equatable {
     this.minimumSilenceMs = defaultMinimumSilenceMs,
     this.candidateCuts = const <AudioSegment>[],
     this.suspects = const <int>[],
+    this.onlySuspects = false,
+    this.canUndo = false,
     this.previewingIndex,
     this.recordingHasBasmala = true,
     this.recordingHasIstiadhah = false,
@@ -76,6 +79,9 @@ class AdminState extends Equatable {
     this.overrideReason = '',
     this.replaceExisting = false,
     this.progress,
+    this.batch = const <BatchEntry>[],
+    this.batchFolder,
+    this.batchRunning = false,
     this.log = const <String>[],
     this.errorMessage,
   });
@@ -126,6 +132,13 @@ class AdminState extends Equatable {
   /// listen to before publishing. Recomputed after every edit.
   final List<int> suspects;
 
+  /// Whether the review list is narrowed to [suspects] alone.
+  final bool onlySuspects;
+
+  /// Whether an edit can be taken back. False after a fresh split: its
+  /// history belongs to segments that no longer exist.
+  final bool canUndo;
+
   /// The segment being played back, or null when nothing is. Drives the
   /// play/stop button on its row.
   final int? previewingIndex;
@@ -165,6 +178,28 @@ class AdminState extends Equatable {
   /// 0..1 while exporting or uploading.
   final double? progress;
 
+  /// A folder of recordings, one per surah, split one after another. Each
+  /// entry keeps its split, so any of them can be opened in the review list
+  /// and fixed by ear without splitting again.
+  final List<BatchEntry> batch;
+
+  /// The folder [batch] came from — where its `README.md` report is written.
+  final String? batchFolder;
+
+  /// Whether the batch is still working through its files.
+  final bool batchRunning;
+
+  /// The recordings the batch split clean — what "publish the batch" uploads.
+  List<BatchEntry> get batchClean => <BatchEntry>[
+    for (final BatchEntry e in batch)
+      if (e.isClean) e,
+  ];
+
+  /// Whether the batch has finished and is waiting on the operator's word —
+  /// publish the clean ones, or review first.
+  bool get batchAwaitsDecision =>
+      !batchRunning && batch.isNotEmpty && batchClean.isNotEmpty;
+
   /// What has happened, newest last. Never holds a credential.
   final List<String> log;
   final String? errorMessage;
@@ -202,6 +237,8 @@ class AdminState extends Equatable {
     int? minimumSilenceMs,
     List<AudioSegment>? candidateCuts,
     List<int>? suspects,
+    bool? onlySuspects,
+    bool? canUndo,
     int? previewingIndex,
     bool clearPreview = false,
     bool? recordingHasBasmala,
@@ -212,6 +249,9 @@ class AdminState extends Equatable {
     bool? replaceExisting,
     double? progress,
     bool clearProgress = false,
+    List<BatchEntry>? batch,
+    String? batchFolder,
+    bool? batchRunning,
     // A nullable field cannot be reset through `??`, so dropping a split is
     // its own flag. Without it, choosing another recording — or another
     // surah — would keep segments computed from the last one, and they would
@@ -233,6 +273,8 @@ class AdminState extends Equatable {
     minimumSilenceMs: minimumSilenceMs ?? this.minimumSilenceMs,
     candidateCuts: candidateCuts ?? this.candidateCuts,
     suspects: clearPlan ? const <int>[] : (suspects ?? this.suspects),
+    onlySuspects: onlySuspects ?? this.onlySuspects,
+    canUndo: clearPlan ? false : (canUndo ?? this.canUndo),
     previewingIndex: clearPlan || clearPreview
         ? null
         : (previewingIndex ?? this.previewingIndex),
@@ -243,6 +285,9 @@ class AdminState extends Equatable {
     overrideReason: overrideReason ?? this.overrideReason,
     replaceExisting: replaceExisting ?? this.replaceExisting,
     progress: clearProgress ? null : (progress ?? this.progress),
+    batch: batch ?? this.batch,
+    batchFolder: batchFolder ?? this.batchFolder,
+    batchRunning: batchRunning ?? this.batchRunning,
     log: log ?? this.log,
     errorMessage: errorMessage,
   );
@@ -262,6 +307,8 @@ class AdminState extends Equatable {
     minimumSilenceMs,
     candidateCuts,
     suspects,
+    onlySuspects,
+    canUndo,
     previewingIndex,
     recordingHasBasmala,
     recordingHasIstiadhah,
@@ -270,6 +317,9 @@ class AdminState extends Equatable {
     overrideReason,
     replaceExisting,
     progress,
+    batch,
+    batchFolder,
+    batchRunning,
     log,
     errorMessage,
   ];

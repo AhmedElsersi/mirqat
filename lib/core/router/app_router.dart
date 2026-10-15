@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/about/screen/developer_screen.dart';
+import '../../features/about/screen/idea_screen.dart';
 import '../../features/about/screen/how_to_use_screen.dart';
 import '../../features/about/screen/info_page_screen.dart';
 import '../../features/history/screen/history_screen.dart';
@@ -10,6 +11,7 @@ import '../../features/mushaf/mushaf_args.dart';
 import '../../features/mushaf/screen/mushaf_screen.dart';
 import '../../features/onboarding/screen/onboarding_screen.dart';
 import '../../features/progress/screen/progress_screen.dart';
+import '../../features/search/screen/search_screen.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/settings/cubit/settings_state.dart';
 import '../../features/settings/screen/downloads_screen.dart';
@@ -97,6 +99,12 @@ class AppRouter {
             const HistoryScreen(),
       ),
       GoRoute(
+        path: AppRoutes.searchPath,
+        name: AppRoutes.searchName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const SearchScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.settingsPath,
         name: AppRoutes.settingsName,
         builder: (BuildContext context, GoRouterState state) =>
@@ -125,6 +133,12 @@ class AppRouter {
             name: AppRoutes.aboutUsName,
             builder: (BuildContext context, GoRouterState state) =>
                 const InfoPageScreen(page: InfoPage.about),
+          ),
+          GoRoute(
+            path: AppRoutes.ideaPath,
+            name: AppRoutes.ideaName,
+            builder: (BuildContext context, GoRouterState state) =>
+                const IdeaScreen(),
           ),
           GoRoute(
             path: AppRoutes.developerPath,

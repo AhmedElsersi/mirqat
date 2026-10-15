@@ -10,14 +10,17 @@ import '../../data/models/app_info.dart';
 List<String> validateAppInfo(AppInfo info, {DateTime? now}) => <String>[
   ..._bothLanguages('About us', info.about),
   ..._bothLanguages('Our goal', info.goal),
+  // The idea section may be left out altogether, but once it says anything it
+  // is held to the same bar as the rest: both languages, an owner to credit,
+  // links a phone can open.
+  if (info.idea.text.ar.trim().isEmpty != info.idea.text.en.trim().isEmpty)
+    'The app idea is written in one language only. Whoever reads the other '
+        'would see it in the wrong one.',
+  if (!info.idea.isEmpty && info.idea.owner.name.isEmpty)
+    'The app idea names no owner. Say whose idea it is.',
+  ..._personLinks('idea owner', info.idea.owner),
   if (info.developer.name.isEmpty) 'The developer has no name.',
-  for (final DeveloperLink link in info.developer.links.keys)
-    if (info.developer.uriFor(link) == null)
-      'The developer\'s ${link.name} — "${info.developer.links[link]}" — is '
-          'not something a phone can open.',
-  if (info.developer.photo.isNotEmpty &&
-      Uri.tryParse(info.developer.photo) == null)
-    'The developer\'s photo is not an address.',
+  ..._personLinks('developer', info.developer),
   ..._platform('Android', info.update.android),
   ..._platform('iOS', info.update.ios),
   if (info.update.notes.ar.trim().isEmpty !=
@@ -37,6 +40,17 @@ List<String> _maintenance(Maintenance sign, DateTime now) => <String>[
           'has already passed, so the app would ignore it. Clear it, or set '
           'a time to come.',
   ],
+];
+
+/// The checks a person's card gets whoever the person is: every filled-in
+/// link must be something a phone can open, and a photo must be an address.
+List<String> _personLinks(String who, DeveloperInfo person) => <String>[
+  for (final DeveloperLink link in person.links.keys)
+    if (person.uriFor(link) == null)
+      'The $who\'s ${link.name} — "${person.links[link]}" — is '
+          'not something a phone can open.',
+  if (person.photo.isNotEmpty && Uri.tryParse(person.photo) == null)
+    'The $who\'s photo is not an address.',
 ];
 
 List<String> _bothLanguages(String what, LocalizedText text) => <String>[

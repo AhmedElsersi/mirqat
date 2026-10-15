@@ -21,22 +21,23 @@ class IslamicFrame extends StatelessWidget {
   final Widget child;
 
   /// Width of the ornamented band at the sides. Defaults to a fraction of the
-  /// frame's own width, held between 18 and 30 logical pixels: wide enough for
+  /// frame's own width, held between 20 and 34 logical pixels: wide enough for
   /// the woven lattice and its guard stripes to read as illumination rather
   /// than as a rule. It was half this at first, to spare the text; the owner
-  /// asked for the ornament to have presence, and a page that no longer fits
-  /// simply scrolls, as a printed page larger than the glass would.
+  /// asked for the ornament to have presence — and then, later, for a little
+  /// more of it — and a page that no longer fits simply scrolls, as a printed
+  /// page larger than the glass would.
   final double? band;
 
   /// What the borders say about the page — surah and juz along the top, the
-  /// page number at the foot, the hizb in the right-hand border — the way a
-  /// printed mushaf writes them in its margins. With labels the top and
-  /// bottom bands are taller than the sides, so that the words in them can be
-  /// read rather than merely present.
+  /// page number at the foot, the hizb and its quarter in the right-hand
+  /// border — the way a printed mushaf writes them in its margins. With
+  /// labels the top and bottom bands are taller than the sides, so that the
+  /// words in them can be read rather than merely present.
   final FrameLabels? labels;
 
   /// The side band for a frame [width] wide.
-  static double bandFor(double width) => (width * 0.055).clamp(18.0, 30.0);
+  static double bandFor(double width) => (width * 0.062).clamp(20.0, 34.0);
 
   /// The top and bottom band: the side band, or taller when it carries words.
   static double crossBandFor(double band, {required bool labelled}) =>
@@ -90,8 +91,15 @@ class IslamicFrame extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    _Plaque(text: l.topStart, height: cross * 0.74),
-                    _Plaque(text: l.topEnd, height: cross * 0.74),
+                    // Flexible, so two long labels share the band instead of
+                    // overflowing it — each plaque scales its words down
+                    // before it would run out (labels, never ayah text).
+                    Flexible(
+                      child: _Plaque(text: l.topStart, height: cross * 0.74),
+                    ),
+                    Flexible(
+                      child: _Plaque(text: l.topEnd, height: cross * 0.74),
+                    ),
                   ],
                 ),
               ),
@@ -138,7 +146,8 @@ class FrameLabels {
   /// Bottom border, centred — the page number.
   final String? bottom;
 
-  /// The right-hand border, turned to run along it — the hizb.
+  /// The right-hand border, turned to run along it — the hizb, with the
+  /// quarter the page opens in where it is not the hizb's start.
   final String? side;
 
   bool get isEmpty =>
@@ -171,19 +180,25 @@ class _Plaque extends StatelessWidget {
       ),
       // Sized to its words. `alignment:` on the Container itself would make
       // it swell to whatever room it is offered — the whole length of the
-      // border, for the two plaques that are not inside a Row.
+      // border, for the two plaques that are not inside a Row. The FittedBox
+      // only ever shrinks: where the band cannot hold the words at full size,
+      // the label scales down rather than overflowing the page. A label is
+      // not ayah text, so scaling it is allowed (A.2 rule 7 is about ayahs).
       child: Center(
         widthFactor: 1,
-        child: Text(
-          label,
-          maxLines: 1,
-          softWrap: false,
-          textScaler: TextScaler.noScaling,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontSize: height * 0.56,
-            height: 1.0,
-            color: AppColors.cream,
-            fontWeight: FontWeight.w600,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            textScaler: TextScaler.noScaling,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              fontSize: height * 0.62,
+              height: 1.0,
+              color: AppColors.cream,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),

@@ -29,8 +29,8 @@ abstract class QuranPagesLocalDataSource {
   Future<List<Word>> wordsForAyah(int surahNumber, int ayahNumber);
 
   /// How many pages the layout has.
-  /// The surah, juz and hizb the page opens in, or null for a page with no
-  /// words on it.
+  /// The surah, juz, hizb and rub' the page opens in, or null for a page with
+  /// no words on it.
   Future<PageInfo?> pageInfo(int page, {int? fromWordId});
 
   /// Every juz and where it begins, in order.
@@ -147,7 +147,7 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
     // — a surah that begins mid-page is labelled with its own juz, not with
     // that of the lines above it.
     final List<Map<String, Object?>> rows = await db.rawQuery(
-      'SELECT a.surah AS surah, a.juz AS juz, a.hizb AS hizb '
+      'SELECT a.surah AS surah, a.juz AS juz, a.hizb AS hizb, a.rub AS rub '
       'FROM words w JOIN ayahs a ON a.surah = w.surah AND a.ayah = w.ayah '
       'WHERE w.page = ? AND w.id >= ? ORDER BY w.id LIMIT 1',
       <Object>[page, fromWordId ?? 0],
@@ -158,6 +158,7 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
       surahNumber: row['surah']! as int,
       juz: row['juz']! as int,
       hizb: row['hizb']! as int,
+      rub: row['rub']! as int,
     );
   }
 

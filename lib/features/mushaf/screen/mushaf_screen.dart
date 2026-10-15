@@ -12,9 +12,12 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_position.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
+import '../../../data/repositories/quran_repository.dart';
+import '../../../services/share_service.dart';
 import '../../session/cubit/session_cubit.dart';
 import '../../session/cubit/session_state.dart';
 import '../../session/default_range.dart';
@@ -28,7 +31,10 @@ import '../cubit/mushaf_state.dart';
 import '../mushaf_args.dart';
 import '../reading_section.dart';
 import '../widgets/ayah_actions_sheet.dart';
+import '../widgets/ayah_share_dialog.dart';
+import '../widgets/mushaf_fold.dart';
 import '../widgets/mushaf_page_view.dart';
+import '../widgets/paper_turn.dart';
 
 class MushafScreen extends StatelessWidget {
   const MushafScreen({this.args = const MushafArgs(), super.key});
@@ -74,6 +80,17 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
   /// another run, with its own first page, and needs its own controller.
   int _controllerEpoch = -1;
 
+  /// Whether the mushaf is lying open at two facing pages, as the last build
+  /// settled it (`spreadFits`). Everything here that counts pages reads it:
+  /// the pager's items are *leaves* of one page or two, and a leaf is what a
+  /// swipe, an arrow key and a page request each move by.
+  bool _spread = false;
+
+  /// What [_spread] was when [_controller] was made. A window dragged past
+  /// the width a spread needs renumbers every leaf, so the controller is
+  /// remade at the leaf the reader is on.
+  bool _controllerSpread = false;
+
   /// Whether the bottom bar is showing. It starts hidden: the screen opens on
   /// the page, whole, the way a book opens — and a tap anywhere brings the
   /// controls up, and another puts them away.
@@ -114,20 +131,55 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
   }
 
   PageController _controllerFor(MushafState state) {
-    if (_controller == null || _controllerEpoch != state.epoch) {
+    if (_controller == null ||
+        _controllerEpoch != state.epoch ||
+        _controllerSpread != _spread) {
       final PageController? old = _controller;
       // Disposed after the frame: the old page view is still attached to it
       // until this build has replaced that view.
       if (old != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
       }
+      // The same run of pages, renumbered because the window crossed the
+      // spread's width: the reader keeps the page they are on rather than
+      // being sent back to where the screen opened.
+      final int at = _controller != null && _controllerEpoch == state.epoch
+          ? state.currentPage
+          : state.initialPage;
       _controllerEpoch = state.epoch;
-      _controller = PageController(
-        initialPage: state.initialPage - state.firstPage,
-      );
+      _controllerSpread = _spread;
+      _controller = PageController(initialPage: _leafOf(at, state));
     }
     return _controller!;
   }
+
+  // --- leaves ---------------------------------------------------------------
+  //
+  // The pager turns leaves, not pages. In a window one leaf is one page; on a
+  // desk wide enough for it, a leaf is two pages facing each other the way a
+  // printed mushaf lies open, the earlier page on the right.
+  //
+  // Leaves are counted from the first page on show, which for the whole
+  // mushaf is page 1 — so the first leaf is pages 1 and 2, Al-Fatiha facing
+  // the opening of Al-Baqarah, which is how the mushaf is printed and bound.
+  // A surah or a juz read on its own is paired from its own first page
+  // instead, so that no half of a leaf is a page the section does not hold.
+
+  /// How many printed pages lie open at once.
+  int get _pagesPerLeaf => _spread ? 2 : 1;
+
+  /// The leaf [page] is printed on.
+  int _leafOf(int page, MushafState state) =>
+      (page - state.firstPage) ~/ _pagesPerLeaf;
+
+  /// The first page of leaf [index]: the right-hand page, the one a mushaf is
+  /// read before its neighbour.
+  int _firstPageOf(int index, MushafState state) =>
+      state.firstPage + index * _pagesPerLeaf;
+
+  /// How many leaves there are to turn through.
+  int _leafCount(MushafState state) =>
+      (state.visiblePageCount + _pagesPerLeaf - 1) ~/ _pagesPerLeaf;
 
   // --- the session and the page ---------------------------------------------
 
@@ -201,6 +253,12 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // Settled before anything below counts a page: a desk wide enough holds
+    // two facing pages, a narrower window one. Read from MediaQuery, so
+    // dragging the window's edge past that width rebuilds and re-lays the
+    // mushaf rather than leaving it as it opened.
+    _spread = spreadFits(MediaQuery.sizeOf(context).width);
+
     return MultiBlocListener(
       listeners: <BlocListener<dynamic, dynamic>>[
         // What "play" would mean follows the page, until the reader chooses.
@@ -252,17 +310,23 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
       listener: (BuildContext context, MushafState state) {
         final PageController? controller = _controller;
         if (controller == null || !controller.hasClients) return;
-        final int target = state.pageRequest!.page - state.firstPage;
+        // The leaf the page is printed on: an ayah on the facing page of the
+        // spread already on show asks for the leaf it is already on, and
+        // nothing moves.
+        final int target = _leafOf(state.pageRequest!.page, state);
         // Animate a short hop so the turn is visible; jump a long one. An
         // animation across hundreds of pages would build and load every page
         // it passes, only to show each for a frame.
         if ((target - (controller.page ?? 0)).abs() > _animatedPageSpan) {
           controller.jumpToPage(target);
         } else {
+          // A folding leaf needs longer on the air than a slide, or the
+          // paper reads as flicked rather than turned.
+          final bool paper = _paperTurns(context);
           controller.animateToPage(
             target,
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeInOut,
+            duration: Duration(milliseconds: paper ? 550 : 350),
+            curve: paper ? Curves.easeInOutCubic : Curves.easeInOut,
           );
         }
       },
@@ -334,30 +398,49 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
     );
   }
 
-  /// One page on from here, or one back: what a key does. The pager clamps
-  /// the index itself, so the first and last pages simply stay.
+  /// One leaf on from here, or one back: what a key does — a page in a
+  /// window, both pages of the spread on a desk, the way a hand turns one
+  /// leaf of a printed mushaf. The pager clamps the index itself, so the
+  /// first and last leaves simply stay.
   void _turnPage(int by) {
     final PageController? controller = _controller;
     if (controller == null || !controller.hasClients) return;
     final int current = controller.page?.round() ?? 0;
+    final bool paper = _paperTurns(context);
     controller.animateToPage(
       (current + by).clamp(0, 1 << 20),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
+      // Longer and softer when the page folds like paper: a key press should
+      // still show the whole leaf lifting and landing, not a flick.
+      duration: Duration(milliseconds: paper ? 550 : 250),
+      curve: paper ? Curves.easeInOutCubic : Curves.easeOut,
     );
   }
 
+  /// Whether the reader has the paper fold turned on.
+  static bool _paperTurns(BuildContext context) =>
+      context.read<SettingsCubit>().state.settings.pageTurnStyle ==
+      PageTurnStyle.paper;
+
   Widget _pages(BuildContext context, MushafState state) {
     final MushafCubit cubit = context.read<MushafCubit>();
+    // How a turned page leaves the screen — folding like paper, or the plain
+    // slide. Selected, so flipping the setting re-dresses the pager in place.
+    final bool paper =
+        context.select<SettingsCubit, PageTurnStyle>(
+          (SettingsCubit c) => c.state.settings.pageTurnStyle,
+        ) ==
+        PageTurnStyle.paper;
+    // One more leaf after a surah or a juz: where to go from here.
+    final int leaves = _leafCount(state) + (state.section == null ? 0 : 1);
     // A mushaf's next page lies to the left whatever language the interface
     // is in. `reverse: true` puts it there only on an LTR axis — under the
     // Arabic locale's RTL it would flip back to the right — so the axis is
     // pinned to LTR here and each page restores RTL for its own content.
     // On a desk the page is held to a printed page's width, centred; the
     // font is sized to fit that width, so the text stays a reading size
-    // however wide the window is.
+    // however wide the window is. A spread is held to two of those.
     return DesktopWidth(
-      maxWidth: kDesktopPageWidth,
+      maxWidth: _spread ? kDesktopSpreadMaxWidth : kDesktopPageWidth,
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<ScrollNotification>(
@@ -370,32 +453,81 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
             return false;
           },
           child: PageView.builder(
-            // Keyed by the run of pages, so that another surah or juz is a new
-            // page view on a new controller rather than the old one re-counted
-            // under the reader's thumb.
-            key: ValueKey<int>(state.epoch),
+            // Keyed by the run of pages and by how they are laid out, so that
+            // another surah or juz — or a window that has just become wide
+            // enough for a spread — is a new page view on a new controller
+            // rather than the old one re-counted under the reader's thumb.
+            key: ValueKey<(int, bool)>((state.epoch, _spread)),
             controller: _controllerFor(state),
             reverse: true,
             // One more leaf after a surah or a juz: where to go from here.
-            itemCount: state.visiblePageCount + (state.section == null ? 0 : 1),
+            itemCount: leaves,
             onPageChanged: (int index) {
               if (_dragging && _following) setState(() => _following = false);
-              if (index < state.visiblePageCount) {
-                cubit.onPageChanged(state.firstPage + index);
+              if (index < _leafCount(state)) {
+                cubit.onPageChanged(_firstPageOf(index, state));
               }
             },
-            itemBuilder: (BuildContext context, int index) => Directionality(
-              textDirection: TextDirection.rtl,
-              child: index < state.visiblePageCount
-                  ? _PageSlot(
-                      pageNumber: state.firstPage + index,
-                      onTap: _toggleChrome,
-                    )
-                  : _SectionEnd(section: state.section!, onTap: _toggleChrome),
-            ),
+            itemBuilder: (BuildContext context, int index) {
+              Widget leafFor(int i) => Directionality(
+                textDirection: TextDirection.rtl,
+                child: _leafAt(i, state),
+              );
+              if (!paper) return leafFor(index);
+              return PaperTurn(
+                controller: _controllerFor(state),
+                index: index,
+                spread: _spread,
+                // What this leaf lifts off: the next leaf's face, drawn flat
+                // beneath it while it turns. The last leaf has none.
+                under: index + 1 < leaves ? () => leafFor(index + 1) : null,
+                child: leafFor(index),
+              );
+            },
           ),
         ),
       ),
+    );
+  }
+
+  /// What the pager draws at [index]: a leaf of the mushaf, or — one past the
+  /// last leaf of a surah or a juz — where to go from here.
+  Widget _leafAt(int index, MushafState state) {
+    if (index >= _leafCount(state)) {
+      final Widget end = _SectionEnd(
+        section: state.section!,
+        onTap: _toggleChrome,
+      );
+      // Across an open spread that panel would be a box two pages wide: it is
+      // held to one page's width, in the middle of the leaf.
+      return _spread
+          ? Center(
+              child: SizedBox(width: kDesktopPageWidth, child: end),
+            )
+          : end;
+    }
+
+    final int first = _firstPageOf(index, state);
+    final Widget recto = _PageSlot(pageNumber: first, onTap: _toggleChrome);
+    if (!_spread) return recto;
+
+    final int facing = first + 1;
+    // The earlier page is read first, so it is the first child: under RTL a
+    // Row lays its children out from the right, which is where a mushaf
+    // begins. Stretched, so the fold between them is as tall as the pages.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Expanded(child: recto),
+        MushafFold(onTap: _toggleChrome),
+        Expanded(
+          // A section whose last page is a right-hand one has nothing printed
+          // facing it.
+          child: facing <= state.lastPage
+              ? _PageSlot(pageNumber: facing, onTap: _toggleChrome)
+              : MushafBlankPage(onTap: _toggleChrome),
+        ),
+      ],
     );
   }
 }
@@ -616,6 +748,7 @@ class _PageSlot extends StatelessWidget {
           (r) => r.hasSurah(word.surahNumber),
         ),
         hasChosenRange: session.state.rangeChosen,
+        canShare: sl<ShareService>().isSupported,
         isMarked:
             mark != null &&
             mark.surahNumber == ayah.surah &&
@@ -637,6 +770,8 @@ class _PageSlot extends StatelessWidget {
         );
       case AyahAction.unmark:
         await settings.clearReadingMark();
+      case AyahAction.share:
+        if (context.mounted) await _shareAyah(context, surah, ayah);
       case AyahAction.playFromHere:
         session.chooseRange(ayah, AyahRef(surah.number, surah.ayahCount));
         await session.start();
@@ -650,5 +785,33 @@ class _PageSlot extends StatelessWidget {
       case AyahAction.clearRange:
         session.clearRange();
     }
+  }
+
+  /// The ayah's verbatim text, fetched afresh from `quran.db` — never joined
+  /// back together from the page's words (A.2 rule 1) — and offered as an
+  /// image in the illuminated frame.
+  static Future<void> _shareAyah(
+    BuildContext context,
+    Surah surah,
+    AyahRef ayah,
+  ) async {
+    final List<Ayah>? fetched = (await sl<QuranRepository>().getAyahRange(
+      ayah.surah,
+      startAyah: ayah.ayah,
+      endAyah: ayah.ayah,
+    )).fold((_) => null, (List<Ayah> ayahs) => ayahs);
+    if (!context.mounted) return;
+
+    if (fetched == null || fetched.length != 1) {
+      // Text that cannot be read is reported, never papered over.
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(LocaleKeys.commonError.tr())));
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AyahShareDialog(ayah: fetched.single, surah: surah),
+    );
   }
 }

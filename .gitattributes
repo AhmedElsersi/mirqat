@@ -1,0 +1,10 @@
+# The two files packed into the Windows zip are shipped to readers exactly as
+# they are written: UTF-8 with a BOM and CRLF line endings, which is what
+# Notepad needs to show Arabic, and to show line breaks at all. No end-of-line
+# conversion in either direction, on any machine that checks them out —
+# including the runner that packs them.
+#
+# The rule lives here rather than in that directory because the packaging step
+# copies everything in it into the zip, and a .gitattributes is not something
+# anyone downloaded the app to read.
+.github/windows-package/* -text

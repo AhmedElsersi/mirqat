@@ -301,6 +301,30 @@ class SegmentPlan extends Equatable {
     return quietest.start + (quietest.end - quietest.start) ~/ 2;
   }
 
+  /// [segments] with [index] and the one after it joined into one.
+  ///
+  /// The inverse of [splitting], and the repair for the mistake [splitting]
+  /// cannot undo: a pause *inside* an ayah — a held madd, a breath mid-verse —
+  /// that the splitter read as the end of one. Dropping one half was the only
+  /// control there was for that, and dropping a half publishes the other half
+  /// as the whole ayah.
+  ///
+  /// Anything cut out between the two comes back with them: the join runs from
+  /// the first segment's start to the second's end, because two halves of one
+  /// ayah have nothing between them that belongs to neither.
+  SegmentPlan merging(int index) {
+    if (index < 0 || index >= segments.length - 1) return this;
+    return copyWith(
+      segments: <AudioSegment>[
+        for (int i = 0; i < segments.length; i++)
+          if (i == index)
+            AudioSegment(start: segments[i].start, end: segments[i + 1].end)
+          else if (i != index + 1)
+            segments[i],
+      ],
+    );
+  }
+
   /// [segments] with one split in two at [at], for a break the splitter missed.
   SegmentPlan splitting(int index, Duration at) {
     final AudioSegment target = segments[index];

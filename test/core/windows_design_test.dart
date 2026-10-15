@@ -174,6 +174,82 @@ void main() {
       expect(theme.listTileTheme.horizontalTitleGap, WindowsDesign.gapRelated);
     });
 
+    test('every slot is inked: a colourless style paints white', () {
+      // Skia's default text colour is opaque white, so a slot that names no
+      // colour is not “whatever the theme says” — it is invisible on a light
+      // surface. The ramp sets metrics; the ink stays the theme's.
+      for (final ThemeData theme in <ThemeData>[
+        asWindows(() => AppTheme.light),
+        asWindows(() => AppTheme.dark),
+      ]) {
+        final TextTheme text = theme.textTheme;
+        final List<TextStyle?> every = <TextStyle?>[
+          text.displayLarge,
+          text.displayMedium,
+          text.displaySmall,
+          text.headlineLarge,
+          text.headlineMedium,
+          text.headlineSmall,
+          text.titleLarge,
+          text.titleMedium,
+          text.titleSmall,
+          text.bodyLarge,
+          text.bodyMedium,
+          text.bodySmall,
+          text.labelLarge,
+          text.labelMedium,
+          text.labelSmall,
+        ];
+
+        for (final TextStyle? style in every) {
+          expect(style?.color, isNotNull);
+          expect(
+            style!.color,
+            isNot(const Color(0xFFFFFFFF)),
+            reason: 'white on cream is the bug this test exists for',
+          );
+        }
+        // The one the whole window hangs on: an unstyled Text takes
+        // bodyMedium through Material's DefaultTextStyle.
+        expect(text.bodyMedium!.color, theme.colorScheme.onSurface);
+      }
+    });
+
+    testWidgets('an unstyled Text in a window is drawn in ink', (
+      WidgetTester tester,
+    ) async {
+      // The end of the chain the slot test guards: Material hands bodyMedium
+      // to DefaultTextStyle, and a Text that names no style takes it. This is
+      // what the admin tool is made of, and what came out white.
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+
+      final ThemeData theme = AppTheme.light;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            appBar: AppBar(title: const Text('Mirqat — audio admin')),
+            body: const Text('Reciter'),
+          ),
+        ),
+      );
+
+      final TextStyle body = DefaultTextStyle.of(
+        tester.element(find.text('Reciter')),
+      ).style;
+      final TextStyle title = DefaultTextStyle.of(
+        tester.element(find.text('Mirqat — audio admin')),
+      ).style;
+      // Put back before the expectations: the framework fails a test that
+      // ends with a debug variable still overridden, and a tear-down is too
+      // late for it.
+      debugDefaultTargetPlatformOverride = null;
+
+      expect(body.color, theme.colorScheme.onSurface);
+      expect(title.color, isNotNull);
+      expect(title.color, isNot(const Color(0xFFFFFFFF)));
+    });
+
     test(
       'no font family is named: the platform’s face is the Windows face',
       () {

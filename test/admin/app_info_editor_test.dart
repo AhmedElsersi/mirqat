@@ -52,6 +52,9 @@ class _Picker implements AdminFilePicker {
   @override
   Future<String?> pickLinkFile() async => null;
 
+  @override
+  Future<String?> pickFolder() async => null;
+
   _Picker(this.image);
 
   final String? image;
@@ -106,6 +109,35 @@ void main() {
         ),
       );
       expect(problems.single, contains('email'));
+    });
+
+    test('an idea left out altogether is fine; once it says anything it is '
+        'held to the same bar', () {
+      expect(validateAppInfo(good.copyWith(idea: IdeaInfo.empty)), isEmpty);
+      expect(
+        validateAppInfo(
+          good.copyWith(
+            idea: const IdeaInfo(text: LocalizedText(ar: 'الفكرة')),
+          ),
+        ),
+        containsAll(<Matcher>[
+          contains('one language only'),
+          contains('names no owner'),
+        ]),
+      );
+      expect(
+        validateAppInfo(
+          good.copyWith(
+            idea: IdeaInfo(
+              text: const LocalizedText(ar: 'الفكرة', en: 'The idea'),
+              owner: const DeveloperInfo(
+                name: LocalizedText(ar: 'سعيد العكش', en: 'Saied Eloksh'),
+              ).withLink(DeveloperLink.phone, 'no digits at all'),
+            ),
+          ),
+        ),
+        contains(contains('idea owner')),
+      );
     });
 
     test('a version that is not a version — the app would ignore it, and its '

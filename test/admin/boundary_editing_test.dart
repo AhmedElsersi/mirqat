@@ -217,6 +217,60 @@ void main() {
     });
   });
 
+  group('joining two segments back together', () {
+    // The repair for a pause inside an ayah — a held madd, a breath mid-verse
+    // — that the splitter read as the end of one. Before it existed, the only
+    // control for that was dropping half the ayah.
+    test('two clips become one, running start to end', () {
+      final SegmentPlan merged = plan().merging(1);
+
+      expect(merged.segments, hasLength(2));
+      expect(merged.segments[0], plan().segments[0]);
+      expect(merged.segments[1].start, s(5));
+      expect(merged.segments[1].end, s(20));
+    });
+
+    test('audio cut out between them comes back with them', () {
+      // An edge trimmed on its own leaves a gap that goes into no clip; two
+      // halves of one ayah have nothing between them that belongs to neither.
+      final SegmentPlan withGap = plan().trimmingEdge(
+        1,
+        end: s(10),
+        recordingLength: s(20),
+      );
+      expect(withGap.gapAfter(1), s(2));
+
+      final SegmentPlan merged = withGap.merging(1);
+      expect(merged.segments[1].start, s(5));
+      expect(merged.segments[1].end, s(20));
+      expect(merged.gapAfter(0), Duration.zero);
+    });
+
+    test('the ayahs after it move back up one', () {
+      // basmala, ayah 1, ayah 2 — joining the two ayahs leaves ayah 1 only,
+      // which is exactly the count the guard should now refuse.
+      final SegmentPlan merged = plan().merging(1);
+
+      expect(merged.planned.map((PlannedSegment p) => p.ayahNumber), <int>[
+        0,
+        1,
+      ]);
+      expect(merged.countMatches, isFalse);
+    });
+
+    test('there is nothing after the last clip to join it to', () {
+      expect(plan().merging(2), plan());
+      expect(plan().merging(-1), plan());
+      expect(plan().merging(9), plan());
+    });
+
+    test('split then merge is where it started', () {
+      final SegmentPlan there = plan().splitting(1, s(8));
+      expect(there.segments, hasLength(4));
+      expect(there.merging(1), plan());
+    });
+  });
+
   group('timecodes', () {
     test('what the list shows can be typed back in', () {
       for (final double seconds in <double>[0, 4.25, 75.4, 3725.125]) {

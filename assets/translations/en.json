@@ -9,6 +9,7 @@
     "retry": "Retry",
     "cancel": "Cancel",
     "close": "Close",
+    "clear": "Clear",
     "done": "Done",
     "ayah_number": "Ayah {}",
     "ayah_range": "Ayahs {} - {}"
@@ -101,6 +102,9 @@
     "wifi_only_hint": "A single surah is tens of megabytes",
     "home_view_mushaf": "Mushaf",
     "home_view_mushaf_hint": "The app opens straight onto the last page you read, and the surah and ajzaa lists become the index.",
+    "page_turn": "Page turning",
+    "page_turn_paper": "Like paper",
+    "page_turn_normal": "Normal",
     "card_appearance": "Appearance",
     "card_audio": "Audio and storage",
     "card_session": "Session",
@@ -122,6 +126,16 @@
     "save_as_default": "Save as default",
     "saved_as_default": "Saved as your defaults"
   },
+  "search": {
+    "title": "Search",
+    "hint": "A surah name, a word, or a page number",
+    "prompt": "Search by surah name, a word of the mushaf, or a page number",
+    "no_results": "No results",
+    "surahs": "Surahs",
+    "ayahs": "Ayahs",
+    "open_page": "Open page {}",
+    "more_results": "There are more results — add a word to narrow the search"
+  },
   "mushaf": {
     "title": "Mushaf",
     "open": "Open the mushaf",
@@ -131,6 +145,9 @@
     "surah_label": "Surah {}",
     "juz_label": "Juz {}",
     "hizb_label": "Hizb {}",
+    "hizb_quarter_label": "¼ Hizb {}",
+    "hizb_half_label": "½ Hizb {}",
+    "hizb_three_quarters_label": "¾ Hizb {}",
     "back": "Back",
     "hint_long_press": "Long-press an ayah for its options",
     "section_end": "End of {}",
@@ -141,7 +158,9 @@
     "set_range_end": "Make it the end of the range",
     "clear_range": "Clear the chosen range",
     "mark_here": "Mark: I stopped at this ayah",
-    "unmark": "Remove the reading mark"
+    "unmark": "Remove the reading mark",
+    "share_ayah": "Share this ayah as an image",
+    "share": "Share"
   },
   "downloads": {
     "section": "Offline audio",
@@ -228,10 +247,13 @@
     "us": "About us",
     "developer": "About the developer",
     "developer_role": "App developer",
+    "idea": "The app's idea",
+    "idea_owner_role": "The owner of the app's idea",
     "contact": "Get in touch",
     "link_email": "Email",
     "link_github": "GitHub",
     "link_linkedin": "LinkedIn",
+    "link_phone": "Phone",
     "link_whatsapp": "WhatsApp",
     "link_facebook": "Facebook",
     "link_failed": "Could not open the link",

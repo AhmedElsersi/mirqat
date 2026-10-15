@@ -44,14 +44,14 @@ void main() {
 
     test('the band has presence, and still leaves the page to the text', () {
       // Wide enough for the woven lattice and its guard stripes to read; the
-      // owner asked for that after seeing a band half this width. It grows
-      // with the page, but only so far.
-      expect(IslamicFrame.bandFor(200), 18);
-      expect(IslamicFrame.bandFor(400), 22);
-      expect(IslamicFrame.bandFor(1200), 30);
+      // owner asked for that after seeing a band half this width, and later
+      // for a little more again. It grows with the page, but only so far.
+      expect(IslamicFrame.bandFor(200), 20);
+      expect(IslamicFrame.bandFor(400), moreOrLessEquals(24.8));
+      expect(IslamicFrame.bandFor(1200), 34);
       for (final double width in <double>[320, 360, 412, 768, 1024]) {
         final double taken = IslamicFrame.insetsFor(width).horizontal;
-        expect(taken / width, lessThan(0.18), reason: 'at $width wide');
+        expect(taken / width, lessThan(0.19), reason: 'at $width wide');
       }
     });
 

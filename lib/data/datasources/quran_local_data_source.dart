@@ -5,6 +5,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 import '../../core/constants/asset_paths.dart';
 import '../../core/error/exceptions.dart';
 import '../models/ayah.dart';
+import '../models/ayah_search_hit.dart';
 import '../models/ayah_timing.dart';
 import '../models/reciter.dart';
 import '../models/surah.dart';
@@ -29,6 +30,16 @@ abstract class QuranLocalDataSource {
 
   /// Ayahs for a surah, text verbatim from `quran.db`, ordered 1..ayahCount.
   Future<List<Ayah>> getAyahs(int surahNumber);
+
+  /// Ayahs whose `text_search` column contains [needle], in mushaf order, at
+  /// most [limit] of them.
+  ///
+  /// [needle] must already be in search form — `searchableQuery()` applied to
+  /// what the user typed. The stored text is never normalised here or
+  /// anywhere in the app: the comparison column was computed at build time by
+  /// `tool/build_quran_data.py`, and what comes back is the `text` column
+  /// verbatim (CLAUDE.md A.2 rule 1).
+  Future<List<AyahSearchHit>> searchAyahs(String needle, {required int limit});
 
   Future<List<Reciter>> getReciters();
 
@@ -104,6 +115,25 @@ class QuranLocalDataSourceImpl implements QuranLocalDataSource {
     validateAyahSequence(ayahs, surah: surah, path: AssetPaths.quranDatabase);
 
     return _ayahsBySurah[surahNumber] = List<Ayah>.unmodifiable(ayahs);
+  }
+
+  @override
+  Future<List<AyahSearchHit>> searchAyahs(
+    String needle, {
+    required int limit,
+  }) async {
+    if (needle.isEmpty || limit < 1) return const <AyahSearchHit>[];
+    final Database db = await _database.open();
+    // The needle holds only Arabic letters and spaces (searchableQuery
+    // produces nothing else), so it cannot carry a LIKE wildcard.
+    final List<Map<String, Object?>> rows = await db.rawQuery(
+      'SELECT surah, ayah, text, page FROM ayahs '
+      'WHERE text_search LIKE ? ORDER BY id LIMIT ?',
+      <Object>['%$needle%', limit],
+    );
+    return List<AyahSearchHit>.unmodifiable(
+      rows.map(AyahSearchHit.fromDbRow),
+    );
   }
 
   @override

@@ -44,9 +44,9 @@ void main() {
   test('a page says where it opens: the first word on it, not the first '
       'ayah to start on it', () async {
     final PageInfo? first = await pages.pageInfo(1);
-    expect(first, const PageInfo(surahNumber: 1, juz: 1, hizb: 1));
+    expect(first, const PageInfo(surahNumber: 1, juz: 1, hizb: 1, rub: 1));
 
-    // Page 22 is where juz 2 begins.
+    // Page 22 is where juz 2 begins — and with it hizb 3 and rub 9.
     final PageInfo? p22 = await pages.pageInfo(22);
     expect(p22?.surahNumber, 2);
     expect(p22?.juz, 2);
@@ -56,6 +56,7 @@ void main() {
     expect(last?.surahNumber, 112);
     expect(last?.juz, 30);
     expect(last?.hizb, 60);
+    expect(last?.rub, 240);
   });
 
   test('a page that does not exist says nothing', () async {

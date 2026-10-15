@@ -56,7 +56,7 @@ abstract final class WindowsDesign {
     if (!isDesktop) return base;
 
     final ColorScheme colors = base.colorScheme;
-    final TextTheme text = _ramp(base.textTheme);
+    final TextTheme text = _ramp(base.textTheme, colors);
     final BorderSide hairline = BorderSide(color: colors.outline);
     final RoundedRectangleBorder control = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(controlRadius),
@@ -237,34 +237,42 @@ abstract final class WindowsDesign {
   /// in place of Bold, and leaves italic out because it costs legibility for
   /// dyslexic readers. So nothing here is heavier than w600 — which is also
   /// why this cannot simply scale the app's phone styles.
-  static TextTheme _ramp(TextTheme base) {
-    TextStyle style(double size, double lineHeight, {bool strong = false}) =>
-        TextStyle(
-          fontSize: size,
-          height: lineHeight / size,
-          fontWeight: strong ? FontWeight.w600 : FontWeight.w400,
-        );
-
-    final TextStyle caption = style(12, 16);
-    final TextStyle body = style(14, 20);
-    final TextStyle bodyStrong = style(14, 20, strong: true);
+  ///
+  /// Metrics only. Every slot keeps the colour it already had — the ramp
+  /// replaced whole [TextStyle]s once, and a slot with no colour is not
+  /// “the default”: Skia's own default is opaque white, so a window took
+  /// every unstyled `Text` from ink to invisible while a phone, whose theme
+  /// never passes through here, stayed correct. Anything the typography
+  /// leaves unset falls to [ColorScheme.onSurface], which is the app's ink.
+  static TextTheme _ramp(TextTheme base, ColorScheme colors) {
+    TextStyle style(
+      TextStyle? from,
+      double size,
+      double lineHeight, {
+      bool strong = false,
+    }) => TextStyle(
+      color: from?.color ?? colors.onSurface,
+      fontSize: size,
+      height: lineHeight / size,
+      fontWeight: strong ? FontWeight.w600 : FontWeight.w400,
+    );
 
     return base.copyWith(
-      displayLarge: style(40, 52, strong: true),
-      displayMedium: style(40, 52, strong: true),
-      displaySmall: style(28, 36, strong: true),
-      headlineLarge: style(28, 36, strong: true),
-      headlineMedium: style(28, 36, strong: true),
-      headlineSmall: style(20, 28, strong: true),
-      titleLarge: style(20, 28, strong: true),
-      titleMedium: style(18, 24, strong: true),
-      titleSmall: bodyStrong,
-      bodyLarge: body,
-      bodyMedium: body,
-      bodySmall: caption,
-      labelLarge: bodyStrong,
-      labelMedium: caption,
-      labelSmall: caption,
+      displayLarge: style(base.displayLarge, 40, 52, strong: true),
+      displayMedium: style(base.displayMedium, 40, 52, strong: true),
+      displaySmall: style(base.displaySmall, 28, 36, strong: true),
+      headlineLarge: style(base.headlineLarge, 28, 36, strong: true),
+      headlineMedium: style(base.headlineMedium, 28, 36, strong: true),
+      headlineSmall: style(base.headlineSmall, 20, 28, strong: true),
+      titleLarge: style(base.titleLarge, 20, 28, strong: true),
+      titleMedium: style(base.titleMedium, 18, 24, strong: true),
+      titleSmall: style(base.titleSmall, 14, 20, strong: true),
+      bodyLarge: style(base.bodyLarge, 14, 20),
+      bodyMedium: style(base.bodyMedium, 14, 20),
+      bodySmall: style(base.bodySmall, 12, 16),
+      labelLarge: style(base.labelLarge, 14, 20, strong: true),
+      labelMedium: style(base.labelMedium, 12, 16),
+      labelSmall: style(base.labelSmall, 12, 16),
     );
   }
 }

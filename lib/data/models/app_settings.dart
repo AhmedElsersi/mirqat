@@ -36,11 +36,38 @@ enum HomeViewMode {
 
   final String storageValue;
 
+  /// The default — for a fresh install and for a stored value that cannot be
+  /// read. The mushaf per the owner's decision (October 2026; it was the list
+  /// before): the app opens as a mushaf, and the lists are the index behind
+  /// it.
   static HomeViewMode fromStorage(String? value) {
     for (final HomeViewMode mode in HomeViewMode.values) {
       if (mode.storageValue == value) return mode;
     }
-    return HomeViewMode.list;
+    return HomeViewMode.mushaf;
+  }
+}
+
+/// How a turned page leaves the screen.
+enum PageTurnStyle {
+  /// The pager's own slide — one page pushes the other out.
+  slide('slide'),
+
+  /// A leaf of paper folding over its hinge, the way a printed page turns.
+  paper('paper');
+
+  const PageTurnStyle(this.storageValue);
+
+  final String storageValue;
+
+  /// The default — for a fresh install and for a stored value that cannot be
+  /// read. The plain slide, per the owner's decision (October 2026): the
+  /// paper fold is there for whoever turns it on in the settings.
+  static PageTurnStyle fromStorage(String? value) {
+    for (final PageTurnStyle style in PageTurnStyle.values) {
+      if (style.storageValue == value) return style;
+    }
+    return PageTurnStyle.slide;
   }
 }
 
@@ -119,7 +146,8 @@ class AppSettings extends Equatable {
     this.defaultRangeBehaviour = RangeBehaviour.wholeSurah,
     this.lastRanges = const <int, AyahRange>{},
     this.themeMode = AppThemeMode.system,
-    this.homeViewMode = HomeViewMode.list,
+    this.homeViewMode = HomeViewMode.mushaf,
+    this.pageTurnStyle = PageTurnStyle.slide,
     this.arabicFontSize = defaultArabicFontSize,
     this.audioQuality = AudioQuality.standard,
     this.readingMark,
@@ -135,10 +163,11 @@ class AppSettings extends Equatable {
 
   /// The connect mode a fresh install starts on.
   ///
-  /// Continuous per the owner's decision: reciting the range straight through
-  /// is the mode most people reach for first, and the drill modes are a
-  /// deliberate choice made after that.
-  static const ConnectMode defaultConnectModeValue = ConnectMode.continuous;
+  /// Cumulative per the owner's decision (October 2026; it was continuous
+  /// before): the talqeen drill — learn an ayah, then join it to everything
+  /// learnt so far — is the app's reason to exist, so it is what a fresh
+  /// install opens on.
+  static const ConnectMode defaultConnectModeValue = ConnectMode.cumulative;
 
   /// Null means "whichever reciter the catalog lists first for the surah",
   /// so a fresh install works before anything is chosen.
@@ -168,6 +197,9 @@ class AppSettings extends Equatable {
 
   final AppThemeMode themeMode;
   final HomeViewMode homeViewMode;
+
+  /// How the mushaf's pages turn — folding like paper, or the plain slide.
+  final PageTurnStyle pageTurnStyle;
   final double arabicFontSize;
 
   /// Which bitrate downloads and streams ask for, where the reciter offers a
@@ -221,6 +253,7 @@ class AppSettings extends Equatable {
     Map<int, AyahRange>? lastRanges,
     AppThemeMode? themeMode,
     HomeViewMode? homeViewMode,
+    PageTurnStyle? pageTurnStyle,
     double? arabicFontSize,
     AudioQuality? audioQuality,
     ReadingPosition? readingMark,
@@ -249,6 +282,7 @@ class AppSettings extends Equatable {
     lastRanges: lastRanges ?? this.lastRanges,
     themeMode: themeMode ?? this.themeMode,
     homeViewMode: homeViewMode ?? this.homeViewMode,
+    pageTurnStyle: pageTurnStyle ?? this.pageTurnStyle,
     arabicFontSize: arabicFontSize ?? this.arabicFontSize,
     audioQuality: audioQuality ?? this.audioQuality,
     readingMark: clearReadingMark ? null : (readingMark ?? this.readingMark),
@@ -280,6 +314,7 @@ class AppSettings extends Equatable {
     },
     'themeMode': themeMode.storageValue,
     'homeViewMode': homeViewMode.storageValue,
+    'pageTurnStyle': pageTurnStyle.storageValue,
     'arabicFontSize': arabicFontSize,
     // The bitrate itself, not the enum name: it is the number the manifest
     // and every path use, so a stored 64 stays meaningful even if these cases
@@ -323,6 +358,7 @@ class AppSettings extends Equatable {
     lastRanges: _rangesFromStorage(map['lastRanges']),
     themeMode: AppThemeMode.fromStorage(map['themeMode'] as String?),
     homeViewMode: HomeViewMode.fromStorage(map['homeViewMode'] as String?),
+    pageTurnStyle: PageTurnStyle.fromStorage(map['pageTurnStyle'] as String?),
     arabicFontSize:
         (map['arabicFontSize'] as num?)?.toDouble() ?? defaultArabicFontSize,
     audioQuality: AudioQuality.fromStorage(map['audioQuality']),
@@ -374,6 +410,7 @@ class AppSettings extends Equatable {
     lastRanges,
     themeMode,
     homeViewMode,
+    pageTurnStyle,
     arabicFontSize,
     audioQuality,
     readingMark,

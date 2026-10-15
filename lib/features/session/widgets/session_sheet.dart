@@ -2,8 +2,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/extensions/duration_extensions.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/widgets/reciter_dropdown.dart';
@@ -102,6 +104,13 @@ class _Header extends StatelessWidget {
             LocaleKeys.readerSessionSettings.tr(),
             style: Theme.of(context).textTheme.titleMedium,
           ),
+        ),
+        // The app's own settings, a push over the sheet: the sheet — and the
+        // session under it — is exactly as it was on the way back.
+        IconButton(
+          onPressed: () => context.pushNamed(AppRoutes.settingsName),
+          tooltip: LocaleKeys.settingsTitle.tr(),
+          icon: const Icon(Icons.settings_outlined),
         ),
         IconButton(
           onPressed: () => Navigator.of(context).pop(),

@@ -11,6 +11,8 @@ Sources expected in data/sources/ :
     quran-metadata-ayah.json        (optional: juz / hizb / sajda)
     quran-metadata-juz.json         (optional fallback)
     quran-metadata-hizb.json        (optional fallback)
+    quran-metadata-rub.json         (rub' al-hizb quarters, from Tanzil's
+                                     quran-data.xml quarter starts)
     quran-metadata-sajda.json       (optional fallback)
 
 Usage:
@@ -57,6 +59,8 @@ CREATE TABLE ayahs (
   page          INTEGER NOT NULL,
   juz           INTEGER,
   hizb          INTEGER,
+  rub           INTEGER,
+  text_search   TEXT,
   sajda         INTEGER NOT NULL DEFAULT 0,
   sajda_type    TEXT,
   first_word_id INTEGER NOT NULL,
@@ -131,6 +135,47 @@ def skeleton(s):
     """Arabic letters only — every diacritic, digit, space and mark removed."""
     import unicodedata
     return "".join(c for c in (s or "") if unicodedata.category(c) == "Lo")
+
+
+def searchable(text):
+    """What a typed search is matched against: the ayah's letters with the
+    marks, the tatweel and the rasm's unpredictable spellings levelled out.
+
+    This is NOT a transformation of the Quranic text — the `text` column is
+    untouched and is the only thing ever rendered. It is the comparison key
+    the search feature uses, computed here at build time so the app never
+    normalizes an ayah itself. `searchableQuery()` in
+    lib/core/search/search_text.dart applies the SAME rules to what the user
+    types, and test/core/search_text_db_test.dart asserts the two agree on
+    every ayah of the built database — change one, change both.
+
+    Rules, per character:
+      * the alef family and the hamza (ا أ إ آ ٱ ء) are dropped outright: the
+        Uthmani rasm writes them where modern typing does not (الرحمن vs
+        الرحمان, قرءان vs قرآن), so they cannot be matched on;
+      * ؤ becomes و, and ئ and ى become ي, and ة becomes ه — the pairs people
+        type interchangeably;
+      * every other Arabic letter (U+0621..U+064A) stays as it is;
+      * whitespace collapses to a single space;
+      * everything else — diacritics, Quranic annotation marks, superscript
+        letters, digits — is dropped.
+    """
+    out = []
+    for ch in text or "":
+        if ch in "اأإآٱء":
+            continue
+        if ch == "ؤ":
+            out.append("و")
+        elif ch in "ئى":
+            out.append("ي")
+        elif ch == "ة":
+            out.append("ه")
+        elif "ء" <= ch <= "ي":
+            out.append(ch)
+        elif ch.isspace():
+            if out and out[-1] != " ":
+                out.append(" ")
+    return "".join(out).strip()
 
 
 def is_marker(text):
@@ -229,6 +274,15 @@ def build_ayahs(out):
             fixed += 1
     n = out.execute("SELECT COUNT(*) FROM ayahs").fetchone()[0]
     print(f"  ayahs: {n:,} (whitespace normalised in {fixed:,})")
+
+    # The search key, derived from the final text. The text itself is never
+    # touched (CLAUDE.md A.2 rule 1); this is a separate column the search
+    # feature compares against.
+    out.executemany(
+        "UPDATE ayahs SET text_search = ? WHERE id = ?",
+        [(searchable(t), i) for i, t in
+         out.execute("SELECT id, text FROM ayahs").fetchall()],
+    )
 
 
 def build_surahs(out):
@@ -422,6 +476,13 @@ def verify(out):
         ("every ayah has a hizb", "SELECT COUNT(*) FROM ayahs WHERE hizb IS NULL", 0),
         ("juz run 1..30", "SELECT COUNT(DISTINCT juz) FROM ayahs", 30),
         ("hizb run 1..60", "SELECT COUNT(DISTINCT hizb) FROM ayahs", 60),
+        ("every ayah has a rub", "SELECT COUNT(*) FROM ayahs WHERE rub IS NULL", 0),
+        ("rub run 1..240", "SELECT COUNT(DISTINCT rub) FROM ayahs", 240),
+        # The two sources must tell one story: rub n lies inside hizb (n-1)/4+1.
+        ("every rub agrees with its hizb",
+         "SELECT COUNT(*) FROM ayahs WHERE (rub - 1) / 4 + 1 <> hizb", 0),
+        ("no empty search text",
+         "SELECT COUNT(*) FROM ayahs WHERE text_search IS NULL OR text_search = ''", 0),
         ("15 sajdas", "SELECT COUNT(*) FROM ayahs WHERE sajda = 1", 15),
         ("At-Tawba basmala_mode is none",
          "SELECT basmala_mode FROM surahs WHERE id = 9", "none"),
@@ -487,9 +548,10 @@ def main():
     build_surahs(out)
     apply_ranges(out, SRC / "quran-metadata-juz.json", "juz", "juz_number", 30)
     apply_ranges(out, SRC / "quran-metadata-hizb.json", "hizb", "hizb_number", 60)
+    apply_ranges(out, SRC / "quran-metadata-rub.json", "rub", "rub_number", 240)
     apply_sajdas(out, SRC / "quran-metadata-sajda.json")
     cross_check_ayahs(out, AYAH_JSON, skip_text="--no-text-check" in sys.argv)
-    out.execute("INSERT INTO meta (key, value) VALUES ('schema_version', '2')")
+    out.execute("INSERT INTO meta (key, value) VALUES ('schema_version', '3')")
     out.commit()
 
     print("\nverifying:")

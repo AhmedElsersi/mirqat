@@ -587,8 +587,17 @@ void main() {
     };
 
     test('sums real clip lengths and the gaps between them', () {
+      // The pauses spelled out: the product defaults are zero (owner
+      // decision, October 2026), and this test is about the gap arithmetic.
       final SessionPlan plan = buildPlan(
-        const SessionConfig(surahNumber: 1, startAyah: 1, endAyah: 3),
+        const SessionConfig(
+          surahNumber: 1,
+          startAyah: 1,
+          endAyah: 3,
+          intraBlockPauseMs: 300,
+          betweenRepeatPauseMs: 800,
+          betweenStepsPauseMs: 1500,
+        ),
       );
 
       // 24 units: ayah 1 nine times, ayah 2 nine times, ayah 3 six times.

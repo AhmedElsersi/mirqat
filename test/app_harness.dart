@@ -42,6 +42,7 @@ import 'package:mirqat/services/app_version_service.dart';
 import 'package:mirqat/services/audio/ayah_duration_service.dart';
 import 'package:mirqat/services/audio/manifest_service.dart';
 import 'package:mirqat/services/audio/memorization_player_service.dart';
+import 'package:mirqat/services/share_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'fake_session_player.dart';
@@ -212,6 +213,17 @@ class AppHarness {
       () => FixedAppVersion(installedVersion),
     );
 
+    // path_provider has no implementation under `flutter test`; a shared
+    // image is written into the harness's own temp directory instead. The
+    // channel itself stays real, so a test can mock it and see the call.
+    sl.unregister<ShareService>();
+    sl.registerLazySingleton<ShareService>(
+      () => ShareService(
+        const MethodChannel('com.mirqat.app/share'),
+        () async => _storageDir!,
+      ),
+    );
+
     // The real service would fetch the manifest and cache it through
     // path_provider, neither of which has an implementation under
     // `flutter test`. This one reads the bundled manifest off disk and has no
@@ -282,9 +294,12 @@ class AppHarness {
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.progressBoxName).clear();
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
     // Every test but the introduction's own starts as someone who has already
-    // seen it; [freshInstall] puts that back.
+    // seen it; [freshInstall] puts that back. The home is pinned to the list:
+    // the app's own default is the mushaf, which would throw the reading view
+    // open over every test that is about the index underneath — launch_page_test
+    // covers the launch rule itself, and the mushaf tests open it deliberately.
     await sl<SettingsRepository>().save(
-      const AppSettings(onboardingSeen: true),
+      const AppSettings(onboardingSeen: true, homeViewMode: HomeViewMode.list),
     );
 
     return const AppHarness._();
@@ -292,10 +307,16 @@ class AppHarness {
 
   Future<void> stop() async => sl.reset();
 
-  /// Settings as a first launch finds them: nothing stored, the introduction
-  /// not yet seen.
-  static Future<void> freshInstall() =>
-      Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
+  /// Settings as a first launch finds them: the introduction not yet seen.
+  /// The home stays pinned to the list for the same reason [start] pins it —
+  /// the app's own mushaf default would open the reading view over the test,
+  /// and its real database load cannot complete inside the test zone.
+  static Future<void> freshInstall() async {
+    await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
+    await sl<SettingsRepository>().save(
+      const AppSettings(homeViewMode: HomeViewMode.list),
+    );
+  }
 
   static Future<void> _warmCatalog(QuranLocalDataSource catalog) async {
     await catalog.getReciters();
@@ -415,6 +436,22 @@ class AppHarness {
     });
     await frames(tester);
     return mushaf;
+  }
+
+  /// Lets the database reads a page turn started actually finish.
+  ///
+  /// A page turned by a key or a swipe runs under the test's fake clock, and
+  /// the read it starts cannot complete there. Left in flight it holds the
+  /// sqflite connection — and every later test in the file then waits out the
+  /// ten-minute timeout trying to read the same database. Real time is all
+  /// those reads need, so a test that turns pages ends with this.
+  static Future<void> settleReads(WidgetTester tester) async {
+    await tester.runAsync(() async {
+      for (int i = 0; i < 60; i++) {
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    });
   }
 
   /// Runs frames for [total] ms, one at a time. A single long pump is a

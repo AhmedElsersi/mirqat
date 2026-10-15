@@ -150,6 +150,11 @@ class _SurahListViewState extends State<_SurahListView> {
           title: Text(LocaleKeys.appName.tr()),
           actions: <Widget>[
             IconButton(
+              onPressed: () => context.pushNamed(AppRoutes.searchName),
+              tooltip: LocaleKeys.searchTitle.tr(),
+              icon: const Icon(Icons.search),
+            ),
+            IconButton(
               onPressed: () async {
                 await context.pushNamed<void>(AppRoutes.historyName);
                 if (context.mounted) {

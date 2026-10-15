@@ -1,0 +1,54 @@
+﻿Iqra Wartaq — Windows build (beta)
+===================================
+
+What you need
+-------------
+64-bit Windows (Windows 10 or newer).
+There is no 32-bit build: the framework this app is built with produces no
+32-bit Windows binaries at all.
+
+
+How to run it
+-------------
+1) Unzip the whole folder somewhere — the desktop is fine.
+   Important: do not run the app from inside the zip. Right-click the zip,
+   choose "Extract All", then open the folder it makes.
+
+2) Run mirqat.exe inside that folder.
+
+3) Nothing is installed. Keep the other files and the data folder beside
+   mirqat.exe — moved on its own, the .exe will not run.
+
+
+First run: a warning from Windows
+---------------------------------
+The file is not code-signed, so Windows SmartScreen may show a blue screen:
+choose "More info", then "Run anyway".
+
+
+If it says MSVCP140.dll was not found
+-------------------------------------
+This build carries the Visual C++ runtime files it needs, so the message
+should not appear. If it does on an older machine, that machine is missing
+the Microsoft Visual C++ runtime. Install it once from Microsoft:
+
+    https://aka.ms/vs/17/release/vc_redist.x64.exe
+
+Then run mirqat.exe again.
+
+
+Internet
+--------
+The whole mushaf reads offline.
+Recitation streams, and any surah can be downloaded to play offline after.
+
+
+Removing it
+-----------
+Delete the folder. Nothing else: nothing was added to the system or to the
+Windows registry.
+
+
+Something wrong, or a suggestion
+--------------------------------
+Email: ahmed.elsersi3@gmail.com
