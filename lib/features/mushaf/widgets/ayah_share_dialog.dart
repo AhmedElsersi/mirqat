@@ -61,17 +61,26 @@ class AyahShareCard extends StatelessWidget {
           ),
           bottom: LocaleKeys.appName.tr(),
         ),
-        child: Padding(
-          padding: EdgeInsetsDirectional.symmetric(
-            horizontal: 8.w,
-            vertical: 18.h,
-          ),
-          child: AyahText.flowing(
-            ayahs: <FlowingAyah>[
-              FlowingAyah(number: ayah.number, text: ayah.text),
-            ],
-            fontSize: fontFor(ayah.text),
-            textAlign: TextAlign.center,
+        // The full width of the card, whatever the ayah's length. The frame
+        // lays its child out loosely, so a short ayah would otherwise shrink
+        // the frame to the width of its words, pushed to one side, with the
+        // plaques — laid out for the whole card — hanging off its edge.
+        child: SizedBox(
+          width: double.infinity,
+          child: Padding(
+            padding: EdgeInsetsDirectional.symmetric(
+              horizontal: 8.w,
+              vertical: 18.h,
+            ),
+            child: Center(
+              child: AyahText.flowing(
+                ayahs: <FlowingAyah>[
+                  FlowingAyah(number: ayah.number, text: ayah.text),
+                ],
+                fontSize: fontFor(ayah.text),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
       ),
