@@ -41,7 +41,7 @@ class OnboardingScreen extends StatefulWidget {
       LocaleKeys.onboardingControlBody,
     ),
     OnboardingPage(
-      Icons.self_improvement_outlined,
+      Icons.tune_outlined,
       LocaleKeys.onboardingYoursTitle,
       LocaleKeys.onboardingYoursBody,
     ),
