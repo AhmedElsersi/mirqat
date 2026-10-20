@@ -519,6 +519,7 @@ class SessionTuningControls extends StatelessWidget {
     required this.betweenStepsPauseMs,
     required this.playbackSpeed,
     required this.finalFullPass,
+    required this.recallRounds,
     required this.onRepeatCount,
     required this.onConnectMode,
     required this.onIntraBlockPause,
@@ -526,6 +527,7 @@ class SessionTuningControls extends StatelessWidget {
     required this.onBetweenStepsPause,
     required this.onPlaybackSpeed,
     required this.onFinalFullPass,
+    required this.onRecallRounds,
     super.key,
   });
 
@@ -539,6 +541,10 @@ class SessionTuningControls extends StatelessWidget {
   /// Whether the session closes with one more pass over the whole range.
   final bool finalFullPass;
 
+  /// How many times each ayah is asked back after its learn step
+  /// ([SessionConfig.recallRounds]). 0 is off.
+  final int recallRounds;
+
   final ValueChanged<int> onRepeatCount;
   final ValueChanged<ConnectMode> onConnectMode;
   final ValueChanged<int> onIntraBlockPause;
@@ -546,6 +552,7 @@ class SessionTuningControls extends StatelessWidget {
   final ValueChanged<int> onBetweenStepsPause;
   final ValueChanged<double> onPlaybackSpeed;
   final ValueChanged<bool> onFinalFullPass;
+  final ValueChanged<int> onRecallRounds;
 
   @override
   Widget build(BuildContext context) {
@@ -581,6 +588,34 @@ class SessionTuningControls extends StatelessWidget {
             ],
           ),
         ),
+        // Recall belongs to the drill modes: continuous has no per-ayah step
+        // for a recall to follow, so the control is not offered under it
+        // rather than offered and ignored.
+        if (connectMode != ConnectMode.continuous)
+          SetupSection(
+            label: LocaleKeys.sessionSetupRecallRounds.tr(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                StepperField(
+                  value: recallRounds,
+                  min: SessionConfig.minRecallRounds,
+                  max: SessionConfig.maxRecallRounds,
+                  formatValue: (int v) => v.toLocalisedString(),
+                  onChanged: onRecallRounds,
+                ),
+                Padding(
+                  padding: EdgeInsetsDirectional.only(top: 6.h),
+                  child: Text(
+                    LocaleKeys.sessionSetupRecallRoundsHint.tr(),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         SetupSection(
           label: LocaleKeys.settingsDefaultPauses.tr(),
           child: Column(

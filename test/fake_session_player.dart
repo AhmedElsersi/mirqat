@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
+import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
 import 'package:mirqat/domain/entities/session_plan.dart';
 import 'package:mirqat/services/audio/memorization_player_service.dart';
@@ -29,12 +30,21 @@ class FakeSessionPlayer implements MemorizationPlayerService {
   int ended = 0;
   bool failOnPlay = false;
 
-  StreamController<PlaybackUnit> _units =
-      StreamController<PlaybackUnit>.broadcast();
+  StreamController<PlaybackMoment> _moments =
+      StreamController<PlaybackMoment>.broadcast();
   final StreamController<PlayerState> _states =
       StreamController<PlayerState>.broadcast();
 
-  void reach(PlaybackUnit unit) => _units.add(unit);
+  /// The recall clip map each load was handed, parallel to [loads].
+  final List<Map<AyahRef, Duration>> recallClipLoads =
+      <Map<AyahRef, Duration>>[];
+
+  void reach(PlaybackUnit unit) =>
+      _moments.add(PlaybackMoment(unit: unit, recalling: false));
+
+  /// A recall gap for [unit] has begun.
+  void recall(PlaybackUnit unit) =>
+      _moments.add(PlaybackMoment(unit: unit, recalling: true));
 
   @override
   Future<void> load({
@@ -42,13 +52,20 @@ class FakeSessionPlayer implements MemorizationPlayerService {
     required Reciter reciter,
     required List<Surah> surahs,
     int startAtUnit = 0,
+    Map<AyahRef, Duration> recallClips = const <AyahRef, Duration>{},
   }) async {
     loads.add(SessionLoad(plan, reciter, surahs, startAtUnit));
-    _units = StreamController<PlaybackUnit>.broadcast();
+    recallClipLoads.add(recallClips);
+    _moments = StreamController<PlaybackMoment>.broadcast();
   }
 
   @override
-  Stream<PlaybackUnit> get currentUnitStream => _units.stream;
+  Stream<PlaybackMoment> get momentStream => _moments.stream;
+
+  @override
+  Stream<PlaybackUnit> get currentUnitStream => momentStream
+      .where((PlaybackMoment m) => !m.recalling)
+      .map((PlaybackMoment m) => m.unit);
 
   @override
   Stream<PlayerState> get playerStateStream => _states.stream;

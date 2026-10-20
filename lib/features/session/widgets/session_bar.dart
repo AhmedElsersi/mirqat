@@ -276,12 +276,17 @@ class _Active extends StatelessWidget {
     if (unit == null) {
       return describeRange(context, state, state.activePlan?.config);
     }
-    return LocaleKeys.mushafAyahReference.tr(
+    final String reference = LocaleKeys.mushafAyahReference.tr(
       args: <String>[
         _surahName(context, state.surah(unit.surahNumber)),
         unit.ayahNumber.toLocalisedString(),
       ],
     );
+    // A recall gap: the silence is the reader's turn, and the bar says so —
+    // otherwise it reads as the session hanging.
+    return state.recalling
+        ? LocaleKeys.playerRecallNow.tr(args: <String>[reference])
+        : reference;
   }
 }
 

@@ -60,6 +60,7 @@ class SessionSettingsScreen extends StatelessWidget {
                     finalFullPass:
                         settings.defaultFinalFullPass ??
                         mode.defaultFinalFullPass,
+                    recallRounds: settings.defaultRecallRounds,
                     onRepeatCount: cubit.setDefaultRepeatCount,
                     onConnectMode: cubit.setDefaultConnectMode,
                     onIntraBlockPause: cubit.setDefaultIntraBlockPause,
@@ -67,6 +68,7 @@ class SessionSettingsScreen extends StatelessWidget {
                     onBetweenStepsPause: cubit.setDefaultBetweenStepsPause,
                     onPlaybackSpeed: cubit.setDefaultPlaybackSpeed,
                     onFinalFullPass: cubit.setDefaultFinalFullPass,
+                    onRecallRounds: cubit.setDefaultRecallRounds,
                   ),
                 ],
               ),

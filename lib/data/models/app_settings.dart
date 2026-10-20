@@ -143,6 +143,7 @@ class AppSettings extends Equatable {
         SessionConfig.defaultBetweenRepeatPauseMs,
     this.defaultBetweenStepsPauseMs = SessionConfig.defaultBetweenStepsPauseMs,
     this.defaultPlaybackSpeed = SessionConfig.defaultPlaybackSpeed,
+    this.defaultRecallRounds = SessionConfig.defaultRecallRounds,
     this.defaultRangeBehaviour = RangeBehaviour.wholeSurah,
     this.lastRanges = const <int, AyahRange>{},
     this.themeMode = AppThemeMode.system,
@@ -184,6 +185,11 @@ class AppSettings extends Equatable {
   final int defaultBetweenRepeatPauseMs;
   final int defaultBetweenStepsPauseMs;
   final double defaultPlaybackSpeed;
+
+  /// How many recall rounds a new session starts with — the silence after an
+  /// ayah's learn step for the reader to recite it back into (see
+  /// [SessionConfig.recallRounds]). 0, the product default, asks nothing.
+  final int defaultRecallRounds;
 
   final RangeBehaviour defaultRangeBehaviour;
 
@@ -249,6 +255,7 @@ class AppSettings extends Equatable {
     int? defaultBetweenRepeatPauseMs,
     int? defaultBetweenStepsPauseMs,
     double? defaultPlaybackSpeed,
+    int? defaultRecallRounds,
     RangeBehaviour? defaultRangeBehaviour,
     Map<int, AyahRange>? lastRanges,
     AppThemeMode? themeMode,
@@ -278,6 +285,7 @@ class AppSettings extends Equatable {
     defaultBetweenStepsPauseMs:
         defaultBetweenStepsPauseMs ?? this.defaultBetweenStepsPauseMs,
     defaultPlaybackSpeed: defaultPlaybackSpeed ?? this.defaultPlaybackSpeed,
+    defaultRecallRounds: defaultRecallRounds ?? this.defaultRecallRounds,
     defaultRangeBehaviour: defaultRangeBehaviour ?? this.defaultRangeBehaviour,
     lastRanges: lastRanges ?? this.lastRanges,
     themeMode: themeMode ?? this.themeMode,
@@ -305,6 +313,7 @@ class AppSettings extends Equatable {
     'defaultBetweenRepeatPauseMs': defaultBetweenRepeatPauseMs,
     'defaultBetweenStepsPauseMs': defaultBetweenStepsPauseMs,
     'defaultPlaybackSpeed': defaultPlaybackSpeed,
+    'defaultRecallRounds': defaultRecallRounds,
     'defaultRangeBehaviour': defaultRangeBehaviour.storageValue,
     // Hive stores plain maps, so the surah number becomes a string key and the
     // range a two-element list.
@@ -352,6 +361,8 @@ class AppSettings extends Equatable {
     defaultPlaybackSpeed:
         (map['defaultPlaybackSpeed'] as num?)?.toDouble() ??
         SessionConfig.defaultPlaybackSpeed,
+    defaultRecallRounds:
+        map['defaultRecallRounds'] as int? ?? SessionConfig.defaultRecallRounds,
     defaultRangeBehaviour: RangeBehaviour.fromStorage(
       map['defaultRangeBehaviour'] as String?,
     ),
@@ -406,6 +417,7 @@ class AppSettings extends Equatable {
     defaultBetweenRepeatPauseMs,
     defaultBetweenStepsPauseMs,
     defaultPlaybackSpeed,
+    defaultRecallRounds,
     defaultRangeBehaviour,
     lastRanges,
     themeMode,

@@ -14,11 +14,13 @@ import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
 import '../../../domain/engine/repetition_plan_builder.dart';
 import '../../../domain/entities/ayah_ref.dart';
+import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../domain/entities/session_plan.dart';
 import '../../../services/audio/ayah_duration_service.dart';
 import '../../../services/audio/memorization_player_service.dart';
+import '../../../services/audio/playback_queue.dart';
 import '../../../services/audio/reciter_catalog.dart';
 import '../../../services/keep_awake_service.dart';
 import 'session_state.dart';
@@ -68,7 +70,7 @@ class SessionCubit extends Cubit<SessionState> {
   /// which is fine once and maddening thirty times a second.
   final Duration pauseSettleTime;
 
-  StreamSubscription<PlaybackUnit>? _unitSub;
+  StreamSubscription<PlaybackMoment>? _unitSub;
   StreamSubscription<ja.PlayerState>? _stateSub;
   Timer? _pauseTimer;
   int _estimateToken = 0;
@@ -223,6 +225,7 @@ class SessionCubit extends Cubit<SessionState> {
       betweenStepsPauseMs: base.betweenStepsPauseMs,
       playbackSpeed: base.playbackSpeed,
       playIstiadhah: base.playIstiadhah,
+      recallRounds: base.recallRounds,
     );
   }
 
@@ -240,6 +243,7 @@ class SessionCubit extends Cubit<SessionState> {
     betweenRepeatPauseMs: settings.defaultBetweenRepeatPauseMs,
     betweenStepsPauseMs: settings.defaultBetweenStepsPauseMs,
     playbackSpeed: settings.defaultPlaybackSpeed,
+    recallRounds: settings.defaultRecallRounds,
   );
 
   // --- tuning --------------------------------------------------------------
@@ -280,6 +284,15 @@ class SessionCubit extends Cubit<SessionState> {
 
   void setFinalFullPass(bool value) =>
       _change((SessionConfig c) => c.copyWith(finalFullPass: value));
+
+  void setRecallRounds(int value) => _change(
+    (SessionConfig c) => c.copyWith(
+      recallRounds: value.clamp(
+        SessionConfig.minRecallRounds,
+        SessionConfig.maxRecallRounds,
+      ),
+    ),
+  );
 
   void setPlayIstiadhah(bool value) =>
       _change((SessionConfig c) => c.copyWith(playIstiadhah: value));
@@ -356,6 +369,7 @@ class SessionCubit extends Cubit<SessionState> {
         betweenStepsPauseMs: d.betweenStepsPauseMs,
         playbackSpeed: d.playbackSpeed,
         playIstiadhah: c.playIstiadhah,
+        recallRounds: d.recallRounds,
       ),
       rangeChosen: state.rangeChosen,
     );
@@ -380,6 +394,7 @@ class SessionCubit extends Cubit<SessionState> {
       defaultBetweenRepeatPauseMs: c.betweenRepeatPauseMs,
       defaultBetweenStepsPauseMs: c.betweenStepsPauseMs,
       defaultPlaybackSpeed: c.playbackSpeed,
+      defaultRecallRounds: c.recallRounds,
     );
     final result = await _settings.save(next);
     if (isClosed) return;
@@ -455,6 +470,7 @@ class SessionCubit extends Cubit<SessionState> {
         reciter: reciter,
         surahs: state.surahs,
         startAtUnit: startAtUnit < 0 ? 0 : startAtUnit,
+        recallClips: await _recallClips(plan, reciter),
       );
     } catch (e) {
       _fail(e);
@@ -462,9 +478,15 @@ class SessionCubit extends Cubit<SessionState> {
     }
     if (isClosed) return;
 
-    _unitSub = _player.currentUnitStream.listen((PlaybackUnit unit) {
-      _played.update(unit.ref, (int n) => n + 1, ifAbsent: () => 1);
-      emit(state.copyWith(currentUnit: unit));
+    _unitSub = _player.momentStream.listen((PlaybackMoment moment) {
+      // A recall gap is the reader's recitation, not the reciter's: only the
+      // plays are counted.
+      if (!moment.recalling) {
+        _played.update(moment.unit.ref, (int n) => n + 1, ifAbsent: () => 1);
+      }
+      emit(
+        state.copyWith(currentUnit: moment.unit, recalling: moment.recalling),
+      );
     });
     _stateSub = _player.playerStateStream.listen(
       (ja.PlayerState s) {
@@ -500,6 +522,37 @@ class SessionCubit extends Cubit<SessionState> {
     } catch (e) {
       _fail(e);
     }
+  }
+
+  /// Measured clip lengths for the plan's recall gaps, where they can be
+  /// measured. Unlike the summary's estimate, a partial map is fine here: a
+  /// surah that would have to be streamed simply gets the fixed fallback gap,
+  /// because an unmeasured ayah is a reason not to show a number, never a
+  /// reason not to ask the reader back.
+  Future<Map<AyahRef, Duration>> _recallClips(
+    SessionPlan plan,
+    Reciter reciter,
+  ) async {
+    if (!plan.units.any((PlaybackUnit u) => u.stepType == StepType.recall)) {
+      return const <AyahRef, Duration>{};
+    }
+    final Map<AyahRef, Duration> clips = <AyahRef, Duration>{};
+    for (final int number in plan.surahNumbers) {
+      final Surah? surah = state.surah(number);
+      if (surah == null) continue;
+      try {
+        final Map<int, Duration> one = await _durations.durationsFor(
+          reciter: reciter,
+          surah: surah,
+        );
+        for (final MapEntry<int, Duration> e in one.entries) {
+          clips[AyahRef(number, e.key)] = e.value;
+        }
+      } on Object {
+        // Unmeasurable is not a failure of the session, only of tailoring.
+      }
+    }
+    return clips;
   }
 
   void _fail(Object error) {

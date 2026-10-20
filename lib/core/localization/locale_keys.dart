@@ -165,6 +165,7 @@ class LocaleKeys {
   static const String playerPause = 'player.pause';
   static const String playerPlay = 'player.play';
   static const String playerPreviousStep = 'player.previous_step';
+  static const String playerRecallNow = 'player.recall_now';
   static const String playerRepeatHeader = 'player.repeat_header';
   static const String playerStepHeader = 'player.step_header';
   static const String playerStop = 'player.stop';
@@ -228,6 +229,9 @@ class LocaleKeys {
   static const String sessionSetupPlaybackSpeed =
       'session_setup.playback_speed';
   static const String sessionSetupRange = 'session_setup.range';
+  static const String sessionSetupRecallRounds = 'session_setup.recall_rounds';
+  static const String sessionSetupRecallRoundsHint =
+      'session_setup.recall_rounds_hint';
   static const String sessionSetupRepeatCount = 'session_setup.repeat_count';
   static const String sessionSetupSummary = 'session_setup.summary';
   static const String sessionSetupTo = 'session_setup.to';

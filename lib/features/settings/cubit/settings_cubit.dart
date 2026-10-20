@@ -180,6 +180,15 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setDefaultFinalFullPass(bool value) =>
       _save(state.settings.copyWith(defaultFinalFullPass: value));
 
+  Future<void> setDefaultRecallRounds(int value) => _save(
+    state.settings.copyWith(
+      defaultRecallRounds: value.clamp(
+        SessionConfig.minRecallRounds,
+        SessionConfig.maxRecallRounds,
+      ),
+    ),
+  );
+
   Future<void> setDefaultIntraBlockPause(int ms) =>
       _save(state.settings.copyWith(defaultIntraBlockPauseMs: _pause(ms)));
 

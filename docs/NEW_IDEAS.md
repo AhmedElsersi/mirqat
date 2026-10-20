@@ -16,6 +16,11 @@ The document is in two halves: English first, then the same ideas in Arabic.
 
 ### 1. Recall mode — the session tests, not just teaches
 
+> **Status:** the core shipped in October 2026 — recall rounds
+> (`SessionConfig.recallRounds`): recite-into-the-gap after each learn step,
+> the ayah veiled on the page, the answer played once. Still open from this
+> section: progressive fading, the chaining drill, and self-grading.
+
 The single highest-value addition. Learning science is clear that *retrieval* — making
 yourself produce the ayah — strengthens memory far more than another passive listen
 (the "testing effect"). Today the session only plays; these steps make it ask.
@@ -178,6 +183,11 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 نصّ الآيات بايتًا واحدًا ولا الصوت (القاعدتان 1 و6).
 
 ### ١. وضع الاسترجاع — جلسة تَختبر لا تُسمِع فحسب
+
+> **الحال:** نُفِّذ الأساس في أكتوبر ٢٠٢٦ — جولات الاسترجاع
+> (`SessionConfig.recallRounds`): القراءة في الفراغ بعد كل خطوة تعلُّم، والآية
+> مستورة على الصفحة، والجواب يُسمَع مرة. وبقي من هذا القسم: تدرّج الإخفاء،
+> وتمرين «ما بعدها؟»، والتقييم الذاتي.
 
 أعلى الإضافات قيمةً. علم التعلّم قاطع في أن *الاسترجاع* — أن تُخرج الآية من صدرك —
 يرسّخ الحفظ أضعاف ما يرسّخه سماعٌ آخر (أثر الاختبار). الجلسة اليوم تُسمِع فقط؛ هذه

@@ -72,6 +72,7 @@ class SessionState extends Equatable {
     this.activePlan,
     this.activeReciter,
     this.currentUnit,
+    this.recalling = false,
     this.playing = false,
     this.finished = false,
     this.failure,
@@ -124,6 +125,11 @@ class SessionState extends Equatable {
 
   /// The ayah being recited. Null before the first unit starts.
   final PlaybackUnit? currentUnit;
+
+  /// True while the session is inside a recall gap: [currentUnit]'s ayah is
+  /// being asked back from memory, and the page veils its words until the
+  /// answering play begins.
+  final bool recalling;
 
   final bool playing;
   final bool finished;
@@ -214,8 +220,16 @@ class SessionState extends Equatable {
   }
 
   /// A record, not a list: two lists are only ever equal to themselves.
-  static (AyahRef, AyahRef, int, ConnectMode, bool) _shapeOf(SessionConfig c) =>
-      (c.start, c.end, c.repeatCount, c.connectMode, c.finalFullPass);
+  static (AyahRef, AyahRef, int, ConnectMode, bool, int) _shapeOf(
+    SessionConfig c,
+  ) => (
+    c.start,
+    c.end,
+    c.repeatCount,
+    c.connectMode,
+    c.finalFullPass,
+    c.recallRounds,
+  );
 
   SessionState copyWith({
     bool? ready,
@@ -236,6 +250,7 @@ class SessionState extends Equatable {
     SessionPlan? activePlan,
     Reciter? activeReciter,
     PlaybackUnit? currentUnit,
+    bool? recalling,
     bool clearSession = false,
     bool? playing,
     bool? finished,
@@ -261,6 +276,7 @@ class SessionState extends Equatable {
     activePlan: clearSession ? null : (activePlan ?? this.activePlan),
     activeReciter: clearSession ? null : (activeReciter ?? this.activeReciter),
     currentUnit: clearSession ? null : (currentUnit ?? this.currentUnit),
+    recalling: clearSession ? false : (recalling ?? this.recalling),
     playing: clearSession ? false : (playing ?? this.playing),
     finished: clearSession ? false : (finished ?? this.finished),
     failure: clearFailure || clearSession ? null : (failure ?? this.failure),
@@ -287,6 +303,7 @@ class SessionState extends Equatable {
     activePlan,
     activeReciter,
     currentUnit,
+    recalling,
     playing,
     finished,
     failure,

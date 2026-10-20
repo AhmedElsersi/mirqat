@@ -32,6 +32,11 @@ enum WordTint {
   /// The ayah the reader marked as where they stopped. Its own colour, the
   /// bookmark's, so it is never mistaken for a session's highlight.
   marked,
+
+  /// The ayah a recall round is asking back from memory: the band shows where
+  /// its words lie while their ink is withheld (see `AyahText.word`'s
+  /// `veiled`).
+  veiled,
 }
 
 /// One ayah inside a flowing block, for [AyahText.flowing].
@@ -91,6 +96,7 @@ class AyahText extends StatefulWidget {
        isMarker = false,
        heldBack = false,
        paintsTint = true,
+       veiled = false,
        tint = WordTint.none;
 
   /// One word of a mushaf page line, byte-for-byte from quran.db.
@@ -105,6 +111,7 @@ class AyahText extends StatefulWidget {
     this.tint = WordTint.none,
     this.heldBack = false,
     this.paintsTint = true,
+    this.veiled = false,
     super.key,
   }) : ayahs = null,
        _word = true,
@@ -129,6 +136,7 @@ class AyahText extends StatefulWidget {
        isMarker = false,
        heldBack = false,
        paintsTint = true,
+       veiled = false,
        tint = WordTint.none;
 
   /// Verbatim ayah text, byte-for-byte from `quran.db`. Never generated, never
@@ -164,6 +172,13 @@ class AyahText extends StatefulWidget {
   /// the band wherever there are letters.
   final bool paintsTint;
 
+  /// [AyahText.word] only: the word's ink is withheld — drawn transparent, in
+  /// its exact place at its exact width — while a recall round asks its ayah
+  /// back from memory. The text itself is untouched (A.2 rule 1 is about the
+  /// bytes); this is the reader covering the page with their own hand, and
+  /// the next build with `veiled: false` is the hand lifting.
+  final bool veiled;
+
   /// The colour behind a tinted word, or null for none. Shared with the page,
   /// which paints a marked run as one band along the line, so that a marked
   /// ayah reads as a stroke of highlighter and not as a row of boxes.
@@ -173,6 +188,9 @@ class AyahText extends StatefulWidget {
     WordTint.highlighted => colors.primary.withValues(alpha: 0.2),
     WordTint.selected => colors.primary.withValues(alpha: 0.26),
     WordTint.marked => colors.secondary.withValues(alpha: 0.28),
+    // Quieter than the recitation highlight: it marks where the hidden words
+    // lie, not which of them is sounding — none of them is.
+    WordTint.veiled => colors.primary.withValues(alpha: 0.1),
   };
 
   /// Width of [text] as [AyahText.word] draws it at [fontSize].
@@ -281,8 +299,12 @@ class _AyahTextState extends State<AyahText> {
         // is never truncated (CLAUDE.md A.2 rule 7).
         softWrap: false,
         style: AppTextStyles.mushafWord(fontSize: widget.fontSize).copyWith(
+          // A veiled word keeps its place and its width; only its ink is
+          // withheld, for the reader to supply from memory.
           color: (widget.isMarker ? colors.primary : colors.onSurface)
-              .withValues(alpha: widget.heldBack ? 0.32 : 1),
+              .withValues(
+                alpha: widget.veiled ? 0 : (widget.heldBack ? 0.32 : 1),
+              ),
           backgroundColor: widget.paintsTint
               ? AyahText.tintColor(colors, widget.tint)
               : null,

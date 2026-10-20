@@ -122,6 +122,11 @@ class RepetitionPlanBuilder {
           '${SessionConfig.minPlaybackSpeed} and '
           '${SessionConfig.maxPlaybackSpeed}, got ${config.playbackSpeed}.';
     }
+    if (config.recallRounds < SessionConfig.minRecallRounds ||
+        config.recallRounds > SessionConfig.maxRecallRounds) {
+      return 'recallRounds must be between ${SessionConfig.minRecallRounds} '
+          'and ${SessionConfig.maxRecallRounds}, got ${config.recallRounds}.';
+    }
     if (config.intraBlockPauseMs < 0 ||
         config.betweenRepeatPauseMs < 0 ||
         config.betweenStepsPauseMs < 0) {
@@ -143,12 +148,15 @@ class RepetitionPlanBuilder {
   /// ```
   /// for i in startAyah..endAyah:
   ///     LearnStep(i)
+  ///     if recallRounds > 0: RecallStep(i)
   ///     if i > startAyah: ConnectStep(...)
   /// if finalFullPass:  ConnectStep(startAyah, endAyah)
   /// ```
   ///
   /// The connect step after the first learn step is never emitted — joining a
-  /// single ayah to nothing is a no-op.
+  /// single ayah to nothing is a no-op. The recall step sits between learning
+  /// an ayah and joining it on: the ayah is asked back while it is freshest,
+  /// and the join then confirms it in its place.
   List<PlanStep> _buildSteps(SessionConfig config, List<AyahRef> range) {
     final int n = config.repeatCount;
     final List<PlanStep> steps = <PlanStep>[];
@@ -172,6 +180,15 @@ class RepetitionPlanBuilder {
       steps.add(
         LearnStep(surah: range[i].surah, ayah: range[i].ayah, repeats: n),
       );
+      if (config.recallRounds > 0) {
+        steps.add(
+          RecallStep(
+            surah: range[i].surah,
+            ayah: range[i].ayah,
+            repeats: config.recallRounds,
+          ),
+        );
+      }
 
       if (i == 0) continue;
 

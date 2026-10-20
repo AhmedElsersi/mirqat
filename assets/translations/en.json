@@ -41,7 +41,9 @@
     "milliseconds": "{} ms",
     "summary": "{} steps · {} recitations · {}",
     "connect_continuous": "Continuous",
-    "connect_continuous_hint": "The range is recited straight through, then the whole pass repeats"
+    "connect_continuous_hint": "The range is recited straight through, then the whole pass repeats",
+    "recall_rounds": "Recall rounds",
+    "recall_rounds_hint": "After an ayah is repeated, the app stays silent for its length so you recite it from memory, then plays it once to confirm. Zero means no recall."
   },
   "player": {
     "step_header": "Step {} of {}",
@@ -55,7 +57,8 @@
     "repeat_header": "Repetition {} of {}",
     "error_offline": "The audio could not be reached. Check your connection, or download the surah to listen offline.",
     "error_config": "This recitation could not be prepared. Try another reciter.",
-    "error_unknown": "The session could not be played."
+    "error_unknown": "The session could not be played.",
+    "recall_now": "Recite from memory: {}"
   },
   "progress": {
     "title": "Progress",

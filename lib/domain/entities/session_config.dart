@@ -146,6 +146,7 @@ class SessionConfig extends Equatable {
     this.betweenStepsPauseMs = defaultBetweenStepsPauseMs,
     this.playbackSpeed = defaultPlaybackSpeed,
     this.playIstiadhah = false,
+    this.recallRounds = defaultRecallRounds,
   }) : // Spelled out rather than delegating to
        // ConnectMode.defaultFinalFullPass because this constructor is
        // `const` and a const initialiser cannot call a getter. The two
@@ -172,6 +173,13 @@ class SessionConfig extends Equatable {
   static const double defaultPlaybackSpeed = 1.0;
   static const double minPlaybackSpeed = 0.5;
   static const double maxPlaybackSpeed = 1.5;
+
+  /// Off by default: recall rounds ask something of the reader, and asking is
+  /// opted into. Nine at most — a recall is a test, and a test run ten times
+  /// over is a drill, which the repeat count already is.
+  static const int defaultRecallRounds = 0;
+  static const int minRecallRounds = 0;
+  static const int maxRecallRounds = 9;
 
   /// The surah the range starts in.
   final int surahNumber;
@@ -219,6 +227,15 @@ class SessionConfig extends Equatable {
   /// [PlaybackUnit] and never counts toward a repetition.
   final bool playIstiadhah;
 
+  /// How many recall rounds follow each ayah's learn step: a silence as long
+  /// as the ayah, for the reader to recite into from memory, then the ayah
+  /// once as the answer. 0 — the default — asks nothing back.
+  ///
+  /// Only the drill modes recall: [ConnectMode.continuous] has no per-ayah
+  /// steps for a recall to follow, so there the setting is ignored rather
+  /// than refused — a saved default must not block a mode change.
+  final int recallRounds;
+
   SessionConfig copyWith({
     int? surahNumber,
     int? startAyah,
@@ -232,6 +249,7 @@ class SessionConfig extends Equatable {
     int? betweenStepsPauseMs,
     double? playbackSpeed,
     bool? playIstiadhah,
+    int? recallRounds,
   }) => SessionConfig(
     surahNumber: surahNumber ?? this.surahNumber,
     startAyah: startAyah ?? this.startAyah,
@@ -251,6 +269,7 @@ class SessionConfig extends Equatable {
     betweenStepsPauseMs: betweenStepsPauseMs ?? this.betweenStepsPauseMs,
     playbackSpeed: playbackSpeed ?? this.playbackSpeed,
     playIstiadhah: playIstiadhah ?? this.playIstiadhah,
+    recallRounds: recallRounds ?? this.recallRounds,
   );
 
   @override
@@ -267,5 +286,6 @@ class SessionConfig extends Equatable {
     betweenStepsPauseMs,
     playbackSpeed,
     playIstiadhah,
+    recallRounds,
   ];
 }

@@ -1,6 +1,9 @@
 import 'package:equatable/equatable.dart';
 
+import '../../domain/entities/ayah_ref.dart';
+import '../../domain/entities/plan_step.dart';
 import '../../domain/entities/playback_unit.dart';
+import '../../domain/entities/recall_gap.dart';
 import '../../domain/entities/session_plan.dart';
 
 /// Why a spacer sits where it does. Carried for debugging and for the plan
@@ -34,6 +37,22 @@ class SpacerQueueEntry extends QueueEntry {
   List<Object?> get props => <Object?>[kind];
 }
 
+/// One silence clip of a recall round: the gap the reader recites [unit]'s
+/// ayah into from memory, ahead of the play that answers them. Several in a
+/// row make the gap as long as the ayah itself.
+///
+/// It carries the unit so the UI can say — and veil — which ayah is being
+/// asked back, but it is not a play: [PlaybackQueue.unitAt] answers null for
+/// it, so nothing counts it as a recitation.
+class RecallGapEntry extends QueueEntry {
+  const RecallGapEntry(this.unit);
+
+  final PlaybackUnit unit;
+
+  @override
+  List<Object?> get props => <Object?>[unit];
+}
+
 /// The isti'adhah or a standalone bismillah. Played once before the session,
 /// never counted as a recitation.
 class PreambleQueueEntry extends QueueEntry {
@@ -48,6 +67,21 @@ class PreambleQueueEntry extends QueueEntry {
 
   @override
   List<Object?> get props => <Object?>[kind, surah];
+}
+
+/// A playing position the UI can act on: which ayah, and whether it is
+/// sounding or being asked back from memory.
+class PlaybackMoment extends Equatable {
+  const PlaybackMoment({required this.unit, required this.recalling});
+
+  final PlaybackUnit unit;
+
+  /// True while the queue is inside [unit]'s recall gap — the silence the
+  /// reader recites into — and false while the ayah itself sounds.
+  final bool recalling;
+
+  @override
+  List<Object?> get props => <Object?>[unit, recalling];
 }
 
 /// The flat queue handed to the player, plus the index bookkeeping the UI
@@ -98,11 +132,40 @@ class PlaybackQueue extends Equatable {
   /// reported — crossing a gap must never look like a change of ayah. The
   /// distinct() is safe because consecutive units always differ by at least
   /// their repeat index.
-  Stream<PlaybackUnit> unitStreamFrom(Stream<int?> indexStream) => indexStream
-      .map((int? index) => index == null ? null : unitAt(index))
-      .where((PlaybackUnit? unit) => unit != null)
-      .cast<PlaybackUnit>()
-      .distinct();
+  Stream<PlaybackUnit> unitStreamFrom(Stream<int?> indexStream) =>
+      momentStreamFrom(indexStream)
+          .where((PlaybackMoment m) => !m.recalling)
+          .map((PlaybackMoment m) => m.unit)
+          .distinct();
+
+  /// Where the session is at [queueIndex], recall gaps included: a recall
+  /// gap is the moment its unit is being asked back, a play the moment it is
+  /// heard. Plain spacers and preambles are nobody's moment — null.
+  PlaybackMoment? momentAt(int queueIndex) {
+    if (queueIndex < 0 || queueIndex >= entries.length) return null;
+    return switch (entries[queueIndex]) {
+      AyahQueueEntry(unit: final PlaybackUnit unit) => PlaybackMoment(
+        unit: unit,
+        recalling: false,
+      ),
+      RecallGapEntry(unit: final PlaybackUnit unit) => PlaybackMoment(
+        unit: unit,
+        recalling: true,
+      ),
+      SpacerQueueEntry() || PreambleQueueEntry() => null,
+    };
+  }
+
+  /// [unitStreamFrom], but with the recall gaps kept in: the gap of a recall
+  /// round emits once as it begins — the page veils the ayah on it — and the
+  /// answering play emits as any play does. Runs of silence clips collapse
+  /// through distinct(), so a gap is one moment however many clips long.
+  Stream<PlaybackMoment> momentStreamFrom(Stream<int?> indexStream) =>
+      indexStream
+          .map((int? index) => index == null ? null : momentAt(index))
+          .where((PlaybackMoment? m) => m != null)
+          .cast<PlaybackMoment>()
+          .distinct();
 
   @override
   List<Object?> get props => <Object?>[entries, plan];
@@ -124,11 +187,21 @@ class PlaybackQueueBuilder {
   /// 300 / 800 / 1500. A gap under half a clip rounds away to nothing.
   int spacerCount(int gapMs) => (gapMs / spacerMs).round();
 
+  /// How many silence clips make one recall gap for an ayah whose clip lasts
+  /// [clip] — null for one that could not be measured. At least one: a recall
+  /// round with no gap at all would answer a question nobody was given time
+  /// to be asked.
+  int recallSpacerCount(Duration? clip) {
+    final int count = spacerCount(RecallGap.of(clip).inMilliseconds);
+    return count < 1 ? 1 : count;
+  }
+
   PlaybackQueue build({
     required SessionPlan plan,
     bool includeIstiadhah = false,
     bool includeBismillah = false,
     Set<int> basmalaBeforeSurahs = const <int>{},
+    Map<AyahRef, Duration> recallClips = const <AyahRef, Duration>{},
   }) {
     final List<QueueEntry> entries = <QueueEntry>[];
 
@@ -161,6 +234,14 @@ class PlaybackQueueBuilder {
           PreambleQueueEntry(PreambleKind.bismillah, surah: unit.surahNumber),
         );
         addGap(plan.config.betweenStepsPauseMs, GapKind.afterPreamble);
+      }
+      // A recall play is answered into the silence that precedes it: the gap
+      // the reader recites into, as long as the ayah itself ([RecallGap]).
+      if (unit.stepType == StepType.recall) {
+        final int clips = recallSpacerCount(recallClips[unit.ref]);
+        for (int c = 0; c < clips; c++) {
+          entries.add(RecallGapEntry(unit));
+        }
       }
       entries.add(AyahQueueEntry(unit));
 

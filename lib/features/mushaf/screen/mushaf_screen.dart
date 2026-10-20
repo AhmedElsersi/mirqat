@@ -280,6 +280,17 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
               a.currentUnit?.ref != b.currentUnit?.ref,
           listener: (_, SessionState state) => _onUnit(state.currentUnit),
         ),
+        // The veil of a recall round: the ayah being asked back has its words
+        // covered until the answering play lifts it.
+        BlocListener<SessionCubit, SessionState>(
+          listenWhen: (SessionState a, SessionState b) =>
+              a.recalling != b.recalling ||
+              a.currentUnit?.ref != b.currentUnit?.ref,
+          listener: (BuildContext context, SessionState state) =>
+              context.read<MushafCubit>().veilAyah(
+                state.recalling ? state.currentUnit?.ref : null,
+              ),
+        ),
         // A session that has just started brings its controls up and takes
         // hold of the page again.
         BlocListener<SessionCubit, SessionState>(
@@ -652,6 +663,7 @@ class _PageSlot extends StatelessWidget {
           a.pages[pageNumber] != b.pages[pageNumber] ||
           a.failedPages[pageNumber] != b.failedPages[pageNumber] ||
           a.highlighted != b.highlighted ||
+          a.veiled != b.veiled ||
           a.selected != b.selected,
       builder: (BuildContext context, MushafState state) {
         final MushafCubit cubit = context.read<MushafCubit>();
@@ -704,6 +716,7 @@ class _PageSlot extends StatelessWidget {
           linesPerFullPage: state.linesPerFullPage,
           textScale: textScale,
           highlighted: state.highlighted,
+          veiled: state.veiled,
           marked: readingMark,
           ribbon: ribbon,
           selected: state.selected,

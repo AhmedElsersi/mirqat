@@ -27,6 +27,7 @@ class MushafPageView extends StatefulWidget {
     required this.page,
     required this.linesPerFullPage,
     required this.highlighted,
+    this.veiled,
     this.marked,
     this.ribbon = true,
     required this.selected,
@@ -41,6 +42,15 @@ class MushafPageView extends StatefulWidget {
   final MushafPage page;
   final int linesPerFullPage;
   final AyahRef? highlighted;
+
+  /// The ayah a recall round is asking back: its words are drawn covered —
+  /// a soft band where the letters are, the letters themselves withheld —
+  /// until the answering play lifts the veil. The words and their layout are
+  /// untouched (A.2 rule 1 is about the bytes, and they are not read here at
+  /// all); only their ink is withheld, by the reader's own setting, the way a
+  /// hand covers the page in a tasmee'. The ayah's number stays legible so
+  /// the reader knows which ayah is being asked.
+  final AyahRef? veiled;
 
   /// The ayah the reader marked as where they stopped, if it is on this page.
   final AyahRef? marked;
@@ -337,6 +347,7 @@ class _MushafPageViewState extends State<MushafPageView> {
                 fontSize: fontSize,
                 tint: _tintFor(w),
                 paintsTint: false,
+                veiled: _isVeiled(w),
               ),
             ),
           ),
@@ -361,12 +372,18 @@ class _MushafPageViewState extends State<MushafPageView> {
 
   WordTint _tintFor(Word w) {
     if (widget.isHeldBack?.call(w) ?? false) return WordTint.none;
+    if (_isVeiled(w)) return WordTint.veiled;
     if (widget.selected?.contains(w) ?? false) return WordTint.selected;
     if (widget.highlighted?.contains(w) ?? false) return WordTint.highlighted;
     if (widget.marked?.contains(w) ?? false) return WordTint.marked;
     if (widget.isSelected?.call(w) ?? false) return WordTint.ranged;
     return WordTint.none;
   }
+
+  /// Whether [w]'s ink is withheld: a word of the ayah being asked back. The
+  /// ayah-number medallion is not — it says which ayah is being asked.
+  bool _isVeiled(Word w) =>
+      !w.isMarker && (widget.veiled?.contains(w) ?? false);
 }
 
 /// Paints the tint behind a line's words: one band for each run of

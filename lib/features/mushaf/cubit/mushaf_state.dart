@@ -28,6 +28,7 @@ class MushafState extends Equatable {
     this.pages = const <int, MushafPage>{},
     this.failedPages = const <int, String>{},
     this.highlighted,
+    this.veiled,
     this.selected,
     this.pageRequest,
     this.errorMessage,
@@ -67,6 +68,10 @@ class MushafState extends Equatable {
   /// Tinted from outside — the ayah being recited.
   final AyahRef? highlighted;
 
+  /// Veiled from outside — the ayah a recall round is asking back from
+  /// memory. Its words are covered on the page until the answer plays.
+  final AyahRef? veiled;
+
   /// Tinted because the reader tapped it.
   final AyahRef? selected;
 
@@ -85,6 +90,8 @@ class MushafState extends Equatable {
     Map<int, String>? failedPages,
     AyahRef? highlighted,
     bool clearHighlighted = false,
+    AyahRef? veiled,
+    bool clearVeiled = false,
     AyahRef? selected,
     bool clearSelected = false,
     PageRequest? pageRequest,
@@ -100,6 +107,7 @@ class MushafState extends Equatable {
     pages: pages ?? this.pages,
     failedPages: failedPages ?? this.failedPages,
     highlighted: clearHighlighted ? null : (highlighted ?? this.highlighted),
+    veiled: clearVeiled ? null : (veiled ?? this.veiled),
     selected: clearSelected ? null : (selected ?? this.selected),
     pageRequest: pageRequest ?? this.pageRequest,
     errorMessage: errorMessage ?? this.errorMessage,
@@ -117,6 +125,7 @@ class MushafState extends Equatable {
     pages,
     failedPages,
     highlighted,
+    veiled,
     selected,
     pageRequest,
     errorMessage,

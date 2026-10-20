@@ -465,6 +465,14 @@ class MushafCubit extends Cubit<MushafState> {
 
   void clearHighlight() => emit(state.copyWith(clearHighlighted: true));
 
+  /// Veils every word of [ayah] — a recall round is asking it back from
+  /// memory — or lifts the veil when [ayah] is null.
+  void veilAyah(AyahRef? ayah) => emit(
+    ayah == null
+        ? state.copyWith(clearVeiled: true)
+        : state.copyWith(veiled: ayah),
+  );
+
   /// Brings the page holding [surah]:[ayah] on screen, animated.
   ///
   /// When one surah or juz is on show and the ayah is in another, that other
