@@ -19,7 +19,8 @@ The document is in two halves: English first, then the same ideas in Arabic.
 > **Status:** the core shipped in October 2026 — recall rounds
 > (`SessionConfig.recallRounds`): recite-into-the-gap after each learn step,
 > the ayah veiled on the page, the answer played once. Still open from this
-> section: progressive fading, the chaining drill, and self-grading.
+> section: self-grading, which belongs with the scheduler (§2). The chaining
+> drill and progressive fading shipped after it.
 
 The single highest-value addition. Learning science is clear that *retrieval* — making
 yourself produce the ayah — strengthens memory far more than another passive listen
@@ -186,8 +187,8 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 > **الحال:** نُفِّذ الأساس في أكتوبر ٢٠٢٦ — جولات الاسترجاع
 > (`SessionConfig.recallRounds`): القراءة في الفراغ بعد كل خطوة تعلُّم، والآية
-> مستورة على الصفحة، والجواب يُسمَع مرة. وبقي من هذا القسم: تدرّج الإخفاء،
-> وتمرين «ما بعدها؟»، والتقييم الذاتي.
+> مستورة على الصفحة، والجواب يُسمَع مرة. ثم نُفِّذ تمرين «ما بعدها؟» وتدرّج
+> الإخفاء، وبقي التقييم الذاتي وموضعه مع جدول المراجعة (§٢).
 
 أعلى الإضافات قيمةً. علم التعلّم قاطع في أن *الاسترجاع* — أن تُخرج الآية من صدرك —
 يرسّخ الحفظ أضعاف ما يرسّخه سماعٌ آخر (أثر الاختبار). الجلسة اليوم تُسمِع فقط؛ هذه

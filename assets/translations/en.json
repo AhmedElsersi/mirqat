@@ -307,5 +307,12 @@
     "maintenance_until": "Expected back: {}",
     "retry": "Try again",
     "target_version": "Required version: {}"
+  },
+  "memorization_view": {
+    "title": "Memorization view",
+    "off": "Shown",
+    "first_words": "First words",
+    "markers_only": "Hidden",
+    "hint": "Covers the page's words so you can test yourself as you read: keep the first word of each ayah as a cue, or cover every ayah. Tap a covered word to reveal its ayah."
   }
 }

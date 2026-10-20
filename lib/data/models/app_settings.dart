@@ -71,6 +71,32 @@ enum PageTurnStyle {
   }
 }
 
+/// How much of the page's text is covered while reading, for testing oneself
+/// against it — the old practice of covering the page a little more each
+/// pass. Covered words keep their place on the page; only their ink is
+/// withheld, and a tap on one reveals its ayah.
+enum MemorizationView {
+  /// The page as it is printed.
+  off('off'),
+
+  /// Only the first word of each ayah shows — the cue to recite the rest.
+  firstWords('first_words'),
+
+  /// Every word is covered; the ayah markers alone say where each ayah is.
+  markersOnly('markers_only');
+
+  const MemorizationView(this.storageValue);
+
+  final String storageValue;
+
+  static MemorizationView fromStorage(Object? value) {
+    for (final MemorizationView view in MemorizationView.values) {
+      if (view.storageValue == value) return view;
+    }
+    return MemorizationView.off;
+  }
+}
+
 /// Which ayah range a freshly opened surah starts with.
 enum RangeBehaviour {
   /// Always the whole surah.
@@ -155,6 +181,7 @@ class AppSettings extends Equatable {
     this.readingMark,
     this.downloadOverWifiOnly = true,
     this.showReadingRibbon = true,
+    this.memorizationView = MemorizationView.off,
     this.onboardingSeen = false,
     this.updatePromptedAt,
   });
@@ -233,6 +260,10 @@ class AppSettings extends Equatable {
   /// a reader who would rather have the page bare turns it off.
   final bool showReadingRibbon;
 
+  /// How much of the page is covered while reading ([MemorizationView]).
+  /// Off by default: the page is the printed page until the reader asks.
+  final MemorizationView memorizationView;
+
   /// Whether the introduction has been shown. False for a fresh install —
   /// and for one updating from before there was an introduction, which is
   /// deliberate: that update is also when the player screen went away, and
@@ -273,6 +304,7 @@ class AppSettings extends Equatable {
     bool clearReadingMark = false,
     bool? downloadOverWifiOnly,
     bool? showReadingRibbon,
+    MemorizationView? memorizationView,
     bool? onboardingSeen,
     DateTime? updatePromptedAt,
   }) => AppSettings(
@@ -303,6 +335,7 @@ class AppSettings extends Equatable {
     readingMark: clearReadingMark ? null : (readingMark ?? this.readingMark),
     downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
     showReadingRibbon: showReadingRibbon ?? this.showReadingRibbon,
+    memorizationView: memorizationView ?? this.memorizationView,
     onboardingSeen: onboardingSeen ?? this.onboardingSeen,
     updatePromptedAt: updatePromptedAt ?? this.updatePromptedAt,
   );
@@ -340,6 +373,7 @@ class AppSettings extends Equatable {
     'readingMark': readingMark?.toMap(),
     'downloadOverWifiOnly': downloadOverWifiOnly,
     'showReadingRibbon': showReadingRibbon,
+    'memorizationView': memorizationView.storageValue,
     'onboardingSeen': onboardingSeen,
     'updatePromptedAt': updatePromptedAt?.millisecondsSinceEpoch,
   };
@@ -397,6 +431,7 @@ class AppSettings extends Equatable {
     },
     downloadOverWifiOnly: map['downloadOverWifiOnly'] as bool? ?? true,
     showReadingRibbon: map['showReadingRibbon'] as bool? ?? true,
+    memorizationView: MemorizationView.fromStorage(map['memorizationView']),
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
     updatePromptedAt: map['updatePromptedAt'] is int
         ? DateTime.fromMillisecondsSinceEpoch(map['updatePromptedAt'] as int)
@@ -445,6 +480,7 @@ class AppSettings extends Equatable {
     readingMark,
     downloadOverWifiOnly,
     showReadingRibbon,
+    memorizationView,
     onboardingSeen,
     updatePromptedAt,
   ];

@@ -8,9 +8,12 @@ import '../../../core/extensions/duration_extensions.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/widgets/memorization_view_control.dart';
 import '../../../core/widgets/reciter_dropdown.dart';
 import '../../../core/widgets/session_controls.dart';
+import '../../../data/models/app_settings.dart';
 import '../../../data/models/reciter.dart';
+import '../../settings/cubit/settings_cubit.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/session_config.dart';
@@ -77,6 +80,7 @@ class SessionSheet extends StatelessWidget {
                           if (state.block != null) _BlockNotice(state: state),
                           _Reciters(state: state),
                           _Range(state: state, config: config),
+                          const _MemorizationView(),
                           _Downloads(state: state),
                           _Tuning(config: config),
                         ],
@@ -334,6 +338,25 @@ class _RangeEnd extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// How much of the page is covered while reading. Not scratch like the rest
+/// of the sheet: it is a way of reading, kept until the reader changes it,
+/// and the same setting the settings page shows.
+class _MemorizationView extends StatelessWidget {
+  const _MemorizationView();
+
+  @override
+  Widget build(BuildContext context) {
+    final MemorizationView view = context
+        .select<SettingsCubit, MemorizationView>(
+          (SettingsCubit c) => c.state.settings.memorizationView,
+        );
+    return MemorizationViewControl(
+      value: view,
+      onChanged: context.read<SettingsCubit>().setMemorizationView,
     );
   }
 }

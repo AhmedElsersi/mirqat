@@ -214,6 +214,13 @@ class LocaleKeys {
       'session_setup.connect_cumulative';
   static const String sessionSetupConnectCumulativeHint =
       'session_setup.connect_cumulative_hint';
+  static const String memorizationViewTitle = 'memorization_view.title';
+  static const String memorizationViewOff = 'memorization_view.off';
+  static const String memorizationViewFirstWords =
+      'memorization_view.first_words';
+  static const String memorizationViewMarkersOnly =
+      'memorization_view.markers_only';
+  static const String memorizationViewHint = 'memorization_view.hint';
   static const String sessionSetupChainRecall = 'session_setup.chain_recall';
   static const String sessionSetupChainRecallHint =
       'session_setup.chain_recall_hint';

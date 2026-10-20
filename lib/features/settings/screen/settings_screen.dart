@@ -12,6 +12,7 @@ import '../../../core/localization/app_localization.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/widgets/memorization_view_control.dart';
 import '../../../core/widgets/reciter_dropdown.dart';
 import '../../../core/widgets/session_controls.dart';
 import '../../../core/widgets/settings_card.dart';
@@ -68,6 +69,10 @@ class SettingsScreen extends StatelessWidget {
                       subtitle: Text(LocaleKeys.settingsReadingRibbonHint.tr()),
                       value: settings.showReadingRibbon,
                       onChanged: cubit.setShowReadingRibbon,
+                    ),
+                    MemorizationViewControl(
+                      value: settings.memorizationView,
+                      onChanged: cubit.setMemorizationView,
                     ),
                   ],
                 ),

@@ -8,6 +8,7 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/widgets/ayah_text.dart';
 import '../../../core/widgets/islamic_frame.dart';
+import '../../../data/models/app_settings.dart';
 import '../../../data/models/word.dart';
 import '../cubit/mushaf_page.dart';
 import 'page_reflow.dart';
@@ -28,6 +29,7 @@ class MushafPageView extends StatefulWidget {
     required this.linesPerFullPage,
     required this.highlighted,
     this.veiled,
+    this.memorizationView = MemorizationView.off,
     this.marked,
     this.ribbon = true,
     required this.selected,
@@ -51,6 +53,12 @@ class MushafPageView extends StatefulWidget {
   /// hand covers the page in a tasmee'. The ayah's number stays legible so
   /// the reader knows which ayah is being asked.
   final AyahRef? veiled;
+
+  /// How much of the page the reader has asked to be covered while reading
+  /// ([MemorizationView]). Covered the same way [veiled] is — ink withheld,
+  /// place and bytes untouched — and a tap on a covered word reveals its ayah
+  /// until the next tap.
+  final MemorizationView memorizationView;
 
   /// The ayah the reader marked as where they stopped, if it is on this page.
   final AyahRef? marked;
@@ -112,10 +120,44 @@ class _MushafPageViewState extends State<MushafPageView> {
   double get _lineHeight => _lineHeightPerEm ??=
       AyahText.mushafLineHeight(fontSize: _referenceSize) / _referenceSize;
 
+  /// The ayah the reader has uncovered by tapping one of its covered words,
+  /// under the memorization view. One at a time; the next tap covers it
+  /// again.
+  AyahRef? _peeked;
+
   @override
   void didUpdateWidget(MushafPageView old) {
     super.didUpdateWidget(old);
-    if (old.page.number != widget.page.number) _widthPerEm.clear();
+    if (old.page.number != widget.page.number) {
+      _widthPerEm.clear();
+      _peeked = null;
+    }
+    if (old.memorizationView != widget.memorizationView) _peeked = null;
+  }
+
+  /// A tap anywhere on the page. While an ayah is uncovered it covers it
+  /// again and does nothing else — the reader is checking a word, not asking
+  /// for the bar.
+  void _onPageTap() {
+    if (_peeked != null) {
+      setState(() => _peeked = null);
+      return;
+    }
+    widget.onTap?.call();
+  }
+
+  /// A tap on a recited word: under the memorization view a covered word
+  /// uncovers its ayah, and a word of the uncovered ayah covers it again.
+  void _onWordTap(Word w) {
+    if (_peeked == w.ref) {
+      setState(() => _peeked = null);
+      return;
+    }
+    if (_coveredByView(w)) {
+      setState(() => _peeked = w.ref);
+      return;
+    }
+    _onPageTap();
   }
 
   @override
@@ -222,7 +264,7 @@ class _MushafPageViewState extends State<MushafPageView> {
           final bool fits = pitch * slots <= room + 0.5;
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: widget.onTap,
+            onTap: _onPageTap,
             child: fits ? page : SingleChildScrollView(child: page),
           );
         },
@@ -322,7 +364,7 @@ class _MushafPageViewState extends State<MushafPageView> {
       else if (widget.isHeldBack?.call(w) ?? false)
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
+          onTap: _onPageTap,
           child: AyahText.word(
             text: w.text,
             fontSize: fontSize,
@@ -332,7 +374,7 @@ class _MushafPageViewState extends State<MushafPageView> {
       else
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
+          onTap: () => _onWordTap(w),
           onLongPress: () => widget.onWordLongPress(w),
           // As tall as the line, not as the letters: the strip between
           // two lines of text belongs to the word above or below it, or a
@@ -370,20 +412,41 @@ class _MushafPageViewState extends State<MushafPageView> {
     return false;
   }
 
+  /// A covered word keeps the band of the ayah under the reader's finger or
+  /// being recited — which ayah that is matters more than that it is
+  /// covered — and otherwise shows the quiet band that says words lie there.
   WordTint _tintFor(Word w) {
     if (widget.isHeldBack?.call(w) ?? false) return WordTint.none;
-    if (_isVeiled(w)) return WordTint.veiled;
     if (widget.selected?.contains(w) ?? false) return WordTint.selected;
     if (widget.highlighted?.contains(w) ?? false) return WordTint.highlighted;
+    if (_isVeiled(w)) return WordTint.veiled;
     if (widget.marked?.contains(w) ?? false) return WordTint.marked;
     if (widget.isSelected?.call(w) ?? false) return WordTint.ranged;
     return WordTint.none;
   }
 
-  /// Whether [w]'s ink is withheld: a word of the ayah being asked back. The
-  /// ayah-number medallion is not — it says which ayah is being asked.
-  bool _isVeiled(Word w) =>
-      !w.isMarker && (widget.veiled?.contains(w) ?? false);
+  /// Whether [w]'s ink is withheld: a word of the ayah a recall round is
+  /// asking back, or one the memorization view covers and the reader has not
+  /// uncovered. The ayah-number medallion never is — it says which ayah is
+  /// being asked, and where each one ends.
+  bool _isVeiled(Word w) {
+    if (w.isMarker) return false;
+    if (widget.veiled?.contains(w) ?? false) return true;
+    return _coveredByView(w) && _peeked != w.ref;
+  }
+
+  /// Whether the memorization view covers [w]: every recited word, or every
+  /// one but the first of its ayah. Words on the page only because they
+  /// share a line with the section being read are not the reader's to
+  /// recite, and stay as they are.
+  bool _coveredByView(Word w) {
+    if (w.isMarker || (widget.isHeldBack?.call(w) ?? false)) return false;
+    return switch (widget.memorizationView) {
+      MemorizationView.off => false,
+      MemorizationView.firstWords => w.position != 1,
+      MemorizationView.markersOnly => true,
+    };
+  }
 }
 
 /// Paints the tint behind a line's words: one band for each run of

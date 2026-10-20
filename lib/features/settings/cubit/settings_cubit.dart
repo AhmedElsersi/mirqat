@@ -152,6 +152,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setShowReadingRibbon(bool value) =>
       _save(state.settings.copyWith(showReadingRibbon: value));
 
+  Future<void> setMemorizationView(MemorizationView view) =>
+      _save(state.settings.copyWith(memorizationView: view));
+
   /// The introduction has been read through, or skipped: either way it is
   /// not shown on its own again. It stays one tap away, under How to use.
   Future<void> markOnboardingSeen() =>

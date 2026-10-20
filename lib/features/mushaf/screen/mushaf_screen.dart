@@ -286,10 +286,9 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
           listenWhen: (SessionState a, SessionState b) =>
               a.recalling != b.recalling ||
               a.currentUnit?.ref != b.currentUnit?.ref,
-          listener: (BuildContext context, SessionState state) =>
-              context.read<MushafCubit>().veilAyah(
-                state.recalling ? state.currentUnit?.ref : null,
-              ),
+          listener: (BuildContext context, SessionState state) => context
+              .read<MushafCubit>()
+              .veilAyah(state.recalling ? state.currentUnit?.ref : null),
         ),
         // A session that has just started brings its controls up and takes
         // hold of the page again.
@@ -711,12 +710,18 @@ class _PageSlot extends StatelessWidget {
           (SettingsCubit c) => c.state.settings.showReadingRibbon,
         );
 
+        final MemorizationView memorizationView = context
+            .select<SettingsCubit, MemorizationView>(
+              (SettingsCubit c) => c.state.settings.memorizationView,
+            );
+
         return MushafPageView(
           page: page,
           linesPerFullPage: state.linesPerFullPage,
           textScale: textScale,
           highlighted: state.highlighted,
           veiled: state.veiled,
+          memorizationView: memorizationView,
           marked: readingMark,
           ribbon: ribbon,
           selected: state.selected,
