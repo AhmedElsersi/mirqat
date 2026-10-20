@@ -62,3 +62,7 @@ data/work/
 # Release secrets kept beside the project for tool/set_release_secrets.sh. Never committed.
 *.p12
 play_service.json
+
+# Promo videos stay local
+iqra-wartaq-promo.mp4
+iqra-wartaq-promo-sound.mp4
