@@ -552,6 +552,76 @@ void main() {
       expect(player.ended, 1);
     });
   });
+
+  group('recall', () {
+    test('changing the connect mode keeps both recall settings', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      cubit.setRecallRounds(2);
+      cubit.setChainRecall(true);
+
+      cubit.setConnectMode(ConnectMode.none);
+
+      expect(cubit.state.config!.recallRounds, 2);
+      expect(cubit.state.config!.chainRecall, isTrue);
+    });
+
+    test('toggling the links test mid-session is a change to decide on', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      cubit.setChainRecall(true);
+      expect(cubit.state.hasPendingChange, isTrue);
+    });
+
+    test('a recall gap veils without counting; the answer counts', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a1);
+      cubit.setRepeatCount(1);
+      cubit.setRecallRounds(1);
+      await cubit.start();
+      final PlaybackUnit asked = cubit.state.activePlan!.units.firstWhere(
+        (PlaybackUnit u) => u.asked,
+      );
+
+      player.recall(asked);
+      await settle();
+      expect(cubit.state.recalling, isTrue);
+      expect(cubit.state.currentUnit, asked);
+
+      player.reach(asked);
+      await settle();
+      expect(cubit.state.recalling, isFalse);
+
+      await cubit.stop();
+      expect(progress.recorded[s1a1], 1, reason: 'the gap is not a recitation');
+    });
+
+    test('the player is handed measured clips to size the gaps', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      cubit.setRecallRounds(1);
+      await cubit.start();
+      expect(player.recallClipLoads.single[s1a1], const Duration(seconds: 1));
+    });
+
+    test('a session with nothing asked measures nothing for gaps', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      expect(player.recallClipLoads.single, isEmpty);
+    });
+
+    test('recall settings are saved as defaults with the rest', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      cubit.setRecallRounds(3);
+      cubit.setChainRecall(true);
+      await cubit.saveAsDefaults();
+      expect(settings.saved.last.defaultRecallRounds, 3);
+      expect(settings.saved.last.defaultChainRecall, isTrue);
+    });
+  });
 }
 
 /// A store that holds what was last saved, the way the real one does — so

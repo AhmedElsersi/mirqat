@@ -43,7 +43,9 @@
     "connect_continuous": "Continuous",
     "connect_continuous_hint": "The range is recited straight through, then the whole pass repeats",
     "recall_rounds": "Recall rounds",
-    "recall_rounds_hint": "After an ayah is repeated, the app stays silent for its length so you recite it from memory, then plays it once to confirm. Zero means no recall."
+    "recall_rounds_hint": "After an ayah is repeated, the app stays silent for its length so you recite it from memory, then plays it once to confirm. Zero means no recall.",
+    "chain_recall": "Test the links: what comes next?",
+    "chain_recall_hint": "At the end, each ayah is played, the app falls silent while you recite the one after it from memory, then plays it as the answer."
   },
   "player": {
     "step_header": "Step {} of {}",

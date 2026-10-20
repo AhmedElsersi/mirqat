@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import 'ayah_ref.dart';
 
-enum StepType { learn, connect, recall }
+enum StepType { learn, connect, recall, chain }
 
 /// One instruction in a session plan: play this ayah, or this block of ayahs,
 /// [repeats] times.
@@ -40,6 +40,11 @@ sealed class PlanStep extends Equatable {
 
   /// Ayah plays contributed by this step.
   int get unitCount => refs.length * repeats;
+
+  /// Whether the play at [position] within one repetition answers a recall
+  /// gap — the reader has just recited it from memory into the silence the
+  /// queue lays before it. One rule, read by the queue and by the estimate.
+  bool isAsked(int position) => false;
 }
 
 /// Drill a single ayah.
@@ -86,7 +91,37 @@ class RecallStep extends PlanStep {
   List<AyahRef> get refs => <AyahRef>[AyahRef(surah, ayah)];
 
   @override
+  bool isAsked(int position) => true;
+
+  @override
   List<Object?> get props => <Object?>[surah, ayah, repeats, type];
+}
+
+/// Test one link of the range: [cue] is played, then the reader is asked for
+/// the ayah that follows it — a recall gap — and [next] plays as the answer.
+///
+/// Recall breaks between ayahs more often than inside one, and this is the
+/// step that asks about exactly that. The two refs need not share a surah: a
+/// range that runs on into the next surah recites that link, so it is
+/// tested too.
+class ChainStep extends PlanStep {
+  const ChainStep({required this.cue, required this.next})
+    : super(repeats: 1);
+
+  final AyahRef cue;
+  final AyahRef next;
+
+  @override
+  StepType get type => StepType.chain;
+
+  @override
+  List<AyahRef> get refs => <AyahRef>[cue, next];
+
+  @override
+  bool isAsked(int position) => position == 1;
+
+  @override
+  List<Object?> get props => <Object?>[cue, next, type];
 }
 
 /// Join a block of ayahs and play them through together.

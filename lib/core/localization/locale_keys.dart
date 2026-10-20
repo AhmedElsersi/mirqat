@@ -214,6 +214,9 @@ class LocaleKeys {
       'session_setup.connect_cumulative';
   static const String sessionSetupConnectCumulativeHint =
       'session_setup.connect_cumulative_hint';
+  static const String sessionSetupChainRecall = 'session_setup.chain_recall';
+  static const String sessionSetupChainRecallHint =
+      'session_setup.chain_recall_hint';
   static const String sessionSetupConnectMode = 'session_setup.connect_mode';
   static const String sessionSetupConnectNone = 'session_setup.connect_none';
   static const String sessionSetupConnectNoneHint =

@@ -180,6 +180,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setDefaultFinalFullPass(bool value) =>
       _save(state.settings.copyWith(defaultFinalFullPass: value));
 
+  Future<void> setDefaultChainRecall(bool value) =>
+      _save(state.settings.copyWith(defaultChainRecall: value));
+
   Future<void> setDefaultRecallRounds(int value) => _save(
     state.settings.copyWith(
       defaultRecallRounds: value.clamp(

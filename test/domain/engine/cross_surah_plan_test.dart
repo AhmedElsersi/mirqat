@@ -32,6 +32,7 @@ String failure(SessionConfig config, {Map<int, int> counts = kCounts}) =>
 String describe(PlanStep step) => switch (step) {
   LearnStep() => 'LEARN ${step.fromRef} x${step.repeats}',
   RecallStep() => 'RECALL ${step.fromRef} x${step.repeats}',
+  ChainStep() => 'CHAIN ${step.fromRef}>${step.toRef}',
   ConnectStep() => 'CONNECT ${step.fromRef}-${step.toRef} x${step.repeats}',
 };
 

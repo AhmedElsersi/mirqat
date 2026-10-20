@@ -401,6 +401,7 @@ class _Tuning extends StatelessWidget {
           playbackSpeed: config.playbackSpeed,
           finalFullPass: config.finalFullPass,
           recallRounds: config.recallRounds,
+          chainRecall: config.chainRecall,
           onRepeatCount: cubit.setRepeatCount,
           onConnectMode: cubit.setConnectMode,
           onIntraBlockPause: cubit.setIntraBlockPause,
@@ -409,6 +410,7 @@ class _Tuning extends StatelessWidget {
           onPlaybackSpeed: cubit.setPlaybackSpeed,
           onFinalFullPass: cubit.setFinalFullPass,
           onRecallRounds: cubit.setRecallRounds,
+          onChainRecall: cubit.setChainRecall,
         ),
         // Only before a session: the isti'adhah opens one, and a session that
         // is already under way has nothing left to open.

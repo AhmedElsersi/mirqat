@@ -147,6 +147,7 @@ class SessionConfig extends Equatable {
     this.playbackSpeed = defaultPlaybackSpeed,
     this.playIstiadhah = false,
     this.recallRounds = defaultRecallRounds,
+    this.chainRecall = false,
   }) : // Spelled out rather than delegating to
        // ConnectMode.defaultFinalFullPass because this constructor is
        // `const` and a const initialiser cannot call a getter. The two
@@ -236,6 +237,15 @@ class SessionConfig extends Equatable {
   /// than refused — a saved default must not block a mode change.
   final int recallRounds;
 
+  /// Whether the session closes by testing every link of the range — "what
+  /// comes next?": each ayah is played as a cue, the reader recites the one
+  /// after it into a recall gap, and that one plays as the answer.
+  ///
+  /// Unlike [recallRounds] it suits every connect mode, continuous included:
+  /// it is a pass over the range, not a step of the per-ayah drill. A range
+  /// of one ayah has no link, and adds nothing.
+  final bool chainRecall;
+
   SessionConfig copyWith({
     int? surahNumber,
     int? startAyah,
@@ -250,6 +260,7 @@ class SessionConfig extends Equatable {
     double? playbackSpeed,
     bool? playIstiadhah,
     int? recallRounds,
+    bool? chainRecall,
   }) => SessionConfig(
     surahNumber: surahNumber ?? this.surahNumber,
     startAyah: startAyah ?? this.startAyah,
@@ -270,6 +281,7 @@ class SessionConfig extends Equatable {
     playbackSpeed: playbackSpeed ?? this.playbackSpeed,
     playIstiadhah: playIstiadhah ?? this.playIstiadhah,
     recallRounds: recallRounds ?? this.recallRounds,
+    chainRecall: chainRecall ?? this.chainRecall,
   );
 
   @override
@@ -287,5 +299,6 @@ class SessionConfig extends Equatable {
     playbackSpeed,
     playIstiadhah,
     recallRounds,
+    chainRecall,
   ];
 }

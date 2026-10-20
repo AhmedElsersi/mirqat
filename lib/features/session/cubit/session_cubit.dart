@@ -14,7 +14,6 @@ import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
 import '../../../domain/engine/repetition_plan_builder.dart';
 import '../../../domain/entities/ayah_ref.dart';
-import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../domain/entities/session_plan.dart';
@@ -226,6 +225,7 @@ class SessionCubit extends Cubit<SessionState> {
       playbackSpeed: base.playbackSpeed,
       playIstiadhah: base.playIstiadhah,
       recallRounds: base.recallRounds,
+      chainRecall: base.chainRecall,
     );
   }
 
@@ -244,6 +244,7 @@ class SessionCubit extends Cubit<SessionState> {
     betweenStepsPauseMs: settings.defaultBetweenStepsPauseMs,
     playbackSpeed: settings.defaultPlaybackSpeed,
     recallRounds: settings.defaultRecallRounds,
+    chainRecall: settings.defaultChainRecall,
   );
 
   // --- tuning --------------------------------------------------------------
@@ -279,11 +280,16 @@ class SessionCubit extends Cubit<SessionState> {
       betweenStepsPauseMs: c.betweenStepsPauseMs,
       playbackSpeed: c.playbackSpeed,
       playIstiadhah: c.playIstiadhah,
+      recallRounds: c.recallRounds,
+      chainRecall: c.chainRecall,
     ),
   );
 
   void setFinalFullPass(bool value) =>
       _change((SessionConfig c) => c.copyWith(finalFullPass: value));
+
+  void setChainRecall(bool value) =>
+      _change((SessionConfig c) => c.copyWith(chainRecall: value));
 
   void setRecallRounds(int value) => _change(
     (SessionConfig c) => c.copyWith(
@@ -370,6 +376,7 @@ class SessionCubit extends Cubit<SessionState> {
         playbackSpeed: d.playbackSpeed,
         playIstiadhah: c.playIstiadhah,
         recallRounds: d.recallRounds,
+        chainRecall: d.chainRecall,
       ),
       rangeChosen: state.rangeChosen,
     );
@@ -395,6 +402,7 @@ class SessionCubit extends Cubit<SessionState> {
       defaultBetweenStepsPauseMs: c.betweenStepsPauseMs,
       defaultPlaybackSpeed: c.playbackSpeed,
       defaultRecallRounds: c.recallRounds,
+      defaultChainRecall: c.chainRecall,
     );
     final result = await _settings.save(next);
     if (isClosed) return;
@@ -533,7 +541,7 @@ class SessionCubit extends Cubit<SessionState> {
     SessionPlan plan,
     Reciter reciter,
   ) async {
-    if (!plan.units.any((PlaybackUnit u) => u.stepType == StepType.recall)) {
+    if (!plan.units.any((PlaybackUnit u) => u.asked)) {
       return const <AyahRef, Duration>{};
     }
     final Map<AyahRef, Duration> clips = <AyahRef, Duration>{};

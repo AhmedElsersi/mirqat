@@ -37,7 +37,11 @@ class RepetitionPlanBuilder {
       return Left<Failure, SessionPlan>(SessionConfigFailure(error));
     }
 
-    final List<PlanStep> steps = _buildSteps(config, rangeOf(config, counts));
+    final List<AyahRef> range = rangeOf(config, counts);
+    final List<PlanStep> steps = List<PlanStep>.unmodifiable(<PlanStep>[
+      ..._buildSteps(config, range),
+      if (config.chainRecall) ..._chainSteps(range),
+    ]);
     return Right<Failure, SessionPlan>(
       SessionPlan(config: config, steps: steps, units: flatten(steps, config)),
     );
@@ -212,6 +216,15 @@ class RepetitionPlanBuilder {
     return List<PlanStep>.unmodifiable(steps);
   }
 
+  /// The closing pass of links: every ayah of the range but the last cues the
+  /// one after it. After the drill, not inside it, because what it tests —
+  /// whether one ayah calls up the next — is only fair to ask once all of
+  /// them have been learned.
+  List<PlanStep> _chainSteps(List<AyahRef> range) => <PlanStep>[
+    for (int i = 0; i + 1 < range.length; i++)
+      ChainStep(cue: range[i], next: range[i + 1]),
+  ];
+
   /// Expands [steps] into the flat queue: one [PlaybackUnit] per ayah play.
   List<PlaybackUnit> flatten(List<PlanStep> steps, SessionConfig config) {
     final List<PlaybackUnit> units = <PlaybackUnit>[];
@@ -237,6 +250,7 @@ class RepetitionPlanBuilder {
               blockToSurah: step.toRef.surah,
               isLastUnitOfRepeat: lastOfRepeat,
               isLastUnitOfStep: lastOfRepeat && repeat == step.repeats,
+              asked: step.isAsked(position),
             ),
           );
         }

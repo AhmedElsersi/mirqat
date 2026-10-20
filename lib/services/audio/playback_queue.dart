@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/ayah_ref.dart';
-import '../../domain/entities/plan_step.dart';
 import '../../domain/entities/playback_unit.dart';
 import '../../domain/entities/recall_gap.dart';
 import '../../domain/entities/session_plan.dart';
@@ -235,9 +234,9 @@ class PlaybackQueueBuilder {
         );
         addGap(plan.config.betweenStepsPauseMs, GapKind.afterPreamble);
       }
-      // A recall play is answered into the silence that precedes it: the gap
+      // An asked play is answered into the silence that precedes it: the gap
       // the reader recites into, as long as the ayah itself ([RecallGap]).
-      if (unit.stepType == StepType.recall) {
+      if (unit.asked) {
         final int clips = recallSpacerCount(recallClips[unit.ref]);
         for (int c = 0; c < clips; c++) {
           entries.add(RecallGapEntry(unit));

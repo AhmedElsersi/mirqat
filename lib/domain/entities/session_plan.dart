@@ -73,9 +73,9 @@ class SessionPlan extends Equatable {
           'the session length without it.',
         );
       }
-      // A recall play is preceded by its silence — the gap the reader
+      // An asked play is preceded by its silence — the gap the reader
       // recites into — which the queue lays out in spacer clips.
-      if (unit.stepType == StepType.recall) {
+      if (unit.asked) {
         micros += RecallGap.of(clip).inMicroseconds;
       }
       micros += clip.inMicroseconds;

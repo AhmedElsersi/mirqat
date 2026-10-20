@@ -103,9 +103,30 @@ void main() {
       homeViewMode: HomeViewMode.grid,
       pageTurnStyle: PageTurnStyle.paper,
       arabicFontSize: 26,
+      defaultRecallRounds: 2,
+      defaultChainRecall: true,
     );
 
     expect(AppSettings.fromMap(settings.toMap()), settings);
+  });
+
+  test('recall defaults: absent is off, and a stored value out of bounds '
+      'is held to them rather than handed to the plan builder', () {
+    final AppSettings absent = AppSettings.fromMap(<String, dynamic>{});
+    expect(absent.defaultRecallRounds, SessionConfig.defaultRecallRounds);
+    expect(absent.defaultChainRecall, isFalse);
+
+    final AppSettings wild = AppSettings.fromMap(<String, dynamic>{
+      'defaultRecallRounds': 400,
+      'defaultChainRecall': 'yes',
+    });
+    expect(wild.defaultRecallRounds, SessionConfig.maxRecallRounds);
+    expect(wild.defaultChainRecall, isFalse);
+
+    final AppSettings wrongType = AppSettings.fromMap(<String, dynamic>{
+      'defaultRecallRounds': '3',
+    });
+    expect(wrongType.defaultRecallRounds, SessionConfig.defaultRecallRounds);
   });
 
   test('an older install missing the newer keys reads its defaults', () {

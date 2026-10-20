@@ -520,6 +520,7 @@ class SessionTuningControls extends StatelessWidget {
     required this.playbackSpeed,
     required this.finalFullPass,
     required this.recallRounds,
+    required this.chainRecall,
     required this.onRepeatCount,
     required this.onConnectMode,
     required this.onIntraBlockPause,
@@ -528,6 +529,7 @@ class SessionTuningControls extends StatelessWidget {
     required this.onPlaybackSpeed,
     required this.onFinalFullPass,
     required this.onRecallRounds,
+    required this.onChainRecall,
     super.key,
   });
 
@@ -545,6 +547,10 @@ class SessionTuningControls extends StatelessWidget {
   /// ([SessionConfig.recallRounds]). 0 is off.
   final int recallRounds;
 
+  /// Whether the session closes by testing each link — "what comes next?"
+  /// ([SessionConfig.chainRecall]).
+  final bool chainRecall;
+
   final ValueChanged<int> onRepeatCount;
   final ValueChanged<ConnectMode> onConnectMode;
   final ValueChanged<int> onIntraBlockPause;
@@ -553,6 +559,7 @@ class SessionTuningControls extends StatelessWidget {
   final ValueChanged<double> onPlaybackSpeed;
   final ValueChanged<bool> onFinalFullPass;
   final ValueChanged<int> onRecallRounds;
+  final ValueChanged<bool> onChainRecall;
 
   @override
   Widget build(BuildContext context) {
@@ -670,6 +677,13 @@ class SessionTuningControls extends StatelessWidget {
           title: Text(LocaleKeys.sessionSetupFinalFullPass.tr()),
           value: finalFullPass,
           onChanged: onFinalFullPass,
+        ),
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsetsDirectional.zero,
+          title: Text(LocaleKeys.sessionSetupChainRecall.tr()),
+          subtitle: Text(LocaleKeys.sessionSetupChainRecallHint.tr()),
+          value: chainRecall,
+          onChanged: onChainRecall,
         ),
       ],
     );

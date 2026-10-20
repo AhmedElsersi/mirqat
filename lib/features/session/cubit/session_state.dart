@@ -220,7 +220,7 @@ class SessionState extends Equatable {
   }
 
   /// A record, not a list: two lists are only ever equal to themselves.
-  static (AyahRef, AyahRef, int, ConnectMode, bool, int) _shapeOf(
+  static (AyahRef, AyahRef, int, ConnectMode, bool, int, bool) _shapeOf(
     SessionConfig c,
   ) => (
     c.start,
@@ -229,6 +229,7 @@ class SessionState extends Equatable {
     c.connectMode,
     c.finalFullPass,
     c.recallRounds,
+    c.chainRecall,
   );
 
   SessionState copyWith({
