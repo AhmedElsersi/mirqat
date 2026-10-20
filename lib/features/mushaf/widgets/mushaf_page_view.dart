@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/extensions/number_extensions.dart';
+import '../../../core/theme/quran_font.dart';
 import '../../../core/widgets/ayah_text.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/app_settings.dart';
@@ -115,15 +116,24 @@ class _MushafPageViewState extends State<MushafPageView> {
   final Map<int, double> _widthPerEm = <int, double>{};
   double? _lineHeightPerEm;
 
+  /// The face the widths were measured in. Another face is other widths, so
+  /// the measurements are dropped when the reader changes it.
+  QuranFont _font = QuranFont.fallback;
+
   double _width(Word w) => _widthPerEm.putIfAbsent(
     w.id,
     () =>
-        AyahText.mushafWordWidth(w.text, fontSize: _referenceSize) /
+        AyahText.mushafWordWidth(
+          w.text,
+          fontSize: _referenceSize,
+          font: _font,
+        ) /
         _referenceSize,
   );
 
   double get _lineHeight => _lineHeightPerEm ??=
-      AyahText.mushafLineHeight(fontSize: _referenceSize) / _referenceSize;
+      AyahText.mushafLineHeight(fontSize: _referenceSize, font: _font) /
+      _referenceSize;
 
   /// The ayah the reader has uncovered by tapping one of its covered words,
   /// under the memorization view. One at a time; the next tap covers it
@@ -167,6 +177,12 @@ class _MushafPageViewState extends State<MushafPageView> {
 
   @override
   Widget build(BuildContext context) {
+    final QuranFont font = QuranFontScope.of(context);
+    if (font != _font) {
+      _font = font;
+      _widthPerEm.clear();
+      _lineHeightPerEm = null;
+    }
     return Padding(
       // A narrow margin of bare page outside the frame, so the ornament is
       // seen whole rather than running into the edge of the glass.

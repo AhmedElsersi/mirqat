@@ -2,6 +2,24 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_text_styles.dart';
+import '../theme/quran_font.dart';
+
+/// Which face the mushaf's text is drawn in, for every [AyahText] below it.
+///
+/// Set once, above the router, from the reader's setting. A tree with no
+/// scope — a test, a screen built on its own — draws in the default face.
+class QuranFontScope extends InheritedWidget {
+  const QuranFontScope({required this.font, required super.child, super.key});
+
+  final QuranFont font;
+
+  static QuranFont of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<QuranFontScope>()?.font ??
+      QuranFont.fallback;
+
+  @override
+  bool updateShouldNotify(QuranFontScope old) => old.font != font;
+}
 
 /// How prominently an ayah is drawn within the current step.
 enum AyahEmphasis {
@@ -193,24 +211,32 @@ class AyahText extends StatefulWidget {
     WordTint.veiled => colors.primary.withValues(alpha: 0.1),
   };
 
-  /// Width of [text] as [AyahText.word] draws it at [fontSize].
-  static double mushafWordWidth(String text, {required double fontSize}) =>
-      _mushafPainter(text, fontSize).width;
+  /// Width of [text] as [AyahText.word] draws it at [fontSize] in [font].
+  static double mushafWordWidth(
+    String text, {
+    required double fontSize,
+    QuranFont font = QuranFont.fallback,
+  }) => _mushafPainter(text, fontSize, font).width;
 
   /// Natural line height of the mushaf face at [fontSize], tall marks
   /// included.
-  static double mushafLineHeight({required double fontSize}) =>
-      _mushafPainter(' ', fontSize).preferredLineHeight;
+  static double mushafLineHeight({
+    required double fontSize,
+    QuranFont font = QuranFont.fallback,
+  }) => _mushafPainter(' ', fontSize, font).preferredLineHeight;
 
-  static TextPainter _mushafPainter(String text, double fontSize) =>
-      TextPainter(
-        text: TextSpan(
-          text: text,
-          style: AppTextStyles.mushafWord(fontSize: fontSize),
-        ),
-        textDirection: TextDirection.rtl,
-        textScaler: TextScaler.noScaling,
-      )..layout();
+  static TextPainter _mushafPainter(
+    String text,
+    double fontSize,
+    QuranFont font,
+  ) => TextPainter(
+    text: TextSpan(
+      text: text,
+      style: AppTextStyles.mushafWord(fontSize: fontSize, font: font),
+    ),
+    textDirection: TextDirection.rtl,
+    textScaler: TextScaler.noScaling,
+  )..layout();
 
   /// The ayah number, in Arabic-Indic digits and nothing else.
   ///
@@ -289,6 +315,7 @@ class _AyahTextState extends State<AyahText> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final QuranFont font = QuranFontScope.of(context);
 
     if (widget._word) {
       return Text(
@@ -298,21 +325,25 @@ class _AyahTextState extends State<AyahText> {
         // One word never wraps. No maxLines: that would clip, and scripture
         // is never truncated (CLAUDE.md A.2 rule 7).
         softWrap: false,
-        style: AppTextStyles.mushafWord(fontSize: widget.fontSize).copyWith(
-          // A veiled word keeps its place and its width; only its ink is
-          // withheld, for the reader to supply from memory.
-          color: (widget.isMarker ? colors.primary : colors.onSurface)
-              .withValues(
-                alpha: widget.veiled ? 0 : (widget.heldBack ? 0.32 : 1),
-              ),
-          backgroundColor: widget.paintsTint
-              ? AyahText.tintColor(colors, widget.tint)
-              : null,
-        ),
+        style: AppTextStyles.mushafWord(fontSize: widget.fontSize, font: font)
+            .copyWith(
+              // A veiled word keeps its place and its width; only its ink is
+              // withheld, for the reader to supply from memory.
+              color: (widget.isMarker ? colors.primary : colors.onSurface)
+                  .withValues(
+                    alpha: widget.veiled ? 0 : (widget.heldBack ? 0.32 : 1),
+                  ),
+              backgroundColor: widget.paintsTint
+                  ? AyahText.tintColor(colors, widget.tint)
+                  : null,
+            ),
       );
     }
 
-    final TextStyle base = AppTextStyles.ayah(fontSize: widget.fontSize);
+    final TextStyle base = AppTextStyles.ayah(
+      fontSize: widget.fontSize,
+      font: font,
+    );
     final List<FlowingAyah>? flow = widget.ayahs;
 
     if (flow == null) {

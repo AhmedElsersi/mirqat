@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'quran_font.dart';
+
 /// Text style tokens.
 ///
 /// These are getters, not `const` fields, because `.sp` needs `ScreenUtil`
@@ -29,6 +31,14 @@ class AppTextStyles {
   /// and no error — it just silently stops being the mushaf's diacritic
   /// placement.
   static const String quranFontFamily = 'QuranUthmani';
+
+  /// The family each [QuranFont] is declared under in pubspec.yaml. Named
+  /// here and nowhere else in Dart, like [quranFontFamily] — which is the
+  /// default face's.
+  static String quranFamilyOf(QuranFont font) => switch (font) {
+    QuranFont.hafsV22 => quranFontFamily,
+    QuranFont.hafsV18 => 'QuranUthmaniV18',
+  };
 
   static TextStyle get displayLarge => TextStyle(
     fontFamily: uiFontFamily,
@@ -80,8 +90,11 @@ class AppTextStyles {
   /// (CLAUDE.md A.2 rule 7).
   ///
   /// Call this from `AyahText` only. Nothing else may render Quranic text.
-  static TextStyle ayah({required double fontSize}) => TextStyle(
-    fontFamily: quranFontFamily,
+  static TextStyle ayah({
+    required double fontSize,
+    QuranFont font = QuranFont.fallback,
+  }) => TextStyle(
+    fontFamily: quranFamilyOf(font),
     fontSize: fontSize.sp,
     fontWeight: FontWeight.w400,
     height: 2.0,
@@ -93,8 +106,11 @@ class AppTextStyles {
   /// because the page computes it to fit the screen and must never scroll.
   ///
   /// Call this from `AyahText` only, like [ayah].
-  static TextStyle mushafWord({required double fontSize}) => TextStyle(
-    fontFamily: quranFontFamily,
+  static TextStyle mushafWord({
+    required double fontSize,
+    QuranFont font = QuranFont.fallback,
+  }) => TextStyle(
+    fontFamily: quranFamilyOf(font),
     fontSize: fontSize,
     fontWeight: FontWeight.w400,
   );

@@ -18,6 +18,8 @@ import unicodedata
 TEXT_DB = "assets/data/quran.db"
 FONTS = [
     "assets/fonts/UthmanicHafs_V22.ttf",
+    # Offered as a choice of face (QuranFont.hafsV18); same script, earlier cut.
+    "assets/fonts/KFGQPCHafs-Uthmanic-v18.ttf",
 ]
 
 

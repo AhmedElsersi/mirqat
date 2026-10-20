@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failures.dart';
+import '../../../core/theme/quran_font.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/app_settings.dart';
 import '../../../data/models/reading_position.dart';
@@ -151,6 +152,9 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> setShowReadingRibbon(bool value) =>
       _save(state.settings.copyWith(showReadingRibbon: value));
+
+  Future<void> setQuranFont(QuranFont font) =>
+      _save(state.settings.copyWith(quranFont: font));
 
   Future<void> setMemorizationView(MemorizationView view) =>
       _save(state.settings.copyWith(memorizationView: view));

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../core/theme/quran_font.dart';
 import 'reading_position.dart';
 
 import '../../domain/entities/session_config.dart';
@@ -177,6 +178,7 @@ class AppSettings extends Equatable {
     this.homeViewMode = HomeViewMode.mushaf,
     this.pageTurnStyle = PageTurnStyle.slide,
     this.arabicFontSize = defaultArabicFontSize,
+    this.quranFont = QuranFont.fallback,
     this.audioQuality = AudioQuality.standard,
     this.readingMark,
     this.downloadOverWifiOnly = true,
@@ -241,6 +243,9 @@ class AppSettings extends Equatable {
   final PageTurnStyle pageTurnStyle;
   final double arabicFontSize;
 
+  /// The face the mushaf's text is drawn in ([QuranFont]).
+  final QuranFont quranFont;
+
   /// Which bitrate downloads and streams ask for, where the reciter offers a
   /// choice.
   final AudioQuality audioQuality;
@@ -304,6 +309,7 @@ class AppSettings extends Equatable {
     HomeViewMode? homeViewMode,
     PageTurnStyle? pageTurnStyle,
     double? arabicFontSize,
+    QuranFont? quranFont,
     AudioQuality? audioQuality,
     ReadingPosition? readingMark,
     bool clearReadingMark = false,
@@ -337,6 +343,7 @@ class AppSettings extends Equatable {
     homeViewMode: homeViewMode ?? this.homeViewMode,
     pageTurnStyle: pageTurnStyle ?? this.pageTurnStyle,
     arabicFontSize: arabicFontSize ?? this.arabicFontSize,
+    quranFont: quranFont ?? this.quranFont,
     audioQuality: audioQuality ?? this.audioQuality,
     readingMark: clearReadingMark ? null : (readingMark ?? this.readingMark),
     downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
@@ -373,6 +380,7 @@ class AppSettings extends Equatable {
     'homeViewMode': homeViewMode.storageValue,
     'pageTurnStyle': pageTurnStyle.storageValue,
     'arabicFontSize': arabicFontSize,
+    'quranFont': quranFont.storageValue,
     // The bitrate itself, not the enum name: it is the number the manifest
     // and every path use, so a stored 64 stays meaningful even if these cases
     // are ever renamed.
@@ -430,6 +438,7 @@ class AppSettings extends Equatable {
     pageTurnStyle: PageTurnStyle.fromStorage(map['pageTurnStyle'] as String?),
     arabicFontSize:
         (map['arabicFontSize'] as num?)?.toDouble() ?? defaultArabicFontSize,
+    quranFont: QuranFont.fromStorage(map['quranFont']),
     audioQuality: AudioQuality.fromStorage(map['audioQuality']),
     readingMark: switch (map['readingMark']) {
       final Map<dynamic, dynamic> m
@@ -485,6 +494,7 @@ class AppSettings extends Equatable {
     homeViewMode,
     pageTurnStyle,
     arabicFontSize,
+    quranFont,
     audioQuality,
     readingMark,
     downloadOverWifiOnly,

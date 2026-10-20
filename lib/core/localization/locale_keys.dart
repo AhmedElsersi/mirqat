@@ -217,6 +217,13 @@ class LocaleKeys {
       'session_setup.connect_cumulative';
   static const String sessionSetupConnectCumulativeHint =
       'session_setup.connect_cumulative_hint';
+  static const String mushafFontTitle = 'mushaf_font.title';
+  static const String mushafFontHint = 'mushaf_font.hint';
+  static const String mushafFontFace = 'mushaf_font.face';
+  static const String mushafFontPreview = 'mushaf_font.preview';
+  static const String mushafFontOnlyMatching = 'mushaf_font.only_matching';
+  static const String mushafFontHafsV22 = 'mushaf_font.hafs_v22';
+  static const String mushafFontHafsV18 = 'mushaf_font.hafs_v18';
   static const String memorizationViewTitle = 'memorization_view.title';
   static const String memorizationViewOff = 'memorization_view.off';
   static const String memorizationViewFirstWords =

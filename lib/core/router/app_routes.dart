@@ -55,6 +55,10 @@ class AppRoutes {
   /// The saved-recitations list. A child of settings, so the back button
   /// returns there rather than to the home screen.
   static const String downloadsPath = 'downloads';
+
+  /// The mushaf's face and text size, with a preview.
+  static const String mushafFontPath = 'mushaf-font';
+  static const String mushafFontName = 'mushaf_font';
   static const String downloadsName = 'downloads';
 
   /// The whole-mushaf download, a child of the saved-recitations route's

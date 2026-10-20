@@ -210,3 +210,9 @@ flutter:
     - family: QuranUthmani
       fonts:
         - asset: assets/fonts/UthmanicHafs_V22.ttf
+    # The same KFGQPC Hafs script at version 0.18, offered as a choice of
+    # face (QuranFont.hafsV18). Same encoding as the text, so the same marks;
+    # held to every codepoint of quran.db by quran_font_coverage_test.
+    - family: QuranUthmaniV18
+      fonts:
+        - asset: assets/fonts/KFGQPCHafs-Uthmanic-v18.ttf

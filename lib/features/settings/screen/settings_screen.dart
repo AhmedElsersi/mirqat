@@ -4,9 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/extensions/number_extensions.dart';
-import '../../../core/widgets/ayah_text.dart';
-import '../../../data/models/ayah.dart';
 import '../../../core/desktop.dart';
 import '../../../core/localization/app_localization.dart';
 import '../../../core/localization/locale_keys.dart';
@@ -57,10 +54,11 @@ class SettingsScreen extends StatelessWidget {
                     const _LanguageControl(),
                     _HomeViewControl(settings: settings, cubit: cubit),
                     _PageTurnControl(settings: settings, cubit: cubit),
-                    _FontSizeControl(
-                      settings: settings,
-                      cubit: cubit,
-                      previewAyah: state.previewAyah,
+                    SettingsLinkRow(
+                      icon: Icons.text_fields,
+                      title: LocaleKeys.mushafFontTitle.tr(),
+                      subtitle: LocaleKeys.mushafFontHint.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.mushafFontName),
                     ),
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsetsDirectional.zero,
@@ -416,51 +414,6 @@ class _PageTurnControl extends StatelessWidget {
   }
 }
 
-class _FontSizeControl extends StatelessWidget {
-  const _FontSizeControl({
-    required this.settings,
-    required this.cubit,
-    required this.previewAyah,
-  });
-
-  final AppSettings settings;
-  final SettingsCubit cubit;
-  final Ayah? previewAyah;
-
-  @override
-  Widget build(BuildContext context) {
-    return SetupSection(
-      label: LocaleKeys.settingsArabicFontSize.tr(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          LabelledSlider(
-            label: LocaleKeys.settingsArabicFontSize.tr(),
-            value: settings.arabicFontSize,
-            min: AppSettings.minArabicFontSize,
-            max: AppSettings.maxArabicFontSize,
-            divisions: 11,
-            valueLabel: settings.arabicFontSize.toLocalisedFixed(0),
-            onChanged: (double v) => cubit.setArabicFontSize(v.roundToDouble()),
-          ),
-          SizedBox(height: 8.h),
-          _FontPreview(fontSize: settings.arabicFontSize, ayah: previewAyah),
-          SizedBox(height: 8.h),
-          // What the slider does to a page is not obvious from a sample line,
-          // so it is said: past the middle, the page is no longer the printed
-          // page line for line.
-          Text(
-            LocaleKeys.settingsArabicFontSizeHint.tr(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ReciterControl extends StatelessWidget {
   const _ReciterControl({
     required this.settings,
@@ -485,36 +438,6 @@ class _ReciterControl extends StatelessWidget {
             settings.reciterId ??
             (state.reciters.isEmpty ? null : state.reciters.first.id),
         onChanged: (Reciter picked) => cubit.setReciter(picked.id),
-      ),
-    );
-  }
-}
-
-/// Shows the chosen size on a real ayah in the real mushaf face — the setting
-/// governs scripture, so previewing it with UI text would misrepresent both
-/// the size and the letterforms. Rendered through [AyahText] like every other
-/// piece of Quranic text in the app.
-class _FontPreview extends StatelessWidget {
-  const _FontPreview({required this.fontSize, required this.ayah});
-
-  final double fontSize;
-  final Ayah? ayah;
-
-  @override
-  Widget build(BuildContext context) {
-    final Ayah? sample = ayah;
-    if (sample == null) return const SizedBox.shrink();
-
-    return Container(
-      padding: EdgeInsetsDirectional.all(12.r),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: AyahText(
-        text: sample.text,
-        fontSize: fontSize,
-        textAlign: TextAlign.center,
       ),
     );
   }

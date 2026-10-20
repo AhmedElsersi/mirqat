@@ -326,5 +326,14 @@
     "empty": "No weak spots yet. Long-press an ayah in the mushaf and choose “I stumble here”.",
     "count": "Times marked: {}",
     "drill": "Drill this ayah"
+  },
+  "mushaf_font": {
+    "title": "Mushaf font",
+    "hint": "The typeface and its size, previewed on an ayah",
+    "face": "Typeface",
+    "preview": "Preview",
+    "only_matching": "Only typefaces made for this mushaf's script are offered, so every mark in it is drawn as it is, never changed.",
+    "hafs_v22": "Uthmanic Hafs — version 2.2 (default)",
+    "hafs_v18": "Uthmanic Hafs — version 0.18"
   }
 }
