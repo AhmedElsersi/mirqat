@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/features/mushaf/widgets/paper_turn.dart';
 
 /// The paper turn: the next page lying flat beneath the current one, and the
-/// current leaf folding over the spine across the whole drag — edge-on only
-/// as it lands. The geometry is tested as arithmetic; the widget is tested
+/// current leaf — an opaque sheet — folding over the spine across the whole
+/// drag: in a window the full half-turn of a bound page, edge-on at the
+/// middle and its blank back falling away past the binding; on a spread, to
+/// edge-on. The geometry is tested as arithmetic; the widget is tested
 /// inside the same kind of pager the mushaf uses — LTR axis, reversed.
 void main() {
   group('the pose', () {
@@ -22,30 +24,49 @@ void main() {
     test('the lift-off is gentle: near flat the angle grows slower than '
         'the drag', () {
       // Smoothstep: at a twentieth of the turn the fold is well under a
-      // twentieth of the way to edge-on.
+      // twentieth of the way through the sweep.
       final double early = PaperTurn.poseFor(0.05, spread: false).angle.abs();
-      expect(early, lessThan(0.05 * math.pi / 2));
+      expect(early, lessThan(0.05 * math.pi));
     });
 
-    test('the leaf is tied to the hand through the whole turn: halfway it is '
-        'half folded, and edge-on comes only as the turn lands', () {
+    test('a bound page turns the whole way over its spine: edge-on at the '
+        'middle of the drag, flat again — back first — as the turn lands', () {
       // Symmetric easing passes through its own middle: half the drag is
-      // half the fold.
+      // half the sweep, and the window's sweep is the full half-turn.
       expect(
         PaperTurn.poseFor(0.5, spread: false).angle,
-        closeTo(-math.pi / 4, 1e-9),
+        closeTo(-math.pi / 2, 1e-9),
       );
-      // Deep into the drag the leaf still shows its face…
+      // Deep into the drag the leaf is past edge-on, falling away over the
+      // binding…
       final double late = PaperTurn.poseFor(0.9, spread: false).angle.abs();
-      expect(late, lessThan(math.pi / 2));
-      // …and reaches edge-on only at the very end, where the pager lands and
-      // the page beneath simply is the page.
+      expect(late, greaterThan(math.pi / 2));
+      // …and completes the half-turn only as the pager lands, where the page
+      // beneath simply is the page.
       expect(
         PaperTurn.poseFor(0.999, spread: false).angle,
-        closeTo(-math.pi / 2, 0.01),
+        closeTo(-math.pi, 0.01),
       );
       expect(PaperTurn.poseFor(1.0, spread: false).angle, 0);
       expect(PaperTurn.poseFor(1.0, spread: false).turning, isFalse);
+    });
+
+    test('past edge-on the reader faces the sheet\'s back, never before', () {
+      expect(PaperTurn.poseFor(0.3, spread: false).showingBack, isFalse);
+      expect(PaperTurn.poseFor(0.5, spread: false).showingBack, isFalse);
+      expect(PaperTurn.poseFor(0.7, spread: false).showingBack, isTrue);
+      // At rest and beneath a turn there is no back to face.
+      expect(PaperTurn.poseFor(0, spread: false).showingBack, isFalse);
+      expect(PaperTurn.poseFor(-0.5, spread: false).showingBack, isFalse);
+    });
+
+    test('a spread\'s leaf is the whole opening, so its sweep still ends '
+        'edge-on and its back is never faced', () {
+      expect(
+        PaperTurn.poseFor(0.999, spread: true).angle,
+        closeTo(-math.pi / 2, 0.01),
+      );
+      expect(PaperTurn.poseFor(0.9, spread: true).showingBack, isFalse);
     });
 
     test('a positive delta is the leaf being lifted, about the spine — the '

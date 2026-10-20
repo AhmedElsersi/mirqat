@@ -12,14 +12,17 @@ class PaperTurnPose {
     required this.hinge,
     required this.turning,
     required this.hidden,
+    required this.showingBack,
     required this.shade,
     required this.underShade,
   });
 
-  /// Radians about the vertical hinge axis. Zero is a page lying flat. The
-  /// leaf folds through the **whole** scroll — edge-on, −π/2, is reached only
-  /// as the turn lands, the way a real page stays in hand until it is over
-  /// the spine and only then is let go.
+  /// Radians about the vertical hinge axis. Zero is a page lying flat. In a
+  /// window the leaf folds the whole way over the binding — −π as the turn
+  /// lands — passing edge-on at the middle of the drag, the way a bound page
+  /// turns over its spine and falls away. On a spread the sweep stops at
+  /// edge-on, −π/2: there the leaf is the whole opening, and a full fold
+  /// would lay its back over both pages.
   final double angle;
 
   /// Where the hinge is: the spine. To the right of the page in a window —
@@ -34,6 +37,11 @@ class PaperTurnPose {
   /// by the leaf being lifted off it, so the real element paints nothing —
   /// keeping its size and its state for the moment the turn lands on it.
   final bool hidden;
+
+  /// Whether the leaf has folded past edge-on, so what faces the reader is
+  /// the sheet's back: blank paper, never the print mirrored. The switch
+  /// falls exactly at edge-on, where the leaf has no width to be seen.
+  final bool showingBack;
 
   /// How deep the lifted leaf's own shadow runs, 0..1 — gathered along its
   /// free edge, which is rising away from the light.
@@ -50,11 +58,13 @@ class PaperTurnPose {
 /// The pager itself is untouched: the same [PageController] still owns the
 /// gesture, the keyboard and the session's own page turns. This only changes
 /// what a turn *looks like*: the next page lies flat under the current one,
-/// already whole, and the current leaf folds over the spine across the full
-/// drag — tied to the hand to the very end, and only there edge-on, where the
-/// pager lands and the page beneath simply *is* the page. A turn backward is
-/// the same scene run in reverse: the leaf comes back down over the page it
-/// had uncovered.
+/// already whole, and the current leaf — an opaque sheet of paper, the page
+/// beneath never showing through it — folds over the spine across the full
+/// drag. In a window it turns the way a bound page does: edge-on at the
+/// middle, then over the binding, its blank paper back falling away past the
+/// spine until the pager lands and the page beneath simply *is* the page. A
+/// turn backward is the same scene run in reverse: the leaf comes back over
+/// the binding and down onto the page it had uncovered.
 ///
 /// Mid-turn, both pages must therefore be painted at once, stacked — and a
 /// pager paints its later item over its earlier one, which is the wrong way
@@ -106,7 +116,7 @@ class PaperTurn extends StatefulWidget {
   /// the page being read, whatever the UI locale (CLAUDE.md A.2 rule 4) — on
   /// a spread it is the centre fold. A positive delta is this leaf being
   /// carried off: it folds about the spine, free edge swinging up toward the
-  /// reader, the way a hand lifts a mushaf's page over its binding. A
+  /// reader and on over the binding, the way a hand turns a bound page. A
   /// negative delta is this leaf lying beneath its predecessor's turn, where
   /// the predecessor paints its face; the real leaf hides.
   ///
@@ -123,6 +133,7 @@ class PaperTurn extends StatefulWidget {
         hinge: hinge,
         turning: false,
         hidden: false,
+        showingBack: false,
         shade: 0,
         underShade: 0,
       );
@@ -134,20 +145,30 @@ class PaperTurn extends StatefulWidget {
         hinge: hinge,
         turning: false,
         hidden: true,
+        showingBack: false,
         shade: 0,
         underShade: 0,
       );
     }
     final double progress = d * d * (3 - 2 * d);
+    // A bound page turns the whole way over its spine, so in a window the
+    // sweep is the full half-turn and edge-on falls at the middle of the
+    // drag. A spread's leaf is the whole opening — a full fold would lay its
+    // back over both pages — so there the sweep still ends edge-on.
+    final double sweep = spread ? math.pi / 2 : math.pi;
+    // How far the leaf has risen toward edge-on, 0..1: the part of the turn
+    // the light answers to. Past edge-on it only falls further away.
+    final double lift = spread ? progress : math.min(progress * 2, 1.0);
     return PaperTurnPose(
-      angle: -progress * math.pi / 2,
+      angle: -progress * sweep,
       hinge: hinge,
       turning: true,
       hidden: false,
+      showingBack: !spread && progress > 0.5,
       // The lifted leaf loses the light as it rises; the page beneath gains
       // it, its shadow deepest while the leaf still lies close over it.
-      shade: 0.32 * math.sin(progress * math.pi / 2),
-      underShade: 0.26 * math.cos(progress * math.pi / 2),
+      shade: 0.32 * math.sin(lift * math.pi / 2),
+      underShade: 0.26 * math.cos(lift * math.pi / 2),
     );
   }
 
@@ -171,6 +192,10 @@ class _PaperTurnState extends State<PaperTurn> {
     // The turning leaf's shadow, in the theme's own ink — the same ink the
     // fold between two facing pages is drawn with.
     final Color ink = Theme.of(context).colorScheme.shadow;
+    // The sheet itself. A mushaf page paints only its frame and its letters,
+    // so without this the page beneath would show through the lifted leaf;
+    // paper is opaque, and the leaf carries its own.
+    final Color paper = Theme.of(context).scaffoldBackgroundColor;
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints box) => AnimatedBuilder(
         animation: widget.controller,
@@ -247,6 +272,18 @@ class _PaperTurnState extends State<PaperTurn> {
                     child: Stack(
                       fit: StackFit.passthrough,
                       children: <Widget>[
+                        // The paper the page is printed on, under the print.
+                        // Only while the leaf is in the air: at rest the
+                        // page lies on the very background this would paint.
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: ColoredBox(
+                              color: paper.withValues(
+                                alpha: pose.turning ? 1 : 0,
+                              ),
+                            ),
+                          ),
+                        ),
                         leaf!,
                         // The lifted leaf falls into its own shadow, gathered
                         // along the free edge rising away from the light.
@@ -264,6 +301,31 @@ class _PaperTurnState extends State<PaperTurn> {
                                 ),
                               ),
                             ),
+                          ),
+                        ),
+                        // Past edge-on the reader faces the sheet's back:
+                        // blank paper in its own shade, never the print
+                        // mirrored. It appears exactly at edge-on, where the
+                        // leaf has no width for the swap to be seen on.
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: !pose.showingBack
+                                ? const SizedBox.shrink()
+                                : DecoratedBox(
+                                    decoration: BoxDecoration(color: paper),
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.centerRight,
+                                          end: Alignment.centerLeft,
+                                          colors: <Color>[
+                                            ink.withValues(alpha: 0.08),
+                                            ink.withValues(alpha: 0.2),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
