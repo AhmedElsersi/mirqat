@@ -30,6 +30,7 @@ class MushafPageView extends StatefulWidget {
     required this.highlighted,
     this.veiled,
     this.memorizationView = MemorizationView.off,
+    this.stumbled = const <AyahRef>{},
     this.marked,
     this.ribbon = true,
     required this.selected,
@@ -59,6 +60,10 @@ class MushafPageView extends StatefulWidget {
   /// place and bytes untouched — and a tap on a covered word reveals its ayah
   /// until the next tap.
   final MemorizationView memorizationView;
+
+  /// Ayahs the reader stumbles at, dotted underneath. Empty when the reader
+  /// has asked for the page without them.
+  final Set<AyahRef> stumbled;
 
   /// The ayah the reader marked as where they stopped, if it is on this page.
   final AyahRef? marked;
@@ -324,6 +329,7 @@ class _MushafPageViewState extends State<MushafPageView> {
           painter: _TintBands(
             widths: <double>[for (final Word w in words) _width(w) * fontSize],
             tints: <WordTint>[for (final Word w in words) _tintFor(w)],
+            underlined: <bool>[for (final Word w in words) _isStumbled(w)],
             centredGap: centered ? fontSize * _minGapEm : null,
             bandHeight: fontSize * _lineHeight,
             colors: Theme.of(context).colorScheme,
@@ -425,6 +431,11 @@ class _MushafPageViewState extends State<MushafPageView> {
     return WordTint.none;
   }
 
+  /// Whether [w] belongs to an ayah the reader stumbles at. Its marker too:
+  /// the dots then run to the ayah's end, as a pencil line would.
+  bool _isStumbled(Word w) =>
+      !(widget.isHeldBack?.call(w) ?? false) && widget.stumbled.contains(w.ref);
+
   /// Whether [w]'s ink is withheld: a word of the ayah a recall round is
   /// asking back, or one the memorization view covers and the reader has not
   /// uncovered. The ayah-number medallion never is — it says which ayah is
@@ -462,6 +473,7 @@ class _TintBands extends CustomPainter {
   const _TintBands({
     required this.widths,
     required this.tints,
+    required this.underlined,
     required this.centredGap,
     required this.bandHeight,
     required this.colors,
@@ -469,6 +481,10 @@ class _TintBands extends CustomPainter {
 
   final List<double> widths;
   final List<WordTint> tints;
+
+  /// Words dotted underneath: a stumbled ayah's. A line of dots rather than a
+  /// tint, so it never competes with the recitation's band or the mark's.
+  final List<bool> underlined;
 
   /// The fixed gap of a centred line, or null for a justified one.
   final double? centredGap;
@@ -489,6 +505,7 @@ class _TintBands extends CustomPainter {
         ? size.width
         : (size.width + total + gap * (n - 1)) / 2;
     final double top = (size.height - bandHeight) / 2;
+    final double runStart = right;
 
     int i = 0;
     while (i < n) {
@@ -517,6 +534,22 @@ class _TintBands extends CustomPainter {
       }
       i = j;
     }
+
+    if (!underlined.contains(true)) return;
+    final Paint dot = Paint()..color = colors.error.withValues(alpha: 0.75);
+    final double radius = (bandHeight * 0.022).clamp(0.8, 2.0);
+    final double step = radius * 3.5;
+    final double y = top + bandHeight - radius * 2;
+    double wordRight = runStart;
+    for (int k = 0; k < n; k++) {
+      final double wordLeft = wordRight - widths[k];
+      if (underlined[k]) {
+        for (double x = wordRight - radius; x >= wordLeft; x -= step) {
+          canvas.drawCircle(Offset(x, y), radius, dot);
+        }
+      }
+      wordRight = wordLeft - gap;
+    }
   }
 
   @override
@@ -525,7 +558,8 @@ class _TintBands extends CustomPainter {
       old.bandHeight != bandHeight ||
       old.colors != colors ||
       !_same(old.widths, widths) ||
-      !_same(old.tints, tints);
+      !_same(old.tints, tints) ||
+      !_same(old.underlined, underlined);
 
   static bool _same<T>(List<T> a, List<T> b) {
     if (a.length != b.length) return false;

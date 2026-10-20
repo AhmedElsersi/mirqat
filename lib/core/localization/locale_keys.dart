@@ -120,6 +120,9 @@ class LocaleKeys {
 
   static const String mushafAyahReference = 'mushaf.ayah_reference';
   static const String mushafBack = 'mushaf.back';
+  static const String mushafStumbleHere = 'mushaf.stumble_here';
+  static const String mushafClearStumble = 'mushaf.clear_stumble';
+  static const String mushafStumbleMarked = 'mushaf.stumble_marked';
   static const String mushafClearRange = 'mushaf.clear_range';
   static const String mushafHintLongPress = 'mushaf.hint_long_press';
   static const String mushafHizbLabel = 'mushaf.hizb_label';
@@ -276,6 +279,13 @@ class LocaleKeys {
   static const String settingsLanguageEn = 'settings.language_en';
   static const String settingsRangeLastUsed = 'settings.range_last_used';
   static const String settingsRangeWholeSurah = 'settings.range_whole_surah';
+  static const String weakSpotsTitle = 'weak_spots.title';
+  static const String weakSpotsHint = 'weak_spots.hint';
+  static const String weakSpotsEmpty = 'weak_spots.empty';
+  static const String weakSpotsCount = 'weak_spots.count';
+  static const String weakSpotsDrill = 'weak_spots.drill';
+  static const String settingsShowStumbles = 'settings.show_stumbles';
+  static const String settingsShowStumblesHint = 'settings.show_stumbles_hint';
   static const String settingsReadingRibbon = 'settings.reading_ribbon';
   static const String settingsReadingRibbonHint =
       'settings.reading_ribbon_hint';

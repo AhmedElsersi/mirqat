@@ -29,6 +29,7 @@ import '../../features/settings/cubit/mushaf_download_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
 import '../../features/update/cubit/update_cubit.dart';
+import '../../features/weak_spots/cubit/weak_spots_cubit.dart';
 import '../../services/app_info_service.dart';
 import '../../services/app_version_service.dart';
 import '../../services/audio/audio_availability.dart';
@@ -225,6 +226,12 @@ Future<void> configureDependencies() async {
   );
   sl.registerFactory<ProgressCubit>(
     () => ProgressCubit(
+      quranRepository: sl<QuranRepository>(),
+      progressRepository: sl<ProgressRepository>(),
+    ),
+  );
+  sl.registerFactory<WeakSpotsCubit>(
+    () => WeakSpotsCubit(
       quranRepository: sl<QuranRepository>(),
       progressRepository: sl<ProgressRepository>(),
     ),

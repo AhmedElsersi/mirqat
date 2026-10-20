@@ -105,8 +105,7 @@ class RecallStep extends PlanStep {
 /// range that runs on into the next surah recites that link, so it is
 /// tested too.
 class ChainStep extends PlanStep {
-  const ChainStep({required this.cue, required this.next})
-    : super(repeats: 1);
+  const ChainStep({required this.cue, required this.next}) : super(repeats: 1);
 
   final AyahRef cue;
   final AyahRef next;

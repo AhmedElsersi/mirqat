@@ -45,7 +45,9 @@ class PlaybackUnit extends Equatable {
   /// Which repetition of the step this is, 1-based.
   final int repeatIndex;
 
-  /// Always equal to the config's `repeatCount`.
+  /// How many times the owning step is played through: the config's
+  /// `repeatCount` for most steps, more for an ayah being reinforced, the
+  /// recall rounds for a recall step.
   final int totalRepeats;
 
   /// Block bounds of the owning step, for highlighting the whole block while

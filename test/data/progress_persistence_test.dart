@@ -158,4 +158,112 @@ void main() {
       }, (_) => fail('expected a Left'));
     });
   });
+
+  group('stumbles', () {
+    test(
+      'marking counts up and stamps the time; clearing keeps the rest',
+      () async {
+        final ProgressLocalDataSource source = await openSource();
+        await source.recordRepeats(2, 5, 4);
+        await source.markStumble(2, 5, at: DateTime(2026, 10, 1));
+        await source.markStumble(2, 5, at: DateTime(2026, 10, 2));
+
+        MemorizationProgress p = await source.get(2, 5);
+        expect(p.stumbles, 2);
+        expect(p.lastStumbleAt, DateTime(2026, 10, 2));
+        expect(p.cumulativeRepeats, 4);
+
+        await source.clearStumble(2, 5);
+        p = await source.get(2, 5);
+        expect(p.stumbles, 0);
+        expect(p.lastStumbleAt, isNull);
+        expect(p.cumulativeRepeats, 4, reason: 'only the mark comes off');
+      },
+    );
+
+    test('lists the stumbled ayahs alone, the most recent first', () async {
+      final ProgressLocalDataSource source = await openSource();
+      await source.recordRepeats(1, 1, 3);
+      await source.markStumble(1, 4, at: DateTime(2026, 10, 1));
+      await source.markStumble(3, 2, at: DateTime(2026, 10, 5));
+      await source.markStumble(2, 7, at: DateTime(2026, 10, 3));
+
+      final List<MemorizationProgress> list = await source.stumbled();
+      expect(list.map((MemorizationProgress p) => p.storageKey), <String>[
+        '3:2',
+        '2:7',
+        '1:4',
+      ]);
+    });
+
+    test('a malformed record costs that record, never the list', () async {
+      final ProgressLocalDataSource source = await openSource();
+      await source.markStumble(1, 2);
+      final Box<Map<dynamic, dynamic>> box = Hive.box<Map<dynamic, dynamic>>(
+        'memorization_progress',
+      );
+      await box.put('9:9', <String, dynamic>{'surahNumber': 'nine'});
+
+      final List<MemorizationProgress> list = await source.stumbled();
+      expect(list.single.storageKey, '1:2');
+    });
+
+    test('a record from before stumbles reads as having none', () {
+      final MemorizationProgress p = MemorizationProgress.fromMap(
+        <String, dynamic>{
+          'surahNumber': 1,
+          'ayahNumber': 2,
+          'status': 'memorized',
+          'cumulativeRepeats': 9,
+        },
+      );
+      expect(p.stumbles, 0);
+      expect(p.isStumbled, isFalse);
+      expect(p.status, MemorizationStatus.memorized);
+    });
+
+    test('a stumble count of the wrong type reads as none', () {
+      final MemorizationProgress p = MemorizationProgress.fromMap(
+        <String, dynamic>{
+          'surahNumber': 1,
+          'ayahNumber': 2,
+          'stumbles': 'three',
+          'lastStumbleAt': 12,
+        },
+      );
+      expect(p.stumbles, 0);
+      expect(p.lastStumbleAt, isNull);
+    });
+
+    test('round-trips through the storage map', () {
+      final MemorizationProgress p = MemorizationProgress(
+        surahNumber: 4,
+        ayahNumber: 11,
+        stumbles: 2,
+        lastStumbleAt: DateTime(2026, 10, 20, 8),
+      );
+      expect(MemorizationProgress.fromMap(p.toMap()), p);
+    });
+
+    test('clearing a surah clears its stumbles too', () async {
+      final ProgressLocalDataSource source = await openSource();
+      await source.markStumble(1, 3);
+      await source.clearSurah(1, 7);
+      expect(await source.stumbled(), isEmpty);
+    });
+
+    test('the repository reports the same through Either', () async {
+      final ProgressRepository repo = ProgressRepositoryImpl(
+        await openSource(),
+      );
+      await repo.markStumble(2, 1);
+      final Either<Failure, List<MemorizationProgress>> r = await repo
+          .stumbled();
+      expect(r.isRight(), isTrue);
+      expect(
+        r.getOrElse(() => const <MemorizationProgress>[]).single.storageKey,
+        '2:1',
+      );
+    });
+  });
 }

@@ -21,6 +21,7 @@ import '../../../services/share_service.dart';
 import '../../session/cubit/session_cubit.dart';
 import '../../session/cubit/session_state.dart';
 import '../../session/default_range.dart';
+import '../../session/session_request.dart';
 import '../../session/widgets/session_bar.dart';
 import '../../session/widgets/session_sheet.dart';
 import '../../settings/cubit/settings_cubit.dart';
@@ -55,7 +56,21 @@ class MushafScreen extends StatelessWidget {
         ),
         // The session belongs to the reading screen: it plays over this text
         // and ends when the screen is left.
-        BlocProvider<SessionCubit>(create: (_) => sl<SessionCubit>()..load()),
+        BlocProvider<SessionCubit>(
+          create: (_) {
+            final SessionCubit session = sl<SessionCubit>();
+            final SessionRequest? request = args.session;
+            // A session asked for on the way in is set up once the catalog
+            // and the reciters are known — by then the page is on screen to
+            // follow it.
+            session.load().then((_) {
+              if (request != null && !session.isClosed) {
+                session.applyRequest(request);
+              }
+            });
+            return session;
+          },
+        ),
       ],
       child: const MushafView(),
     );
@@ -710,6 +725,17 @@ class _PageSlot extends StatelessWidget {
           (SettingsCubit c) => c.state.settings.showReadingRibbon,
         );
 
+        // The ayahs the reader stumbles at, unless they asked for the page
+        // without them.
+        final Set<AyahRef> stumbled =
+            context.select<SettingsCubit, bool>(
+              (SettingsCubit c) => c.state.settings.showStumbles,
+            )
+            ? context.select<SessionCubit, Set<AyahRef>>(
+                (SessionCubit c) => c.state.stumbled,
+              )
+            : const <AyahRef>{};
+
         final MemorizationView memorizationView = context
             .select<SettingsCubit, MemorizationView>(
               (SettingsCubit c) => c.state.settings.memorizationView,
@@ -722,6 +748,7 @@ class _PageSlot extends StatelessWidget {
           highlighted: state.highlighted,
           veiled: state.veiled,
           memorizationView: memorizationView,
+          stumbled: stumbled,
           marked: readingMark,
           ribbon: ribbon,
           selected: state.selected,
@@ -771,6 +798,7 @@ class _PageSlot extends StatelessWidget {
             mark != null &&
             mark.surahNumber == ayah.surah &&
             mark.ayahNumber == ayah.ayah,
+        isStumbled: session.state.stumbled.contains(ayah),
       ),
     );
     if (!cubit.isClosed) cubit.clearSelection();
@@ -802,6 +830,15 @@ class _PageSlot extends StatelessWidget {
         session.setEnd(ayah);
       case AyahAction.clearRange:
         session.clearRange();
+      case AyahAction.stumble:
+        await session.markStumble(ayah);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(LocaleKeys.mushafStumbleMarked.tr())),
+          );
+        }
+      case AyahAction.clearStumble:
+        await session.clearStumble(ayah);
     }
   }
 

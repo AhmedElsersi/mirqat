@@ -21,8 +21,6 @@ abstract final class RecallGap {
   /// there is no measurement to size it from.
   static Duration of(Duration? clip) => clip == null
       ? fallback
-      : Duration(
-          microseconds: (clip.inMicroseconds * clipFactor).round(),
-        ) +
-          margin;
+      : Duration(microseconds: (clip.inMicroseconds * clipFactor).round()) +
+            margin;
 }

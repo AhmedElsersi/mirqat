@@ -182,6 +182,7 @@ class AppSettings extends Equatable {
     this.downloadOverWifiOnly = true,
     this.showReadingRibbon = true,
     this.memorizationView = MemorizationView.off,
+    this.showStumbles = true,
     this.onboardingSeen = false,
     this.updatePromptedAt,
   });
@@ -264,6 +265,10 @@ class AppSettings extends Equatable {
   /// Off by default: the page is the printed page until the reader asks.
   final MemorizationView memorizationView;
 
+  /// Whether ayahs the reader stumbles at are dotted on the page. On by
+  /// default; the marks still make the drill longer either way.
+  final bool showStumbles;
+
   /// Whether the introduction has been shown. False for a fresh install —
   /// and for one updating from before there was an introduction, which is
   /// deliberate: that update is also when the player screen went away, and
@@ -305,6 +310,7 @@ class AppSettings extends Equatable {
     bool? downloadOverWifiOnly,
     bool? showReadingRibbon,
     MemorizationView? memorizationView,
+    bool? showStumbles,
     bool? onboardingSeen,
     DateTime? updatePromptedAt,
   }) => AppSettings(
@@ -336,6 +342,7 @@ class AppSettings extends Equatable {
     downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
     showReadingRibbon: showReadingRibbon ?? this.showReadingRibbon,
     memorizationView: memorizationView ?? this.memorizationView,
+    showStumbles: showStumbles ?? this.showStumbles,
     onboardingSeen: onboardingSeen ?? this.onboardingSeen,
     updatePromptedAt: updatePromptedAt ?? this.updatePromptedAt,
   );
@@ -374,6 +381,7 @@ class AppSettings extends Equatable {
     'downloadOverWifiOnly': downloadOverWifiOnly,
     'showReadingRibbon': showReadingRibbon,
     'memorizationView': memorizationView.storageValue,
+    'showStumbles': showStumbles,
     'onboardingSeen': onboardingSeen,
     'updatePromptedAt': updatePromptedAt?.millisecondsSinceEpoch,
   };
@@ -432,6 +440,7 @@ class AppSettings extends Equatable {
     downloadOverWifiOnly: map['downloadOverWifiOnly'] as bool? ?? true,
     showReadingRibbon: map['showReadingRibbon'] as bool? ?? true,
     memorizationView: MemorizationView.fromStorage(map['memorizationView']),
+    showStumbles: map['showStumbles'] != false,
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
     updatePromptedAt: map['updatePromptedAt'] is int
         ? DateTime.fromMillisecondsSinceEpoch(map['updatePromptedAt'] as int)
@@ -481,6 +490,7 @@ class AppSettings extends Equatable {
     downloadOverWifiOnly,
     showReadingRibbon,
     memorizationView,
+    showStumbles,
     onboardingSeen,
     updatePromptedAt,
   ];

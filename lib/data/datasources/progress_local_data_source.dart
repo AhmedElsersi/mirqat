@@ -41,6 +41,17 @@ abstract class ProgressLocalDataSource {
 
   Future<void> clearSurah(int surahNumber, int ayahCount);
 
+  /// Counts one more stumble on an ayah and stamps it [at].
+  Future<void> markStumble(int surahNumber, int ayahNumber, {DateTime? at});
+
+  /// Takes the stumble mark off an ayah. Its repeats and status stay.
+  Future<void> clearStumble(int surahNumber, int ayahNumber);
+
+  /// Every ayah carrying a stumble mark, the most recently marked first. A
+  /// record that cannot be read is left out rather than failing the list —
+  /// one bad record must not hide every other weak spot.
+  Future<List<MemorizationProgress>> stumbled();
+
   /// Fires once per record written, for screens that show a progress summary
   /// they did not write themselves.
   ///
@@ -167,6 +178,58 @@ class ProgressLocalDataSourceImpl implements ProgressLocalDataSource {
       );
     }
   }
+
+  @override
+  Future<void> markStumble(
+    int surahNumber,
+    int ayahNumber, {
+    DateTime? at,
+  }) async {
+    final MemorizationProgress current = await get(surahNumber, ayahNumber);
+    await save(
+      current.copyWith(
+        stumbles: current.stumbles + 1,
+        lastStumbleAt: at ?? DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> clearStumble(int surahNumber, int ayahNumber) async {
+    final MemorizationProgress current = await get(surahNumber, ayahNumber);
+    if (!current.isStumbled) return;
+    await save(current.copyWith(clearStumbles: true));
+  }
+
+  @override
+  Future<List<MemorizationProgress>> stumbled() async {
+    final List<MemorizationProgress> out = <MemorizationProgress>[];
+    for (final Map<dynamic, dynamic> stored in _requireBox.values) {
+      final MemorizationProgress record;
+      try {
+        record = MemorizationProgress.fromMap(stored);
+      } catch (_) {
+        continue;
+      }
+      if (record.isStumbled) out.add(record);
+    }
+    out.sort((MemorizationProgress a, MemorizationProgress b) {
+      final DateTime? x = a.lastStumbleAt;
+      final DateTime? y = b.lastStumbleAt;
+      if (x == null || y == null) {
+        if (x == y) return _mushafOrder(a, b);
+        return x == null ? 1 : -1;
+      }
+      final int byTime = y.compareTo(x);
+      return byTime != 0 ? byTime : _mushafOrder(a, b);
+    });
+    return List<MemorizationProgress>.unmodifiable(out);
+  }
+
+  static int _mushafOrder(MemorizationProgress a, MemorizationProgress b) =>
+      a.surahNumber != b.surahNumber
+      ? a.surahNumber - b.surahNumber
+      : a.ayahNumber - b.ayahNumber;
 
   @override
   Stream<void> watchChanges() => _requireBox.watch();

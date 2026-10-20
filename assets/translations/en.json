@@ -118,7 +118,9 @@
     "version": "Version {} ({})",
     "arabic_font_size_hint": "At the default size (24) the page is as it is printed, line for line. Larger, the page's lines are re-filled at the bigger size and the page scrolls; the words, their order and their page do not change.",
     "reading_ribbon": "Bookmark ribbon",
-    "reading_ribbon_hint": "A translucent ribbon hung on the page you stopped at"
+    "reading_ribbon_hint": "A translucent ribbon hung on the page you stopped at",
+    "show_stumbles": "Show stumbles",
+    "show_stumbles_hint": "Light dots under the ayahs you stumble at"
   },
   "duration": {
     "minutes": "{} min",
@@ -165,7 +167,10 @@
     "mark_here": "Mark: I stopped at this ayah",
     "unmark": "Remove the reading mark",
     "share_ayah": "Share this ayah as an image",
-    "share": "Share"
+    "share": "Share",
+    "stumble_here": "I stumble here",
+    "clear_stumble": "Clear the stumble mark",
+    "stumble_marked": "Noted. This ayah will be repeated more in your sessions."
   },
   "downloads": {
     "section": "Offline audio",
@@ -314,5 +319,12 @@
     "first_words": "First words",
     "markers_only": "Hidden",
     "hint": "Covers the page's words so you can test yourself as you read: keep the first word of each ayah as a cue, or cover every ayah. Tap a covered word to reveal its ayah."
+  },
+  "weak_spots": {
+    "title": "Weak spots",
+    "hint": "The ayahs you marked as ones you stumble at",
+    "empty": "No weak spots yet. Long-press an ayah in the mushaf and choose “I stumble here”.",
+    "count": "Times marked: {}",
+    "drill": "Drill this ayah"
   }
 }

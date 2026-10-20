@@ -7,6 +7,7 @@ import 'package:just_audio/just_audio.dart' as ja;
 import '../../../core/error/exceptions.dart';
 import '../../../core/error/failures.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/memorization_progress.dart';
 import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/repositories/progress_repository.dart';
@@ -22,6 +23,7 @@ import '../../../services/audio/memorization_player_service.dart';
 import '../../../services/audio/playback_queue.dart';
 import '../../../services/audio/reciter_catalog.dart';
 import '../../../services/keep_awake_service.dart';
+import '../session_request.dart';
 import 'session_state.dart';
 
 /// The memorization session of one reading screen: what it would be, and —
@@ -89,6 +91,7 @@ class SessionCubit extends Cubit<SessionState> {
     final AppSettings settings = (await _settings.read()).getOrElse(
       () => const AppSettings(),
     );
+    final Set<AyahRef> stumbled = await _readStumbled();
     if (isClosed) return;
 
     emit(
@@ -100,8 +103,45 @@ class SessionCubit extends Cubit<SessionState> {
             .where((Reciter r) => r.id == settings.reciterId)
             .firstOrNull,
         defaults: settings,
+        stumbled: stumbled,
       ),
     );
+  }
+
+  // --- stumbles -------------------------------------------------------------
+
+  /// Every stumbled ayah, as a set. Storage that cannot be read costs the
+  /// marks, never the session.
+  Future<Set<AyahRef>> _readStumbled() async =>
+      (await _progress.stumbled()).fold(
+        (Failure _) => const <AyahRef>{},
+        (List<MemorizationProgress> records) => <AyahRef>{
+          for (final MemorizationProgress r in records)
+            AyahRef(r.surahNumber, r.ayahNumber),
+        },
+      );
+
+  /// The reader slips at [ayah]: it is marked on the page, and the next plan
+  /// over it drills it more. A plan already playing is left as it is.
+  Future<void> markStumble(AyahRef ayah) async {
+    await _progress.markStumble(ayah.surah, ayah.ayah);
+    await refreshStumbles();
+  }
+
+  Future<void> clearStumble(AyahRef ayah) async {
+    await _progress.clearStumble(ayah.surah, ayah.ayah);
+    await refreshStumbles();
+  }
+
+  /// Reads the marks again — after they were changed here, or elsewhere.
+  Future<void> refreshStumbles() async {
+    final Set<AyahRef> stumbled = await _readStumbled();
+    if (isClosed || setEquals(stumbled, state.stumbled)) return;
+    emit(state.copyWith(stumbled: stumbled));
+    // The plan that would play next drills the new marks; nothing about the
+    // running session changes, so nothing is asked.
+    final SessionConfig? config = state.config;
+    if (config != null) _apply(config, rangeChosen: state.rangeChosen);
   }
 
   // --- the range -----------------------------------------------------------
@@ -171,6 +211,17 @@ class SessionCubit extends Cubit<SessionState> {
     final result = await _settings.save(next);
     if (isClosed) return;
     result.fold((Failure _) {}, (_) => emit(state.copyWith(defaults: next)));
+  }
+
+  /// Sets up the session a screen was opened for: its range, chosen; its
+  /// preset over the reader's defaults; and, if asked, starts it.
+  Future<void> applyRequest(SessionRequest request) async {
+    if (!state.ready) return;
+    chooseRange(_clamped(request.from), _clamped(request.to));
+    final SessionConfig? config = state.config;
+    if (config == null) return;
+    _apply(request.preset.applyTo(config), rangeChosen: true);
+    if (request.autostart && state.canStart) await start();
   }
 
   /// A range the reader picked — from an ayah's actions, or the sheet.
@@ -343,8 +394,16 @@ class SessionCubit extends Cubit<SessionState> {
       betweenStepsPauseMs: draft.betweenStepsPauseMs,
     );
     if (next == active.config) return;
-    final SessionPlan? plan = _build(next);
-    if (plan == null) return;
+    // The same steps and plays, with new gaps: the gaps live in the config
+    // and the queue, never in the plan's units. Rebuilding instead would
+    // pick up anything that changed since the session began — a stumble
+    // marked meanwhile adds plays — and the play it resumes at would no
+    // longer be the one it was on.
+    final SessionPlan plan = SessionPlan(
+      config: next,
+      steps: active.steps,
+      units: active.units,
+    );
     final PlaybackUnit? unit = state.currentUnit;
     await _run(
       plan,
@@ -647,7 +706,7 @@ class SessionCubit extends Cubit<SessionState> {
 
   void _apply(SessionConfig config, {required bool rangeChosen}) {
     final (SessionPlan? plan, String? error) = _builder
-        .build(config, ayahCounts: state.ayahCounts)
+        .build(config, ayahCounts: state.ayahCounts, reinforce: state.stumbled)
         .fold((Failure f) => (null, f.message), (SessionPlan p) => (p, null));
     emit(
       state.copyWith(
@@ -661,10 +720,6 @@ class SessionCubit extends Cubit<SessionState> {
     );
     unawaited(_estimate());
   }
-
-  SessionPlan? _build(SessionConfig config) => _builder
-      .build(config, ayahCounts: state.ayahCounts)
-      .fold((Failure _) => null, (SessionPlan plan) => plan);
 
   /// Adds up real clip lengths for the summary. Only when every surah of the
   /// range can be measured on the device; otherwise there is no honest number

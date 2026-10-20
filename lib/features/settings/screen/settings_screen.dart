@@ -70,6 +70,14 @@ class SettingsScreen extends StatelessWidget {
                       value: settings.showReadingRibbon,
                       onChanged: cubit.setShowReadingRibbon,
                     ),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsetsDirectional.zero,
+                      secondary: const Icon(Icons.flag_outlined),
+                      title: Text(LocaleKeys.settingsShowStumbles.tr()),
+                      subtitle: Text(LocaleKeys.settingsShowStumblesHint.tr()),
+                      value: settings.showStumbles,
+                      onChanged: cubit.setShowStumbles,
+                    ),
                     MemorizationViewControl(
                       value: settings.memorizationView,
                       onChanged: cubit.setMemorizationView,
@@ -124,6 +132,12 @@ class SettingsScreen extends StatelessWidget {
                       subtitle: LocaleKeys.settingsSectionSessionHint.tr(),
                       onTap: () =>
                           context.pushNamed(AppRoutes.sessionSettingsName),
+                    ),
+                    SettingsLinkRow(
+                      icon: Icons.flag_outlined,
+                      title: LocaleKeys.weakSpotsTitle.tr(),
+                      subtitle: LocaleKeys.weakSpotsHint.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.weakSpotsName),
                     ),
                   ],
                 ),

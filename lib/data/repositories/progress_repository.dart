@@ -31,6 +31,18 @@ abstract class ProgressRepository {
 
   Future<Either<Failure, Unit>> clearSurah(int surahNumber, int ayahCount);
 
+  /// The reader says they slip at this ayah.
+  Future<Either<Failure, Unit>> markStumble(
+    int surahNumber,
+    int ayahNumber, {
+    DateTime? at,
+  });
+
+  Future<Either<Failure, Unit>> clearStumble(int surahNumber, int ayahNumber);
+
+  /// Every stumbled ayah, the most recently marked first.
+  Future<Either<Failure, List<MemorizationProgress>>> stumbled();
+
   /// Emits whenever any progress record is written, by anyone.
   ///
   /// Deliberately `void` rather than the changed record: every listener here
@@ -77,6 +89,21 @@ class ProgressRepositoryImpl implements ProgressRepository {
   @override
   Future<Either<Failure, Unit>> clearSurah(int surahNumber, int ayahCount) =>
       _guardUnit(() => _local.clearSurah(surahNumber, ayahCount));
+
+  @override
+  Future<Either<Failure, Unit>> markStumble(
+    int surahNumber,
+    int ayahNumber, {
+    DateTime? at,
+  }) => _guardUnit(() => _local.markStumble(surahNumber, ayahNumber, at: at));
+
+  @override
+  Future<Either<Failure, Unit>> clearStumble(int surahNumber, int ayahNumber) =>
+      _guardUnit(() => _local.clearStumble(surahNumber, ayahNumber));
+
+  @override
+  Future<Either<Failure, List<MemorizationProgress>>> stumbled() =>
+      _guard(_local.stumbled);
 
   @override
   Stream<void> get changes => _local.watchChanges();

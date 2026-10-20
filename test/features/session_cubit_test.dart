@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mirqat/core/error/failures.dart';
 import 'package:mirqat/data/models/app_settings.dart';
+import 'package:mirqat/data/models/memorization_progress.dart';
 import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/data/repositories/progress_repository.dart';
@@ -16,6 +17,7 @@ import 'package:mirqat/domain/entities/session_config.dart';
 import 'package:mirqat/domain/entities/session_plan.dart';
 import 'package:mirqat/features/session/cubit/session_cubit.dart';
 import 'package:mirqat/features/session/cubit/session_state.dart';
+import 'package:mirqat/features/session/session_request.dart';
 import 'package:mirqat/services/audio/ayah_duration_service.dart';
 import 'package:mirqat/services/audio/reciter_catalog.dart';
 import 'package:mirqat/services/keep_awake_service.dart';
@@ -553,6 +555,133 @@ void main() {
     });
   });
 
+  group('stumbles', () {
+    test(
+      'marks stored before the screen opened are read with the catalog',
+      () async {
+        progress.stumbles[const AyahRef(1, 2)] = 3;
+        final SessionCubit cubit = await open(reciterId: 'b');
+        expect(cubit.state.stumbled, <AyahRef>{const AyahRef(1, 2)});
+      },
+    );
+
+    test(
+      'a stumbled ayah in the range is drilled more; the rest as set',
+      () async {
+        final SessionCubit cubit = await open(reciterId: 'b');
+        cubit.chooseRange(s1a1, s1a3);
+        cubit.setConnectMode(ConnectMode.none);
+        cubit.setRepeatCount(3);
+        await cubit.markStumble(const AyahRef(1, 2));
+
+        final List<PlanStep> learns = cubit.state.plan!.steps
+            .whereType<LearnStep>()
+            .toList();
+        expect(learns.map((PlanStep s) => s.repeats), <int>[
+          3,
+          3 + RepetitionPlanBuilder.reinforceExtra,
+          3,
+        ]);
+      },
+    );
+
+    test('clearing the mark puts the drill back', () async {
+      progress.stumbles[const AyahRef(1, 2)] = 1;
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.clearStumble(const AyahRef(1, 2));
+      expect(cubit.state.stumbled, isEmpty);
+      expect(
+        cubit.state.plan!.steps.whereType<LearnStep>().map(
+          (PlanStep s) => s.repeats,
+        ),
+        everyElement(cubit.state.config!.repeatCount),
+      );
+    });
+
+    test('a mark made mid-session leaves the running session alone, and a '
+        'pause change still resumes at the very play it was on', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      final SessionPlan running = cubit.state.activePlan!;
+      player.reach(running.units[4]);
+      await settle();
+
+      await cubit.markStumble(s1a1);
+      expect(cubit.state.hasPendingChange, isFalse);
+      expect(cubit.state.activePlan, running);
+
+      cubit.setBetweenStepsPause(2000);
+      await settle();
+      expect(player.loads.last.plan.steps, running.steps);
+      expect(player.loads.last.startAtUnit, 4);
+    });
+  });
+
+  group('a session asked for on the way in', () {
+    test('chooses its range and lays its preset over the defaults', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      await cubit.applyRequest(
+        const SessionRequest(
+          from: AyahRef(1, 2),
+          to: s1a3,
+          preset: SessionPreset(
+            repeatCount: 1,
+            connectMode: ConnectMode.continuous,
+            recallRounds: 1,
+          ),
+        ),
+      );
+      final SessionConfig c = cubit.state.config!;
+      expect(cubit.state.rangeChosen, isTrue);
+      expect(c.start, const AyahRef(1, 2));
+      expect(c.end, s1a3);
+      expect(c.repeatCount, 1);
+      expect(c.connectMode, ConnectMode.continuous);
+      expect(c.recallRounds, 1);
+      expect(
+        cubit.state.phase,
+        SessionPhase.idle,
+        reason: 'not asked to start',
+      );
+    });
+
+    test('starts when asked to', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      await cubit.applyRequest(
+        const SessionRequest(from: s1a1, to: s1a1, autostart: true),
+      );
+      expect(cubit.state.phase, SessionPhase.active);
+      expect(player.loads.single.plan.config.start, s1a1);
+      expect(player.loads.single.plan.config.end, s1a1);
+    });
+
+    test(
+      'an ayah past the end of its surah is pulled back inside it',
+      () async {
+        final SessionCubit cubit = await open(reciterId: 'b');
+        await cubit.applyRequest(
+          const SessionRequest(from: AyahRef(1, 2), to: AyahRef(1, 99)),
+        );
+        expect(cubit.state.config!.end, s1a3);
+      },
+    );
+
+    test('a range nobody recorded is set up, never started', () async {
+      final SessionCubit cubit = await open(reciterId: 'a');
+      await cubit.applyRequest(
+        const SessionRequest(
+          from: AyahRef(3, 1),
+          to: AyahRef(3, 2),
+          autostart: true,
+        ),
+      );
+      expect(cubit.state.phase, SessionPhase.idle);
+      expect(player.loads, isEmpty);
+    });
+  });
+
   group('recall', () {
     test('changing the connect mode keeps both recall settings', () async {
       final SessionCubit cubit = await open(reciterId: 'b');
@@ -566,13 +695,16 @@ void main() {
       expect(cubit.state.config!.chainRecall, isTrue);
     });
 
-    test('toggling the links test mid-session is a change to decide on', () async {
-      final SessionCubit cubit = await open(reciterId: 'b');
-      cubit.chooseRange(s1a1, s1a3);
-      await cubit.start();
-      cubit.setChainRecall(true);
-      expect(cubit.state.hasPendingChange, isTrue);
-    });
+    test(
+      'toggling the links test mid-session is a change to decide on',
+      () async {
+        final SessionCubit cubit = await open(reciterId: 'b');
+        cubit.chooseRange(s1a1, s1a3);
+        await cubit.start();
+        cubit.setChainRecall(true);
+        expect(cubit.state.hasPendingChange, isTrue);
+      },
+    );
 
     test('a recall gap veils without counting; the answer counts', () async {
       final SessionCubit cubit = await open(reciterId: 'b');
@@ -678,6 +810,43 @@ class _Durations implements AyahDurationService {
 
 class _Progress implements ProgressRepository {
   final Map<AyahRef, int> recorded = <AyahRef, int>{};
+
+  /// Stumble counts, by ayah — what `stumbled()` reads back.
+  final Map<AyahRef, int> stumbles = <AyahRef, int>{};
+
+  @override
+  Future<Either<Failure, List<MemorizationProgress>>> stumbled() async =>
+      Right<Failure, List<MemorizationProgress>>(<MemorizationProgress>[
+        for (final MapEntry<AyahRef, int> e in stumbles.entries)
+          MemorizationProgress(
+            surahNumber: e.key.surah,
+            ayahNumber: e.key.ayah,
+            stumbles: e.value,
+          ),
+      ]);
+
+  @override
+  Future<Either<Failure, Unit>> markStumble(
+    int surahNumber,
+    int ayahNumber, {
+    DateTime? at,
+  }) async {
+    stumbles.update(
+      AyahRef(surahNumber, ayahNumber),
+      (int n) => n + 1,
+      ifAbsent: () => 1,
+    );
+    return const Right<Failure, Unit>(unit);
+  }
+
+  @override
+  Future<Either<Failure, Unit>> clearStumble(
+    int surahNumber,
+    int ayahNumber,
+  ) async {
+    stumbles.remove(AyahRef(surahNumber, ayahNumber));
+    return const Right<Failure, Unit>(unit);
+  }
 
   @override
   Future<Either<Failure, Unit>> recordRepeats(

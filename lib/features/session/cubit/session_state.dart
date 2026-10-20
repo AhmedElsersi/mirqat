@@ -78,6 +78,7 @@ class SessionState extends Equatable {
     this.failure,
     this.errorDetail,
     this.keepAwake = false,
+    this.stumbled = const <AyahRef>{},
   });
 
   /// Whether the catalog, the reciters and the settings have been read.
@@ -140,6 +141,10 @@ class SessionState extends Equatable {
   final String? errorDetail;
 
   final bool keepAwake;
+
+  /// Every ayah the reader has marked as one they stumble at. Drawn on the
+  /// page, and drilled more often by any plan that covers it.
+  final Set<AyahRef> stumbled;
 
   bool get isActive => phase == SessionPhase.active;
 
@@ -259,6 +264,7 @@ class SessionState extends Equatable {
     bool clearFailure = false,
     String? errorDetail,
     bool? keepAwake,
+    Set<AyahRef>? stumbled,
   }) => SessionState(
     ready: ready ?? this.ready,
     surahs: surahs ?? this.surahs,
@@ -285,6 +291,7 @@ class SessionState extends Equatable {
         ? null
         : (errorDetail ?? this.errorDetail),
     keepAwake: keepAwake ?? this.keepAwake,
+    stumbled: stumbled ?? this.stumbled,
   );
 
   @override
@@ -310,5 +317,6 @@ class SessionState extends Equatable {
     failure,
     errorDetail,
     keepAwake,
+    stumbled,
   ];
 }

@@ -26,6 +26,10 @@ class AppRoutes {
   static const String searchPath = '/search';
   static const String searchName = 'search';
 
+  /// Every ayah the reader stumbles at.
+  static const String weakSpotsPath = '/weak-spots';
+  static const String weakSpotsName = 'weak_spots';
+
   static const String settingsPath = '/settings';
   static const String settingsName = 'settings';
 

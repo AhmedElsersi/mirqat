@@ -31,6 +31,11 @@ enum AyahAction {
 
   /// Gives the range back to the page on show.
   clearRange,
+
+  /// The reader slips here — or no longer does. A stumbled ayah is marked on
+  /// the page and drilled more by every session over it.
+  stumble,
+  clearStumble,
 }
 
 /// What a long-pressed ayah offers. Pops with the [AyahAction] chosen.
@@ -41,6 +46,7 @@ class AyahActionsSheet extends StatelessWidget {
     required this.canPlay,
     required this.hasChosenRange,
     this.isMarked = false,
+    this.isStumbled = false,
     this.canShare = false,
     super.key,
   });
@@ -57,6 +63,10 @@ class AyahActionsSheet extends StatelessWidget {
   /// Whether this ayah carries the reader's mark, so the sheet offers to
   /// take it off rather than to set it again.
   final bool isMarked;
+
+  /// Whether this ayah carries a stumble mark, so the sheet offers to take
+  /// it off as well as to count another.
+  final bool isStumbled;
 
   /// Whether this platform can share at all — a desktop without a share
   /// sheet is not offered a button that would do nothing.
@@ -106,6 +116,17 @@ class AyahActionsSheet extends StatelessWidget {
                     Icons.bookmark_add_outlined,
                     LocaleKeys.mushafMarkHere.tr(),
                   ),
+            action(
+              AyahAction.stumble,
+              Icons.flag_outlined,
+              LocaleKeys.mushafStumbleHere.tr(),
+            ),
+            if (isStumbled)
+              action(
+                AyahAction.clearStumble,
+                Icons.outlined_flag,
+                LocaleKeys.mushafClearStumble.tr(),
+              ),
             if (canShare)
               action(
                 AyahAction.share,

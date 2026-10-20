@@ -20,6 +20,7 @@ import '../../features/settings/screen/session_settings_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/splash/screen/splash_screen.dart';
 import '../../features/surah_list/screen/surah_list_screen.dart';
+import '../../features/weak_spots/screen/weak_spots_screen.dart';
 import 'app_routes.dart';
 
 /// GoRouter configuration. Typed arguments travel in `state.extra`.
@@ -103,6 +104,12 @@ class AppRouter {
         name: AppRoutes.searchName,
         builder: (BuildContext context, GoRouterState state) =>
             const SearchScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.weakSpotsPath,
+        name: AppRoutes.weakSpotsName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const WeakSpotsScreen(),
       ),
       GoRoute(
         path: AppRoutes.settingsPath,
