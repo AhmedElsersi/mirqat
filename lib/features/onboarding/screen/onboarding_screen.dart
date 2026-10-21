@@ -41,6 +41,21 @@ class OnboardingScreen extends StatefulWidget {
       LocaleKeys.onboardingControlBody,
     ),
     OnboardingPage(
+      Icons.record_voice_over_outlined,
+      LocaleKeys.onboardingTestTitle,
+      LocaleKeys.onboardingTestBody,
+    ),
+    OnboardingPage(
+      Icons.event_repeat,
+      LocaleKeys.onboardingReviewTitle,
+      LocaleKeys.onboardingReviewBody,
+    ),
+    OnboardingPage(
+      Icons.compare_arrows,
+      LocaleKeys.onboardingSimilarTitle,
+      LocaleKeys.onboardingSimilarBody,
+    ),
+    OnboardingPage(
       Icons.tune_outlined,
       LocaleKeys.onboardingYoursTitle,
       LocaleKeys.onboardingYoursBody,

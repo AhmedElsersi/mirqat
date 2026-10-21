@@ -237,8 +237,14 @@ class LocaleKeys {
   static const String onboardingNext = 'onboarding.next';
   static const String onboardingReadBody = 'onboarding.read_body';
   static const String onboardingReadTitle = 'onboarding.read_title';
+  static const String onboardingReviewBody = 'onboarding.review_body';
+  static const String onboardingReviewTitle = 'onboarding.review_title';
+  static const String onboardingSimilarBody = 'onboarding.similar_body';
+  static const String onboardingSimilarTitle = 'onboarding.similar_title';
   static const String onboardingSkip = 'onboarding.skip';
   static const String onboardingStart = 'onboarding.start';
+  static const String onboardingTestBody = 'onboarding.test_body';
+  static const String onboardingTestTitle = 'onboarding.test_title';
   static const String onboardingYoursBody = 'onboarding.yours_body';
   static const String onboardingYoursTitle = 'onboarding.yours_title';
 
