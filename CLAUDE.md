@@ -108,8 +108,15 @@ lib/
     entities/        PlanStep, PlaybackUnit, SessionPlan, SessionConfig
     engine/          RepetitionPlanBuilder  (pure Dart, zero Flutter imports)
   features/
-    surah_list/      cubit + screen + widgets   (the home: surahs | ajzaa tabs)
-    home/            cubit + widgets            (ajzaa index, last place read)
+    home/            cubit + shell + widgets    (the home: four tabs — Today,
+                                                 Mushaf, My hifz, Settings —
+                                                 the ajzaa index, last place read)
+    today/           view                       (the day's wird: the new portion,
+                                                 the reviews, what is due)
+    my_hifz/         cubit + view               (what is memorized, by juz, and
+                                                 the tools that keep it)
+    surah_list/      cubit + screen + widgets   (the Mushaf tab: search, surahs |
+                                                 ajzaa)
     history/         screen                     (the last twenty places read)
     mushaf/          cubit + screen + widgets   (the reading view: the mushaf, or
                                                  one surah / one juz of it)
