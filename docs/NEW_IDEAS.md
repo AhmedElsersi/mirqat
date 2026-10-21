@@ -16,9 +16,9 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat and browsing, §5 sleep timer, "three more" and the listen loop, §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
+> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat and browsing, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
 > | **Partly done** | §4 menu entry does not name the twins · §9 presets are fixed, not saved by the reader; the surah line has no juz span |
-> | **Not built yet** | §4 mutashabihat drill · §5 bedtime and morning bookends |
+> | **Not built yet** | §4 mutashabihat drill |
 > | **Problem in a built feature** | §8 on Android the backup sits in the app's own folder, hard to reach since Android 11 and deleted with the app |
 > | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
 > | **Blocked on a package** | daily reminder · record-and-compare · system share sheet |
@@ -29,9 +29,9 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
+> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
 > | **تمّ بعضه** | §٤ خيار القائمة لا يسمّي الشبيهات · §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
-> | **لم يُبنَ بعد** | §٤ تمرين المتشابهات · §٥ طرفا الليل والنهار |
+> | **لم يُبنَ بعد** | §٤ تمرين المتشابهات |
 > | **مشكلة في ميزة مبنية** | §٨ النسخة على أندرويد في مجلد التطبيق نفسه، يصعب بلوغه منذ أندرويد ١١، ويُحذف بحذف التطبيق |
 > | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
 > | **ينتظر حزمة** | التنبيه اليومي · سجّل وقارن · نافذة المشاركة النظامية |
@@ -168,7 +168,15 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 > **Listen-only loop done:** *Listen from here* in the ayah menu plays to
 > the end of the surah, once; and the session sheet's **Listen** preset
 > plays the chosen range straight through, nothing asked back, as many
-> times as the repeat stepper says — the range M times. **Bedtime and morning bookends: not built yet.**
+> times as the repeat stepper says — the range M times. **Bedtime and
+> morning bookends done:** a switch in Settings (off until chosen). From
+> 19:00 into the small hours the Today card offers the portion first
+> memorized that day, to hear once more; from 04:00 to noon, the one
+> memorized the day before, to recite back — in place of its ladder review,
+> not beside it. Taken up, a suggestion is not made again; outside the two
+> windows nothing is said, so no time is ever "missed". *Built
+> differently:* without notifications (a package blocker) the app cannot
+> call the reader at bedtime; the suggestion waits on the home screen.
 
 - **Listen-only loop.** "Play this range on repeat M times" with no drill structure —
   for the commute, for cooking, for the pre-memorization familiarization pass that
@@ -391,7 +399,13 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 > زرٌّ في شريط الجلسة لا ضغطة مطولة. **حلقة السماع تمّت:** «استمع من هنا» في قائمة
 > الآية يُسمِع إلى آخر السورة مرة؛ وإعداد **استماع** في نافذة الجلسة يُسمِع النطاق
 > المختار متصلًا بلا سؤال، بعدد ما في عدّاد التكرار — النطاقَ كذا مرة.
-> **طرفا الليل والنهار: لم يُبنيا بعد.**
+> **طرفا الليل والنهار تمّا:** مفتاح في
+> الإعدادات (مطفأ حتى يختاره القارئ). من السابعة مساءً إلى ما بعد منتصف الليل تقترح
+> بطاقة اليوم المقطعَ الذي حُفظ أولَ مرة ذلك اليوم ليُسمع مرة أخرى؛ ومن الرابعة إلى
+> الظهر المقطعَ الذي حُفظ أمس ليُقرأ من الحفظ — مكانَ مراجعته في السلّم لا بجوارها.
+> وما أُخذ من الاقتراحات لا يُعاد؛ وخارج الوقتين لا يُقال شيء، فلا وقتَ «يفوت».
+> *على غير ما في الفكرة:* بلا تنبيهات (عائق حزمة) لا يستطيع التطبيق أن يدعو القارئ
+> عند النوم؛ فالاقتراح ينتظر في الرئيسة.
 
 - **حلقة سماع فقط.** «شغّل هذا النطاق مكررًا كذا مرة» بلا بنية تدريس — للطريق
   وللمطبخ، ولجولة الاستئناس التي يُفتتح بها التلقين تقليدًا. هي محرك الجلسة بتكرارٍ

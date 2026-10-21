@@ -160,6 +160,14 @@ class SettingsScreen extends StatelessWidget {
                       subtitle: LocaleKeys.reviewHint.tr(),
                       onTap: () => context.pushNamed(AppRoutes.reviewsName),
                     ),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsetsDirectional.zero,
+                      secondary: const Icon(Icons.bedtime_outlined),
+                      title: Text(LocaleKeys.reviewBookendsTitle.tr()),
+                      subtitle: Text(LocaleKeys.reviewBookendsHint.tr()),
+                      value: settings.bookends,
+                      onChanged: cubit.setBookends,
+                    ),
                     SettingsLinkRow(
                       icon: Icons.flag_outlined,
                       title: LocaleKeys.weakSpotsTitle.tr(),

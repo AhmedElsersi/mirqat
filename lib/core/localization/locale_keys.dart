@@ -269,6 +269,10 @@ class LocaleKeys {
   static const String resumeTitle = 'resume.title';
 
   static const String reviewAll = 'review.all';
+  static const String reviewBookendMorning = 'review.bookend_morning';
+  static const String reviewBookendNight = 'review.bookend_night';
+  static const String reviewBookendsHint = 'review.bookends_hint';
+  static const String reviewBookendsTitle = 'review.bookends_title';
   static const String reviewDueOn = 'review.due_on';
   static const String reviewDueToday = 'review.due_today';
   static const String reviewDueTomorrow = 'review.due_tomorrow';

@@ -187,6 +187,8 @@ class AppSettings extends Equatable {
     this.showReadingRibbon = true,
     this.memorizationView = MemorizationView.off,
     this.showStumbles = true,
+    this.bookends = false,
+    this.bookendTaken,
     this.hifzPlan,
     this.interruptedSession,
     this.onboardingSeen = false,
@@ -278,6 +280,15 @@ class AppSettings extends Equatable {
   /// default; the marks still make the drill longer either way.
   final bool showStumbles;
 
+  /// Whether the Today card suggests the day's new portion again before
+  /// sleep, and once more the next morning (NEW_IDEAS §5). Off by default:
+  /// it is an option the reader takes up, not a routine laid on them.
+  final bool bookends;
+
+  /// The last bookend suggestion the reader took up (`Bookend.key`), so it
+  /// is not made again. Null: none yet.
+  final String? bookendTaken;
+
   /// The reader's plan to memorize a range in so many days, if they made
   /// one. Null: no plan.
   final HifzPlan? hifzPlan;
@@ -329,6 +340,8 @@ class AppSettings extends Equatable {
     bool? showReadingRibbon,
     MemorizationView? memorizationView,
     bool? showStumbles,
+    bool? bookends,
+    String? bookendTaken,
     HifzPlan? hifzPlan,
     bool clearHifzPlan = false,
     InterruptedSession? interruptedSession,
@@ -366,6 +379,8 @@ class AppSettings extends Equatable {
     showReadingRibbon: showReadingRibbon ?? this.showReadingRibbon,
     memorizationView: memorizationView ?? this.memorizationView,
     showStumbles: showStumbles ?? this.showStumbles,
+    bookends: bookends ?? this.bookends,
+    bookendTaken: bookendTaken ?? this.bookendTaken,
     hifzPlan: clearHifzPlan ? null : (hifzPlan ?? this.hifzPlan),
     interruptedSession: clearInterruptedSession
         ? null
@@ -410,6 +425,8 @@ class AppSettings extends Equatable {
     'showReadingRibbon': showReadingRibbon,
     'memorizationView': memorizationView.storageValue,
     'showStumbles': showStumbles,
+    'bookends': bookends,
+    'bookendTaken': bookendTaken,
     'hifzPlan': hifzPlan?.toMap(),
     'interruptedSession': interruptedSession?.toMap(),
     'onboardingSeen': onboardingSeen,
@@ -472,6 +489,10 @@ class AppSettings extends Equatable {
     showReadingRibbon: map['showReadingRibbon'] as bool? ?? true,
     memorizationView: MemorizationView.fromStorage(map['memorizationView']),
     showStumbles: map['showStumbles'] != false,
+    bookends: map['bookends'] == true,
+    bookendTaken: map['bookendTaken'] is String
+        ? map['bookendTaken'] as String
+        : null,
     hifzPlan: HifzPlan.fromMap(map['hifzPlan']),
     interruptedSession: InterruptedSession.fromMap(map['interruptedSession']),
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
@@ -525,6 +546,8 @@ class AppSettings extends Equatable {
     showReadingRibbon,
     memorizationView,
     showStumbles,
+    bookends,
+    bookendTaken,
     hifzPlan,
     interruptedSession,
     onboardingSeen,

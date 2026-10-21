@@ -365,7 +365,11 @@
     "grade_solid": "متقَن",
     "grade_shaky": "متذبذب",
     "grade_forgot": "نسيته",
-    "today_title": "اليوم"
+    "today_title": "اليوم",
+    "bookends_title": "طرفا الليل والنهار",
+    "bookends_hint": "يقترح مقطع اليوم الجديد قبل النوم، ثم صباح الغد",
+    "bookend_night": "قبل النوم: استمع إليه مرة أخرى",
+    "bookend_morning": "هذا الصباح: اقرأه من حفظك"
   },
   "sleep": {
     "title": "مؤقّت النوم",

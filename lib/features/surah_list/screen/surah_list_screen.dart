@@ -185,7 +185,12 @@ class _SurahListViewState extends State<_SurahListView> {
             children: <Widget>[
               // What is due for review first: the day's work, before the
               // way back to where the reader stopped.
-              TodayCard(plan: settings.settings.hifzPlan),
+              TodayCard(
+                plan: settings.settings.hifzPlan,
+                bookends: settings.settings.bookends,
+                bookendTaken: settings.settings.bookendTaken,
+                onBookendTaken: context.read<SettingsCubit>().takeBookend,
+              ),
               if (last != null)
                 _ContinueCard(
                   place: last,

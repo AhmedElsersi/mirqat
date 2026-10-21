@@ -365,7 +365,11 @@
     "grade_solid": "Solid",
     "grade_shaky": "Shaky",
     "grade_forgot": "Forgot",
-    "today_title": "Today"
+    "today_title": "Today",
+    "bookends_title": "Bedtime and morning",
+    "bookends_hint": "Suggests the day's new portion before sleep, and again the next morning",
+    "bookend_night": "Before you sleep: hear it once more",
+    "bookend_morning": "This morning: recite it back"
   },
   "sleep": {
     "title": "Sleep timer",

@@ -349,6 +349,22 @@ void main() {
       await visit('عن المطوّر', DeveloperScreen);
     });
 
+    testWidgets('bedtime and morning is off until the reader turns it on', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+      final Finder toggle = find.text(LocaleKeys.reviewBookendsTitle.tr());
+      await reveal(tester, toggle);
+      final SettingsCubit cubit = BlocProvider.of<SettingsCubit>(
+        tester.element(find.byType(SettingsScreen)),
+      );
+      expect(cubit.state.settings.bookends, isFalse);
+
+      await AppHarness.tapAndSettle(tester, toggle);
+      expect(cubit.state.settings.bookends, isTrue);
+    });
+
     testWidgets('the home view toggle mirrors the app bar', (
       WidgetTester tester,
     ) async {

@@ -162,6 +162,13 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setShowStumbles(bool value) =>
       _save(state.settings.copyWith(showStumbles: value));
 
+  Future<void> setBookends(bool value) =>
+      _save(state.settings.copyWith(bookends: value));
+
+  /// The reader took a bookend suggestion up: it is not made again.
+  Future<void> takeBookend(String key) =>
+      _save(state.settings.copyWith(bookendTaken: key));
+
   /// The introduction has been read through, or skipped: either way it is
   /// not shown on its own again. It stays one tap away, under How to use.
   Future<void> markOnboardingSeen() =>

@@ -19,7 +19,14 @@ void main() {
   late FakeReviewRepository reviews;
   late ReviewCubit cubit;
 
-  Future<void> pump(WidgetTester tester, int dueCards, {HifzPlan? plan}) async {
+  Future<void> pump(
+    WidgetTester tester,
+    int dueCards, {
+    HifzPlan? plan,
+    bool bookends = false,
+    String? bookendTaken,
+    DateTime? now,
+  }) async {
     reviews = FakeReviewRepository();
     for (int i = 1; i <= dueCards; i++) {
       final int surah = (i - 1) % 3 + 1;
@@ -37,7 +44,7 @@ void main() {
     cubit = ReviewCubit(
       quranRepository: fixtureRepository(),
       reviewRepository: reviews,
-      clock: () => DateTime(2026, 12, 1, 9),
+      clock: () => now ?? DateTime(2026, 12, 1, 9),
     );
     addTearDown(cubit.close);
     await tester.runAsync(cubit.load);
@@ -55,7 +62,15 @@ void main() {
             home: Scaffold(
               body: BlocProvider<ReviewCubit>.value(
                 value: cubit,
-                child: Column(children: <Widget>[TodayCard(plan: plan)]),
+                child: Column(
+                  children: <Widget>[
+                    TodayCard(
+                      plan: plan,
+                      bookends: bookends,
+                      bookendTaken: bookendTaken,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -123,5 +138,45 @@ void main() {
   testWidgets('a finished plan adds nothing', (WidgetTester tester) async {
     await pump(tester, 0, plan: plan.copyWith(completed: 2));
     expect(find.byType(ListTile), findsNothing);
+  });
+
+  group('bedtime and morning', () {
+    testWidgets('off, as for every reader who has not chosen it: nothing '
+        'added', (WidgetTester tester) async {
+      await pump(tester, 2);
+      expect(find.byIcon(Icons.wb_twilight), findsNothing);
+      expect(find.byIcon(Icons.bedtime_outlined), findsNothing);
+    });
+
+    testWidgets('on, in the morning: last night\'s portion first — one row, '
+        'not a second one beside its review', (WidgetTester tester) async {
+      await pump(tester, 2, bookends: true);
+      expect(find.byIcon(Icons.wb_twilight), findsOneWidget);
+      expect(find.text('هذا الصباح: اقرأه من حفظك'), findsOneWidget);
+      // Two cards were due: one is the morning's, one stays a review.
+      expect(find.byType(ListTile), findsNWidgets(2));
+      expect(find.byType(TierChip), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('on, at night: today\'s new portion, to hear once more, even '
+        'with nothing due', (WidgetTester tester) async {
+      // The cards were memorized on 30 November; it is that night.
+      await pump(tester, 1, bookends: true, now: DateTime(2026, 11, 30, 22));
+      expect(find.byIcon(Icons.bedtime_outlined), findsOneWidget);
+      expect(find.text('قبل النوم: استمع إليه مرة أخرى'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('taken up, it is gone', (WidgetTester tester) async {
+      await pump(
+        tester,
+        1,
+        bookends: true,
+        now: DateTime(2026, 11, 30, 22),
+        bookendTaken: 'night:1:1-1:1:2026-11-30',
+      );
+      expect(find.byIcon(Icons.bedtime_outlined), findsNothing);
+    });
   });
 }
