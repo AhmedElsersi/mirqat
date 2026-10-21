@@ -16,6 +16,7 @@ import '../../../data/models/word.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../../session/session_request.dart';
+import '../../surah_list/widgets/surah_row.dart' show NumberDiamond;
 import '../../surah_list/widgets/error_view.dart';
 import '../cubit/drill_cubit.dart';
 import '../widgets/compared_ayah_card.dart';
@@ -131,12 +132,32 @@ class _Round extends StatelessWidget {
               style: theme.textTheme.titleMedium,
             ),
             SizedBox(height: 8.h),
+            // Each choice a card: the surah's number, and the ayah named.
             for (final DrillChoice c in round.choices)
               Padding(
-                padding: EdgeInsetsDirectional.only(bottom: 8.h),
+                padding: EdgeInsetsDirectional.only(bottom: 10.h),
                 child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: Size.fromHeight(60.r),
+                    alignment: AlignmentDirectional.centerStart,
+                    padding: EdgeInsetsDirectional.symmetric(horizontal: 12.w),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.r),
+                    ),
+                  ),
                   onPressed: () => cubit.pick(c.ref),
-                  child: Text(_refName(context, c.surah, c.ref)),
+                  child: Row(
+                    children: <Widget>[
+                      NumberDiamond(number: c.surah.number),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          _refName(context, c.surah, c.ref),
+                          style: theme.textTheme.titleSmall,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
           ],

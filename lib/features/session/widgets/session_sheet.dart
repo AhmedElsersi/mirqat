@@ -80,13 +80,16 @@ class SessionSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           if (state.block != null) _BlockNotice(state: state),
+                          // The way of working first: most sessions are one
+                          // tap here. Then what is recited and how; then the
+                          // rest, which a session is rarely started to change.
+                          const _Presets(),
+                          _Range(state: state, config: config),
+                          _Tuning(config: config),
                           if (state.isActive) _SleepTimer(state: state),
                           _Reciters(state: state),
-                          _Range(state: state, config: config),
-                          const _MemorizationView(),
                           _Downloads(state: state),
-                          const _Presets(),
-                          _Tuning(config: config),
+                          const _MemorizationView(),
                           if (!state.isActive && !state.tasmee)
                             Padding(
                               padding: EdgeInsetsDirectional.only(top: 8.h),

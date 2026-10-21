@@ -29,6 +29,18 @@ class LocaleKeys {
   static const String appSlogan = 'app.slogan';
   static const String appSubtitle = 'app.subtitle';
 
+  static const String ayahMenuEnd = 'ayah_menu.end';
+  static const String ayahMenuListen = 'ayah_menu.listen';
+  static const String ayahMenuMark = 'ayah_menu.mark';
+  static const String ayahMenuMemorize = 'ayah_menu.memorize';
+  static const String ayahMenuRange = 'ayah_menu.range';
+  static const String ayahMenuRangeHint = 'ayah_menu.range_hint';
+  static const String ayahMenuShareAyah = 'ayah_menu.share_ayah';
+  static const String ayahMenuSharePage = 'ayah_menu.share_page';
+  static const String ayahMenuStart = 'ayah_menu.start';
+  static const String ayahMenuStumble = 'ayah_menu.stumble';
+  static const String ayahMenuUnmark = 'ayah_menu.unmark';
+
   static const String backupExport = 'backup.export';
   static const String backupExportFailed = 'backup.export_failed';
   static const String backupExportNow = 'backup.export_now';

@@ -1,11 +1,13 @@
-import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../settings/cubit/settings_cubit.dart';
 
 class OnboardingPage {
@@ -189,16 +191,20 @@ class _Leaf extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Container(
-              width: 132.r,
-              height: 132.r,
-              decoration: BoxDecoration(
-                color: colors.surfaceContainerHighest,
-                shape: BoxShape.circle,
-                border: Border.all(color: colors.secondary, width: 2),
+            // The method is the ladder itself: drawn, not an icon.
+            if (page.titleKey == LocaleKeys.onboardingMethodTitle)
+              const _Ladder()
+            else
+              Container(
+                width: 132.r,
+                height: 132.r,
+                decoration: BoxDecoration(
+                  color: colors.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.secondary, width: 2),
+                ),
+                child: Icon(page.icon, size: 60.r, color: colors.primary),
               ),
-              child: Icon(page.icon, size: 60.r, color: colors.primary),
-            ),
             SizedBox(height: 32.h),
             Text(
               page.titleKey.tr(),
@@ -219,4 +225,99 @@ class _Leaf extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The method as the logo draws it: rungs climbing to the upper left —
+/// forward, for an Arabic reader — each overlapping the one below; the one
+/// being reached for, gold. Ayah 1; then 1 and 2 joined; then 1 to 3; then
+/// the next ayah.
+class _Ladder extends StatelessWidget {
+  const _Ladder();
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool dark = theme.brightness == Brightness.dark;
+    final Color stood = dark ? AppColors.sabrDark : AppColors.sabrLight;
+    final List<(String, Color, Color)> rungs = <(String, Color, Color)>[
+      (
+        '${1.toLocalisedString()} + ${2.toLocalisedString()} + '
+            '${3.toLocalisedString()}',
+        AppColors.forest,
+        AppColors.cream,
+      ),
+      (
+        '${1.toLocalisedString()} + ${2.toLocalisedString()}',
+        stood,
+        AppColors.cream,
+      ),
+      (
+        LocaleKeys.commonAyahNumber.tr(args: <String>[1.toLocalisedString()]),
+        stood,
+        AppColors.cream,
+      ),
+    ];
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: SizedBox(
+        width: 230.r,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _Rung(
+              label: LocaleKeys.commonAyahNumber.tr(
+                args: <String>[4.toLocalisedString()],
+              ),
+              color: AppColors.gold,
+              ink: AppColors.forestDeep,
+              indent: 0,
+            ),
+            for (int i = 0; i < rungs.length; i++)
+              _Rung(
+                label: rungs[i].$1,
+                color: rungs[i].$2,
+                ink: rungs[i].$3,
+                indent: 30.r * (i + 1),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Rung extends StatelessWidget {
+  const _Rung({
+    required this.label,
+    required this.color,
+    required this.ink,
+    required this.indent,
+  });
+
+  final String label;
+  final Color color;
+  final Color ink;
+  final double indent;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    // Inside a left-to-right box: start is left, which is where it climbs.
+    padding: EdgeInsetsDirectional.only(start: indent, top: 8.r),
+    child: Container(
+      width: 140.r,
+      height: 30.r,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(15.r),
+      ),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(color: ink),
+        ),
+      ),
+    ),
+  );
 }

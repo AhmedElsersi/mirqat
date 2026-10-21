@@ -390,12 +390,12 @@ void main() {
 
       await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text(LocaleKeys.mushafShareAyah.tr()), findsOneWidget);
+      expect(find.byTooltip(LocaleKeys.mushafShareAyah.tr()), findsOneWidget);
 
       // The tap starts a quran.db read, which only completes in the real
       // zone — same reasoning as every other real-zone block here.
       await tester.runAsync(() async {
-        await tester.tap(find.text(LocaleKeys.mushafShareAyah.tr()));
+        await tester.tap(find.byTooltip(LocaleKeys.mushafShareAyah.tr()));
         await tester.pump();
         await Future<void>.delayed(const Duration(milliseconds: 100));
       });
@@ -488,7 +488,7 @@ void main() {
       // And from the menu, as a reader reaches it.
       await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
       await tester.pump(const Duration(milliseconds: 400));
-      await tester.tap(find.text(LocaleKeys.mushafSharePage.tr()));
+      await tester.tap(find.byTooltip(LocaleKeys.mushafSharePage.tr()));
       await frames(tester);
 
       final Finder card = find.byType(PageShareCard);
@@ -541,8 +541,8 @@ void main() {
 
       await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text(LocaleKeys.mushafMarkHere.tr()), findsOneWidget);
-      expect(find.text(LocaleKeys.mushafUnmark.tr()), findsNothing);
+      expect(find.byTooltip(LocaleKeys.mushafMarkHere.tr()), findsOneWidget);
+      expect(find.byTooltip(LocaleKeys.mushafUnmark.tr()), findsNothing);
       await closeSheet();
 
       // The write itself, in real time: a store write begun under the
@@ -579,8 +579,8 @@ void main() {
 
       await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text(LocaleKeys.mushafUnmark.tr()), findsOneWidget);
-      expect(find.text(LocaleKeys.mushafMarkHere.tr()), findsNothing);
+      expect(find.byTooltip(LocaleKeys.mushafUnmark.tr()), findsOneWidget);
+      expect(find.byTooltip(LocaleKeys.mushafMarkHere.tr()), findsNothing);
       await closeSheet();
 
       await tester.runAsync(settings.clearReadingMark);

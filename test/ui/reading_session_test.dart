@@ -189,6 +189,9 @@ void main() {
 
       final Finder field = find.byType(DropdownButton<String>);
       expect(field, findsOneWidget);
+      // Below the way of working, the range and the tuning now: scrolled to.
+      await tester.ensureVisible(field);
+      await AppHarness.frames(tester, 400);
       // The field writes the Arabic name over the English one.
       expect(
         find.descendant(of: field, matching: find.text('أحمد خليل شاهين')),
@@ -236,15 +239,21 @@ void main() {
       );
       expect(sheet.ayah, const AyahRef(1, 1));
       expect(sheet.canPlay, isTrue);
-      // Mark, I stumble here, share the ayah, share the page, listen from
-      // here, memorize, range start, range end.
-      expect(find.byType(ListTile), findsNWidgets(8));
-      expect(
-        tester
-            .widgetList<ListTile>(find.byType(ListTile))
-            .every((ListTile t) => t.enabled && t.onTap != null),
-        isTrue,
-      );
+      // Listen from here, memorize, mark, I stumble here, share the ayah,
+      // share the page — and the range's two ends. Every one of them there
+      // and live.
+      for (final String action in <String>[
+        'استمع من هنا إلى آخر السورة، مرة واحدة',
+        'حفظ هذه الآية وحدها',
+        'علِّم هنا: انتهيت عند هذه الآية',
+        'أتعثّر هنا',
+        'مشاركة الآية صورةً',
+        'مشاركة الصفحة صورةً',
+        'اجعلها بداية النطاق',
+        'اجعلها نهاية النطاق',
+      ]) {
+        expect(find.byTooltip(action), findsOneWidget, reason: action);
+      }
       expect(find.text('قريبًا'), findsNothing);
     });
 

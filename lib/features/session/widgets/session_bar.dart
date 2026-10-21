@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/ladder_mark.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
@@ -533,6 +534,15 @@ class _Active extends StatelessWidget {
             ],
           ),
         ),
+        // Where in the ladder: the steps stood on, the one being climbed.
+        if (unit != null && steps > 1)
+          Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 12.w, 0),
+            child: StepsBar(
+              total: steps,
+              current: state.finished ? steps : unit.stepIndex,
+            ),
+          ),
         Row(
           children: <Widget>[
             const _BackButton(),

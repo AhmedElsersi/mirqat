@@ -575,5 +575,18 @@
     "phrases": "{} phrases, and a drill to tell them apart",
     "practice": "{} days, {} minutes listened",
     "juz_map": "What is memorized, across the thirty ajzaa"
+  },
+  "ayah_menu": {
+    "listen": "Listen to the end",
+    "memorize": "Memorize it alone",
+    "mark": "I stopped here",
+    "unmark": "Remove the mark",
+    "stumble": "I stumble here",
+    "share_ayah": "Share the ayah",
+    "share_page": "Share the page",
+    "range": "Range",
+    "range_hint": "Make it the start or the end",
+    "start": "Start",
+    "end": "End"
   }
 }

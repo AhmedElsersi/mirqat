@@ -112,7 +112,7 @@ void main() {
         (ref: const AyahRef(67, 29), surah: mulk),
       ],
     );
-    expect(find.text('تشبه: الملك ١ · الملك ١٢ · و٢ غيرها'), findsOneWidget);
+    expect(find.text('تشبه: الملك ١، الملك ١٢، و٢ غيرها'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -125,21 +125,18 @@ void main() {
     expect(find.text('Resembles: ${mulk.nameEn} 1'), findsOneWidget);
   });
 
-  testWidgets(
-    'one way on to the end of the surah, listening; nothing to play '
-    'without audio',
-    (WidgetTester tester) async {
-      await pump(tester);
-      expect(entry(Icons.headphones_outlined), findsOneWidget);
-      expect(
-        find.text('استمع من هنا إلى آخر السورة، مرة واحدة'),
-        findsOneWidget,
-      );
-      await pump(tester, canPlay: false);
-      expect(entry(Icons.headphones_outlined), findsNothing);
-      expect(entry(Icons.repeat_one), findsNothing);
-    },
-  );
+  testWidgets('one way on to the end of the surah, listening; nothing to play '
+      'without audio', (WidgetTester tester) async {
+    await pump(tester);
+    expect(entry(Icons.headphones_outlined), findsOneWidget);
+    expect(
+      find.byTooltip('استمع من هنا إلى آخر السورة، مرة واحدة'),
+      findsOneWidget,
+    );
+    await pump(tester, canPlay: false);
+    expect(entry(Icons.headphones_outlined), findsNothing);
+    expect(entry(Icons.repeat_one), findsNothing);
+  });
 
   testWidgets('a choice pops with its action', (WidgetTester tester) async {
     AyahAction? chosen;
@@ -186,7 +183,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await pump(tester, juzFirst: 29, juzLast: 29);
-    expect(find.text('سورة مكية · عدد آياتها ٣٠ · الجزء ٢٩'), findsOneWidget);
+    expect(find.text('سورة مكية · عدد آياتها ٣٠، الجزء ٢٩'), findsOneWidget);
     await pump(tester, juzFirst: 1, juzLast: 3);
     expect(find.textContaining('الأجزاء ١–٣'), findsOneWidget);
     await pump(tester);
