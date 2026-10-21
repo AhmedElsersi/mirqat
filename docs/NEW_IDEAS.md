@@ -16,8 +16,8 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks, §4 mutashabihat and browsing, §5 sleep timer and "three more", §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
-> | **Partly done** | §3 surah list shows memorized, not weak spots · §4 menu entry does not name the twins · §5 "listen" plays once, not M times · §9 presets are fixed, not saved by the reader; the surah line has no juz span |
+> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat and browsing, §5 sleep timer and "three more", §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
+> | **Partly done** | §4 menu entry does not name the twins · §5 "listen" plays once, not M times · §9 presets are fixed, not saved by the reader; the surah line has no juz span |
 > | **Not built yet** | §4 mutashabihat drill · §5 bedtime and morning bookends |
 > | **Problem in a built feature** | §8 on Android the backup sits in the app's own folder, hard to reach since Android 11 and deleted with the app |
 > | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
@@ -29,8 +29,8 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا»، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
-> | **تمّ بعضه** | §٣ فهرس السور يُظهر المحفوظ لا مواضع الضعف · §٤ خيار القائمة لا يسمّي الشبيهات · §٥ «استمع» يُسمِع مرة لا مرات · §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
+> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا»، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
+> | **تمّ بعضه** | §٤ خيار القائمة لا يسمّي الشبيهات · §٥ «استمع» يُسمِع مرة لا مرات · §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
 > | **لم يُبنَ بعد** | §٤ تمرين المتشابهات · §٥ طرفا الليل والنهار |
 > | **مشكلة في ميزة مبنية** | §٨ النسخة على أندرويد في مجلد التطبيق نفسه، يصعب بلوغه منذ أندرويد ١١، ويُحذف بحذف التطبيق |
 > | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
@@ -113,8 +113,11 @@ already has progress tracking and session plans to build on:
 > **Status: stumble marks done** (`1dd3af2`): *I stumble here* in the ayah
 > menu, a dotted underline on the page, two extra repeats inside any
 > session, and the Weak spots screen that launches a session over them.
-> **Heatmap partly done:** each surah row already shows how much of it is
-> memorized; how much is marked weak is not shown yet.
+> **Heatmap done** (`eea3f0f`): each surah row and grid tile shows how much
+> of it is memorized and, when there are any, how many of its ayahs are
+> marked — «Weak spots: 3», in the muted tone of the reading-only marker,
+> never a warning colour (BRAND_GUIDE §6). It follows a mark made or
+> cleared anywhere while the list is on screen.
 
 - **Mark a stumble.** During a session or plain reading, the ayah's existing menu gets
   *I stumble here*. Stumble-marked ayahs: get extra repetitions automatically when
@@ -341,8 +344,10 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 > **الحال: علامات التعثر تمّت** (`1dd3af2`): «أتعثر هنا» في قائمة الآية، وخط
 > منقّط تحتها في الصفحة، وتكراران زائدان في كل جلسة، وشاشة مواضع الضعف تُطلق
-> جلسة عليها. **خريطة الضعف تمّ بعضها:** صفّ السورة يُظهر مقدار المحفوظ منها،
-> ولا يُظهر بعدُ مقدار الموسوم ضعفًا.
+> جلسة عليها. **خريطة الضعف تمّت** (`eea3f0f`): صفّ السورة وبطاقتها
+> في الشبكة يُظهران مقدار المحفوظ، وعدد الآيات الموسومة إن وُجدت — «مواضع ضعف:
+> ٣» — بلون العلامات الهادئ لا بلون التحذير (دليل الهوية §٦)، ويتبعان أي علامة
+> تُوضع أو تُرفع والفهرس ظاهر.
 
 - **علامة تعثّر.** في الجلسة أو في القراءة، يُزاد في قائمة الآية خيار *أتعثر هنا*.
   الآيات الموسومة: تنال تكرارًا زائدًا آليًّا متى وقعت في جلسة، وتُظلَّل تظليلًا
