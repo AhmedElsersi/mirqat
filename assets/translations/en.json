@@ -401,6 +401,21 @@
     "phrase_title": "Shared phrase",
     "in_surah": "Surah {} · Ayahs: {}"
   },
+  "drill": {
+    "title": "Mutashabihat drill",
+    "round": "Round {} of {}",
+    "which": "Which ayah is this?",
+    "right": "Yes — {}",
+    "it_is": "It is {}",
+    "continue": "Continue it from memory, then show the rest.",
+    "show": "Show the rest",
+    "had_it": "I had it",
+    "slipped": "I slipped",
+    "done": "Drill finished",
+    "no_slips": "No slips.",
+    "slips": "The slips ({}) are noted under Weak spots, and will be repeated more in your sessions.",
+    "again": "Again"
+  },
   "plan": {
     "title": "Memorization plan",
     "hint": "Memorize a passage in a set number of days, a balanced portion each day",

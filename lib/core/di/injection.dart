@@ -34,6 +34,7 @@ import '../../features/search/cubit/search_cubit.dart';
 import '../../features/session/cubit/audio_pack_cubit.dart';
 import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
+import '../../features/similar/cubit/drill_cubit.dart';
 import '../../features/similar/cubit/mutashabihat_cubit.dart';
 import '../../features/similar/cubit/phrase_cubit.dart';
 import '../../features/similar/cubit/similar_cubit.dart';
@@ -277,6 +278,14 @@ Future<void> configureDependencies() async {
       mutashabihatRepository: sl<MutashabihatRepository>(),
       quranRepository: sl<QuranRepository>(),
       pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
+  sl.registerFactory<DrillCubit>(
+    () => DrillCubit(
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+      progressRepository: sl<ProgressRepository>(),
     ),
   );
   sl.registerFactory<PhraseCubit>(

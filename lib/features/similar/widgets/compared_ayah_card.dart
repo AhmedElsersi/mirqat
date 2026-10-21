@@ -96,11 +96,24 @@ class ComparedAyahCard extends StatelessWidget {
 /// Words of `quran.db`, each through [AyahText], wrapping right to left
 /// whatever the interface language.
 class QuranWords extends StatelessWidget {
-  const QuranWords({required this.words, this.tint, this.fontSize, super.key});
+  const QuranWords({
+    required this.words,
+    this.tint,
+    this.fontSize,
+    this.veiled,
+    this.faint = false,
+    super.key,
+  });
 
   final List<Word> words;
   final WordTint Function(Word)? tint;
   final double? fontSize;
+
+  /// Words whose ink is held back — in place, at their width, unread.
+  final bool Function(Word)? veiled;
+
+  /// Drawn fainter: context, not what is being asked.
+  final bool faint;
 
   @override
   Widget build(BuildContext context) => Directionality(
@@ -114,7 +127,11 @@ class QuranWords extends StatelessWidget {
             text: w.text,
             fontSize: fontSize ?? 22.sp,
             isMarker: w.isMarker,
-            tint: tint?.call(w) ?? WordTint.none,
+            tint: (veiled?.call(w) ?? false)
+                ? WordTint.veiled
+                : tint?.call(w) ?? WordTint.none,
+            veiled: veiled?.call(w) ?? false,
+            heldBack: faint,
           ),
       ],
     ),

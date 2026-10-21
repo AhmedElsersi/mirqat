@@ -16,6 +16,7 @@ import '../../features/progress/screen/progress_screen.dart';
 import '../../features/review/screen/reviews_screen.dart';
 import '../../domain/entities/ayah_ref.dart';
 import '../../features/search/screen/search_screen.dart';
+import '../../features/similar/screen/drill_screen.dart';
 import '../../features/similar/screen/mutashabihat_screen.dart';
 import '../../features/similar/screen/phrase_screen.dart';
 import '../../features/similar/screen/similar_screen.dart';
@@ -131,6 +132,12 @@ class AppRouter {
         name: AppRoutes.mutashabihatPhraseName,
         builder: (BuildContext context, GoRouterState state) =>
             PhraseScreen(phraseId: state.extra! as int),
+      ),
+      GoRoute(
+        path: AppRoutes.mutashabihatDrillPath,
+        name: AppRoutes.mutashabihatDrillName,
+        builder: (BuildContext context, GoRouterState state) =>
+            DrillScreen(phraseId: state.extra! as int),
       ),
       GoRoute(
         path: AppRoutes.statsPath,

@@ -2,11 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/desktop.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
 import '../../surah_list/widgets/error_view.dart';
 import '../cubit/phrase_cubit.dart';
@@ -24,7 +26,19 @@ class PhraseScreen extends StatelessWidget {
   Widget build(BuildContext context) => BlocProvider<PhraseCubit>(
     create: (_) => sl<PhraseCubit>()..load(phraseId),
     child: Scaffold(
-      appBar: AppBar(title: Text(LocaleKeys.mutashabihatPhraseTitle.tr())),
+      appBar: AppBar(
+        title: Text(LocaleKeys.mutashabihatPhraseTitle.tr()),
+        actions: <Widget>[
+          IconButton(
+            tooltip: LocaleKeys.drillTitle.tr(),
+            onPressed: () => context.pushNamed(
+              AppRoutes.mutashabihatDrillName,
+              extra: phraseId,
+            ),
+            icon: const Icon(Icons.quiz_outlined),
+          ),
+        ],
+      ),
       body: DesktopWidth(
         child: BlocBuilder<PhraseCubit, PhraseState>(
           builder: (BuildContext context, PhraseState state) {

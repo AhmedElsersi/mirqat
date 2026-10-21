@@ -101,6 +101,20 @@ class LocaleKeys {
   static const String downloadsWholeRunning = 'downloads.whole_running';
   static const String downloadsWholeTitle = 'downloads.whole_title';
 
+  static const String drillAgain = 'drill.again';
+  static const String drillContinue = 'drill.continue';
+  static const String drillDone = 'drill.done';
+  static const String drillHadIt = 'drill.had_it';
+  static const String drillItIs = 'drill.it_is';
+  static const String drillNoSlips = 'drill.no_slips';
+  static const String drillRight = 'drill.right';
+  static const String drillRound = 'drill.round';
+  static const String drillShow = 'drill.show';
+  static const String drillSlipped = 'drill.slipped';
+  static const String drillSlips = 'drill.slips';
+  static const String drillTitle = 'drill.title';
+  static const String drillWhich = 'drill.which';
+
   static const String durationMinutes = 'duration.minutes';
   static const String durationMinutesSeconds = 'duration.minutes_seconds';
   static const String durationSeconds = 'duration.seconds';

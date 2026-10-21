@@ -40,6 +40,11 @@ class AppRoutes {
   static const String mutashabihatPhrasePath = '/mutashabihat/phrase';
   static const String mutashabihatPhraseName = 'mutashabihat-phrase';
 
+  /// The drill over one such phrase. The phrase id, an `int`, in
+  /// `state.extra`.
+  static const String mutashabihatDrillPath = '/mutashabihat/drill';
+  static const String mutashabihatDrillName = 'mutashabihat-drill';
+
   /// The reader's practice, in plain numbers.
   static const String statsPath = '/stats';
   static const String statsName = 'stats';

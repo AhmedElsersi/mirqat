@@ -16,9 +16,8 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat and browsing, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
+> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat, browsing, named twins and the drill, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
 > | **Partly done** | §9 presets are fixed, not saved by the reader; the surah line has no juz span |
-> | **Not built yet** | §4 mutashabihat drill |
 > | **Problem in a built feature** | §8 on Android the backup sits in the app's own folder, hard to reach since Android 11 and deleted with the app |
 > | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
 > | **Blocked on a package** | daily reminder · record-and-compare · system share sheet |
@@ -29,9 +28,8 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
+> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها وتسمية الشبيهات والتمرين، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
 > | **تمّ بعضه** | §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
-> | **لم يُبنَ بعد** | §٤ تمرين المتشابهات |
 > | **مشكلة في ميزة مبنية** | §٨ النسخة على أندرويد في مجلد التطبيق نفسه، يصعب بلوغه منذ أندرويد ١١، ويُحذف بحذف التطبيق |
 > | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
 > | **ينتظر حزمة** | التنبيه اليومي · سجّل وقارن · نافذة المشاركة النظامية |
@@ -143,7 +141,15 @@ already has progress tracking and session plans to build on:
 > (`3c101ed`): a card per phrase, narrowed by surah, each opening every
 > ayah it is in. The ayah menu's *Similar ayahs* entry names them — the
 > two most alike, then a count: *Resembles: Al-Baqarah 48 · Al-Baqarah 123
-> · and 3 more*. **Not built yet:** the drill.
+> · and 3 more*. **The drill is done:** from a phrase's page (the quiz
+> button), each ayah of the phrase in turn, shown as far as the phrase
+> reaches with the rest veiled — the ayah before shown faintly when the
+> phrase opens it, the next one veiled too when the phrase closes it. The
+> reader says which ayah it is, continues it from memory, shows the rest,
+> and says *I had it* or *I slipped*; a slip is a stumble mark, so the
+> next session over that ayah drills it more. *Built differently:* it is
+> read, not heard — audio plays over the reading view and nowhere else
+> (CLAUDE.md A.1), so *Listen to this ayah* opens it there.
 
 The most common failure of established memorization is sliding from one ayah into its
 near-twin elsewhere. Several dedicated apps exist for this alone.
@@ -377,7 +383,12 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 > ثم صار تصفّح القائمة كلها من أعلى الإعدادات (`3c101ed`): بطاقة لكل عبارة،
 > وتضييقٌ بالسورة، وكل بطاقة تفتح كل آية ترد فيها. وخيار «آيات متشابهة» في قائمة
 > الآية يسمّيها — أشدَّها شبهًا اثنتين، ثم العدد: *تشبه: البقرة ٤٨ · البقرة ١٢٣ · و٣
-> غيرها*. **لم يُبنَ بعد:** التمرين.
+> غيرها*. **والتمرين تمّ:** من صفحة العبارة (زر الاختبار)، كل آية من آياتها بدورها،
+> ظاهرةً إلى آخر العبارة وما بعدها مستور — والآية التي قبلها باهتةً إن افتُتحت بالعبارة،
+> والتي بعدها مستورةً إن خُتمت بها. يقول القارئ أيّ آية هي، ويُكملها من حفظه، ويكشف
+> الباقي، ثم «أتممتها» أو «تعثّرت»؛ والتعثّر علامةُ تعثّر، فتُكرَّر الآية أكثر في الجلسة
+> التالية. *على غير ما في الفكرة:* يُقرأ ولا يُسمَع — فالصوت يُشغَّل فوق صفحة القراءة
+> وحدها (العقد A.1)، فزر «استمع إلى الآية» يفتحها هناك.
 
 أشيعُ خللٍ في الحفظ المستقر هو الانزلاق من آيةٍ إلى شبيهتها في موضع آخر، وقد قامت
 تطبيقات كاملة على هذا وحده.
