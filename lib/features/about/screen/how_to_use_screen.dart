@@ -47,14 +47,59 @@ class HowToUseScreen extends StatelessWidget {
       LocaleKeys.howtoModesBody,
     ),
     HowToStep(
+      Icons.record_voice_over_outlined,
+      LocaleKeys.howtoRecallTitle,
+      LocaleKeys.howtoRecallBody,
+    ),
+    HowToStep(
+      Icons.bookmark_add_outlined,
+      LocaleKeys.howtoPresetsTitle,
+      LocaleKeys.howtoPresetsBody,
+    ),
+    HowToStep(
       Icons.tune,
       LocaleKeys.howtoChangeTitle,
       LocaleKeys.howtoChangeBody,
     ),
     HowToStep(
+      Icons.visibility_off_outlined,
+      LocaleKeys.howtoViewTitle,
+      LocaleKeys.howtoViewBody,
+    ),
+    HowToStep(
+      Icons.flag_outlined,
+      LocaleKeys.howtoStumbleTitle,
+      LocaleKeys.howtoStumbleBody,
+    ),
+    HowToStep(
+      Icons.hearing_outlined,
+      LocaleKeys.howtoTasmeeTitle,
+      LocaleKeys.howtoTasmeeBody,
+    ),
+    HowToStep(
+      Icons.event_repeat,
+      LocaleKeys.howtoReviewTitle,
+      LocaleKeys.howtoReviewBody,
+    ),
+    HowToStep(
+      Icons.flag_circle_outlined,
+      LocaleKeys.howtoPlanTitle,
+      LocaleKeys.howtoPlanBody,
+    ),
+    HowToStep(
+      Icons.compare_arrows,
+      LocaleKeys.howtoSimilarTitle,
+      LocaleKeys.howtoSimilarBody,
+    ),
+    HowToStep(
       Icons.download_outlined,
       LocaleKeys.howtoOfflineTitle,
       LocaleKeys.howtoOfflineBody,
+    ),
+    HowToStep(
+      Icons.save_alt,
+      LocaleKeys.howtoBackupTitle,
+      LocaleKeys.howtoBackupBody,
     ),
     HowToStep(
       Icons.history,

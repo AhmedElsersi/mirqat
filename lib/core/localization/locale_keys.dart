@@ -72,8 +72,7 @@ class LocaleKeys {
   static const String downloadsInstalling = 'downloads.installing';
   static const String downloadsOnDevice = 'downloads.on_device';
   static const String downloadsQueued = 'downloads.queued';
-  static const String downloadsRedownloadReciter =
-      'downloads.redownload_reciter';
+  static const String downloadsRedownloadReciter = 'downloads.redownload_reciter';
   static const String downloadsRetryFailed = 'downloads.retry_failed';
   static const String downloadsSavedEmpty = 'downloads.saved_empty';
   static const String downloadsSavedTitle = 'downloads.saved_title';
@@ -85,21 +84,17 @@ class LocaleKeys {
   static const String downloadsVerifying = 'downloads.verifying';
   static const String downloadsWholeCancelled = 'downloads.whole_cancelled';
   static const String downloadsWholeComplete = 'downloads.whole_complete';
-  static const String downloadsWholeConfirmBody =
-      'downloads.whole_confirm_body';
-  static const String downloadsWholeConfirmBodyUnsized =
-      'downloads.whole_confirm_body_unsized';
+  static const String downloadsWholeConfirmBody = 'downloads.whole_confirm_body';
+  static const String downloadsWholeConfirmBodyUnsized = 'downloads.whole_confirm_body_unsized';
   static const String downloadsWholeConfirmCta = 'downloads.whole_confirm_cta';
-  static const String downloadsWholeConfirmTitle =
-      'downloads.whole_confirm_title';
+  static const String downloadsWholeConfirmTitle = 'downloads.whole_confirm_title';
   static const String downloadsWholeDownload = 'downloads.whole_download';
   static const String downloadsWholeFinished = 'downloads.whole_finished';
   static const String downloadsWholeIntro = 'downloads.whole_intro';
   static const String downloadsWholeNone = 'downloads.whole_none';
   static const String downloadsWholeOnDevice = 'downloads.whole_on_device';
   static const String downloadsWholeRemaining = 'downloads.whole_remaining';
-  static const String downloadsWholeRemainingUnsized =
-      'downloads.whole_remaining_unsized';
+  static const String downloadsWholeRemainingUnsized = 'downloads.whole_remaining_unsized';
   static const String downloadsWholeRunFailed = 'downloads.whole_run_failed';
   static const String downloadsWholeRunning = 'downloads.whole_running';
   static const String downloadsWholeTitle = 'downloads.whole_title';
@@ -138,6 +133,8 @@ class LocaleKeys {
   static const String homeTabAjzaa = 'home.tab_ajzaa';
   static const String homeTabSurahs = 'home.tab_surahs';
 
+  static const String howtoBackupBody = 'howto.backup_body';
+  static const String howtoBackupTitle = 'howto.backup_title';
   static const String howtoChangeBody = 'howto.change_body';
   static const String howtoChangeTitle = 'howto.change_title';
   static const String howtoListenBody = 'howto.listen_body';
@@ -146,18 +143,32 @@ class LocaleKeys {
   static const String howtoModesTitle = 'howto.modes_title';
   static const String howtoOfflineBody = 'howto.offline_body';
   static const String howtoOfflineTitle = 'howto.offline_title';
+  static const String howtoPlanBody = 'howto.plan_body';
+  static const String howtoPlanTitle = 'howto.plan_title';
+  static const String howtoPresetsBody = 'howto.presets_body';
+  static const String howtoPresetsTitle = 'howto.presets_title';
   static const String howtoRangeBody = 'howto.range_body';
   static const String howtoRangeTitle = 'howto.range_title';
   static const String howtoReadBody = 'howto.read_body';
   static const String howtoReadTitle = 'howto.read_title';
+  static const String howtoRecallBody = 'howto.recall_body';
+  static const String howtoRecallTitle = 'howto.recall_title';
   static const String howtoResumeBody = 'howto.resume_body';
   static const String howtoResumeTitle = 'howto.resume_title';
+  static const String howtoReviewBody = 'howto.review_body';
+  static const String howtoReviewTitle = 'howto.review_title';
+  static const String howtoSimilarBody = 'howto.similar_body';
+  static const String howtoSimilarTitle = 'howto.similar_title';
+  static const String howtoStumbleBody = 'howto.stumble_body';
+  static const String howtoStumbleTitle = 'howto.stumble_title';
+  static const String howtoTasmeeBody = 'howto.tasmee_body';
+  static const String howtoTasmeeTitle = 'howto.tasmee_title';
+  static const String howtoViewBody = 'howto.view_body';
+  static const String howtoViewTitle = 'howto.view_title';
 
-  static const String memorizationViewFirstWords =
-      'memorization_view.first_words';
+  static const String memorizationViewFirstWords = 'memorization_view.first_words';
   static const String memorizationViewHint = 'memorization_view.hint';
-  static const String memorizationViewMarkersOnly =
-      'memorization_view.markers_only';
+  static const String memorizationViewMarkersOnly = 'memorization_view.markers_only';
   static const String memorizationViewOff = 'memorization_view.off';
   static const String memorizationViewTitle = 'memorization_view.title';
 
@@ -169,8 +180,7 @@ class LocaleKeys {
   static const String mushafHizbHalfLabel = 'mushaf.hizb_half_label';
   static const String mushafHizbLabel = 'mushaf.hizb_label';
   static const String mushafHizbQuarterLabel = 'mushaf.hizb_quarter_label';
-  static const String mushafHizbThreeQuartersLabel =
-      'mushaf.hizb_three_quarters_label';
+  static const String mushafHizbThreeQuartersLabel = 'mushaf.hizb_three_quarters_label';
   static const String mushafJuzLabel = 'mushaf.juz_label';
   static const String mushafJuzOne = 'mushaf.juz_one';
   static const String mushafJuzSpan = 'mushaf.juz_span';
@@ -350,65 +360,48 @@ class LocaleKeys {
   static const String sessionSurah = 'session.surah';
   static const String sessionUsePageRange = 'session.use_page_range';
 
-  static const String sessionSetupBetweenRepeatPause =
-      'session_setup.between_repeat_pause';
-  static const String sessionSetupBetweenStepsPause =
-      'session_setup.between_steps_pause';
+  static const String sessionSetupBetweenRepeatPause = 'session_setup.between_repeat_pause';
+  static const String sessionSetupBetweenStepsPause = 'session_setup.between_steps_pause';
   static const String sessionSetupChainRecall = 'session_setup.chain_recall';
-  static const String sessionSetupChainRecallHint =
-      'session_setup.chain_recall_hint';
-  static const String sessionSetupConnectContinuous =
-      'session_setup.connect_continuous';
-  static const String sessionSetupConnectContinuousHint =
-      'session_setup.connect_continuous_hint';
-  static const String sessionSetupConnectCumulative =
-      'session_setup.connect_cumulative';
-  static const String sessionSetupConnectCumulativeHint =
-      'session_setup.connect_cumulative_hint';
+  static const String sessionSetupChainRecallHint = 'session_setup.chain_recall_hint';
+  static const String sessionSetupConnectContinuous = 'session_setup.connect_continuous';
+  static const String sessionSetupConnectContinuousHint = 'session_setup.connect_continuous_hint';
+  static const String sessionSetupConnectCumulative = 'session_setup.connect_cumulative';
+  static const String sessionSetupConnectCumulativeHint = 'session_setup.connect_cumulative_hint';
   static const String sessionSetupConnectMode = 'session_setup.connect_mode';
   static const String sessionSetupConnectNone = 'session_setup.connect_none';
-  static const String sessionSetupConnectNoneHint =
-      'session_setup.connect_none_hint';
-  static const String sessionSetupFinalFullPass =
-      'session_setup.final_full_pass';
+  static const String sessionSetupConnectNoneHint = 'session_setup.connect_none_hint';
+  static const String sessionSetupFinalFullPass = 'session_setup.final_full_pass';
   static const String sessionSetupFrom = 'session_setup.from';
-  static const String sessionSetupIntraBlockPause =
-      'session_setup.intra_block_pause';
+  static const String sessionSetupIntraBlockPause = 'session_setup.intra_block_pause';
   static const String sessionSetupMilliseconds = 'session_setup.milliseconds';
-  static const String sessionSetupPlayIstiadhah =
-      'session_setup.play_istiadhah';
-  static const String sessionSetupPlaybackSpeed =
-      'session_setup.playback_speed';
+  static const String sessionSetupPlayIstiadhah = 'session_setup.play_istiadhah';
+  static const String sessionSetupPlaybackSpeed = 'session_setup.playback_speed';
   static const String sessionSetupRange = 'session_setup.range';
   static const String sessionSetupRecallRounds = 'session_setup.recall_rounds';
-  static const String sessionSetupRecallRoundsHint =
-      'session_setup.recall_rounds_hint';
+  static const String sessionSetupRecallRoundsHint = 'session_setup.recall_rounds_hint';
   static const String sessionSetupRepeatCount = 'session_setup.repeat_count';
   static const String sessionSetupSummary = 'session_setup.summary';
   static const String sessionSetupTo = 'session_setup.to';
 
   static const String settingsArabicFontSize = 'settings.arabic_font_size';
-  static const String settingsArabicFontSizeHint =
-      'settings.arabic_font_size_hint';
+  static const String settingsArabicFontSizeHint = 'settings.arabic_font_size_hint';
   static const String settingsAudioQuality = 'settings.audio_quality';
   static const String settingsAudioQualityHigh = 'settings.audio_quality_high';
   static const String settingsAudioQualityHint = 'settings.audio_quality_hint';
   static const String settingsAudioQualityLow = 'settings.audio_quality_low';
-  static const String settingsAudioQualityStandard =
-      'settings.audio_quality_standard';
+  static const String settingsAudioQualityStandard = 'settings.audio_quality_standard';
   static const String settingsCardAbout = 'settings.card_about';
   static const String settingsCardAppearance = 'settings.card_appearance';
   static const String settingsCardAudio = 'settings.card_audio';
   static const String settingsCardSession = 'settings.card_session';
   static const String settingsDefaultPauses = 'settings.default_pauses';
-  static const String settingsDefaultRangeBehaviour =
-      'settings.default_range_behaviour';
+  static const String settingsDefaultRangeBehaviour = 'settings.default_range_behaviour';
   static const String settingsHomeViewGrid = 'settings.home_view_grid';
   static const String settingsHomeViewList = 'settings.home_view_list';
   static const String settingsHomeViewMode = 'settings.home_view_mode';
   static const String settingsHomeViewMushaf = 'settings.home_view_mushaf';
-  static const String settingsHomeViewMushafHint =
-      'settings.home_view_mushaf_hint';
+  static const String settingsHomeViewMushafHint = 'settings.home_view_mushaf_hint';
   static const String settingsLanguage = 'settings.language';
   static const String settingsLanguageAr = 'settings.language_ar';
   static const String settingsLanguageEn = 'settings.language_en';
@@ -418,17 +411,14 @@ class LocaleKeys {
   static const String settingsRangeLastUsed = 'settings.range_last_used';
   static const String settingsRangeWholeSurah = 'settings.range_whole_surah';
   static const String settingsReadingRibbon = 'settings.reading_ribbon';
-  static const String settingsReadingRibbonHint =
-      'settings.reading_ribbon_hint';
+  static const String settingsReadingRibbonHint = 'settings.reading_ribbon_hint';
   static const String settingsReciter = 'settings.reciter';
   static const String settingsSavedRecitations = 'settings.saved_recitations';
-  static const String settingsSavedRecitationsHint =
-      'settings.saved_recitations_hint';
+  static const String settingsSavedRecitationsHint = 'settings.saved_recitations_hint';
   static const String settingsSectionGeneral = 'settings.section_general';
   static const String settingsSectionReciter = 'settings.section_reciter';
   static const String settingsSectionSession = 'settings.section_session';
-  static const String settingsSectionSessionHint =
-      'settings.section_session_hint';
+  static const String settingsSectionSessionHint = 'settings.section_session_hint';
   static const String settingsSectionStorage = 'settings.section_storage';
   static const String settingsSessionPageHint = 'settings.session_page_hint';
   static const String settingsShowStumbles = 'settings.show_stumbles';
