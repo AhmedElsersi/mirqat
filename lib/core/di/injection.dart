@@ -12,6 +12,7 @@ import '../../data/datasources/reading_history_local_data_source.dart';
 import '../../data/datasources/review_local_data_source.dart';
 import '../../data/datasources/settings_local_data_source.dart';
 import '../../data/repositories/downloads_repository.dart';
+import '../../data/repositories/mutashabihat_repository.dart';
 import '../../data/repositories/progress_repository.dart';
 import '../../data/repositories/quran_pages_repository.dart';
 import '../../data/repositories/quran_repository.dart';
@@ -29,6 +30,7 @@ import '../../features/search/cubit/search_cubit.dart';
 import '../../features/session/cubit/audio_pack_cubit.dart';
 import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
+import '../../features/similar/cubit/similar_cubit.dart';
 import '../../features/settings/cubit/mushaf_download_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
@@ -117,6 +119,9 @@ Future<void> configureDependencies() async {
   );
   sl.registerLazySingleton<SettingsRepository>(
     () => SettingsRepositoryImpl(sl<SettingsLocalDataSource>()),
+  );
+  sl.registerLazySingleton<MutashabihatRepository>(
+    () => MutashabihatRepository(sl<AssetReader>()),
   );
   sl.registerLazySingleton<DownloadsRepository>(
     () => DownloadsRepositoryImpl(sl<DownloadsLocalDataSource>()),
@@ -242,6 +247,13 @@ Future<void> configureDependencies() async {
     () => ProgressCubit(
       quranRepository: sl<QuranRepository>(),
       progressRepository: sl<ProgressRepository>(),
+    ),
+  );
+  sl.registerFactory<SimilarCubit>(
+    () => SimilarCubit(
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
     ),
   );
   sl.registerFactory<ReviewCubit>(

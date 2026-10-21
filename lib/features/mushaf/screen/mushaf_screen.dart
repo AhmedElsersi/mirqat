@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/desktop.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
@@ -16,6 +18,7 @@ import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_position.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
+import '../../../data/repositories/mutashabihat_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../services/share_service.dart';
 import '../../session/cubit/session_cubit.dart';
@@ -779,6 +782,10 @@ class _PageSlot extends StatelessWidget {
     final ReadingPosition? mark = settings.state.settings.readingMark;
 
     cubit.selectWord(word);
+    // Read once and kept; on every later press it is already in hand.
+    final bool hasSimilar = (await sl<MutashabihatRepository>().index())
+        .hasSimilar(ayah);
+    if (!context.mounted) return;
     final AyahAction? action = await showModalBottomSheet<AyahAction>(
       context: context,
       // Sized to its entries: six of them, with a chosen range, are more
@@ -799,6 +806,7 @@ class _PageSlot extends StatelessWidget {
             mark.surahNumber == ayah.surah &&
             mark.ayahNumber == ayah.ayah,
         isStumbled: session.state.stumbled.contains(ayah),
+        hasSimilar: hasSimilar,
       ),
     );
     if (!cubit.isClosed) cubit.clearSelection();
@@ -848,6 +856,10 @@ class _PageSlot extends StatelessWidget {
         }
       case AyahAction.clearStumble:
         await session.clearStumble(ayah);
+      case AyahAction.similar:
+        if (context.mounted) {
+          await context.pushNamed<void>(AppRoutes.similarName, extra: ayah);
+        }
     }
   }
 

@@ -84,6 +84,15 @@ already has progress tracking and session plans to build on:
 
 ### 4. Mutashabihat — the confusable verses
 
+> **Status:** built in October 2026 and waiting on its data. QUL's
+> *Mutashabihat ul Quran* (resource 73) is served only to a signed-in
+> account. To switch the feature on: sign in at qul.tarteel.ai, download
+> the JSON zip from https://qul.tarteel.ai/resources/mutashabihat/73, then
+> run `python3 tool/build_mutashabihat.py path/to/the.zip`. It checks every
+> reference against `quran.db`, refuses a source that disagrees, and writes
+> `assets/data/mutashabihat.json`; *Similar ayahs* then appears on the
+> ayah menu of every ayah that has one.
+
 The most common failure of established memorization is sliding from one ayah into its
 near-twin elsewhere. Several dedicated apps exist for this alone.
 
@@ -243,6 +252,14 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
   ومقدار الموسوم ضعفًا — نظرة «أي السور راسخة» بلمحة، محسوبة من التقدم المحلي وحده.
 
 ### ٤. المتشابهات — الآيات المتقاربات
+
+> **الحال:** بُنيت الميزة في أكتوبر ٢٠٢٦ وتنتظر بياناتها. «متشابهات القرآن»
+> في QUL (المورد ٧٣) لا يُنزَّل إلا بحساب مسجَّل. لتفعيلها: سجّل الدخول في
+> qul.tarteel.ai ونزّل ملف JSON المضغوط من الرابط أعلاه، ثم شغّل
+> `python3 tool/build_mutashabihat.py path/to/the.zip`. يتحقق الأمر من كل
+> إحالة على `quran.db` ويرفض المصدر إن خالفه، ثم يكتب
+> `assets/data/mutashabihat.json`؛ فيظهر «آيات متشابهة» في قائمة كل آية لها
+> نظير.
 
 أشيعُ خللٍ في الحفظ المستقر هو الانزلاق من آيةٍ إلى شبيهتها في موضع آخر، وقد قامت
 تطبيقات كاملة على هذا وحده.

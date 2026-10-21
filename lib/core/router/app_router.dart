@@ -12,7 +12,9 @@ import '../../features/mushaf/screen/mushaf_screen.dart';
 import '../../features/onboarding/screen/onboarding_screen.dart';
 import '../../features/progress/screen/progress_screen.dart';
 import '../../features/review/screen/reviews_screen.dart';
+import '../../domain/entities/ayah_ref.dart';
 import '../../features/search/screen/search_screen.dart';
+import '../../features/similar/screen/similar_screen.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/settings/cubit/settings_state.dart';
 import '../../features/settings/screen/downloads_screen.dart';
@@ -106,6 +108,12 @@ class AppRouter {
         name: AppRoutes.searchName,
         builder: (BuildContext context, GoRouterState state) =>
             const SearchScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.similarPath,
+        name: AppRoutes.similarName,
+        builder: (BuildContext context, GoRouterState state) =>
+            SimilarScreen(ayah: state.extra! as AyahRef),
       ),
       GoRoute(
         path: AppRoutes.reviewsPath,

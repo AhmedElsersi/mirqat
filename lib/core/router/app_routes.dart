@@ -26,6 +26,11 @@ class AppRoutes {
   static const String searchPath = '/search';
   static const String searchName = 'search';
 
+  /// An ayah beside the ayahs it is easily confused with. An `AyahRef` in
+  /// `state.extra`.
+  static const String similarPath = '/similar';
+  static const String similarName = 'similar';
+
   /// Every range kept on the review ladder.
   static const String reviewsPath = '/reviews';
   static const String reviewsName = 'reviews';

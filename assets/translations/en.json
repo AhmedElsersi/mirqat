@@ -172,7 +172,8 @@
     "stumble_here": "I stumble here",
     "clear_stumble": "Clear the stumble mark",
     "stumble_marked": "Noted. This ayah will be repeated more in your sessions.",
-    "listen_from_here": "Listen from here to the end of the surah"
+    "listen_from_here": "Listen from here to the end of the surah",
+    "similar_ayahs": "Similar ayahs"
   },
   "downloads": {
     "section": "Offline audio",
@@ -368,5 +369,12 @@
     "minutes": "{} min",
     "end_of_step": "End of step",
     "until": "Pauses at {}"
+  },
+  "similar": {
+    "title": "Similar ayahs",
+    "none": "No similar ayahs for this ayah.",
+    "count": "Ayahs sharing its wording ({})",
+    "listen": "Listen to this ayah",
+    "source": "Similar phrases from QUL's “Mutashabihat ul Quran”; the shared words are shaded."
   }
 }

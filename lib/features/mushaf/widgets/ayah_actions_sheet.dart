@@ -40,6 +40,9 @@ enum AyahAction {
   /// the page and drilled more by every session over it.
   stumble,
   clearStumble,
+
+  /// The ayahs this one shares a phrase with, side by side.
+  similar,
 }
 
 /// What a long-pressed ayah offers. Pops with the [AyahAction] chosen.
@@ -51,6 +54,7 @@ class AyahActionsSheet extends StatelessWidget {
     required this.hasChosenRange,
     this.isMarked = false,
     this.isStumbled = false,
+    this.hasSimilar = false,
     this.canShare = false,
     super.key,
   });
@@ -71,6 +75,9 @@ class AyahActionsSheet extends StatelessWidget {
   /// Whether this ayah carries a stumble mark, so the sheet offers to take
   /// it off as well as to count another.
   final bool isStumbled;
+
+  /// Whether other ayahs share a phrase with this one.
+  final bool hasSimilar;
 
   /// Whether this platform can share at all — a desktop without a share
   /// sheet is not offered a button that would do nothing.
@@ -130,6 +137,12 @@ class AyahActionsSheet extends StatelessWidget {
                 AyahAction.clearStumble,
                 Icons.outlined_flag,
                 LocaleKeys.mushafClearStumble.tr(),
+              ),
+            if (hasSimilar)
+              action(
+                AyahAction.similar,
+                Icons.compare_arrows,
+                LocaleKeys.mushafSimilarAyahs.tr(),
               ),
             if (canShare)
               action(

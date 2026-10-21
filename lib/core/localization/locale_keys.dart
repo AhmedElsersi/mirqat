@@ -217,6 +217,12 @@ class LocaleKeys {
       'session_setup.connect_cumulative';
   static const String sessionSetupConnectCumulativeHint =
       'session_setup.connect_cumulative_hint';
+  static const String similarTitle = 'similar.title';
+  static const String similarNone = 'similar.none';
+  static const String similarCount = 'similar.count';
+  static const String similarListen = 'similar.listen';
+  static const String similarSource = 'similar.source';
+  static const String mushafSimilarAyahs = 'mushaf.similar_ayahs';
   static const String sleepTitle = 'sleep.title';
   static const String sleepOff = 'sleep.off';
   static const String sleepMinutes = 'sleep.minutes';
