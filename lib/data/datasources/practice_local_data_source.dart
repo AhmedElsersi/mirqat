@@ -13,6 +13,10 @@ abstract class PracticeLocalDataSource {
   /// Adds [practice] to what [day] already holds.
   Future<void> add(DateTime day, PracticeDay practice);
 
+  /// Puts exactly [practice] for [day], whatever was there — restoring a
+  /// backup, never counting the same day twice.
+  Future<void> set(DateTime day, PracticeDay practice);
+
   /// Every day recorded. A record that cannot be read is left out.
   Future<Map<DateTime, PracticeDay>> all();
 }
@@ -70,6 +74,17 @@ class PracticeLocalDataSourceImpl implements PracticeLocalDataSource {
       await _requireBox.put(key, before.plus(practice).toMap());
     } catch (e) {
       throw StorageException('Could not record practice for $key: $e');
+    }
+  }
+
+  @override
+  Future<void> set(DateTime day, PracticeDay practice) async {
+    try {
+      await _requireBox.put(keyFor(day), practice.toMap());
+    } catch (e) {
+      throw StorageException(
+        'Could not record practice for ${keyFor(day)}: $e',
+      );
     }
   }
 

@@ -34,7 +34,8 @@ because the scheduler reads them.
 | 5 — mutashabihat | built; data awaits a QUL download (see NEW_IDEAS §4) | `951792d` |
 | 6a — hifz plan | done | `bacfb05` (its "behind schedule" line removed in 6b) |
 | 6b — quiet stats | done | `3ea5bc8` |
-| 7 — tasmee', reciting to a listener | done | this commit |
+| 7 — tasmee', reciting to a listener | done | `16cee2c` |
+| 8 — back up and restore progress | done | this commit |
 
 ---
 

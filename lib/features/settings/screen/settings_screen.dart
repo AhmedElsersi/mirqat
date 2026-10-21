@@ -132,6 +132,12 @@ class SettingsScreen extends StatelessWidget {
                           context.pushNamed(AppRoutes.sessionSettingsName),
                     ),
                     SettingsLinkRow(
+                      icon: Icons.save_alt,
+                      title: LocaleKeys.backupTitle.tr(),
+                      subtitle: LocaleKeys.backupHint.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.backupName),
+                    ),
+                    SettingsLinkRow(
                       icon: Icons.insights_outlined,
                       title: LocaleKeys.statsTitle.tr(),
                       subtitle: LocaleKeys.statsHint.tr(),

@@ -9,6 +9,9 @@ abstract class PracticeRepository {
   Future<Either<Failure, Unit>> add(DateTime day, PracticeDay practice);
 
   Future<Either<Failure, Map<DateTime, PracticeDay>>> all();
+
+  /// Puts exactly [practice] for [day] — restoring a backup.
+  Future<Either<Failure, Unit>> set(DateTime day, PracticeDay practice);
 }
 
 class PracticeRepositoryImpl implements PracticeRepository {
@@ -20,6 +23,13 @@ class PracticeRepositoryImpl implements PracticeRepository {
   Future<Either<Failure, Unit>> add(DateTime day, PracticeDay practice) =>
       _guard(() async {
         await _local.add(day, practice);
+        return unit;
+      });
+
+  @override
+  Future<Either<Failure, Unit>> set(DateTime day, PracticeDay practice) =>
+      _guard(() async {
+        await _local.set(day, practice);
         return unit;
       });
 

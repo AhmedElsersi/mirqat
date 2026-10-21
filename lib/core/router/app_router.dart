@@ -7,6 +7,7 @@ import '../../features/about/screen/idea_screen.dart';
 import '../../features/about/screen/how_to_use_screen.dart';
 import '../../features/about/screen/info_page_screen.dart';
 import '../../features/hifz_plan/screen/hifz_plan_screen.dart';
+import '../../features/backup/screen/backup_screen.dart';
 import '../../features/history/screen/history_screen.dart';
 import '../../features/mushaf/mushaf_args.dart';
 import '../../features/mushaf/screen/mushaf_screen.dart';
@@ -152,6 +153,12 @@ class AppRouter {
             name: AppRoutes.sessionSettingsName,
             builder: (BuildContext context, GoRouterState state) =>
                 const SessionSettingsScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.backupPath,
+            name: AppRoutes.backupName,
+            builder: (BuildContext context, GoRouterState state) =>
+                const BackupScreen(),
           ),
           GoRoute(
             path: AppRoutes.mushafFontPath,

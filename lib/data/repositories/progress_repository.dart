@@ -48,6 +48,12 @@ abstract class ProgressRepository {
 
   Future<Either<Failure, int>> memorizedCount();
 
+  /// Every record that can be read, in mushaf order.
+  Future<Either<Failure, List<MemorizationProgress>>> all();
+
+  /// Writes [progress] as it is — restoring a backup.
+  Future<Either<Failure, Unit>> save(MemorizationProgress progress);
+
   /// Emits whenever any progress record is written, by anyone.
   ///
   /// Deliberately `void` rather than the changed record: every listener here
@@ -113,6 +119,14 @@ class ProgressRepositoryImpl implements ProgressRepository {
   @override
   Future<Either<Failure, List<MemorizationProgress>>> stumbled() =>
       _guard(_local.stumbled);
+
+  @override
+  Future<Either<Failure, List<MemorizationProgress>>> all() =>
+      _guard(_local.all);
+
+  @override
+  Future<Either<Failure, Unit>> save(MemorizationProgress progress) =>
+      _guardUnit(() => _local.save(progress));
 
   @override
   Future<Either<Failure, int>> memorizedCount() =>

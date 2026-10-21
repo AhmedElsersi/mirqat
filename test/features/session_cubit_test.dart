@@ -1200,6 +1200,12 @@ class _Practice implements PracticeRepository {
   @override
   Future<Either<Failure, Map<DateTime, PracticeDay>>> all() async =>
       Right<Failure, Map<DateTime, PracticeDay>>(days);
+
+  @override
+  Future<Either<Failure, Unit>> set(DateTime day, PracticeDay p) async {
+    days[day] = p;
+    return const Right<Failure, Unit>(unit);
+  }
 }
 
 /// A store that holds what was last saved, the way the real one does — so

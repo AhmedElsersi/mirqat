@@ -24,6 +24,7 @@ import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
 import '../../domain/engine/review_scheduler.dart';
 import '../../features/about/cubit/app_info_cubit.dart';
+import '../../features/backup/cubit/backup_cubit.dart';
 import '../../features/hifz_plan/cubit/hifz_plan_cubit.dart';
 import '../../features/home/cubit/home_index_cubit.dart';
 import '../../features/mushaf/cubit/mushaf_cubit.dart';
@@ -41,6 +42,7 @@ import '../../features/surah_list/cubit/surah_list_cubit.dart';
 import '../../features/update/cubit/update_cubit.dart';
 import '../../features/weak_spots/cubit/weak_spots_cubit.dart';
 import '../../services/app_info_service.dart';
+import '../../services/backup_service.dart';
 import '../../services/app_version_service.dart';
 import '../../services/audio/audio_availability.dart';
 import '../../services/audio/audio_pack_service.dart';
@@ -267,6 +269,17 @@ Future<void> configureDependencies() async {
       quranRepository: sl<QuranRepository>(),
       pagesRepository: sl<QuranPagesRepository>(),
     ),
+  );
+  sl.registerLazySingleton<BackupService>(
+    () => BackupService(
+      progressRepository: sl<ProgressRepository>(),
+      reviewRepository: sl<ReviewRepository>(),
+      practiceRepository: sl<PracticeRepository>(),
+      settingsRepository: sl<SettingsRepository>(),
+    ),
+  );
+  sl.registerFactory<BackupCubit>(
+    () => BackupCubit(backupService: sl<BackupService>()),
   );
   sl.registerFactory<StatsCubit>(
     () => StatsCubit(

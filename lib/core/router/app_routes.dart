@@ -73,6 +73,10 @@ class AppRoutes {
   /// returns there rather than to the home screen.
   static const String downloadsPath = 'downloads';
 
+  /// The reader's progress saved to a file and taken back in.
+  static const String backupPath = 'backup';
+  static const String backupName = 'backup';
+
   /// The mushaf's face and text size, with a preview.
   static const String mushafFontPath = 'mushaf-font';
   static const String mushafFontName = 'mushaf_font';
