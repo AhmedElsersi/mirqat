@@ -82,6 +82,8 @@ class SessionState extends Equatable {
     this.gradeOffer,
     this.sleepAt,
     this.sleepAtEndOfStep = false,
+    this.tasmee = false,
+    this.tasmeeMarks = const <AyahRef>[],
   });
 
   /// Whether the catalog, the reciters and the settings have been read.
@@ -161,6 +163,14 @@ class SessionState extends Equatable {
   final bool sleepAtEndOfStep;
 
   bool get sleepTimerSet => sleepAt != null || sleepAtEndOfStep;
+
+  /// Whether the reader is reciting to a listener who holds the phone: the
+  /// page is shown plainly, and a tap on a word notes a slip at its ayah.
+  final bool tasmee;
+
+  /// The slips noted in this sitting, in the order they were noted — the
+  /// last one is what undo takes back.
+  final List<AyahRef> tasmeeMarks;
 
   bool get isActive => phase == SessionPhase.active;
 
@@ -286,6 +296,8 @@ class SessionState extends Equatable {
     DateTime? sleepAt,
     bool? sleepAtEndOfStep,
     bool clearSleep = false,
+    bool? tasmee,
+    List<AyahRef>? tasmeeMarks,
   }) => SessionState(
     ready: ready ?? this.ready,
     surahs: surahs ?? this.surahs,
@@ -318,6 +330,8 @@ class SessionState extends Equatable {
     sleepAtEndOfStep: clearSleep
         ? false
         : (sleepAtEndOfStep ?? this.sleepAtEndOfStep),
+    tasmee: tasmee ?? this.tasmee,
+    tasmeeMarks: tasmeeMarks ?? this.tasmeeMarks,
   );
 
   @override
@@ -347,5 +361,7 @@ class SessionState extends Equatable {
     gradeOffer,
     sleepAt,
     sleepAtEndOfStep,
+    tasmee,
+    tasmeeMarks,
   ];
 }

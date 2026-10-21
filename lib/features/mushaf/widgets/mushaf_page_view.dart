@@ -36,6 +36,7 @@ class MushafPageView extends StatefulWidget {
     this.ribbon = true,
     required this.selected,
     required this.onWordLongPress,
+    this.onWordTap,
     this.onTap,
     this.isSelected,
     this.isHeldBack,
@@ -77,6 +78,11 @@ class MushafPageView extends StatefulWidget {
   /// tap anywhere on the page belongs to [onTap], and one gesture cannot mean
   /// both "show me the controls" and "act on this ayah".
   final ValueChanged<Word> onWordLongPress;
+
+  /// A tap on a recited word, when the screen wants it — reciting to a
+  /// listener, whose tap notes a slip there. Null leaves a tap to the
+  /// memorization view's peek and to [onTap], as usual.
+  final ValueChanged<Word>? onWordTap;
 
   /// A tap anywhere on the page, words included.
   final VoidCallback? onTap;
@@ -164,6 +170,11 @@ class _MushafPageViewState extends State<MushafPageView> {
   /// A tap on a recited word: under the memorization view a covered word
   /// uncovers its ayah, and a word of the uncovered ayah covers it again.
   void _onWordTap(Word w) {
+    final ValueChanged<Word>? handler = widget.onWordTap;
+    if (handler != null) {
+      handler(w);
+      return;
+    }
     if (_peeked == w.ref) {
       setState(() => _peeked = null);
       return;

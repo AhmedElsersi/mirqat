@@ -403,5 +403,16 @@
     "plays": "Recitations heard",
     "memorized": "Ayahs marked memorized",
     "note": "Everything is counted on this device alone, and sent nowhere."
+  },
+  "tasmee": {
+    "title": "Recite to a listener",
+    "hint": "The listener holds the phone and taps where you slip",
+    "start": "Recite to a listener",
+    "count": "Slips: {}",
+    "undo": "Undo",
+    "end": "End",
+    "noted": "Slip noted at ayah {}",
+    "no_slips": "Recited without a slip.",
+    "slips_noted": "The places ({}) are noted under Weak spots, and will be repeated more in your sessions."
   }
 }

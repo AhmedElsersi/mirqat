@@ -230,6 +230,15 @@ class LocaleKeys {
   static const String sleepUntil = 'sleep.until';
   static const String playerRepeatAyah = 'player.repeat_ayah';
   static const String mushafListenFromHere = 'mushaf.listen_from_here';
+  static const String tasmeeTitle = 'tasmee.title';
+  static const String tasmeeHint = 'tasmee.hint';
+  static const String tasmeeStart = 'tasmee.start';
+  static const String tasmeeCount = 'tasmee.count';
+  static const String tasmeeUndo = 'tasmee.undo';
+  static const String tasmeeEnd = 'tasmee.end';
+  static const String tasmeeNoted = 'tasmee.noted';
+  static const String tasmeeNoSlips = 'tasmee.no_slips';
+  static const String tasmeeSlipsNoted = 'tasmee.slips_noted';
   static const String statsTitle = 'stats.title';
   static const String statsHint = 'stats.hint';
   static const String statsDays = 'stats.days';

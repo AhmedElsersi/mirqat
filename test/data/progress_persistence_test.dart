@@ -245,6 +245,20 @@ void main() {
       expect(MemorizationProgress.fromMap(p.toMap()), p);
     });
 
+    test('undo takes back one stumble; the last one clears the mark', () async {
+      final ProgressLocalDataSource source = await openSource();
+      await source.markStumble(3, 4);
+      await source.markStumble(3, 4);
+      await source.undoStumble(3, 4);
+      expect((await source.get(3, 4)).stumbles, 1);
+      await source.undoStumble(3, 4);
+      final MemorizationProgress p = await source.get(3, 4);
+      expect(p.isStumbled, isFalse);
+      expect(p.lastStumbleAt, isNull);
+      await source.undoStumble(3, 4);
+      expect((await source.get(3, 4)).stumbles, 0, reason: 'never below');
+    });
+
     test('clearing a surah clears its stumbles too', () async {
       final ProgressLocalDataSource source = await openSource();
       await source.markStumble(1, 3);

@@ -318,6 +318,12 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
             if (state.phase == SessionPhase.loading) _following = true;
           }),
         ),
+        // Reciting to a listener begins with the bar up: it holds the count
+        // and the way out.
+        BlocListener<SessionCubit, SessionState>(
+          listenWhen: (SessionState a, SessionState b) => !a.tasmee && b.tasmee,
+          listener: (_, _) => setState(() => _chrome = true),
+        ),
         BlocListener<SessionCubit, SessionState>(
           listenWhen: (SessionState a, SessionState b) =>
               a.defaultsSavedAt != b.defaultsSavedAt,
@@ -739,10 +745,17 @@ class _PageSlot extends StatelessWidget {
               )
             : const <AyahRef>{};
 
-        final MemorizationView memorizationView = context
-            .select<SettingsCubit, MemorizationView>(
-              (SettingsCubit c) => c.state.settings.memorizationView,
-            );
+        // Reciting to a listener: the page is the listener's, shown plainly,
+        // and a tap on a word notes a slip at its ayah.
+        final bool tasmee = context.select<SessionCubit, bool>(
+          (SessionCubit c) => c.state.tasmee,
+        );
+
+        final MemorizationView memorizationView = tasmee
+            ? MemorizationView.off
+            : context.select<SettingsCubit, MemorizationView>(
+                (SettingsCubit c) => c.state.settings.memorizationView,
+              );
 
         return MushafPageView(
           page: page,
@@ -763,9 +776,36 @@ class _PageSlot extends StatelessWidget {
               : (Word w) => !state.section!.holds(w.ref),
           onTap: onTap,
           onWordLongPress: (Word word) => _openAyah(context, cubit, word),
+          onWordTap: tasmee ? (Word word) => _noteSlip(context, word) : null,
         );
       },
     );
+  }
+
+  /// The listener heard a slip at [word]'s ayah. Said back at once, with a
+  /// way to take it back: the listener is following a voice, not the
+  /// screen, and a tap can land on the wrong word.
+  static Future<void> _noteSlip(BuildContext context, Word word) async {
+    if (word.isMarker) return;
+    final SessionCubit session = context.read<SessionCubit>();
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    await session.markInTasmee(word.ref);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 3),
+          content: Text(
+            LocaleKeys.tasmeeNoted.tr(
+              args: <String>[word.ayahNumber.toLocalisedString()],
+            ),
+          ),
+          action: SnackBarAction(
+            label: LocaleKeys.tasmeeUndo.tr(),
+            onPressed: session.undoTasmeeMark,
+          ),
+        ),
+      );
   }
 
   static Future<void> _openAyah(

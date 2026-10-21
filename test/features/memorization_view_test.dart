@@ -50,6 +50,7 @@ void main() {
     WidgetTester tester, {
     MemorizationView view = MemorizationView.off,
     AyahRef? veiled,
+    ValueChanged<Word>? onWordTap,
   }) async {
     pageTaps = 0;
     tester.view.physicalSize = const Size(412, 915);
@@ -69,6 +70,7 @@ void main() {
               selected: null,
               onWordLongPress: (_) {},
               onTap: () => pageTaps++,
+              onWordTap: onWordTap,
               isHeldBack: (Word w) => w.surahNumber == 3,
             ),
           ),
@@ -160,6 +162,21 @@ void main() {
     await pump(tester, view: MemorizationView.markersOnly);
     expect(find.text('w1-2'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a word tap the screen asks for goes to it, and nothing else '
+      'happens: no peek, no bar', (WidgetTester tester) async {
+    final List<String> tapped = <String>[];
+    await pump(
+      tester,
+      view: MemorizationView.markersOnly,
+      onWordTap: (Word w) => tapped.add(w.text),
+    );
+    await tester.tap(find.text('w2-2'));
+    await tester.pump();
+    expect(tapped, <String>['w2-2']);
+    expect(covered(tester)['w2-1'], isTrue, reason: 'nothing peeked');
+    expect(pageTaps, 0);
   });
 
   test('the view is read forgivingly from storage', () {

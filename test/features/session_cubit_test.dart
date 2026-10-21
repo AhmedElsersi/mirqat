@@ -1,4 +1,10 @@
 import 'package:dartz/dartz.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mirqat/core/localization/app_localization.dart';
+import 'package:mirqat/features/session/widgets/session_bar.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mirqat/core/error/failures.dart';
@@ -28,6 +34,7 @@ import 'package:mirqat/services/keep_awake_service.dart';
 
 import '../fake_review_repository.dart';
 import '../fake_session_player.dart';
+import '../localized.dart';
 import '../quran_db_fixtures.dart';
 
 /// Surah fixtures, three ayahs each: 1 is recorded by reciters a and b, 2 only
@@ -705,6 +712,157 @@ void main() {
     });
   });
 
+  group('reciting to a listener', () {
+    test('a running session is stopped: the reader\'s voice is the '
+        'recitation now', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      await cubit.startTasmee();
+      expect(cubit.state.tasmee, isTrue);
+      expect(cubit.state.phase, SessionPhase.idle);
+      expect(player.ended, 1);
+    });
+
+    test(
+      'each slip is a stumble at its ayah; undo takes back the last',
+      () async {
+        final SessionCubit cubit = await open(reciterId: 'b');
+        await cubit.startTasmee();
+        await cubit.markInTasmee(const AyahRef(1, 2));
+        await cubit.markInTasmee(const AyahRef(1, 2));
+        await cubit.markInTasmee(s1a3);
+        expect(cubit.state.tasmeeMarks, hasLength(3));
+        expect(progress.stumbles[const AyahRef(1, 2)], 2);
+        expect(cubit.state.stumbled, contains(s1a3));
+
+        await cubit.undoTasmeeMark();
+        expect(cubit.state.tasmeeMarks, hasLength(2));
+        expect(progress.stumbles.containsKey(s1a3), isFalse);
+        expect(cubit.state.stumbled, isNot(contains(s1a3)));
+      },
+    );
+
+    test('ending says what was noted, and the notes stay', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      await cubit.startTasmee();
+      await cubit.markInTasmee(s1a1);
+      final List<AyahRef> marks = cubit.endTasmee();
+      expect(marks, <AyahRef>[s1a1]);
+      expect(cubit.state.tasmee, isFalse);
+      expect(progress.stumbles[s1a1], 1);
+    });
+
+    test('outside a sitting, a slip is not noted', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      await cubit.markInTasmee(s1a1);
+      expect(progress.stumbles, isEmpty);
+    });
+
+    test('starting a session ends the sitting', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      await cubit.startTasmee();
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      expect(cubit.state.tasmee, isFalse);
+    });
+
+    for (final Locale locale in AppLocalization.supportedLocales) {
+      testWidgets('the bar holds the count, undo and end at 320 dp, in '
+          '${locale.languageCode}', (WidgetTester tester) async {
+        await ensureTestLocalization();
+        late SessionCubit cubit;
+        await tester.runAsync(() async {
+          cubit = await open(reciterId: 'b');
+          await cubit.startTasmee();
+          await cubit.markInTasmee(s1a1);
+        });
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          localized(
+            ScreenUtilInit(
+              designSize: const Size(390, 844),
+              builder: (BuildContext context, _) => MaterialApp(
+                locale: context.locale,
+                supportedLocales: context.supportedLocales,
+                localizationsDelegates: context.localizationDelegates,
+                home: Scaffold(
+                  body: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: BlocProvider<SessionCubit>.value(
+                      value: cubit,
+                      child: SessionBar(visible: true, onOpenSettings: () {}),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            locale: locale,
+          ),
+        );
+        await settleLocalization(tester);
+        expect(tester.takeException(), isNull);
+        expect(find.byIcon(Icons.undo), findsOneWidget);
+        expect(find.byType(FilledButton), findsOneWidget);
+      });
+    }
+  });
+
+  group('the playing bar at 320 dp', () {
+    for (final Locale locale in AppLocalization.supportedLocales) {
+      testWidgets('grade prompt, moon, repeat and counter fit, in '
+          '${locale.languageCode}', (WidgetTester tester) async {
+        await ensureTestLocalization();
+        late SessionCubit cubit;
+        await tester.runAsync(() async {
+          cubit = await open(reciterId: 'b');
+          cubit.chooseRange(s1a1, s1a3);
+          await cubit.start();
+          player.reach(cubit.state.activePlan!.units[5]);
+          await settle();
+          cubit.setSleepTimer(const Duration(minutes: 30));
+          // A question left from an earlier range, still on show.
+          cubit.emit(cubit.state.copyWith(gradeOffer: (from: s1a1, to: s1a3)));
+        });
+        Intl.defaultLocale = locale.toString();
+        addTearDown(() => Intl.defaultLocale = null);
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          localized(
+            ScreenUtilInit(
+              designSize: const Size(390, 844),
+              builder: (BuildContext context, _) => MaterialApp(
+                locale: context.locale,
+                supportedLocales: context.supportedLocales,
+                localizationsDelegates: context.localizationDelegates,
+                home: Scaffold(
+                  body: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: BlocProvider<SessionCubit>.value(
+                      value: cubit,
+                      child: SessionBar(visible: true, onOpenSettings: () {}),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            locale: locale,
+          ),
+        );
+        await settleLocalization(tester);
+        expect(tester.takeException(), isNull);
+        expect(find.byIcon(Icons.bedtime_outlined), findsOneWidget);
+        expect(find.byIcon(Icons.replay), findsOneWidget);
+        expect(find.byType(OutlinedButton), findsNWidgets(3));
+        await tester.runAsync(cubit.close);
+      });
+    }
+  });
+
   group('listening', () {
     Future<SessionCubit> playing() async {
       final SessionCubit cubit = await open(reciterId: 'b');
@@ -1124,6 +1282,21 @@ class _Progress implements ProgressRepository {
       (int n) => n + 1,
       ifAbsent: () => 1,
     );
+    return const Right<Failure, Unit>(unit);
+  }
+
+  @override
+  Future<Either<Failure, Unit>> undoStumble(
+    int surahNumber,
+    int ayahNumber,
+  ) async {
+    final AyahRef ref = AyahRef(surahNumber, ayahNumber);
+    final int n = stumbles[ref] ?? 0;
+    if (n <= 1) {
+      stumbles.remove(ref);
+    } else {
+      stumbles[ref] = n - 1;
+    }
     return const Right<Failure, Unit>(unit);
   }
 

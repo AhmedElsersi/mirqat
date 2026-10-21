@@ -2,9 +2,11 @@ import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/review_card.dart';
@@ -61,18 +63,21 @@ class SessionBar extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             if (state.gradeOffer != null) const _GradePrompt(),
-                            switch (state.phase) {
-                              SessionPhase.idle => _Idle(
-                                state: state,
-                                onOpenSettings: onOpenSettings,
-                              ),
-                              SessionPhase.loading => const _Loading(),
-                              SessionPhase.active => _Active(
-                                state: state,
-                                onOpenSettings: onOpenSettings,
-                              ),
-                              SessionPhase.failed => _Failed(state: state),
-                            },
+                            if (state.tasmee)
+                              _Tasmee(state: state)
+                            else
+                              switch (state.phase) {
+                                SessionPhase.idle => _Idle(
+                                  state: state,
+                                  onOpenSettings: onOpenSettings,
+                                ),
+                                SessionPhase.loading => const _Loading(),
+                                SessionPhase.active => _Active(
+                                  state: state,
+                                  onOpenSettings: onOpenSettings,
+                                ),
+                                SessionPhase.failed => _Failed(state: state),
+                              },
                           ],
                         ),
                       ),
@@ -82,6 +87,113 @@ class SessionBar extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Reciting to a listener: how many slips are noted, the last one taken
+/// back, and the end of the sitting.
+class _Tasmee extends StatelessWidget {
+  const _Tasmee({required this.state});
+
+  final SessionState state;
+
+  Future<void> _end(BuildContext context) async {
+    // Taken now: ending the sitting turns the bar back into the session's,
+    // and this widget — and its context — is gone by the time the dialog is
+    // answered.
+    final GoRouter router = GoRouter.of(context);
+    final int slips = context.read<SessionCubit>().endTasmee().length;
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialog) => AlertDialog(
+        title: Text(LocaleKeys.tasmeeTitle.tr()),
+        content: Text(
+          slips == 0
+              ? LocaleKeys.tasmeeNoSlips.tr()
+              : LocaleKeys.tasmeeSlipsNoted.tr(
+                  args: <String>[slips.toLocalisedString()],
+                ),
+        ),
+        actions: <Widget>[
+          if (slips > 0)
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialog).pop();
+                router.pushNamed(AppRoutes.weakSpotsName);
+              },
+              child: Text(LocaleKeys.weakSpotsTitle.tr()),
+            ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialog).pop(),
+            child: Text(LocaleKeys.commonClose.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final SessionCubit cubit = context.read<SessionCubit>();
+    // Two rows, as the playing bar has: what this is and the count above, the
+    // controls below — one row does not fit a narrow phone.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(12.w, 6.h, 12.w, 0),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      LocaleKeys.tasmeeTitle.tr(),
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    Text(
+                      LocaleKeys.tasmeeHint.tr(),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                LocaleKeys.tasmeeCount.tr(
+                  args: <String>[state.tasmeeMarks.length.toLocalisedString()],
+                ),
+                style: theme.textTheme.labelLarge,
+              ),
+            ],
+          ),
+        ),
+        Row(
+          children: <Widget>[
+            const _BackButton(),
+            const Spacer(),
+            IconButton(
+              tooltip: LocaleKeys.tasmeeUndo.tr(),
+              onPressed: state.tasmeeMarks.isEmpty
+                  ? null
+                  : cubit.undoTasmeeMark,
+              icon: const Icon(Icons.undo),
+            ),
+            SizedBox(width: 4.w),
+            FilledButton.tonal(
+              onPressed: () => _end(context),
+              child: Text(LocaleKeys.tasmeeEnd.tr()),
+            ),
+            SizedBox(width: 8.w),
+          ],
+        ),
+      ],
     );
   }
 }

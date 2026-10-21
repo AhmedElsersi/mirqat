@@ -179,6 +179,48 @@ class SessionCubit extends Cubit<SessionState> {
     if (config != null) _apply(config, rangeChosen: state.rangeChosen);
   }
 
+  // --- tasmee' --------------------------------------------------------------
+
+  /// The reader recites to a listener, who holds the phone and follows the
+  /// page. Nothing plays: a running session is stopped first, because the
+  /// reader's own voice is the recitation now.
+  Future<void> startTasmee() async {
+    if (state.tasmee) return;
+    if (state.phase != SessionPhase.idle) await stop();
+    if (isClosed) return;
+    emit(state.copyWith(tasmee: true, tasmeeMarks: const <AyahRef>[]));
+  }
+
+  /// The listener heard a slip at [ayah]: it is noted as a stumble, which
+  /// marks it on the page and makes every later drill over it longer.
+  Future<void> markInTasmee(AyahRef ayah) async {
+    if (!state.tasmee) return;
+    emit(state.copyWith(tasmeeMarks: <AyahRef>[...state.tasmeeMarks, ayah]));
+    await _progress.markStumble(ayah.surah, ayah.ayah, at: clock());
+    await refreshStumbles();
+  }
+
+  /// Takes back the last slip noted — a tap on the wrong word.
+  Future<void> undoTasmeeMark() async {
+    if (!state.tasmee || state.tasmeeMarks.isEmpty) return;
+    final AyahRef last = state.tasmeeMarks.last;
+    emit(
+      state.copyWith(
+        tasmeeMarks: state.tasmeeMarks.sublist(0, state.tasmeeMarks.length - 1),
+      ),
+    );
+    await _progress.undoStumble(last.surah, last.ayah);
+    await refreshStumbles();
+  }
+
+  /// Ends the sitting. Returns the slips noted, for the screen to say how
+  /// many; they stay noted as stumbles.
+  List<AyahRef> endTasmee() {
+    final List<AyahRef> marks = state.tasmeeMarks;
+    emit(state.copyWith(tasmee: false, tasmeeMarks: const <AyahRef>[]));
+    return marks;
+  }
+
   // --- the range -----------------------------------------------------------
 
   /// What the page on show suggests a session would cover. Ignored once the
@@ -514,6 +556,8 @@ class SessionCubit extends Cubit<SessionState> {
     final SessionPlan? plan = state.plan;
     final Reciter? reciter = state.reciter;
     if (plan == null || reciter == null) return;
+    // A recitation starting is the end of reciting to a listener.
+    if (state.tasmee) endTasmee();
     _heard.clear();
     _cancelSleep();
     emit(

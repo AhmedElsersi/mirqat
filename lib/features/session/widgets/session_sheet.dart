@@ -84,6 +84,18 @@ class SessionSheet extends StatelessWidget {
                           const _MemorizationView(),
                           _Downloads(state: state),
                           _Tuning(config: config),
+                          if (!state.isActive && !state.tasmee)
+                            Padding(
+                              padding: EdgeInsetsDirectional.only(top: 8.h),
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  context.read<SessionCubit>().startTasmee();
+                                  Navigator.of(context).pop();
+                                },
+                                icon: const Icon(Icons.record_voice_over),
+                                label: Text(LocaleKeys.tasmeeStart.tr()),
+                              ),
+                            ),
                         ],
                       ),
                     ),

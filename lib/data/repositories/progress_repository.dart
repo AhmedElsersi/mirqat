@@ -40,6 +40,9 @@ abstract class ProgressRepository {
 
   Future<Either<Failure, Unit>> clearStumble(int surahNumber, int ayahNumber);
 
+  /// Takes back one stumble, made by mistake.
+  Future<Either<Failure, Unit>> undoStumble(int surahNumber, int ayahNumber);
+
   /// Every stumbled ayah, the most recently marked first.
   Future<Either<Failure, List<MemorizationProgress>>> stumbled();
 
@@ -102,6 +105,10 @@ class ProgressRepositoryImpl implements ProgressRepository {
   @override
   Future<Either<Failure, Unit>> clearStumble(int surahNumber, int ayahNumber) =>
       _guardUnit(() => _local.clearStumble(surahNumber, ayahNumber));
+
+  @override
+  Future<Either<Failure, Unit>> undoStumble(int surahNumber, int ayahNumber) =>
+      _guardUnit(() => _local.undoStumble(surahNumber, ayahNumber));
 
   @override
   Future<Either<Failure, List<MemorizationProgress>>> stumbled() =>

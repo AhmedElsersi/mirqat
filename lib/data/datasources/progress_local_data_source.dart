@@ -47,6 +47,10 @@ abstract class ProgressLocalDataSource {
   /// Takes the stumble mark off an ayah. Its repeats and status stay.
   Future<void> clearStumble(int surahNumber, int ayahNumber);
 
+  /// Takes back one stumble — a mark made by mistake. The last one taken
+  /// back clears the mark.
+  Future<void> undoStumble(int surahNumber, int ayahNumber);
+
   /// Every ayah carrying a stumble mark, the most recently marked first. A
   /// record that cannot be read is left out rather than failing the list —
   /// one bad record must not hide every other weak spot.
@@ -203,6 +207,17 @@ class ProgressLocalDataSourceImpl implements ProgressLocalDataSource {
     final MemorizationProgress current = await get(surahNumber, ayahNumber);
     if (!current.isStumbled) return;
     await save(current.copyWith(clearStumbles: true));
+  }
+
+  @override
+  Future<void> undoStumble(int surahNumber, int ayahNumber) async {
+    final MemorizationProgress current = await get(surahNumber, ayahNumber);
+    if (!current.isStumbled) return;
+    await save(
+      current.stumbles == 1
+          ? current.copyWith(clearStumbles: true)
+          : current.copyWith(stumbles: current.stumbles - 1),
+    );
   }
 
   @override
