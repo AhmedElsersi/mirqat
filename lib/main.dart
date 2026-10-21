@@ -95,8 +95,6 @@ class IqraWartaqApp extends StatefulWidget {
   @override
   State<IqraWartaqApp> createState() => _IqraWartaqAppState();
 }
-// review the whole app, and if you can suggest a better design do it as screens in a new folder call it design in the project directory make it modern and suitable to the
-// app idea and scope
 
 class _IqraWartaqAppState extends State<IqraWartaqApp>
     with WidgetsBindingObserver {
