@@ -18,6 +18,7 @@ import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_position.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
+import '../../../data/models/mutashabihat.dart';
 import '../../../data/repositories/mutashabihat_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../services/share_service.dart';
@@ -823,8 +824,12 @@ class _PageSlot extends StatelessWidget {
 
     cubit.selectWord(word);
     // Read once and kept; on every later press it is already in hand.
-    final bool hasSimilar = (await sl<MutashabihatRepository>().index())
-        .hasSimilar(ayah);
+    final List<SimilarRef> similar = <SimilarRef>[
+      for (final SimilarAyah s
+          in (await sl<MutashabihatRepository>().index()).similarTo(ayah))
+        if (cubit.surahFor(s.ref.surah) case final Surah of)
+          (ref: s.ref, surah: of),
+    ];
     if (!context.mounted) return;
     final AyahAction? action = await showModalBottomSheet<AyahAction>(
       context: context,
@@ -846,7 +851,7 @@ class _PageSlot extends StatelessWidget {
             mark.surahNumber == ayah.surah &&
             mark.ayahNumber == ayah.ayah,
         isStumbled: session.state.stumbled.contains(ayah),
-        hasSimilar: hasSimilar,
+        similar: similar,
       ),
     );
     if (!cubit.isClosed) cubit.clearSelection();

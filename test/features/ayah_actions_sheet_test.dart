@@ -25,7 +25,7 @@ void main() {
     WidgetTester tester, {
     Locale locale = AppLocalization.arabic,
     bool isStumbled = false,
-    bool hasSimilar = false,
+    List<SimilarRef> similar = const <SimilarRef>[],
     bool canPlay = true,
   }) async {
     Intl.defaultLocale = locale.toString();
@@ -48,7 +48,7 @@ void main() {
                 canPlay: canPlay,
                 hasChosenRange: false,
                 isStumbled: isStumbled,
-                hasSimilar: hasSimilar,
+                similar: similar,
               ),
             ),
           ),
@@ -89,8 +89,36 @@ void main() {
   ) async {
     await pump(tester);
     expect(entry(Icons.compare_arrows), findsNothing);
-    await pump(tester, hasSimilar: true);
+    await pump(
+      tester,
+      similar: <SimilarRef>[(ref: const AyahRef(67, 1), surah: mulk)],
+    );
     expect(entry(Icons.compare_arrows), findsOneWidget);
+  });
+
+  testWidgets('the entry names the most alike two, and counts the rest', (
+    WidgetTester tester,
+  ) async {
+    await pump(
+      tester,
+      similar: <SimilarRef>[
+        (ref: const AyahRef(67, 1), surah: mulk),
+        (ref: const AyahRef(67, 12), surah: mulk),
+        (ref: const AyahRef(67, 20), surah: mulk),
+        (ref: const AyahRef(67, 29), surah: mulk),
+      ],
+    );
+    expect(find.text('تشبه: الملك ١ · الملك ١٢ · و٢ غيرها'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('in English, the same', (WidgetTester tester) async {
+    await pump(
+      tester,
+      locale: AppLocalization.english,
+      similar: <SimilarRef>[(ref: const AyahRef(67, 1), surah: mulk)],
+    );
+    expect(find.text('Resembles: ${mulk.nameEn} 1'), findsOneWidget);
   });
 
   testWidgets(

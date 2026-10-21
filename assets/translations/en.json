@@ -177,7 +177,9 @@
     "similar_ayahs": "Similar ayahs",
     "surah_about": "{} surah · {} ayahs",
     "makki": "Makki",
-    "madani": "Madani"
+    "madani": "Madani",
+    "similar_resembles": "Resembles: {}",
+    "similar_more": "and {} more"
   },
   "downloads": {
     "section": "Offline audio",

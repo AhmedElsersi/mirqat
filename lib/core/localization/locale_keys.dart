@@ -171,6 +171,8 @@ class LocaleKeys {
   static const String mushafShare = 'mushaf.share';
   static const String mushafShareAyah = 'mushaf.share_ayah';
   static const String mushafSimilarAyahs = 'mushaf.similar_ayahs';
+  static const String mushafSimilarMore = 'mushaf.similar_more';
+  static const String mushafSimilarResembles = 'mushaf.similar_resembles';
   static const String mushafStumbleHere = 'mushaf.stumble_here';
   static const String mushafStumbleMarked = 'mushaf.stumble_marked';
   static const String mushafSurahAbout = 'mushaf.surah_about';

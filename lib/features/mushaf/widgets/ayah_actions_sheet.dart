@@ -45,6 +45,9 @@ enum AyahAction {
   similar,
 }
 
+/// An ayah that resembles the one pressed, with its surah, to name it.
+typedef SimilarRef = ({AyahRef ref, Surah surah});
+
 /// What a long-pressed ayah offers. Pops with the [AyahAction] chosen.
 class AyahActionsSheet extends StatelessWidget {
   const AyahActionsSheet({
@@ -54,7 +57,7 @@ class AyahActionsSheet extends StatelessWidget {
     required this.hasChosenRange,
     this.isMarked = false,
     this.isStumbled = false,
-    this.hasSimilar = false,
+    this.similar = const <SimilarRef>[],
     this.canShare = false,
     super.key,
   });
@@ -76,8 +79,14 @@ class AyahActionsSheet extends StatelessWidget {
   /// it off as well as to count another.
   final bool isStumbled;
 
-  /// Whether other ayahs share a phrase with this one.
-  final bool hasSimilar;
+  /// The ayahs this one shares a phrase with, the most alike first; named
+  /// in the entry, so the reader learns the trap is there before opening it.
+  final List<SimilarRef> similar;
+
+  bool get hasSimilar => similar.isNotEmpty;
+
+  /// How many are named before the rest are only counted.
+  static const int named = 2;
 
   /// Whether this platform can share at all — a desktop without a share
   /// sheet is not offered a button that would do nothing.
@@ -90,11 +99,21 @@ class AyahActionsSheet extends StatelessWidget {
         ? surah.nameAr
         : surah.nameEn;
 
-    ListTile action(AyahAction value, IconData icon, String label) => ListTile(
+    ListTile action(
+      AyahAction value,
+      IconData icon,
+      String label, {
+      String? subtitle,
+    }) => ListTile(
       leading: Icon(icon),
       title: Text(label),
+      subtitle: subtitle == null ? null : Text(subtitle),
       onTap: () => Navigator.of(context).pop(value),
     );
+    final bool arabic = context.locale.languageCode == 'ar';
+    String refName(SimilarRef r) =>
+        '${arabic ? r.surah.nameAr : r.surah.nameEn} '
+        '${r.ref.ayah.toLocalisedString()}';
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -165,6 +184,19 @@ class AyahActionsSheet extends StatelessWidget {
                 AyahAction.similar,
                 Icons.compare_arrows,
                 LocaleKeys.mushafSimilarAyahs.tr(),
+                subtitle: LocaleKeys.mushafSimilarResembles.tr(
+                  args: <String>[
+                    <String>[
+                      ...similar.take(named).map(refName),
+                      if (similar.length > named)
+                        LocaleKeys.mushafSimilarMore.tr(
+                          args: <String>[
+                            (similar.length - named).toLocalisedString(),
+                          ],
+                        ),
+                    ].join(' · '),
+                  ],
+                ),
               ),
             if (canShare)
               action(

@@ -17,7 +17,7 @@ The document is in two halves: English first, then the same ideas in Arabic.
 > | | |
 > |---|---|
 > | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat and browsing, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
-> | **Partly done** | §4 menu entry does not name the twins · §9 presets are fixed, not saved by the reader; the surah line has no juz span |
+> | **Partly done** | §9 presets are fixed, not saved by the reader; the surah line has no juz span |
 > | **Not built yet** | §4 mutashabihat drill |
 > | **Problem in a built feature** | §8 on Android the backup sits in the app's own folder, hard to reach since Android 11 and deleted with the app |
 > | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
@@ -30,7 +30,7 @@ The document is in two halves: English first, then the same ideas in Arabic.
 > | | |
 > |---|---|
 > | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
-> | **تمّ بعضه** | §٤ خيار القائمة لا يسمّي الشبيهات · §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
+> | **تمّ بعضه** | §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
 > | **لم يُبنَ بعد** | §٤ تمرين المتشابهات |
 > | **مشكلة في ميزة مبنية** | §٨ النسخة على أندرويد في مجلد التطبيق نفسه، يصعب بلوغه منذ أندرويد ١١، ويُحذف بحذف التطبيق |
 > | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
@@ -141,9 +141,9 @@ already has progress tracking and session plans to build on:
 > ayahs are too common to be what confuses a reader.
 > Since then the whole list can be browsed from the top of Settings
 > (`3c101ed`): a card per phrase, narrowed by surah, each opening every
-> ayah it is in. **Partly done:** the ayah menu says *Similar ayahs* but
-> does not name them (*this resembles 2:48 / 2:123*). **Not built yet:**
-> the drill.
+> ayah it is in. The ayah menu's *Similar ayahs* entry names them — the
+> two most alike, then a count: *Resembles: Al-Baqarah 48 · Al-Baqarah 123
+> · and 3 more*. **Not built yet:** the drill.
 
 The most common failure of established memorization is sliding from one ayah into its
 near-twin elsewhere. Several dedicated apps exist for this alone.
@@ -375,8 +375,9 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 > ٢٥ كلمة — تُصحَّح باسمها إلى ٢٣–٢٥، أي آخر ثلاث كلمات في الآية. أُبقي ٨٠٧ عبارات من ٨١٤، واستُبعدت ٧ ترد في أكثر
 > من ٤٠ آية لشيوعها. ويظهر «آيات متشابهة» في قائمة كل آية لها نظير.
 > ثم صار تصفّح القائمة كلها من أعلى الإعدادات (`3c101ed`): بطاقة لكل عبارة،
-> وتضييقٌ بالسورة، وكل بطاقة تفتح كل آية ترد فيها. **تمّ بعضه:** قائمة الآية تقول
-> «آيات متشابهة» ولا تسمّيها (*تشبه ٢:٤٨ / ٢:١٢٣*). **لم يُبنَ بعد:** التمرين.
+> وتضييقٌ بالسورة، وكل بطاقة تفتح كل آية ترد فيها. وخيار «آيات متشابهة» في قائمة
+> الآية يسمّيها — أشدَّها شبهًا اثنتين، ثم العدد: *تشبه: البقرة ٤٨ · البقرة ١٢٣ · و٣
+> غيرها*. **لم يُبنَ بعد:** التمرين.
 
 أشيعُ خللٍ في الحفظ المستقر هو الانزلاق من آيةٍ إلى شبيهتها في موضع آخر، وقد قامت
 تطبيقات كاملة على هذا وحده.

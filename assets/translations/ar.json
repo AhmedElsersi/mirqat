@@ -177,7 +177,9 @@
     "similar_ayahs": "آيات متشابهة",
     "surah_about": "سورة {} · عدد آياتها {}",
     "makki": "مكية",
-    "madani": "مدنية"
+    "madani": "مدنية",
+    "similar_resembles": "تشبه: {}",
+    "similar_more": "و{} غيرها"
   },
   "downloads": {
     "section": "الصوت دون إنترنت",
