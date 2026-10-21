@@ -36,6 +36,7 @@ Future<void> pump(
   Size size, {
   double textScale = 1,
   double bottomInset = 0,
+  AyahRef? highlighted,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -48,7 +49,7 @@ Future<void> pump(
           body: MushafPageView(
             page: fullPage(),
             linesPerFullPage: 15,
-            highlighted: null,
+            highlighted: highlighted,
             selected: null,
             onWordLongPress: (_) {},
             textScale: textScale,
@@ -103,6 +104,61 @@ void main() {
       tester.getBottomLeft(find.byType(IslamicFrame)).dy,
       lessThanOrEqualTo(915 - 120 + 0.5),
     );
+  });
+
+  testWidgets('the ayah being recited is scrolled out from under the bar, '
+      'and back up when the recitation returns to the top', (
+    WidgetTester tester,
+  ) async {
+    // Each test-page line is one ayah: 2:15 is the last line.
+    double offset() => tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byType(SingleChildScrollView),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position
+        .pixels;
+    double bottomOf(int ayah) => tester
+        .getBottomLeft(
+          find
+              .byWidgetPredicate(
+                (Widget w) =>
+                    w is AyahText && !w.isMarker && w.text == 'كلمة',
+              )
+              .at((ayah - 1) * 6),
+        )
+        .dy;
+
+    await pump(
+      tester,
+      const Size(412, 915),
+      bottomInset: 120,
+      highlighted: const AyahRef(2, 1),
+    );
+    await tester.pumpAndSettle();
+    expect(offset(), 0, reason: 'the first line is already in sight');
+
+    await pump(
+      tester,
+      const Size(412, 915),
+      bottomInset: 120,
+      highlighted: const AyahRef(2, 15),
+    );
+    await tester.pumpAndSettle();
+    expect(offset(), greaterThan(0));
+    expect(bottomOf(15), lessThanOrEqualTo(915 - 120 + 0.5));
+
+    await pump(
+      tester,
+      const Size(412, 915),
+      bottomInset: 120,
+      highlighted: const AyahRef(2, 1),
+    );
+    await tester.pumpAndSettle();
+    expect(offset(), 0);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a wide, short screen scrolls the page instead of shrinking it', (

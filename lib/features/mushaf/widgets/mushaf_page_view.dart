@@ -153,6 +153,77 @@ class _MushafPageViewState extends State<MushafPageView> {
   /// again.
   AyahRef? _peeked;
 
+  /// The page's own vertical scroll: a tall page, or one lent room by the
+  /// session bar.
+  final ScrollController _scroll = ScrollController();
+
+  /// What the scroll was last brought in line with — the ayah, and the
+  /// geometry it was measured in — so a rebuild that changes neither leaves
+  /// a reader's own scrolling alone.
+  Object? _followed;
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Keeps the ayah being recited in sight: where its lines run past what
+  /// shows above the bar, or above the top of the glass, the page scrolls
+  /// just far enough to bring them in. [top] is where the first line slot
+  /// starts inside what scrolls, and [viewport] the height of the glass.
+  void _follow({
+    required List<PageLine> lines,
+    required double pitch,
+    required int slots,
+    required double top,
+    required double viewport,
+  }) {
+    final AyahRef? ayah = widget.highlighted;
+    final Object key = (ayah, widget.bottomInset, pitch, viewport);
+    if (key == _followed) return;
+    _followed = key;
+    if (ayah == null) return;
+
+    int? first;
+    int? last;
+    for (int i = 0; i < lines.length; i++) {
+      final PageLine line = lines[i];
+      if (line is AyahLine && line.words.any((Word w) => w.ref == ayah)) {
+        first ??= i;
+        last = i;
+      }
+    }
+    if (first == null || last == null) return;
+    // A short page is drawn centred in its slots (see the column below).
+    final double lead = widget.page.partial
+        ? 0
+        : (slots - lines.length) * pitch / 2;
+    // The page's first or last line is shown with the frame beyond it — the
+    // band with its surah and juz, or the page number — not cut at the line.
+    final double from = first == 0 ? 0 : top + lead + first * pitch;
+    final double to = last == lines.length - 1
+        ? double.infinity
+        : top + lead + (last + 1) * pitch;
+    final double seen = viewport - widget.bottomInset;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final ScrollPosition p = _scroll.position;
+      double target = p.pixels;
+      if (to > target + seen) target = to - seen;
+      // The top of the ayah wins over its end, for one taller than the glass.
+      if (from < target) target = from;
+      target = target.clamp(p.minScrollExtent, p.maxScrollExtent);
+      if ((target - p.pixels).abs() < 0.5) return;
+      _scroll.animateTo(
+        target,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
   @override
   void didUpdateWidget(MushafPageView old) {
     super.didUpdateWidget(old);
@@ -302,6 +373,13 @@ class _MushafPageViewState extends State<MushafPageView> {
 
           final bool fits = pitch * slots <= room + 0.5;
           final double inset = widget.bottomInset;
+          _follow(
+            lines: lines,
+            pitch: pitch,
+            slots: slots,
+            top: insets.top,
+            viewport: box.maxHeight,
+          );
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _onPageTap,
@@ -309,7 +387,7 @@ class _MushafPageViewState extends State<MushafPageView> {
             // not remount the page under it; a page that fits with nothing
             // over it simply does not scroll.
             child: SingleChildScrollView(
-              primary: false,
+              controller: _scroll,
               physics: fits && inset == 0
                   ? const NeverScrollableScrollPhysics()
                   : null,
