@@ -950,6 +950,27 @@ void main() {
       expect(cubit.state.config!.repeatCount, 1);
     });
 
+    test('listen plays the range straight through, the repeat count times, '
+        'nothing asked back', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      cubit.setRecallRounds(2);
+      cubit.setChainRecall(true);
+      cubit.setRepeatCount(4);
+      cubit.applyPreset(SessionPreset.listenLoop);
+
+      final SessionConfig c = cubit.state.config!;
+      expect(c.connectMode, ConnectMode.continuous);
+      expect(c.repeatCount, 4, reason: 'the stepper is how many times');
+      expect(c.recallRounds, 0);
+      expect(c.chainRecall, isFalse);
+      expect(
+        cubit.state.plan!.units.map((PlaybackUnit u) => u.ayahNumber),
+        <int>[1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3],
+      );
+      expect(cubit.state.plan!.units.any((PlaybackUnit u) => u.asked), isFalse);
+    });
+
     test('under a running session, a preset waits to be told', () async {
       final SessionCubit cubit = await open(reciterId: 'b');
       cubit.chooseRange(s1a1, s1a3);

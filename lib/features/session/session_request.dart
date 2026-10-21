@@ -37,6 +37,16 @@ class SessionPreset extends Equatable {
     chainRecall: true,
   );
 
+  /// Listening on a loop: the range straight through, nothing asked back,
+  /// as many times as the repeat count says — for the commute, or the first
+  /// familiarizing passes talqeen begins with. The count is left as it is,
+  /// so the stepper beside it is how many times.
+  static const SessionPreset listenLoop = SessionPreset(
+    connectMode: ConnectMode.continuous,
+    recallRounds: 0,
+    chainRecall: false,
+  );
+
   /// Listening, not drilling: straight through once, nothing asked back.
   static const SessionPreset listen = SessionPreset(
     repeatCount: 1,

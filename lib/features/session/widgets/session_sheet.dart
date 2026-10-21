@@ -483,8 +483,8 @@ class _Downloads extends StatelessWidget {
 }
 
 /// A way of working, in one tap: learning something new the reader's own
-/// way, going over a recent portion, keeping an old one, or drilling one
-/// that will not settle. Each lays its values over the settings below,
+/// way, going over a recent portion, keeping an old one, drilling one that
+/// will not settle, or just listening to it, round and round. Each lays its values over the settings below,
 /// where they can still be changed.
 class _Presets extends StatelessWidget {
   const _Presets();
@@ -512,6 +512,10 @@ class _Presets extends StatelessWidget {
           chip(
             LocaleKeys.presetsDeep.tr(),
             () => cubit.applyPreset(SessionPreset.deep),
+          ),
+          chip(
+            LocaleKeys.presetsListen.tr(),
+            () => cubit.applyPreset(SessionPreset.listenLoop),
           ),
         ],
       ),

@@ -244,6 +244,7 @@ class LocaleKeys {
   static const String playerStop = 'player.stop';
 
   static const String presetsDeep = 'presets.deep';
+  static const String presetsListen = 'presets.listen';
   static const String presetsNew = 'presets.new';
   static const String presetsOld = 'presets.old';
   static const String presetsRecent = 'presets.recent';

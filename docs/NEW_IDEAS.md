@@ -16,8 +16,8 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat and browsing, §5 sleep timer and "three more", §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
-> | **Partly done** | §4 menu entry does not name the twins · §5 "listen" plays once, not M times · §9 presets are fixed, not saved by the reader; the surah line has no juz span |
+> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat and browsing, §5 sleep timer, "three more" and the listen loop, §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
+> | **Partly done** | §4 menu entry does not name the twins · §9 presets are fixed, not saved by the reader; the surah line has no juz span |
 > | **Not built yet** | §4 mutashabihat drill · §5 bedtime and morning bookends |
 > | **Problem in a built feature** | §8 on Android the backup sits in the app's own folder, hard to reach since Android 11 and deleted with the app |
 > | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
@@ -29,8 +29,8 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا»، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
-> | **تمّ بعضه** | §٤ خيار القائمة لا يسمّي الشبيهات · §٥ «استمع» يُسمِع مرة لا مرات · §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
+> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
+> | **تمّ بعضه** | §٤ خيار القائمة لا يسمّي الشبيهات · §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
 > | **لم يُبنَ بعد** | §٤ تمرين المتشابهات · §٥ طرفا الليل والنهار |
 > | **مشكلة في ميزة مبنية** | §٨ النسخة على أندرويد في مجلد التطبيق نفسه، يصعب بلوغه منذ أندرويد ١١، ويُحذف بحذف التطبيق |
 > | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
@@ -165,9 +165,10 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 > **Status:** sleep timer and "this ayah again ×3" **done** (`06c89fc`) —
 > the extra repeats are a button on the session bar, not a long press.
-> **Listen-only loop partly done:** *Listen from here* plays to the end of
-> the surah straight through, once; repeating the range M times is not
-> built yet. **Bedtime and morning bookends: not built yet.**
+> **Listen-only loop done:** *Listen from here* in the ayah menu plays to
+> the end of the surah, once; and the session sheet's **Listen** preset
+> plays the chosen range straight through, nothing asked back, as many
+> times as the repeat stepper says — the range M times. **Bedtime and morning bookends: not built yet.**
 
 - **Listen-only loop.** "Play this range on repeat M times" with no drill structure —
   for the commute, for cooking, for the pre-memorization familiarization pass that
@@ -387,8 +388,9 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 ### ٥. سماعٌ في خدمة الحفظ
 
 > **الحال:** مؤقّت النوم و«هذه الآية ثلاثًا أيضًا» **تمّا** (`06c89fc`) — والزيادة
-> زرٌّ في شريط الجلسة لا ضغطة مطولة. **حلقة السماع تمّ بعضها:** «استمع من هنا»
-> يُسمِع إلى آخر السورة مرة واحدة متصلة؛ وتكرار النطاق كذا مرة لم يُبنَ بعد.
+> زرٌّ في شريط الجلسة لا ضغطة مطولة. **حلقة السماع تمّت:** «استمع من هنا» في قائمة
+> الآية يُسمِع إلى آخر السورة مرة؛ وإعداد **استماع** في نافذة الجلسة يُسمِع النطاق
+> المختار متصلًا بلا سؤال، بعدد ما في عدّاد التكرار — النطاقَ كذا مرة.
 > **طرفا الليل والنهار: لم يُبنيا بعد.**
 
 - **حلقة سماع فقط.** «شغّل هذا النطاق مكررًا كذا مرة» بلا بنية تدريس — للطريق
