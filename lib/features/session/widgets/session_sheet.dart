@@ -78,6 +78,7 @@ class SessionSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           if (state.block != null) _BlockNotice(state: state),
+                          if (state.isActive) _SleepTimer(state: state),
                           _Reciters(state: state),
                           _Range(state: state, config: config),
                           const _MemorizationView(),
@@ -341,6 +342,71 @@ class _RangeEnd extends StatelessWidget {
     );
   }
 }
+
+/// When the running session should fall quiet: after so many minutes, or
+/// once the step it is on is over. It pauses rather than stops, so the
+/// place is kept for the morning.
+class _SleepTimer extends StatelessWidget {
+  const _SleepTimer({required this.state});
+
+  final SessionState state;
+
+  static const List<int> minutes = <int>[5, 15, 30, 60];
+
+  @override
+  Widget build(BuildContext context) {
+    final SessionCubit cubit = context.read<SessionCubit>();
+    final DateTime? at = state.sleepAt;
+    return SetupSection(
+      label: LocaleKeys.sleepTitle.tr(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 4.h,
+            children: <Widget>[
+              ChoiceChip(
+                label: Text(LocaleKeys.sleepOff.tr()),
+                selected: !state.sleepTimerSet,
+                onSelected: (_) => cubit.setSleepTimer(null),
+              ),
+              for (final int m in minutes)
+                ChoiceChip(
+                  label: Text(
+                    LocaleKeys.sleepMinutes.tr(
+                      args: <String>[m.toLocalisedString()],
+                    ),
+                  ),
+                  selected: false,
+                  onSelected: (_) => cubit.setSleepTimer(Duration(minutes: m)),
+                ),
+              ChoiceChip(
+                label: Text(LocaleKeys.sleepEndOfStep.tr()),
+                selected: state.sleepAtEndOfStep,
+                onSelected: (_) => cubit.sleepAtEndOfStep(),
+              ),
+            ],
+          ),
+          if (at != null)
+            Padding(
+              padding: EdgeInsetsDirectional.only(top: 6.h),
+              child: Text(
+                LocaleKeys.sleepUntil.tr(
+                  args: <String>[sleepTimeLabel(context, at)],
+                ),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The time a sleep timer falls due, as the clock says it: «١٠:٤٢ م».
+String sleepTimeLabel(BuildContext context, DateTime at) =>
+    DateFormat.jm(context.locale.toString()).format(at).withLocalisedDigits();
 
 /// How much of the page is covered while reading. Not scratch like the rest
 /// of the sheet: it is a way of reading, kept until the reader changes it,

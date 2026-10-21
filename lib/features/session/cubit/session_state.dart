@@ -80,6 +80,8 @@ class SessionState extends Equatable {
     this.keepAwake = false,
     this.stumbled = const <AyahRef>{},
     this.gradeOffer,
+    this.sleepAt,
+    this.sleepAtEndOfStep = false,
   });
 
   /// Whether the catalog, the reciters and the settings have been read.
@@ -151,6 +153,14 @@ class SessionState extends Equatable {
   /// self-grade that sets when it is next reviewed. Null once answered or
   /// waved away, and whenever there is nothing to grade.
   final ({AyahRef from, AyahRef to})? gradeOffer;
+
+  /// When the sleep timer pauses the session. Null while none is set.
+  final DateTime? sleepAt;
+
+  /// Whether the session pauses once the step it is on has been played out.
+  final bool sleepAtEndOfStep;
+
+  bool get sleepTimerSet => sleepAt != null || sleepAtEndOfStep;
 
   bool get isActive => phase == SessionPhase.active;
 
@@ -273,6 +283,9 @@ class SessionState extends Equatable {
     Set<AyahRef>? stumbled,
     ({AyahRef from, AyahRef to})? gradeOffer,
     bool clearGradeOffer = false,
+    DateTime? sleepAt,
+    bool? sleepAtEndOfStep,
+    bool clearSleep = false,
   }) => SessionState(
     ready: ready ?? this.ready,
     surahs: surahs ?? this.surahs,
@@ -301,6 +314,10 @@ class SessionState extends Equatable {
     keepAwake: keepAwake ?? this.keepAwake,
     stumbled: stumbled ?? this.stumbled,
     gradeOffer: clearGradeOffer ? null : (gradeOffer ?? this.gradeOffer),
+    sleepAt: clearSleep ? null : (sleepAt ?? this.sleepAt),
+    sleepAtEndOfStep: clearSleep
+        ? false
+        : (sleepAtEndOfStep ?? this.sleepAtEndOfStep),
   );
 
   @override
@@ -328,5 +345,7 @@ class SessionState extends Equatable {
     keepAwake,
     stumbled,
     gradeOffer,
+    sleepAt,
+    sleepAtEndOfStep,
   ];
 }

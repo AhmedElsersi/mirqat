@@ -18,6 +18,7 @@ import '../../../domain/engine/repetition_plan_builder.dart';
 import '../../../domain/engine/review_scheduler.dart';
 import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/ayah_ref.dart';
+import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../domain/entities/session_plan.dart';
@@ -75,6 +76,7 @@ class SessionCubit extends Cubit<SessionState> {
   final KeepAwakeService _keepAwake;
   final ReviewRepository _reviews;
   final ReviewScheduler _scheduler;
+
   /// Today, as far as the review ladder is concerned. A test hands in its
   /// own.
   final DateTime Function() clock;
@@ -92,6 +94,11 @@ class SessionCubit extends Cubit<SessionState> {
   StreamSubscription<PlaybackMoment>? _unitSub;
   StreamSubscription<ja.PlayerState>? _stateSub;
   Timer? _pauseTimer;
+  Timer? _sleepTimer;
+
+  /// The step the session was on when "end of this step" was chosen: the
+  /// session pauses as soon as a play of any other step begins.
+  int? _sleepStep;
   int _estimateToken = 0;
 
   /// How many times each ayah has actually been recited this session. Written
@@ -498,11 +505,13 @@ class SessionCubit extends Cubit<SessionState> {
     final Reciter? reciter = state.reciter;
     if (plan == null || reciter == null) return;
     _heard.clear();
+    _cancelSleep();
     emit(
       state.copyWith(
         phase: SessionPhase.loading,
         clearFailure: true,
         clearGradeOffer: true,
+        clearSleep: true,
       ),
     );
     await _recordProgress();
@@ -521,6 +530,12 @@ class SessionCubit extends Cubit<SessionState> {
     final int at = restart || here == null ? 0 : (plan.firstUnitOf(here) ?? 0);
     // Said before anything is awaited: the question has been answered, and
     // whoever asked it must see that now, not when the new queue has loaded.
+    // Another plan numbers its steps its own way: a pause waiting for the end
+    // of one of the old plan's steps has nothing left to wait for.
+    if (_sleepStep != null) {
+      _cancelSleep();
+      emit(state.copyWith(clearSleep: true));
+    }
     emit(state.copyWith(phase: SessionPhase.loading, clearFailure: true));
     if (restart) {
       _heard.clear();
@@ -583,6 +598,12 @@ class SessionCubit extends Cubit<SessionState> {
       emit(
         state.copyWith(currentUnit: moment.unit, recalling: moment.recalling),
       );
+      // Past the step it was set on — not merely another one: going back a
+      // step is the reader's own doing, not the step coming to its end.
+      final int? sleepStep = _sleepStep;
+      if (sleepStep != null && moment.unit.stepIndex > sleepStep) {
+        _sleepNow();
+      }
     });
     _stateSub = _player.playerStateStream.listen(
       (ja.PlayerState s) {
@@ -592,6 +613,10 @@ class SessionCubit extends Cubit<SessionState> {
           state.copyWith(playing: s.playing && !finished, finished: finished),
         );
         if (finished) unawaited(_recordProgress());
+        if (justFinished && state.sleepTimerSet) {
+          _cancelSleep();
+          emit(state.copyWith(clearSleep: true));
+        }
         if (justFinished) _offerGrade(plan.config, force: true);
       },
       // A connection lost mid-session surfaces here rather than at load. What
@@ -692,6 +717,80 @@ class SessionCubit extends Cubit<SessionState> {
     await (state.playing ? _player.pause() : _player.play());
   }
 
+  // --- the sleep timer -----------------------------------------------------
+
+  /// Pauses the session after [after] — never stops it: the place is kept,
+  /// and play takes it up again. Null cancels the timer.
+  void setSleepTimer(Duration? after) {
+    _cancelSleep();
+    if (after == null || !state.isActive) {
+      emit(state.copyWith(clearSleep: true));
+      return;
+    }
+    _sleepTimer = Timer(after, _sleepNow);
+    emit(state.copyWith(sleepAt: clock().add(after), sleepAtEndOfStep: false));
+  }
+
+  /// Pauses the session once the step it is on — this ayah's drill, this
+  /// join — has been played out.
+  void sleepAtEndOfStep() {
+    _cancelSleep();
+    final PlaybackUnit? unit = state.currentUnit;
+    if (!state.isActive || unit == null) return;
+    _sleepStep = unit.stepIndex;
+    emit(state.copyWith(clearSleep: true));
+    emit(state.copyWith(sleepAtEndOfStep: true));
+  }
+
+  void _sleepNow() {
+    _cancelSleep();
+    if (isClosed) return;
+    emit(state.copyWith(clearSleep: true));
+    if (state.isActive && state.playing) unawaited(_player.pause());
+  }
+
+  void _cancelSleep() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepStep = null;
+  }
+
+  // --- one more time --------------------------------------------------------
+
+  /// Drills the ayah being recited [times] more, now, then carries on with
+  /// the step it was in from that step's start. The engine is not asked to
+  /// change a plan: a one-off learn step is laid into the running plan's own
+  /// steps, which is the same session with a little more of one ayah.
+  Future<void> repeatCurrentAyah({int times = 3}) async {
+    final SessionPlan? active = state.activePlan;
+    final Reciter? reciter = state.activeReciter;
+    final PlaybackUnit? unit = state.currentUnit;
+    if (!state.isActive || active == null || reciter == null || unit == null) {
+      return;
+    }
+    final int at = unit.stepIndex;
+    // Every step from [at] on moves one along; a pause waiting for the end
+    // of one of them must wait for the same step under its new number.
+    final int? sleepStep = _sleepStep;
+    if (sleepStep != null && sleepStep >= at) _sleepStep = sleepStep + 1;
+    final List<PlanStep> steps = <PlanStep>[
+      ...active.steps.take(at),
+      LearnStep(surah: unit.surahNumber, ayah: unit.ayahNumber, repeats: times),
+      ...active.steps.skip(at),
+    ];
+    final SessionPlan plan = SessionPlan(
+      config: active.config,
+      steps: List<PlanStep>.unmodifiable(steps),
+      units: _builder.flatten(steps, active.config),
+    );
+    await _run(
+      plan,
+      reciter,
+      startAtUnit: plan.firstUnitOfStep(at),
+      autoplay: state.playing || state.finished,
+    );
+  }
+
   Future<void> nextStep() => _player.skipToNextStep();
 
   Future<void> previousStep() => _player.skipToPreviousStep();
@@ -702,6 +801,7 @@ class SessionCubit extends Cubit<SessionState> {
     final SessionConfig? running = state.activePlan?.config;
     if (running != null && !state.finished) _offerGrade(running);
     _pauseTimer?.cancel();
+    _cancelSleep();
     await _unitSub?.cancel();
     await _stateSub?.cancel();
     _unitSub = null;
@@ -709,7 +809,13 @@ class SessionCubit extends Cubit<SessionState> {
     await _player.endSession();
     await _recordProgress();
     if (isClosed) return;
-    emit(state.copyWith(phase: SessionPhase.idle, clearSession: true));
+    emit(
+      state.copyWith(
+        phase: SessionPhase.idle,
+        clearSession: true,
+        clearSleep: true,
+      ),
+    );
   }
 
   Future<void> setKeepAwake(bool enabled) async {
@@ -846,6 +952,7 @@ class SessionCubit extends Cubit<SessionState> {
   @override
   Future<void> close() async {
     _pauseTimer?.cancel();
+    _cancelSleep();
     await _unitSub?.cancel();
     await _stateSub?.cancel();
     await _recordProgress();

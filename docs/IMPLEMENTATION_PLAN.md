@@ -29,7 +29,8 @@ because the scheduler reads them.
 | 1b — memorization view | done | `3c05ad8` |
 | 2 — stumble marks, weak spots | done | `1dd3af2` |
 | (asked for) mushaf font page | done | `80e0018` |
-| 3 — review ladder, grading, today | done | this commit |
+| 3 — review ladder, grading, today | done | `8c5f8ee` |
+| 4 — sleep timer, listen, three more | done | this commit |
 
 ---
 

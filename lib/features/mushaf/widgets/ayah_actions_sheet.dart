@@ -20,6 +20,10 @@ enum AyahAction {
   /// A session from this ayah to the end of its surah, started at once.
   playFromHere,
 
+  /// The rest of the surah recited straight through, once, with nothing
+  /// drilled — listening, the way talqeen begins.
+  listenFromHere,
+
   /// A session over this ayah alone, started at once.
   memorizeAlone,
 
@@ -138,6 +142,11 @@ class AyahActionsSheet extends StatelessWidget {
                 AyahAction.playFromHere,
                 Icons.play_arrow_outlined,
                 LocaleKeys.mushafPlayFromHere.tr(),
+              ),
+              action(
+                AyahAction.listenFromHere,
+                Icons.headphones_outlined,
+                LocaleKeys.mushafListenFromHere.tr(),
               ),
               action(
                 AyahAction.memorizeAlone,

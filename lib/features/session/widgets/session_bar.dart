@@ -11,6 +11,7 @@ import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/session_config.dart';
 import '../cubit/session_cubit.dart';
 import '../cubit/session_state.dart';
+import 'session_sheet.dart' show sleepTimeLabel;
 
 /// The bar at the foot of the reading view: what would play and the button
 /// that plays it, and — once a session is running — the session's controls.
@@ -279,14 +280,43 @@ class _Active extends StatelessWidget {
                   style: theme.textTheme.titleSmall,
                 ),
               ),
+              if (state.sleepTimerSet)
+                Padding(
+                  padding: EdgeInsetsDirectional.only(end: 6.w),
+                  child: Tooltip(
+                    message: state.sleepAt == null
+                        ? LocaleKeys.sleepEndOfStep.tr()
+                        : LocaleKeys.sleepUntil.tr(
+                            args: <String>[
+                              sleepTimeLabel(context, state.sleepAt!),
+                            ],
+                          ),
+                    child: Icon(
+                      Icons.bedtime_outlined,
+                      size: 18.r,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              if (unit != null && !state.finished && !state.recalling)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: LocaleKeys.playerRepeatAyah.tr(),
+                  onPressed: () => cubit.repeatCurrentAyah(),
+                  icon: Icon(Icons.replay, size: 20.r),
+                ),
               if (unit != null && !state.finished)
-                // The repeat counter: which time through, of how many.
-                Text(
-                  '${LocaleKeys.playerRepeatHeader.tr(args: <String>[unit.repeatIndex.toLocalisedString(), unit.totalRepeats.toLocalisedString()])}'
-                  ' · '
-                  '${LocaleKeys.playerStepHeader.tr(args: <String>[(unit.stepIndex + 1).toLocalisedString(), steps.toLocalisedString()])}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                // The repeat counter: which time through, of how many. Free to
+                // wrap: on a narrow phone it shares the row with the buttons.
+                Flexible(
+                  child: Text(
+                    '${LocaleKeys.playerRepeatHeader.tr(args: <String>[unit.repeatIndex.toLocalisedString(), unit.totalRepeats.toLocalisedString()])}'
+                    ' · '
+                    '${LocaleKeys.playerStepHeader.tr(args: <String>[(unit.stepIndex + 1).toLocalisedString(), steps.toLocalisedString()])}',
+                    textAlign: TextAlign.end,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
             ],

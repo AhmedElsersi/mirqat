@@ -688,6 +688,133 @@ void main() {
     });
   });
 
+  group('listening', () {
+    Future<SessionCubit> playing() async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      cubit.setConnectMode(ConnectMode.cumulative);
+      await cubit.start();
+      await settle();
+      return cubit;
+    }
+
+    test('the sleep timer pauses — never stops — when it runs out', () async {
+      final SessionCubit cubit = await playing();
+      cubit.setSleepTimer(const Duration(milliseconds: 20));
+      expect(cubit.state.sleepTimerSet, isTrue);
+      expect(cubit.state.sleepAt, isNotNull);
+
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(cubit.state.playing, isFalse);
+      expect(cubit.state.phase, SessionPhase.active, reason: 'the place kept');
+      expect(cubit.state.sleepTimerSet, isFalse);
+    });
+
+    test('turned off, it never fires', () async {
+      final SessionCubit cubit = await playing();
+      cubit.setSleepTimer(const Duration(milliseconds: 20));
+      cubit.setSleepTimer(null);
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(cubit.state.playing, isTrue);
+    });
+
+    test('stopping the session takes the timer with it', () async {
+      final SessionCubit cubit = await playing();
+      cubit.setSleepTimer(const Duration(milliseconds: 20));
+      await cubit.stop();
+      expect(cubit.state.sleepTimerSet, isFalse);
+    });
+
+    test('"end of step" pauses as the next step begins, not before', () async {
+      final SessionCubit cubit = await playing();
+      final SessionPlan plan = cubit.state.activePlan!;
+      player.reach(plan.units[0]);
+      await settle();
+      cubit.sleepAtEndOfStep();
+
+      for (final PlaybackUnit u in plan.units.where(
+        (PlaybackUnit u) => u.stepIndex == 0,
+      )) {
+        player.reach(u);
+        await settle();
+      }
+      expect(cubit.state.playing, isTrue);
+
+      player.reach(plan.units.firstWhere((PlaybackUnit u) => u.stepIndex == 1));
+      await settle();
+      expect(cubit.state.playing, isFalse);
+    });
+
+    test('three more times lays a one-off drill in at the ayah being heard, '
+        'then takes its step up again from the start', () async {
+      final SessionCubit cubit = await playing();
+      final SessionPlan before = cubit.state.activePlan!;
+      final PlaybackUnit here = before.units.firstWhere(
+        (PlaybackUnit u) => u.stepIndex == 2,
+      );
+      player.reach(here);
+      await settle();
+
+      await cubit.repeatCurrentAyah();
+
+      final SessionLoad load = player.loads.last;
+      expect(load.plan.stepCount, before.stepCount + 1);
+      final PlaybackUnit first = load.plan.units[load.startAtUnit];
+      expect(first.ref, here.ref);
+      expect(first.stepType, StepType.learn);
+      expect(first.totalRepeats, 3);
+      // After the extra drill, the step it interrupted, whole.
+      expect(load.plan.steps[3], before.steps[2]);
+      expect(cubit.state.hasPendingChange, isFalse, reason: 'same session');
+    });
+
+    test(
+      'a pending end-of-step waits for the same step after the insertion',
+      () async {
+        final SessionCubit cubit = await playing();
+        final SessionPlan before = cubit.state.activePlan!;
+        player.reach(
+          before.units.firstWhere((PlaybackUnit u) => u.stepIndex == 2),
+        );
+        await settle();
+        cubit.sleepAtEndOfStep();
+        await cubit.repeatCurrentAyah();
+        final SessionPlan after = player.loads.last.plan;
+
+        // The inserted drill (step 2) and the interrupted step (now 3) play on.
+        for (final PlaybackUnit u in after.units.where(
+          (PlaybackUnit u) => u.stepIndex == 2 || u.stepIndex == 3,
+        )) {
+          player.reach(u);
+          await settle();
+        }
+        expect(cubit.state.playing, isTrue);
+        player.reach(
+          after.units.firstWhere((PlaybackUnit u) => u.stepIndex == 4),
+        );
+        await settle();
+        expect(cubit.state.playing, isFalse);
+      },
+    );
+
+    test('listening is straight through once, nothing asked back', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.setRecallRounds(2);
+      await cubit.applyRequest(
+        const SessionRequest(
+          from: AyahRef(1, 2),
+          to: s1a3,
+          preset: SessionPreset.listen,
+          autostart: true,
+        ),
+      );
+      final SessionPlan plan = player.loads.single.plan;
+      expect(plan.config.connectMode, ConnectMode.continuous);
+      expect(plan.unitCount, 2, reason: 'each ayah once');
+      expect(plan.units.where((PlaybackUnit u) => u.asked), isEmpty);
+    });
+  });
+
   group('grading what was recited', () {
     Future<SessionCubit> recited({bool all = true}) async {
       final SessionCubit cubit = await open(reciterId: 'b');

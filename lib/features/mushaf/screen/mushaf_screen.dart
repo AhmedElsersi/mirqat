@@ -821,6 +821,15 @@ class _PageSlot extends StatelessWidget {
       case AyahAction.playFromHere:
         session.chooseRange(ayah, AyahRef(surah.number, surah.ayahCount));
         await session.start();
+      case AyahAction.listenFromHere:
+        await session.applyRequest(
+          SessionRequest(
+            from: ayah,
+            to: AyahRef(surah.number, surah.ayahCount),
+            preset: SessionPreset.listen,
+            autostart: true,
+          ),
+        );
       case AyahAction.memorizeAlone:
         session.chooseRange(ayah, ayah);
         await session.start();

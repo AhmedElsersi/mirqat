@@ -60,7 +60,8 @@
     "error_offline": "The audio could not be reached. Check your connection, or download the surah to listen offline.",
     "error_config": "This recitation could not be prepared. Try another reciter.",
     "error_unknown": "The session could not be played.",
-    "recall_now": "Recite from memory: {}"
+    "recall_now": "Recite from memory: {}",
+    "repeat_ayah": "Repeat this ayah three more times"
   },
   "progress": {
     "title": "Progress",
@@ -170,7 +171,8 @@
     "share": "Share",
     "stumble_here": "I stumble here",
     "clear_stumble": "Clear the stumble mark",
-    "stumble_marked": "Noted. This ayah will be repeated more in your sessions."
+    "stumble_marked": "Noted. This ayah will be repeated more in your sessions.",
+    "listen_from_here": "Listen from here to the end of the surah"
   },
   "downloads": {
     "section": "Offline audio",
@@ -359,5 +361,12 @@
     "grade_solid": "Solid",
     "grade_shaky": "Shaky",
     "grade_forgot": "Forgot"
+  },
+  "sleep": {
+    "title": "Sleep timer",
+    "off": "Off",
+    "minutes": "{} min",
+    "end_of_step": "End of step",
+    "until": "Pauses at {}"
   }
 }

@@ -14,6 +14,14 @@ class SessionPreset extends Equatable {
     this.chainRecall,
   });
 
+  /// Listening, not drilling: straight through once, nothing asked back.
+  static const SessionPreset listen = SessionPreset(
+    repeatCount: 1,
+    connectMode: ConnectMode.continuous,
+    recallRounds: 0,
+    chainRecall: false,
+  );
+
   final int? repeatCount;
   final ConnectMode? connectMode;
   final int? recallRounds;
