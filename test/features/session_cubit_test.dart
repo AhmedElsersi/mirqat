@@ -6,6 +6,7 @@ import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/data/models/memorization_progress.dart';
 import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
+import 'package:mirqat/data/repositories/practice_repository.dart';
 import 'package:mirqat/data/repositories/progress_repository.dart';
 import 'package:mirqat/data/repositories/quran_repository.dart';
 import 'package:mirqat/data/repositories/settings_repository.dart';
@@ -14,6 +15,7 @@ import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
 import 'package:mirqat/domain/entities/hifz_plan.dart';
 import 'package:mirqat/domain/entities/plan_step.dart';
+import 'package:mirqat/domain/entities/practice_stats.dart';
 import 'package:mirqat/domain/entities/review_card.dart';
 import 'package:mirqat/domain/entities/session_config.dart';
 import 'package:mirqat/domain/entities/session_plan.dart';
@@ -36,8 +38,10 @@ void main() {
   late FakeSessionPlayer player;
   late _Progress progress;
   late FakeReviewRepository reviews;
+  late _Practice practice;
 
   setUp(() {
+    practice = _Practice();
     quran = fixtureRepository();
     player = FakeSessionPlayer();
     progress = _Progress();
@@ -65,6 +69,7 @@ void main() {
       progressRepository: progress,
       keepAwakeService: const KeepAwakeService(),
       reviewRepository: reviews,
+      practiceRepository: practice,
       clock: () => DateTime(2026, 10, 19, 20),
       pauseSettleTime: Duration.zero,
     );
@@ -524,6 +529,17 @@ void main() {
         expect(cubit.state.hasPendingChange, isFalse);
       },
     );
+
+    test('the day\'s practice is written down with it', () async {
+      final SessionCubit cubit = await started();
+      for (final PlaybackUnit unit in cubit.state.activePlan!.units.take(4)) {
+        player.reach(unit);
+        await settle();
+      }
+      await cubit.stop();
+      expect(practice.days.keys.single, DateTime(2026, 10, 19, 20));
+      expect(practice.days.values.single.plays, 4);
+    });
 
     test(
       'what was recited is written down by surah and ayah when it stops',
@@ -1012,6 +1028,20 @@ void main() {
       expect(settings.saved.last.defaultChainRecall, isTrue);
     });
   });
+}
+
+class _Practice implements PracticeRepository {
+  final Map<DateTime, PracticeDay> days = <DateTime, PracticeDay>{};
+
+  @override
+  Future<Either<Failure, Unit>> add(DateTime day, PracticeDay p) async {
+    days.update(day, (PracticeDay d) => d.plus(p), ifAbsent: () => p);
+    return const Right<Failure, Unit>(unit);
+  }
+
+  @override
+  Future<Either<Failure, Map<DateTime, PracticeDay>>> all() async =>
+      Right<Failure, Map<DateTime, PracticeDay>>(days);
 }
 
 /// A store that holds what was last saved, the way the real one does — so

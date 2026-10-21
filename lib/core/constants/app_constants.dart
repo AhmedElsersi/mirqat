@@ -59,6 +59,9 @@ class AppConstants {
   /// The review ladder: one card per memorized range (ReviewCard).
   static const String reviewCardsBoxName = 'review_cards';
 
+  /// What was practised each day: plays and listening time (PracticeDay).
+  static const String practiceDaysBoxName = 'practice_days';
+
   // Download state is NOT here: it lives in its own writable `downloads.db`
   // (see DownloadsDatabase), not in a Hive box and never in `quran.db`, which
   // ships read-only and is replaced wholesale on a schema bump

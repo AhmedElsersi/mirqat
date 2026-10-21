@@ -4,6 +4,7 @@ import '../../data/datasources/asset_reader.dart';
 import '../../data/datasources/bundle_asset_reader.dart';
 import '../../data/datasources/downloads_database.dart';
 import '../../data/datasources/downloads_local_data_source.dart';
+import '../../data/datasources/practice_local_data_source.dart';
 import '../../data/datasources/progress_local_data_source.dart';
 import '../../data/datasources/quran_database.dart';
 import '../../data/datasources/quran_local_data_source.dart';
@@ -13,6 +14,7 @@ import '../../data/datasources/review_local_data_source.dart';
 import '../../data/datasources/settings_local_data_source.dart';
 import '../../data/repositories/downloads_repository.dart';
 import '../../data/repositories/mutashabihat_repository.dart';
+import '../../data/repositories/practice_repository.dart';
 import '../../data/repositories/progress_repository.dart';
 import '../../data/repositories/quran_pages_repository.dart';
 import '../../data/repositories/quran_repository.dart';
@@ -34,6 +36,7 @@ import '../../features/settings/cubit/downloads_cubit.dart';
 import '../../features/similar/cubit/similar_cubit.dart';
 import '../../features/settings/cubit/mushaf_download_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
+import '../../features/stats/cubit/stats_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
 import '../../features/update/cubit/update_cubit.dart';
 import '../../features/weak_spots/cubit/weak_spots_cubit.dart';
@@ -96,6 +99,13 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<ReviewLocalDataSource>(() => reviews);
   sl.registerLazySingleton<ReviewRepository>(
     () => ReviewRepositoryImpl(sl<ReviewLocalDataSource>()),
+  );
+
+  final PracticeLocalDataSourceImpl practice = PracticeLocalDataSourceImpl();
+  await practice.open();
+  sl.registerLazySingleton<PracticeLocalDataSource>(() => practice);
+  sl.registerLazySingleton<PracticeRepository>(
+    () => PracticeRepositoryImpl(sl<PracticeLocalDataSource>()),
   );
 
   // Its own database, and lazily: unlike the Hive boxes it opens itself on
@@ -232,6 +242,7 @@ Future<void> configureDependencies() async {
       keepAwakeService: sl<KeepAwakeService>(),
       reviewRepository: sl<ReviewRepository>(),
       reviewScheduler: sl<ReviewScheduler>(),
+      practiceRepository: sl<PracticeRepository>(),
     ),
   );
   sl.registerFactory<AudioPackCubit>(
@@ -255,6 +266,12 @@ Future<void> configureDependencies() async {
       mutashabihatRepository: sl<MutashabihatRepository>(),
       quranRepository: sl<QuranRepository>(),
       pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
+  sl.registerFactory<StatsCubit>(
+    () => StatsCubit(
+      practiceRepository: sl<PracticeRepository>(),
+      progressRepository: sl<ProgressRepository>(),
     ),
   );
   sl.registerFactory<HifzPlanCubit>(

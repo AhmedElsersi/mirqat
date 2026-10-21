@@ -295,6 +295,9 @@ class AppHarness {
     await Hive.box<Map<dynamic, dynamic>>(
       AppConstants.reviewCardsBoxName,
     ).clear();
+    await Hive.box<Map<dynamic, dynamic>>(
+      AppConstants.practiceDaysBoxName,
+    ).clear();
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
     // Every test but the introduction's own starts as someone who has already
     // seen it; [freshInstall] puts that back. The home is pinned to the list:

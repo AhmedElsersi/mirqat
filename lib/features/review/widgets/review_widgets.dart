@@ -31,13 +31,14 @@ String tierLabel(ReviewTier tier) => switch (tier) {
   ReviewTier.manzil => LocaleKeys.reviewTierManzil.tr(),
 };
 
-/// When a card falls due: today, waiting since an earlier day, tomorrow, or
-/// the date — in the app's own numerals.
+/// When a card falls due: now, tomorrow, or the date — in the app's own
+/// numerals.
 String dueLabel(BuildContext context, ReviewItem item, DateTime now) {
   final DateTime today = ReviewScheduler.dayOf(now);
   final DateTime due = ReviewScheduler.dayOf(item.card.due);
-  if (due == today) return LocaleKeys.reviewDueToday.tr();
-  if (due.isBefore(today)) return LocaleKeys.reviewOverdue.tr();
+  // Waiting since an earlier day is simply due: when it was missed is not
+  // the reader's to be reminded of (docs/BRAND_GUIDE.md §6).
+  if (!due.isAfter(today)) return LocaleKeys.reviewDueToday.tr();
   if (due == ReviewScheduler.addDays(today, 1)) {
     return LocaleKeys.reviewDueTomorrow.tr();
   }

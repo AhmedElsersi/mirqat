@@ -89,10 +89,9 @@ void main() {
         ),
         counts: const <int, int>{112: 4, 113: 5},
       );
-      expect(
-        plan.steps.whereType<ChainStep>().map(describe),
-        <String>['CHAIN 112:4>113:1'],
-      );
+      expect(plan.steps.whereType<ChainStep>().map(describe), <String>[
+        'CHAIN 112:4>113:1',
+      ]);
     });
 
     test('off by default', () {

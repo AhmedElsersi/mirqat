@@ -43,6 +43,8 @@ abstract class ProgressRepository {
   /// Every stumbled ayah, the most recently marked first.
   Future<Either<Failure, List<MemorizationProgress>>> stumbled();
 
+  Future<Either<Failure, int>> memorizedCount();
+
   /// Emits whenever any progress record is written, by anyone.
   ///
   /// Deliberately `void` rather than the changed record: every listener here
@@ -104,6 +106,10 @@ class ProgressRepositoryImpl implements ProgressRepository {
   @override
   Future<Either<Failure, List<MemorizationProgress>>> stumbled() =>
       _guard(_local.stumbled);
+
+  @override
+  Future<Either<Failure, int>> memorizedCount() =>
+      _guard(_local.memorizedCount);
 
   @override
   Stream<void> get changes => _local.watchChanges();

@@ -350,10 +350,9 @@
     "forget": "Remove from review",
     "forget_confirm": "This passage leaves the review schedule. Your memorization record stays as it is.",
     "last_grade": "Last: {}",
-    "due_today": "Today",
+    "due_today": "Due now",
     "due_tomorrow": "Tomorrow",
     "due_on": "On {}",
-    "overdue": "Overdue",
     "tier_sabaq": "New",
     "tier_sabqi": "Recent",
     "tier_manzil": "Old",
@@ -387,7 +386,6 @@
     "preview": "{} ayahs, about {} a day",
     "create": "Start the plan",
     "progress": "{} of {} portions memorized",
-    "behind": "Days behind schedule: {}",
     "finished": "The plan is complete. May Allah bless it.",
     "today": "Today's portion",
     "today_short": "Today's portion · {} of {}",
@@ -396,5 +394,14 @@
     "day": "Day {}",
     "delete": "Give up the plan",
     "delete_confirm": "The plan is removed. What you memorized, and its review schedule, stay as they are."
+  },
+  "stats": {
+    "title": "Your practice",
+    "hint": "Days practised, minutes listened, and what you memorized",
+    "days": "Days practised",
+    "minutes": "Minutes listened",
+    "plays": "Recitations heard",
+    "memorized": "Ayahs marked memorized",
+    "note": "Everything is counted on this device alone, and sent nowhere."
   }
 }

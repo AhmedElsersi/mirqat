@@ -24,6 +24,7 @@ import '../../features/settings/screen/mushaf_font_screen.dart';
 import '../../features/settings/screen/session_settings_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/splash/screen/splash_screen.dart';
+import '../../features/stats/screen/stats_screen.dart';
 import '../../features/surah_list/screen/surah_list_screen.dart';
 import '../../features/weak_spots/screen/weak_spots_screen.dart';
 import 'app_routes.dart';
@@ -115,6 +116,12 @@ class AppRouter {
         name: AppRoutes.similarName,
         builder: (BuildContext context, GoRouterState state) =>
             SimilarScreen(ayah: state.extra! as AyahRef),
+      ),
+      GoRoute(
+        path: AppRoutes.statsPath,
+        name: AppRoutes.statsName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const StatsScreen(),
       ),
       GoRoute(
         path: AppRoutes.hifzPlanPath,

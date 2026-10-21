@@ -52,6 +52,10 @@ abstract class ProgressLocalDataSource {
   /// one bad record must not hide every other weak spot.
   Future<List<MemorizationProgress>> stumbled();
 
+  /// How many ayahs are marked memorized. A record that cannot be read is
+  /// not counted.
+  Future<int> memorizedCount();
+
   /// Fires once per record written, for screens that show a progress summary
   /// they did not write themselves.
   ///
@@ -224,6 +228,22 @@ class ProgressLocalDataSourceImpl implements ProgressLocalDataSource {
       return byTime != 0 ? byTime : _mushafOrder(a, b);
     });
     return List<MemorizationProgress>.unmodifiable(out);
+  }
+
+  @override
+  Future<int> memorizedCount() async {
+    int n = 0;
+    for (final Map<dynamic, dynamic> stored in _requireBox.values) {
+      try {
+        if (MemorizationProgress.fromMap(stored).status ==
+            MemorizationStatus.memorized) {
+          n++;
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+    return n;
   }
 
   static int _mushafOrder(MemorizationProgress a, MemorizationProgress b) =>

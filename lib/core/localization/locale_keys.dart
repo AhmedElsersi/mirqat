@@ -230,6 +230,13 @@ class LocaleKeys {
   static const String sleepUntil = 'sleep.until';
   static const String playerRepeatAyah = 'player.repeat_ayah';
   static const String mushafListenFromHere = 'mushaf.listen_from_here';
+  static const String statsTitle = 'stats.title';
+  static const String statsHint = 'stats.hint';
+  static const String statsDays = 'stats.days';
+  static const String statsMinutes = 'stats.minutes';
+  static const String statsPlays = 'stats.plays';
+  static const String statsMemorized = 'stats.memorized';
+  static const String statsNote = 'stats.note';
   static const String planTitle = 'plan.title';
   static const String planHint = 'plan.hint';
   static const String planIntro = 'plan.intro';
@@ -238,7 +245,6 @@ class LocaleKeys {
   static const String planPreview = 'plan.preview';
   static const String planCreate = 'plan.create';
   static const String planProgress = 'plan.progress';
-  static const String planBehind = 'plan.behind';
   static const String planFinished = 'plan.finished';
   static const String planToday = 'plan.today';
   static const String planTodayShort = 'plan.today_short';
@@ -261,7 +267,6 @@ class LocaleKeys {
   static const String reviewDueToday = 'review.due_today';
   static const String reviewDueTomorrow = 'review.due_tomorrow';
   static const String reviewDueOn = 'review.due_on';
-  static const String reviewOverdue = 'review.overdue';
   static const String reviewTierSabaq = 'review.tier_sabaq';
   static const String reviewTierSabqi = 'review.tier_sabqi';
   static const String reviewTierManzil = 'review.tier_manzil';

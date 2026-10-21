@@ -123,12 +123,6 @@ void main() {
       expect(plan.to, const AyahRef(2, 10));
     });
 
-    test('the calendar says which portion should be in hand', () {
-      expect(HifzPlanner.expectedPortion(plan, DateTime(2026, 10, 21, 23)), 1);
-      expect(HifzPlanner.expectedPortion(plan, DateTime(2026, 10, 23)), 3);
-      expect(HifzPlanner.expectedPortion(plan, DateTime(2027, 1, 1)), 5);
-    });
-
     test('done when every portion is', () {
       expect(plan.copyWith(completed: 5).isFinished, isTrue);
       expect(plan.copyWith(completed: 5).current, isNull);

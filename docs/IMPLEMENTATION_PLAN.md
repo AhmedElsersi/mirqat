@@ -32,7 +32,8 @@ because the scheduler reads them.
 | 3 — review ladder, grading, today | done | `8c5f8ee` |
 | 4 — sleep timer, listen, three more | done | `06c89fc` |
 | 5 — mutashabihat | built; data awaits a QUL download (see NEW_IDEAS §4) | `951792d` |
-| 6a — hifz plan | done | this commit |
+| 6a — hifz plan | done | `bacfb05` (its "behind schedule" line removed in 6b) |
+| 6b — quiet stats | done | this commit |
 
 ---
 
@@ -222,12 +223,14 @@ skipped; menu entry appears only for grouped ayahs.
   sabaq session; finishing it advances the plan.
 - **Stats.** On the progress area: days practised (from the dates sessions
   ran), ayahs held (memorized count), minutes listened (accumulated from
-  real played durations where measured). A streak counts consecutive local
-  days with any session. Shown plainly, no celebration.
+  real played durations where measured). Totals only, shown plainly, no
+  celebration — and no streak, nor anything marking a day missed or a plan
+  "behind": BRAND_GUIDE §6, enforced by brand_voice_test. (A streak was in
+  the first draft of this plan; that test caught it.)
 
 *Tests.* Portion split covers the range exactly, never splits an ayah, never
-an empty day unless the range is shorter than the days; streak across a
-missed day and across midnight.
+an empty day unless the range is shorter than the days; totals across gaps
+and across midnight.
 
 ---
 

@@ -31,6 +31,10 @@ class AppRoutes {
   static const String similarPath = '/similar';
   static const String similarName = 'similar';
 
+  /// The reader's practice, in plain numbers.
+  static const String statsPath = '/stats';
+  static const String statsName = 'stats';
+
   /// The hifz plan: made, and followed.
   static const String hifzPlanPath = '/plan';
   static const String hifzPlanName = 'hifz_plan';

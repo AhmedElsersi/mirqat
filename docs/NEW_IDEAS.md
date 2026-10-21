@@ -131,9 +131,10 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
   divides it into daily portions by ayah weight (the admin tool's `recitationWeight`
   arithmetic already measures how long text takes to recite; reuse the idea, not the
   code). The "Today" card then has real content from day one.
-- **Streaks and quiet stats.** Days practiced, ayahs held, minutes listened — computed
-  locally, shown humbly (no confetti; rule 7's spirit). The history feature already
-  records the raw material.
+- **Quiet stats.** Days practiced, ayahs held, minutes listened — totals, computed
+  locally, shown humbly. **No streaks**, and nothing that marks a day missed:
+  `docs/BRAND_GUIDE.md` §6 rules out loss-aversion pointed at someone's relationship
+  with the Quran, and `test/core/brand_voice_test.dart` enforces it.
 - **Daily reminder notification. [blocker]** Needs `flutter_local_notifications` (or
   similar) — not on the approved list. Worth a numbered blocker: a fixed local
   reminder at a user-chosen time is the single cheapest habit feature, and it needs
@@ -294,9 +295,10 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 - **خطة ختمة حفظ.** يختار القارئ غايةً — جزء عمّ في ٩٠ يومًا مثلًا — فيقسمها التطبيق
   مقاطعَ يومية على وزن الآيات (حسابُ `recitationWeight` في أداة الإدارة يقيس أصلًا
   طولَ التلاوة من النص؛ تُستعاد الفكرة لا الشيفرة). فتمتلئ بطاقة «اليوم» من أول يوم.
-- **مواظبة وإحصاء هادئ.** أيام الممارسة، والآيات المحفوظة، ودقائق السماع — تُحسب
-  محليًّا وتُعرض بتواضع (لا زينة صاخبة؛ روح القاعدة السابعة). وميزة السجل تقيّد
-  المادة الخام أصلًا.
+- **إحصاء هادئ.** أيام الممارسة، والآيات المحفوظة، ودقائق السماع — مجاميع تُحسب
+  محليًّا وتُعرض بتواضع. **بلا أيام متتالية** ولا علامة على يوم فات: دليل الهوية
+  (§٦) يمنع الضغط بخوف الخسارة على صلة المرء بالقرآن، واختبار `brand_voice_test`
+  يحرس ذلك.
 - **تنبيه يومي. [عائق]** يحتاج `flutter_local_notifications` أو نحوها — ليست في
   القائمة المعتمدة. يستحق عائقًا مرقّمًا: تذكيرٌ محلي ثابت في وقتٍ يختاره القارئ هو
   أرخص ميزات العادة جميعًا، ولا يحتاج شبكةً ولا حسابًا.

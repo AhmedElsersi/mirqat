@@ -13,12 +13,14 @@ import '../../../data/models/surah.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
+import '../../../data/repositories/practice_repository.dart';
 import '../../../data/repositories/review_repository.dart';
 import '../../../domain/engine/repetition_plan_builder.dart';
 import '../../../domain/engine/review_scheduler.dart';
 import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/hifz_plan.dart';
+import '../../../domain/entities/practice_stats.dart';
 import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/session_config.dart';
@@ -52,11 +54,13 @@ class SessionCubit extends Cubit<SessionState> {
     required ProgressRepository progressRepository,
     required KeepAwakeService keepAwakeService,
     required ReviewRepository reviewRepository,
+    required PracticeRepository practiceRepository,
     ReviewScheduler reviewScheduler = const ReviewScheduler(),
     this.clock = DateTime.now,
     this.pauseSettleTime = const Duration(milliseconds: 600),
   }) : _quran = quranRepository,
        _reviews = reviewRepository,
+       _practice = practiceRepository,
        _scheduler = reviewScheduler,
        _settings = settingsRepository,
        _reciters = reciterCatalog,
@@ -76,6 +80,11 @@ class SessionCubit extends Cubit<SessionState> {
   final ProgressRepository _progress;
   final KeepAwakeService _keepAwake;
   final ReviewRepository _reviews;
+  final PracticeRepository _practice;
+
+  /// Runs while the session is actually playing: the listening time the
+  /// practice log is given, measured rather than estimated.
+  final Stopwatch _listening = Stopwatch();
   final ReviewScheduler _scheduler;
 
   /// Today, as far as the review ladder is concerned. A test hands in its
@@ -610,6 +619,11 @@ class SessionCubit extends Cubit<SessionState> {
       (ja.PlayerState s) {
         final bool finished = s.processingState == ja.ProcessingState.completed;
         final bool justFinished = finished && !state.finished;
+        if (s.playing && !finished) {
+          _listening.start();
+        } else {
+          _listening.stop();
+        }
         emit(
           state.copyWith(playing: s.playing && !finished, finished: finished),
         );
@@ -888,10 +902,21 @@ class SessionCubit extends Cubit<SessionState> {
   /// Writes what was actually recited, then clears the tally so a stop
   /// followed by a completion cannot double-count.
   Future<void> _recordProgress() async {
-    if (_played.isEmpty) return;
+    final int seconds = _listening.elapsed.inSeconds;
+    if (_played.isEmpty && seconds == 0) return;
     final Map<AyahRef, int> tally = Map<AyahRef, int>.of(_played);
     _played.clear();
-    final DateTime now = DateTime.now();
+    _listening.reset();
+    final DateTime now = clock();
+    // The day's practice, beside the per-ayah record. A log that cannot be
+    // written costs the statistics, never the session.
+    await _practice.add(
+      now,
+      PracticeDay(
+        plays: tally.values.fold(0, (int a, int b) => a + b),
+        seconds: seconds,
+      ),
+    );
     for (final MapEntry<AyahRef, int> e in tally.entries) {
       await _progress.recordRepeats(e.key.surah, e.key.ayah, e.value, at: now);
     }

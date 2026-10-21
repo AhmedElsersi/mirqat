@@ -262,8 +262,6 @@ class _FollowPlan extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final HifzPlanCubit cubit = context.read<HifzPlanCubit>();
     final Portion? today = plan.current;
-    final int expected = HifzPlanner.expectedPortion(plan, cubit.clock());
-    final int behind = expected - (plan.completed + 1);
 
     return ListView(
       padding: EdgeInsetsDirectional.all(16.r),
@@ -288,15 +286,6 @@ class _FollowPlan extends StatelessWidget {
           ),
           style: theme.textTheme.bodySmall,
         ),
-        if (!plan.isFinished && behind > 0)
-          Text(
-            LocaleKeys.planBehind.tr(
-              args: <String>[behind.toLocalisedString()],
-            ),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.secondary,
-            ),
-          ),
         SizedBox(height: 16.h),
         if (today == null)
           Card(

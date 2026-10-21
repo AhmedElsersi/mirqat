@@ -75,11 +75,4 @@ class HifzPlanner {
       portions: portions,
     );
   }
-
-  /// Which portion the calendar says should be in hand at [now]: day one is
-  /// portion one. Clamped to the plan's length.
-  static int expectedPortion(HifzPlan plan, DateTime now) {
-    final int day = ReviewScheduler.daysBetween(plan.started, now) + 1;
-    return day.clamp(1, plan.portions.length);
-  }
 }
