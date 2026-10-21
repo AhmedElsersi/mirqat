@@ -30,12 +30,20 @@ What it may leave out is said on the command line and in the output:
                   reference it names must exist, or the build is refused —
                   so a leave-out cannot outlive the error it was for. The
                   phrase keeps its other ayahs.
+  --correct PHRASE:SURAH:AYAH:FROM-TO=FROM-TO
+                  one range of one reference, read in quran.db and put
+                  right. Repeatable. It names the source's range as well as
+                  the correct one, and the build is refused unless the
+                  source holds exactly that range — so a correction cannot
+                  outlive the error it was for, or apply to something else.
+                  The corrected range is checked like any other.
 
-Known errors in resource 73 (as downloaded 2026-10-21), and the leave-out
-each needs:
+Known errors in resource 73 (as downloaded 2026-10-21), and what each needs:
 
-  4970:48:10  "فسيؤتيه أجرا عظيما" — words 23-25 of 48:10, the ayah's end —
-              is recorded as 23-27, past the ayah's 25 words.
+  --correct 4970:48:10:23-27=23-25
+      "نؤتيه أجرا عظيما" in 48:10 is its last three words, 23-25
+      ("فسيؤتيه أجرا عظيما", as 4:74, 4:114 and 4:162 have it, three words);
+      QUL records 23-27, past the ayah's 25 words.
 
 Output, compact and ordered so an unchanged source rebuilds byte-identical:
 
@@ -85,12 +93,15 @@ def build(
     max_ayahs: int,
     min_words: int,
     leave_out: frozenset = frozenset(),
+    corrections: dict = None,
 ):
     """(kept phrases, problems, how many left out by each filter)."""
     kept = []
     problems = []
     too_common = too_short = single = 0
     unused = set(leave_out)
+    corrections = corrections or {}
+    uncorrected = set(corrections)
 
     for raw_id, phrase in phrases.items():
         try:
@@ -116,6 +127,10 @@ def build(
                 continue
             surah, ayah = (int(x) for x in key.split(":"))
             for r in ranges:
+                fix = (pid, key, tuple(r) if isinstance(r, list) else None)
+                if fix in corrections:
+                    uncorrected.discard(fix)
+                    r = list(corrections[fix])
                 if (
                     not isinstance(r, list)
                     or len(r) != 2
@@ -143,6 +158,8 @@ def build(
 
     for pid, key in sorted(unused):
         problems.append(f"--leave-out {pid}:{key} names no reference of the source")
+    for pid, key, (f, t) in sorted(uncorrected):
+        problems.append(f"--correct {pid}:{key}:{f}-{t} names no range of the source")
     kept.sort(key=lambda p: p["id"])
     return kept, problems, {"too_common": too_common, "too_short": too_short, "single": single}
 
@@ -155,6 +172,9 @@ def main(argv=None) -> int:
     ap.add_argument("--max-ayahs", type=int, default=40)
     ap.add_argument("--min-words", type=int, default=2)
     ap.add_argument("--leave-out", action="append", default=[], metavar="PHRASE:SURAH:AYAH")
+    ap.add_argument(
+        "--correct", action="append", default=[], metavar="PHRASE:SURAH:AYAH:FROM-TO=FROM-TO"
+    )
     args = ap.parse_args(argv)
 
     phrases = load_phrases(args.source)
@@ -170,12 +190,28 @@ def main(argv=None) -> int:
             return 1
         leave_out.add((int(parts[0]), f"{parts[1]}:{parts[2]}"))
 
+    corrections = {}
+    for spec in args.correct:
+        try:
+            ref, right = spec.split("=")
+            pid, surah, ayah, wrong = ref.split(":")
+            wf, wt = (int(x) for x in wrong.split("-"))
+            rf, rt = (int(x) for x in right.split("-"))
+            corrections[(int(pid), f"{int(surah)}:{int(ayah)}", (wf, wt))] = (rf, rt)
+        except ValueError:
+            print(
+                f"--correct {spec!r}: expected PHRASE:SURAH:AYAH:FROM-TO=FROM-TO",
+                file=sys.stderr,
+            )
+            return 1
+
     kept, problems, left_out = build(
         phrases,
         recited_word_counts(args.db),
         args.max_ayahs,
         args.min_words,
         frozenset(leave_out),
+        corrections,
     )
     if problems:
         print(f"REFUSED: {len(problems)} references disagree with {args.db}:", file=sys.stderr)
@@ -198,6 +234,8 @@ def main(argv=None) -> int:
     )
     for pid, key in sorted(leave_out):
         print(f"     left out by hand: phrase {pid} in {key}")
+    for (pid, key, (wf, wt)), (rf, rt) in sorted(corrections.items()):
+        print(f"     corrected by hand: phrase {pid} in {key}, words {wf}-{wt} read as {rf}-{rt}")
     return 0
 
 

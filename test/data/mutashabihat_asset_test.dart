@@ -63,25 +63,35 @@ void main() {
     expect(wrong, isEmpty);
   });
 
-  test('the one known error in the source stays left out', () {
+  test('the one known error in the source is read as corrected: 48:10 '
+      'shares its last three words', () async {
     // QUL records "فسيؤتيه أجرا عظيما" in 48:10 as words 23-27; the ayah
-    // has 25. See tool/build_mutashabihat.py.
-    final Object? json = jsonDecode(file.readAsStringSync());
-    final Map<String, dynamic> phrase =
-        ((json! as Map<String, dynamic>)['phrases'] as List<dynamic>)
-            .cast<Map<String, dynamic>>()
-            .singleWhere((Map<String, dynamic> p) => p['id'] == 4970);
-    expect(
-      (phrase['ayahs'] as List<dynamic>).map(
-        (dynamic r) => '${(r as List<dynamic>)[0]}:${r[1]}',
-      ),
-      isNot(contains('48:10')),
+    // has 25. The build reads it as 23-25. See tool/build_mutashabihat.py.
+    final MutashabihatIndex index = MutashabihatIndex.fromJson(
+      jsonDecode(file.readAsStringSync()),
     );
-    // The phrase keeps the ayahs QUL had right.
-    final MutashabihatIndex index = MutashabihatIndex.fromJson(json);
-    expect(
-      index.similarTo(const AyahRef(4, 74)).map((SimilarAyah s) => s.ref),
-      containsAll(<AyahRef>[const AyahRef(4, 114), const AyahRef(4, 162)]),
+    final SimilarAyah fortyEight = index
+        .similarTo(const AyahRef(4, 74))
+        .singleWhere((SimilarAyah s) => s.ref == const AyahRef(48, 10));
+    final PhraseOccurrence there = fortyEight.there.singleWhere(
+      (PhraseOccurrence o) => o.phraseId == 4970,
     );
+    expect(<int>[there.fromWord, there.toWord], <int>[23, 25]);
+
+    // And those are the words: the ayah's last three, ending on the same
+    // two words as 4:74's occurrence, byte for byte.
+    final Database db = await RepoQuranDatabase().open();
+    Future<List<String>> words(int surah, int ayah) async => <String>[
+      for (final Map<String, Object?> r in await db.rawQuery(
+        'SELECT text FROM words WHERE surah = ? AND ayah = ? '
+        'AND is_marker = 0 ORDER BY id',
+        <int>[surah, ayah],
+      ))
+        r['text']! as String,
+    ];
+    final List<String> w48 = await words(48, 10);
+    final List<String> w4 = await words(4, 74);
+    expect(w48, hasLength(25));
+    expect(w48.sublist(23, 25), w4.sublist(19, 21));
   });
 }

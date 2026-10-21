@@ -98,10 +98,10 @@ already has progress tracking and session plans to build on:
 > 2026. QUL's *Mutashabihat ul Quran* (resource 73) is served only to a
 > signed-in account; its JSON zip (named `.json.bz2` on download, but a zip)
 > is rebuilt with `python3 tool/build_mutashabihat.py path/to/the.zip
-> --leave-out 4970:48:10`. The tool checks every reference against
-> `quran.db` and refuses a source that disagrees; the one reference that
-> does — phrase 4970 in 48:10, recorded past the ayah's last word — is left
-> out by name. 807 of 814 phrases are kept; the 7 found in more than 40
+> --correct 4970:48:10:23-27=23-25`. The tool checks every reference
+> against `quran.db` and refuses a source that disagrees; the one reference
+> that does — phrase 4970 in 48:10, recorded as words 23-27 of an ayah of
+> 25 — is corrected by name to 23-25, the ayah's last three words. 807 of 814 phrases are kept; the 7 found in more than 40
 > ayahs are too common to be what confuses a reader.
 
 The most common failure of established memorization is sliding from one ayah into its
@@ -267,10 +267,10 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 > **الحال:** بُنيت الميزة في أكتوبر ٢٠٢٦، وأُدخلت بياناتها في ٢١ أكتوبر ٢٠٢٦.
 > «متشابهات القرآن» في QUL (المورد ٧٣) لا يُنزَّل إلا بحساب مسجَّل، ويُعاد بناؤه
-> بالأمر `python3 tool/build_mutashabihat.py path/to/the.zip --leave-out 4970:48:10`.
+> بالأمر `python3 tool/build_mutashabihat.py path/to/the.zip --correct 4970:48:10:23-27=23-25`.
 > يتحقق الأمر من كل إحالة على `quran.db` ويرفض المصدر إن خالفه؛ والإحالة
-> الوحيدة المخالفة — العبارة ٤٩٧٠ في الآية ٤٨:١٠، مسجّلة إلى ما بعد آخر كلمة
-> في الآية — تُستبعد باسمها. أُبقي ٨٠٧ عبارات من ٨١٤، واستُبعدت ٧ ترد في أكثر
+> الوحيدة المخالفة — العبارة ٤٩٧٠ في الآية ٤٨:١٠، مسجّلة كلماتٍ ٢٣–٢٧ وفي الآية
+> ٢٥ كلمة — تُصحَّح باسمها إلى ٢٣–٢٥، أي آخر ثلاث كلمات في الآية. أُبقي ٨٠٧ عبارات من ٨١٤، واستُبعدت ٧ ترد في أكثر
 > من ٤٠ آية لشيوعها. ويظهر «آيات متشابهة» في قائمة كل آية لها نظير.
 
 أشيعُ خللٍ في الحفظ المستقر هو الانزلاق من آيةٍ إلى شبيهتها في موضع آخر، وقد قامت

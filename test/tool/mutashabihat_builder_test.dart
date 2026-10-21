@@ -222,6 +222,77 @@ void main() {
         });
       });
 
+      group('--correct', () {
+        // 2:112 has 17 recited words; the source runs a range past them.
+        Map<String, Object?> withBadRange() => source(
+          extra: <String, Object?>{
+            '9': <String, Object?>{
+              'ayah': <String, Object?>{
+                '2:112': <List<int>>[
+                  <int>[16, 19],
+                ],
+                '2:62': <List<int>>[
+                  <int>[23, 24],
+                ],
+              },
+            },
+          },
+        );
+
+        Map<String, dynamic> phrase(int id) =>
+            ((jsonDecode(out.readAsStringSync())
+                        as Map<String, dynamic>)['phrases']
+                    as List<dynamic>)
+                .cast<Map<String, dynamic>>()
+                .singleWhere((Map<String, dynamic> p) => p['id'] == id);
+
+        test('reads the named range as the corrected one, and says so', () {
+          final ProcessResult r = run(write(withBadRange()).path, <String>[
+            '--correct',
+            '9:2:112:16-19=16-17',
+          ]);
+          expect(r.exitCode, 0, reason: '${r.stderr}');
+          expect(
+            '${r.stdout}',
+            contains('phrase 9 in 2:112, words 16-19 read as 16-17'),
+          );
+          expect(phrase(9)['ayahs'], <List<int>>[
+            <int>[2, 62, 23, 24],
+            <int>[2, 112, 16, 17],
+          ]);
+        });
+
+        test('is refused when the source no longer holds the range it names, '
+            'so a correction cannot outlive its error', () {
+          final ProcessResult r = run(write(withBadRange()).path, <String>[
+            '--correct',
+            '9:2:112:16-18=16-17',
+          ]);
+          expect(r.exitCode, isNot(0));
+          expect('${r.stderr}', contains('9:2:112:16-18'));
+          expect(out.existsSync(), isFalse);
+        });
+
+        test('a corrected range is checked like any other', () {
+          final ProcessResult r = run(write(withBadRange()).path, <String>[
+            '--correct',
+            '9:2:112:16-19=16-18',
+          ]);
+          expect(r.exitCode, isNot(0));
+          expect('${r.stderr}', contains('2:112 range [16, 18]'));
+          expect(out.existsSync(), isFalse);
+        });
+
+        test('is refused when it is not PHRASE:SURAH:AYAH:FROM-TO=FROM-TO', () {
+          final ProcessResult r = run(write(withBadRange()).path, <String>[
+            '--correct',
+            '9:2:112=16-17',
+          ]);
+          expect(r.exitCode, isNot(0));
+          expect(out.existsSync(), isFalse);
+        });
+      });
+
       test('a phrase in more ayahs than asked for is left out, and said', () {
         final ProcessResult r = run(write(source()).path, <String>[
           '--max-ayahs',
