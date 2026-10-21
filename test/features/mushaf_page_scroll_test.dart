@@ -35,6 +35,7 @@ Future<void> pump(
   WidgetTester tester,
   Size size, {
   double textScale = 1,
+  double bottomInset = 0,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -51,6 +52,7 @@ Future<void> pump(
             selected: null,
             onWordLongPress: (_) {},
             textScale: textScale,
+            bottomInset: bottomInset,
           ),
         ),
       ),
@@ -58,6 +60,16 @@ Future<void> pump(
   );
   await tester.pump();
 }
+
+double maxScroll(WidgetTester tester) => tester
+    .state<ScrollableState>(
+      find.descendant(
+        of: find.byType(SingleChildScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    )
+    .position
+    .maxScrollExtent;
 
 /// The width alone sizes the text; the height never squeezes it. A page that
 /// is taller than the glass scrolls, frame and all.
@@ -68,7 +80,29 @@ void main() {
     await pump(tester, const Size(412, 915));
     expect(tester.takeException(), isNull);
     expect(find.byType(IslamicFrame), findsOneWidget);
-    expect(find.byType(SingleChildScrollView), findsNothing);
+    expect(maxScroll(tester), 0);
+  });
+
+  testWidgets('with the session bar up, the page can be scrolled clear of it, '
+      'and keeps its size', (WidgetTester tester) async {
+    await pump(tester, const Size(412, 915));
+    final Size whole = tester.getSize(find.byType(IslamicFrame));
+
+    await pump(tester, const Size(412, 915), bottomInset: 120);
+    expect(tester.takeException(), isNull);
+    // Showing the bar never re-lays the page; it only adds room below it.
+    expect(tester.getSize(find.byType(IslamicFrame)), whole);
+    expect(maxScroll(tester), closeTo(120, 0.5));
+
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -400),
+    );
+    await tester.pump();
+    expect(
+      tester.getBottomLeft(find.byType(IslamicFrame)).dy,
+      lessThanOrEqualTo(915 - 120 + 0.5),
+    );
   });
 
   testWidgets('a wide, short screen scrolls the page instead of shrinking it', (

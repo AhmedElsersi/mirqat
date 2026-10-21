@@ -41,6 +41,7 @@ class MushafPageView extends StatefulWidget {
     this.isSelected,
     this.isHeldBack,
     this.textScale = 1,
+    this.bottomInset = 0,
     super.key,
   });
 
@@ -102,6 +103,12 @@ class MushafPageView extends StatefulWidget {
   /// so the page's lines are re-broken at the larger size (see [reflowPage])
   /// and the page scrolls.
   final double textScale;
+
+  /// How much of the bottom of the glass something is drawn over — the
+  /// session bar, while it is up. The page keeps its size, so showing the bar
+  /// never re-lays the lines; it gains that much room to scroll instead, and
+  /// the last lines can be brought out from under the bar.
+  final double bottomInset;
 
   @override
   State<MushafPageView> createState() => _MushafPageViewState();
@@ -294,10 +301,21 @@ class _MushafPageViewState extends State<MushafPageView> {
           );
 
           final bool fits = pitch * slots <= room + 0.5;
+          final double inset = widget.bottomInset;
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _onPageTap,
-            child: fits ? page : SingleChildScrollView(child: page),
+            // Always the same scroll view, so the bar coming and going does
+            // not remount the page under it; a page that fits with nothing
+            // over it simply does not scroll.
+            child: SingleChildScrollView(
+              primary: false,
+              physics: fits && inset == 0
+                  ? const NeverScrollableScrollPhysics()
+                  : null,
+              padding: EdgeInsetsDirectional.only(bottom: inset),
+              child: page,
+            ),
           );
         },
       ),

@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -114,6 +115,12 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
   /// the page, whole, the way a book opens — and a tap anywhere brings the
   /// controls up, and another puts them away.
   bool _chrome = false;
+
+  /// The bar's height, as last laid out: while it is up, each page gains this
+  /// much room to scroll, so nothing printed stays hidden under it.
+  double _barHeight = 0;
+
+  double get _bottomInset => _chrome ? _barHeight : 0;
 
   /// Whether the page keeps up with the ayah being recited. Turning a page by
   /// hand lets go of it — the reader is looking at something else — and the
@@ -414,9 +421,16 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
                                 following: _following,
                                 onPressed: _followAgain,
                               ),
-                              SessionBar(
-                                visible: _chrome,
-                                onOpenSettings: _openSettings,
+                              _ReportHeight(
+                                onHeight: (double h) {
+                                  if (mounted && h != _barHeight) {
+                                    setState(() => _barHeight = h);
+                                  }
+                                },
+                                child: SessionBar(
+                                  visible: _chrome,
+                                  onOpenSettings: _openSettings,
+                                ),
                               ),
                             ],
                           ),
@@ -543,7 +557,11 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
     }
 
     final int first = _firstPageOf(index, state);
-    final Widget recto = _PageSlot(pageNumber: first, onTap: _toggleChrome);
+    final Widget recto = _PageSlot(
+      pageNumber: first,
+      onTap: _toggleChrome,
+      bottomInset: _bottomInset,
+    );
     if (!_spread) return recto;
 
     final int facing = first + 1;
@@ -559,7 +577,11 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
           // A section whose last page is a right-hand one has nothing printed
           // facing it.
           child: facing <= state.lastPage
-              ? _PageSlot(pageNumber: facing, onTap: _toggleChrome)
+              ? _PageSlot(
+                  pageNumber: facing,
+                  onTap: _toggleChrome,
+                  bottomInset: _bottomInset,
+                )
               : MushafBlankPage(onTap: _toggleChrome),
         ),
       ],
@@ -672,13 +694,54 @@ class _SectionEnd extends StatelessWidget {
   }
 }
 
+/// Hands [onHeight] its child's height whenever a layout changes it — after
+/// the frame, since the caller rebuilds on it.
+class _ReportHeight extends SingleChildRenderObjectWidget {
+  const _ReportHeight({required this.onHeight, required super.child});
+
+  final ValueChanged<double> onHeight;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderReportHeight(onHeight);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderReportHeight renderObject,
+  ) => renderObject.onHeight = onHeight;
+}
+
+class _RenderReportHeight extends RenderProxyBox {
+  _RenderReportHeight(this.onHeight);
+
+  ValueChanged<double> onHeight;
+  double? _reported;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final double height = size.height;
+    if (height == _reported) return;
+    _reported = height;
+    WidgetsBinding.instance.addPostFrameCallback((_) => onHeight(height));
+  }
+}
+
 class _PageSlot extends StatelessWidget {
-  const _PageSlot({required this.pageNumber, required this.onTap});
+  const _PageSlot({
+    required this.pageNumber,
+    required this.onTap,
+    required this.bottomInset,
+  });
 
   final int pageNumber;
 
   /// A tap anywhere on the page: shows or hides the reading bar.
   final VoidCallback onTap;
+
+  /// What the bar covers at the bottom, while it is up.
+  final double bottomInset;
 
   @override
   Widget build(BuildContext context) {
@@ -778,6 +841,7 @@ class _PageSlot extends StatelessWidget {
           onTap: onTap,
           onWordLongPress: (Word word) => _openAyah(context, cubit, word),
           onWordTap: tasmee ? (Word word) => _noteSlip(context, word) : null,
+          bottomInset: bottomInset,
         );
       },
     );

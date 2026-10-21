@@ -18,6 +18,7 @@ import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_actions_sheet.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_share_dialog.dart';
 import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
+import 'package:mirqat/features/session/widgets/session_bar.dart';
 import 'package:mirqat/features/mushaf/widgets/paper_turn.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -278,17 +279,56 @@ void main() {
         for (final int page in pages) {
           await showPage(tester, cubit, page);
           expect(tester.takeException(), isNull, reason: 'page $page');
-          expect(
+          // The page sits in a scroll view either way, so that the session
+          // bar can lend it room to scroll; with the bar down, there is none.
+          for (final ScrollableState s in tester.stateList<ScrollableState>(
             find.descendant(
               of: pageView(page),
               matching: find.byType(Scrollable),
             ),
-            findsNothing,
-            reason: 'page $page must not scroll',
-          );
+          )) {
+            expect(
+              s.position.maxScrollExtent,
+              0,
+              reason: 'page $page must not scroll',
+            );
+          }
         }
       });
     }
+
+    testWidgets('with the session bar up, the page gains the bar\'s height to '
+        'scroll by, and loses it when the bar goes', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await openMushaf(tester);
+
+      double room() => tester
+          .state<ScrollableState>(
+            find.descendant(
+              of: pageView(1),
+              matching: find.byType(Scrollable),
+            ),
+          )
+          .position
+          .maxScrollExtent;
+
+      expect(room(), 0);
+      await tester.tapAt(tester.getCenter(pageView(1)));
+      await frames(tester);
+      final double bar = tester.getSize(find.byType(SessionBar)).height;
+      expect(bar, greaterThan(0));
+      expect(room(), closeTo(bar, 0.5));
+      expect(tester.takeException(), isNull);
+
+      await tester.tapAt(tester.getCenter(pageView(1)));
+      await frames(tester);
+      expect(room(), 0);
+    });
   });
 
   group('taps', () {
