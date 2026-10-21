@@ -12,7 +12,6 @@ import '../../../data/repositories/review_repository.dart';
 import '../../../domain/engine/review_scheduler.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/review_card.dart';
-import '../../../domain/entities/session_config.dart';
 import '../../session/session_request.dart';
 
 /// One card, with what it takes to show it and to open it.
@@ -47,12 +46,8 @@ class ReviewItem extends Equatable {
   /// old one is recited straight through once, then its links are tested.
   static SessionPreset presetFor(ReviewTier tier) => switch (tier) {
     ReviewTier.sabaq => const SessionPreset(),
-    ReviewTier.sabqi => const SessionPreset(repeatCount: 2, recallRounds: 1),
-    ReviewTier.manzil => const SessionPreset(
-      repeatCount: 1,
-      connectMode: ConnectMode.continuous,
-      chainRecall: true,
-    ),
+    ReviewTier.sabqi => SessionPreset.recent,
+    ReviewTier.manzil => SessionPreset.old,
   };
 
   @override

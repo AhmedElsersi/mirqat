@@ -17,6 +17,7 @@ import '../../settings/cubit/settings_cubit.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/session_config.dart';
+import '../session_request.dart';
 import 'audio_pack_tile.dart';
 import '../cubit/session_cubit.dart';
 import '../cubit/session_state.dart';
@@ -83,6 +84,7 @@ class SessionSheet extends StatelessWidget {
                           _Range(state: state, config: config),
                           const _MemorizationView(),
                           _Downloads(state: state),
+                          const _Presets(),
                           _Tuning(config: config),
                           if (!state.isActive && !state.tasmee)
                             Padding(
@@ -475,6 +477,43 @@ class _Downloads extends StatelessWidget {
         ),
         // Built only when opened: each tile asks the device what it holds.
         children: <Widget>[Builder(builder: (_) => Column(children: tiles()))],
+      ),
+    );
+  }
+}
+
+/// A way of working, in one tap: learning something new the reader's own
+/// way, going over a recent portion, keeping an old one, or drilling one
+/// that will not settle. Each lays its values over the settings below,
+/// where they can still be changed.
+class _Presets extends StatelessWidget {
+  const _Presets();
+
+  @override
+  Widget build(BuildContext context) {
+    final SessionCubit cubit = context.read<SessionCubit>();
+    Widget chip(String label, VoidCallback onTap) =>
+        ActionChip(label: Text(label), onPressed: onTap);
+    return SetupSection(
+      label: LocaleKeys.presetsTitle.tr(),
+      child: Wrap(
+        spacing: 8.w,
+        runSpacing: 4.h,
+        children: <Widget>[
+          chip(LocaleKeys.presetsNew.tr(), cubit.resetToDefaults),
+          chip(
+            LocaleKeys.presetsRecent.tr(),
+            () => cubit.applyPreset(SessionPreset.recent),
+          ),
+          chip(
+            LocaleKeys.presetsOld.tr(),
+            () => cubit.applyPreset(SessionPreset.old),
+          ),
+          chip(
+            LocaleKeys.presetsDeep.tr(),
+            () => cubit.applyPreset(SessionPreset.deep),
+          ),
+        ],
       ),
     );
   }

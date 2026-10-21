@@ -233,6 +233,11 @@ class LocaleKeys {
   static const String sleepUntil = 'sleep.until';
   static const String playerRepeatAyah = 'player.repeat_ayah';
   static const String mushafListenFromHere = 'mushaf.listen_from_here';
+  static const String presetsTitle = 'presets.title';
+  static const String presetsNew = 'presets.new';
+  static const String presetsRecent = 'presets.recent';
+  static const String presetsOld = 'presets.old';
+  static const String presetsDeep = 'presets.deep';
   static const String backupTitle = 'backup.title';
   static const String backupHint = 'backup.hint';
   static const String backupIntro = 'backup.intro';

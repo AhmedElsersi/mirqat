@@ -436,5 +436,12 @@
     "not_a_backup": "This file is not a copy from the app, so nothing was changed.",
     "newer": "This copy is from a newer version of the app. Update the app, then try again.",
     "unreadable": "The file could not be read, so nothing was changed."
+  },
+  "presets": {
+    "title": "Way of working",
+    "new": "New portion",
+    "recent": "Recent review",
+    "old": "Old review",
+    "deep": "Deep drill"
   }
 }

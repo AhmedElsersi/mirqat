@@ -413,6 +413,12 @@ class SessionCubit extends Cubit<SessionState> {
     ),
   );
 
+  /// Lays [preset] over the settings as they stand — one tap for a way of
+  /// working. Like any other change, under a running session it waits for
+  /// the reader to say start again or carry on.
+  void applyPreset(SessionPreset preset) =>
+      _change((SessionConfig c) => preset.applyTo(c));
+
   void setFinalFullPass(bool value) =>
       _change((SessionConfig c) => c.copyWith(finalFullPass: value));
 

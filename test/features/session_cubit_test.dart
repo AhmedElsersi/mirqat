@@ -27,6 +27,7 @@ import 'package:mirqat/domain/entities/session_config.dart';
 import 'package:mirqat/domain/entities/session_plan.dart';
 import 'package:mirqat/features/session/cubit/session_cubit.dart';
 import 'package:mirqat/features/session/cubit/session_state.dart';
+import 'package:mirqat/features/review/cubit/review_cubit.dart';
 import 'package:mirqat/features/session/session_request.dart';
 import 'package:mirqat/services/audio/ayah_duration_service.dart';
 import 'package:mirqat/services/audio/reciter_catalog.dart';
@@ -861,6 +862,38 @@ void main() {
         await tester.runAsync(cubit.close);
       });
     }
+  });
+
+  group('quick presets', () {
+    test('lay their values over the settings, the range kept', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(const AyahRef(1, 2), s1a3);
+      cubit.applyPreset(SessionPreset.deep);
+      final SessionConfig c = cubit.state.config!;
+      expect(c.repeatCount, 7);
+      expect(c.recallRounds, 2);
+      expect(c.chainRecall, isTrue);
+      expect(c.start, const AyahRef(1, 2));
+      expect(cubit.state.rangeChosen, isTrue);
+
+      cubit.applyPreset(SessionPreset.old);
+      expect(cubit.state.config!.connectMode, ConnectMode.continuous);
+      expect(cubit.state.config!.repeatCount, 1);
+    });
+
+    test('under a running session, a preset waits to be told', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      cubit.applyPreset(SessionPreset.deep);
+      expect(cubit.state.hasPendingChange, isTrue);
+      expect(player.loads, hasLength(1));
+    });
+
+    test('the review tiers use the same presets', () {
+      expect(ReviewItem.presetFor(ReviewTier.sabqi), SessionPreset.recent);
+      expect(ReviewItem.presetFor(ReviewTier.manzil), SessionPreset.old);
+    });
   });
 
   group('listening', () {

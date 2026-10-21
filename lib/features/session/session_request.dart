@@ -14,6 +14,29 @@ class SessionPreset extends Equatable {
     this.chainRecall,
   });
 
+  /// A recent portion gone over again: twice, with one recall round.
+  static const SessionPreset recent = SessionPreset(
+    repeatCount: 2,
+    recallRounds: 1,
+  );
+
+  /// An old portion kept: recited straight through once, then its links
+  /// tested.
+  static const SessionPreset old = SessionPreset(
+    repeatCount: 1,
+    connectMode: ConnectMode.continuous,
+    chainRecall: true,
+  );
+
+  /// A passage that will not settle: drilled hard, asked back twice, its
+  /// links tested.
+  static const SessionPreset deep = SessionPreset(
+    repeatCount: 7,
+    connectMode: ConnectMode.cumulative,
+    recallRounds: 2,
+    chainRecall: true,
+  );
+
   /// Listening, not drilling: straight through once, nothing asked back.
   static const SessionPreset listen = SessionPreset(
     repeatCount: 1,
