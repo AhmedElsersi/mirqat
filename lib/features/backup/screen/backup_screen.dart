@@ -53,6 +53,14 @@ class BackupScreen extends StatelessWidget {
                         textDirection: TextDirection.ltr,
                         style: theme.textTheme.bodySmall,
                       ),
+                      if (cubit.canShare) ...<Widget>[
+                        SizedBox(height: 8.h),
+                        OutlinedButton.icon(
+                          onPressed: cubit.shareExported,
+                          icon: const Icon(Icons.ios_share),
+                          label: Text(LocaleKeys.backupShare.tr()),
+                        ),
+                      ],
                     ],
                     if (state.failed)
                       Text(
@@ -67,6 +75,22 @@ class BackupScreen extends StatelessWidget {
                   title: LocaleKeys.backupImport.tr(),
                   icon: Icons.download_outlined,
                   children: <Widget>[
+                    if (cubit.canPick) ...<Widget>[
+                      FilledButton.icon(
+                        onPressed: state.busy
+                            ? null
+                            : () => _confirmPick(context, cubit),
+                        icon: const Icon(Icons.file_open_outlined),
+                        label: Text(LocaleKeys.backupPick.tr()),
+                      ),
+                      Text(
+                        LocaleKeys.backupPickHint.tr(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+                    ],
                     Text(
                       LocaleKeys.backupWhere.tr(),
                       style: theme.textTheme.bodySmall,
@@ -128,28 +152,40 @@ class BackupScreen extends StatelessWidget {
     ),
   );
 
+  /// The same promise as importing from the folder, asked first: nothing on
+  /// this device is removed.
+  static Future<void> _confirmPick(
+    BuildContext context,
+    BackupCubit cubit,
+  ) async {
+    if (await _confirm(context)) await cubit.importPicked();
+  }
+
+  static Future<bool> _confirm(BuildContext context) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (BuildContext dialog) => AlertDialog(
+          content: Text(LocaleKeys.backupImportConfirm.tr()),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialog).pop(false),
+              child: Text(LocaleKeys.commonCancel.tr()),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialog).pop(true),
+              child: Text(LocaleKeys.backupImportThis.tr()),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
   static Future<void> _confirmImport(
     BuildContext context,
     BackupCubit cubit,
     BackupFile file,
   ) async {
-    final bool? yes = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext dialog) => AlertDialog(
-        content: Text(LocaleKeys.backupImportConfirm.tr()),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialog).pop(false),
-            child: Text(LocaleKeys.commonCancel.tr()),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialog).pop(true),
-            child: Text(LocaleKeys.backupImportThis.tr()),
-          ),
-        ],
-      ),
-    );
-    if (yes ?? false) await cubit.import(file);
+    if (await _confirm(context)) await cubit.import(file);
   }
 }
 

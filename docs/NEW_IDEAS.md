@@ -16,11 +16,10 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat, browsing, named twins and the drill, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
+> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat, browsing, named twins and the drill, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup (with Android send and pick), §9 presets, resume, about-the-surah |
 > | **Partly done** | §9 presets are fixed, not saved by the reader; the surah line has no juz span |
-> | **Problem in a built feature** | §8 on Android the backup sits in the app's own folder, hard to reach since Android 11 and deleted with the app |
 > | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
-> | **Blocked on a package** | daily reminder · record-and-compare · system share sheet |
+> | **Blocked on a package** | daily reminder · record-and-compare |
 >
 > **حال كل فكرة** مذكور تحت قسمها (*الحال*)، والإيداعات في
 > `docs/IMPLEMENTATION_PLAN.md`. يذكر كل «حال» ما بُني، وما بُني على غير ما في
@@ -28,11 +27,10 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها وتسمية الشبيهات والتمرين، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
+> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها وتسمية الشبيهات والتمرين، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي (مع الإرسال والاختيار على أندرويد)، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
 > | **تمّ بعضه** | §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
-> | **مشكلة في ميزة مبنية** | §٨ النسخة على أندرويد في مجلد التطبيق نفسه، يصعب بلوغه منذ أندرويد ١١، ويُحذف بحذف التطبيق |
 > | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
-> | **ينتظر حزمة** | التنبيه اليومي · سجّل وقارن · نافذة المشاركة النظامية |
+> | **ينتظر حزمة** | التنبيه اليومي · سجّل وقارن |
 
 ---
 
@@ -240,15 +238,18 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### 8. Export, portability, peace of mind
 
-> **Status: done, with a problem** (`c477ea0`). Export writes one JSON
-> file; import merges it and never deletes. On iOS the file is in the
-> app's folder in the Files app. **Problem:** on Android it is written to
-> the app's own external folder (`Android/data/<app>/files`), which the
-> Files app cannot open since Android 11, and which is deleted when the
-> app is uninstalled — so moving to a new phone needs a computer. The app
-> already has a native share channel of its own (the shared ayah image
-> uses it), so the file can be handed to the system share sheet with no
-> new package; that is the fix.
+> **Status: done** (`c477ea0`; Android fixed later). Export writes one
+> JSON file; import merges it and never deletes. *Problem found and fixed:*
+> on Android the file was written to the app's own external folder
+> (`Android/data/<app>/files`), which the Files app cannot open since
+> Android 11 and which is deleted with the app — moving to a new phone
+> needed a computer. Now a saved copy has **Send or save the copy
+> elsewhere**, which hands it to the system share sheet (Drive, Downloads,
+> a chat) through the app's own share channel, and on Android **Choose a
+> copy…** opens the system file picker (`ACTION_OPEN_DOCUMENT`, no storage
+> permission) to take one back in from anywhere. Both are platform
+> channels, not packages, so the `share_plus` blocker is no longer needed
+> here. On iOS the app's folder stays in the Files app, as before.
 
 - **Progress export/import as a file.** One JSON of progress, marks, and the review
   ladder, written to a user-chosen place and read back on a new phone. Keeps the
@@ -466,13 +467,16 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ٨. التصدير والنقل وطمأنينة البال
 
-> **الحال: تمّ، وفيه مشكلة** (`c477ea0`). التصدير يكتب ملف JSON واحدًا، والاستيراد
-> يدمجه ولا يحذف شيئًا. وعلى iOS يظهر الملف في مجلد التطبيق في تطبيق «الملفات».
-> **المشكلة:** على أندرويد يُكتب في مجلد التطبيق الخارجي (`Android/data/<app>/files`)،
-> وتطبيق الملفات لا يفتحه منذ أندرويد ١١، ويُحذف بحذف التطبيق — فالانتقال إلى
-> هاتف جديد يحتاج حاسوبًا. وللتطبيق قناة مشاركة أصلية خاصة به (تستعملها صورة
-> الآية)، فيمكن تسليم الملف لنافذة المشاركة النظامية بلا حزمة جديدة؛ وذلك هو
-> الإصلاح.
+> **الحال: تمّ** (`c477ea0`، وأُصلح أندرويد بعدُ). التصدير يكتب ملف JSON واحدًا،
+> والاستيراد يدمجه ولا يحذف شيئًا. *مشكلة وُجدت وأُصلحت:* على أندرويد كان الملف
+> يُكتب في مجلد التطبيق الخارجي (`Android/data/<app>/files`)، وتطبيق الملفات لا
+> يفتحه منذ أندرويد ١١، ويُحذف بحذف التطبيق — فكان الانتقال إلى هاتف جديد يحتاج
+> حاسوبًا. والآن للنسخة المحفوظة زر **أرسل النسخة أو احفظها في مكان آخر** يسلّمها
+> لنافذة المشاركة النظامية (Drive أو التنزيلات أو محادثة) عبر قناة المشاركة الخاصة
+> بالتطبيق، وعلى أندرويد زر **اختر ملف نسخة…** يفتح منتقي الملفات النظامي
+> (`ACTION_OPEN_DOCUMENT`، بلا إذن تخزين) لاستردادها من أي مكان. وكلاهما قناةٌ أصلية
+> لا حزمة، فلم يعد عائق `share_plus` لازمًا هنا. وعلى iOS يبقى مجلد التطبيق في
+> تطبيق «الملفات» كما كان.
 
 - **تصدير التقدم واستيراده ملفًّا.** ملف JSON واحد بالتقدم والعلامات وسلّم المراجعة،
   يُكتب حيث يختار القارئ ويُسترد على هاتف جديد. يحفظ عهدَ «لا حسابات» ويرفع خوفَ

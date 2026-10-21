@@ -169,6 +169,33 @@ void main() {
     expect(merge.skipped, 0);
   });
 
+  test('a copy picked from elsewhere — its contents, not a path — is taken '
+      'in the same way', () async {
+    final _Device old = await populated();
+    final String path = (await old.backup(folder).export()).getOrElse(
+      () => fail('export failed'),
+    );
+    final String contents = File(path).readAsStringSync();
+    final List<MemorizationProgress> before = (await old.progress.all())
+        .getOrElse(() => fail(''));
+
+    final _Device fresh = await freshDevice();
+    final BackupMerge merge =
+        (await fresh.backup(folder).importContents(contents)).getOrElse(
+          () => fail('import refused'),
+        );
+    expect((await fresh.progress.all()).getOrElse(() => fail('')), before);
+    expect(merge.plan, isTrue);
+
+    expect(
+      (await fresh.backup(folder).importContents('<html>')).fold(
+        (BackupRefusal r) => r,
+        (_) => null,
+      ),
+      BackupRefusal.notABackup,
+    );
+  });
+
   test('taken in twice, nothing counts twice', () async {
     final _Device d = await populated();
     final String path = (await d.backup(folder).export()).getOrElse(

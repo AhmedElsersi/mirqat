@@ -207,11 +207,23 @@ class BackupService {
 
   /// Reads [path] whole, and only then merges it in.
   Future<Either<BackupRefusal, BackupMerge>> import(String path) async {
-    final Object? doc;
+    final String contents;
     try {
-      doc = jsonDecode(await File(path).readAsString());
+      contents = await File(path).readAsString();
     } on FileSystemException {
       return const Left<BackupRefusal, BackupMerge>(BackupRefusal.unreadable);
+    }
+    return importContents(contents);
+  }
+
+  /// A backup's contents, from wherever they came — the app's folder, or a
+  /// file the reader picked — checked whole, and only then merged in.
+  Future<Either<BackupRefusal, BackupMerge>> importContents(
+    String contents,
+  ) async {
+    final Object? doc;
+    try {
+      doc = jsonDecode(contents);
     } on FormatException {
       return const Left<BackupRefusal, BackupMerge>(BackupRefusal.notABackup);
     }

@@ -457,13 +457,13 @@
   "backup": {
     "title": "Back up progress",
     "hint": "Save your progress to a file and take it to another device",
-    "intro": "Your progress — memorized ayahs, the review schedule, weak spots and your plan — is saved to a file on this device, with no account and no server. Move the file to the new device, put it in the same folder, and import it.",
+    "intro": "Your progress — memorized ayahs, the review schedule, weak spots and your plan — is saved to a file on this device, with no account and no server. Save a copy, then send it or keep it wherever you like; on the new device, import it.",
     "export": "Save a copy",
     "export_now": "Save now",
     "saved_at": "Saved to:",
     "export_failed": "The copy could not be saved.",
     "import": "Import a copy",
-    "where": "Copies live in this folder. On iOS it is in the Files app; on Android it is reached over a USB cable.",
+    "where": "Copies are saved in the app's folder. On iOS it is in the Files app. On Android the folder is removed with the app, so send the copy or save it somewhere else.",
     "none": "No copies in the folder.",
     "import_this": "Import",
     "import_confirm": "The copy is merged with what is on this device and nothing here is removed: for each ayah the further progress is kept, for each review the more recent.",
@@ -471,7 +471,10 @@
     "merged": "Done. Ayahs: {} · reviews: {} · days: {}",
     "not_a_backup": "This file is not a copy from the app, so nothing was changed.",
     "newer": "This copy is from a newer version of the app. Update the app, then try again.",
-    "unreadable": "The file could not be read, so nothing was changed."
+    "unreadable": "The file could not be read, so nothing was changed.",
+    "share": "Send or save the copy elsewhere",
+    "pick": "Choose a copy…",
+    "pick_hint": "From Downloads, Drive, or anywhere on the device."
   },
   "presets": {
     "title": "Way of working",

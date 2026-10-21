@@ -41,8 +41,11 @@ class LocaleKeys {
   static const String backupNewer = 'backup.newer';
   static const String backupNone = 'backup.none';
   static const String backupNotABackup = 'backup.not_a_backup';
+  static const String backupPick = 'backup.pick';
+  static const String backupPickHint = 'backup.pick_hint';
   static const String backupRefresh = 'backup.refresh';
   static const String backupSavedAt = 'backup.saved_at';
+  static const String backupShare = 'backup.share';
   static const String backupTitle = 'backup.title';
   static const String backupUnreadable = 'backup.unreadable';
   static const String backupWhere = 'backup.where';

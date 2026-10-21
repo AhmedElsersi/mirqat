@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// Hands an image to the platform's share sheet — WhatsApp, mail, whatever
+/// Hands an image, or a file, to the platform's share sheet — WhatsApp, mail, whatever
 /// the device offers.
 ///
 /// Implemented over a platform channel rather than a package, so the approved
@@ -34,6 +34,35 @@ class ShareService {
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
+
+  /// Opens the share sheet on a copy of the file at [path] — a backup, to
+  /// save to Drive or Downloads or to send. Copied under the temp directory
+  /// first, because on Android that is all the share `FileProvider` reaches.
+  /// `false`, quietly, as for [shareImage].
+  Future<bool> shareFile(String path, {required String mimeType}) async {
+    try {
+      final Directory dir = Directory(
+        p.join((await _tempDirectory()).path, 'share'),
+      );
+      await dir.create(recursive: true);
+      final File copy = await File(
+        path,
+      ).copy(p.join(dir.path, p.basename(path)));
+      await _channel.invokeMethod<void>('shareFile', <String, String?>{
+        'path': copy.path,
+        'mimeType': mimeType,
+      });
+      return true;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException catch (e) {
+      debugPrint('share failed: ${e.message}');
+      return false;
+    } on FileSystemException catch (e) {
+      debugPrint('share failed: ${e.message}');
+      return false;
+    }
+  }
 
   /// Writes [bytes] under the temp directory as [filename] and opens the
   /// share sheet on it, with [text] as the accompanying caption where the

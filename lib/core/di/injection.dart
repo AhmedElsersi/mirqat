@@ -304,7 +304,10 @@ Future<void> configureDependencies() async {
     ),
   );
   sl.registerFactory<BackupCubit>(
-    () => BackupCubit(backupService: sl<BackupService>()),
+    () => BackupCubit(
+      backupService: sl<BackupService>(),
+      shareService: sl<ShareService>(),
+    ),
   );
   sl.registerFactory<StatsCubit>(
     () => StatsCubit(
