@@ -120,6 +120,9 @@ class LocaleKeys {
 
   static const String mushafAyahReference = 'mushaf.ayah_reference';
   static const String mushafBack = 'mushaf.back';
+  static const String mushafSurahAbout = 'mushaf.surah_about';
+  static const String mushafMakki = 'mushaf.makki';
+  static const String mushafMadani = 'mushaf.madani';
   static const String mushafStumbleHere = 'mushaf.stumble_here';
   static const String mushafClearStumble = 'mushaf.clear_stumble';
   static const String mushafStumbleMarked = 'mushaf.stumble_marked';

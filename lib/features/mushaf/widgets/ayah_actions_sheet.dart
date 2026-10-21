@@ -108,11 +108,33 @@ class AyahActionsSheet extends StatelessWidget {
                 horizontal: 16.w,
                 vertical: 8.h,
               ),
-              child: Text(
-                LocaleKeys.mushafAyahReference.tr(
-                  args: <String>[surahName, ayah.ayah.toLocalisedString()],
-                ),
-                style: theme.textTheme.titleMedium,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    LocaleKeys.mushafAyahReference.tr(
+                      args: <String>[surahName, ayah.ayah.toLocalisedString()],
+                    ),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  // Where the surah stands, from the catalog: where it was
+                  // revealed and how long it is — a moment's orientation.
+                  Text(
+                    LocaleKeys.mushafSurahAbout.tr(
+                      args: <String>[
+                        switch (surah.revelationPlace) {
+                          RevelationPlace.makkah => LocaleKeys.mushafMakki.tr(),
+                          RevelationPlace.madinah =>
+                            LocaleKeys.mushafMadani.tr(),
+                        },
+                        surah.ayahCount.toLocalisedString(),
+                      ],
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
             // First, because it is what a reader closing the mushaf wants.

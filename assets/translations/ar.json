@@ -173,7 +173,10 @@
     "clear_stumble": "إزالة علامة التعثّر",
     "stumble_marked": "سُجِّلت. ستُكرَّر هذه الآية أكثر في جلساتك.",
     "listen_from_here": "استمع من هنا إلى آخر السورة",
-    "similar_ayahs": "آيات متشابهة"
+    "similar_ayahs": "آيات متشابهة",
+    "surah_about": "سورة {} · عدد آياتها {}",
+    "makki": "مكية",
+    "madani": "مدنية"
   },
   "downloads": {
     "section": "الصوت دون إنترنت",

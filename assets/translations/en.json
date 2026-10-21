@@ -173,7 +173,10 @@
     "clear_stumble": "Clear the stumble mark",
     "stumble_marked": "Noted. This ayah will be repeated more in your sessions.",
     "listen_from_here": "Listen from here to the end of the surah",
-    "similar_ayahs": "Similar ayahs"
+    "similar_ayahs": "Similar ayahs",
+    "surah_about": "{} surah · {} ayahs",
+    "makki": "Makki",
+    "madani": "Madani"
   },
   "downloads": {
     "section": "Offline audio",
