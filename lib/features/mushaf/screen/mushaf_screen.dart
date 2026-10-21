@@ -18,10 +18,8 @@ import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_position.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
-import '../../../data/models/juz_info.dart';
 import '../../../data/models/mutashabihat.dart';
 import '../../../data/repositories/mutashabihat_repository.dart';
-import '../../../data/repositories/quran_pages_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../services/share_service.dart';
 import '../../session/cubit/session_cubit.dart';
@@ -832,14 +830,7 @@ class _PageSlot extends StatelessWidget {
         if (cubit.surahFor(s.ref.surah) case final Surah of)
           (ref: s.ref, surah: of),
     ];
-    // Cached by the data source after the first read, like the index above.
-    final ({int first, int last})? juz = juzSpan(
-      (await sl<QuranPagesRepository>().juzList()).getOrElse(
-        () => const <JuzInfo>[],
-      ),
-      surah.number,
-      surah.ayahCount,
-    );
+    final ({int first, int last})? juz = cubit.juzSpanOf(surah.number);
     if (!context.mounted) return;
     final AyahAction? action = await showModalBottomSheet<AyahAction>(
       context: context,

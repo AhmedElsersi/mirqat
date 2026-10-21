@@ -48,6 +48,10 @@ class MushafCubit extends Cubit<MushafState> {
   bool _visitRecorded = false;
 
   Map<int, Surah> _surahs = const <int, Surah>{};
+
+  /// Where each juz begins, read with the catalog: an ayah's menu says
+  /// which juz its surah lies in, and asks at once (see [juzSpanOf]).
+  List<JuzInfo> _ajzaa = const <JuzInfo>[];
   List<Word> _basmalaWords = const <Word>[];
 
   /// Builds in flight, so a second caller waits for the first rather than
@@ -69,6 +73,13 @@ class MushafCubit extends Cubit<MushafState> {
       final int linesPerFullPage = await _unwrap(_pages.linesPerFullPage());
       final List<Surah> surahs = await _unwrap(_quran.getSurahs());
       _surahs = <int, Surah>{for (final Surah s in surahs) s.number: s};
+      // Beside the page, not ahead of it: the first page waits on nothing
+      // it does not draw. A failed read costs the menu its juz line.
+      unawaited(
+        _pages.juzList().then((Either<Failure, List<JuzInfo>> r) {
+          _ajzaa = r.getOrElse(() => const <JuzInfo>[]);
+        }),
+      );
       _basmalaWords = await _basmalaSource(surahs);
 
       final ReadingSection? resolved = section == null
@@ -531,6 +542,13 @@ class MushafCubit extends Cubit<MushafState> {
   void clearSelection() => emit(state.copyWith(clearSelected: true));
 
   Surah? surahFor(int number) => _surahs[number];
+
+  /// The juz [surah] begins and ends in; null before the catalog is read,
+  /// or for a surah it does not have.
+  ({int first, int last})? juzSpanOf(int surah) {
+    final Surah? s = _surahs[surah];
+    return s == null ? null : juzSpan(_ajzaa, s.number, s.ayahCount);
+  }
 }
 
 /// Carries a [Failure] out of a chain of repository calls.
