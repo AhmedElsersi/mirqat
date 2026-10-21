@@ -32,14 +32,14 @@ because the scheduler reads them.
 | 3 — review ladder, grading, today | done | `8c5f8ee` |
 | 4 — sleep timer, listen, three more | done | `06c89fc` |
 | 5 — mutashabihat | built; data imported 2026-10-21 (807 phrases, one QUL range corrected) | `951792d` |
-| 5b — mutashabihat to browse | first in Settings: every phrase a card, narrowed by surah; a phrase opens every ayah it is in, surah by surah | this commit |
+| 5b — mutashabihat to browse | first in Settings: every phrase a card, narrowed by surah; a phrase opens every ayah it is in, surah by surah | `3c101ed` |
 | 6a — hifz plan | done | `bacfb05` (its "behind schedule" line removed in 6b) |
 | 6b — quiet stats | done | `3ea5bc8` |
 | 7 — tasmee', reciting to a listener | done | `16cee2c` |
 | 8 — back up and restore progress | done | `c477ea0` |
 | 9a — about the surah, in the ayah menu | done | `35e0296` |
 | 9b — quick presets | done | `fda6c1e` |
-| 9c — resume an interrupted session | done | this commit |
+| 9c — resume an interrupted session | done | `3c101ed` |
 | 9d — multiple reading marks | not taken: A.5 fixes one reading mark | — |
 
 ---
