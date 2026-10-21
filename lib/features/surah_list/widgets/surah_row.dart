@@ -7,6 +7,7 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/theme/app_colors.dart';
 import '../cubit/surah_list_state.dart';
 import 'reading_only_marker.dart';
+import 'weak_spots_marker.dart';
 
 class SurahRow extends StatelessWidget {
   const SurahRow({
@@ -61,6 +62,8 @@ class SurahRow extends StatelessWidget {
                         ),
                       ),
                       if (item.readingOnly) const ReadingOnlyMarker(),
+                      if (item.weakCount > 0)
+                        WeakSpotsMarker(count: item.weakCount),
                     ],
                   ),
                   SizedBox(height: 8.h),

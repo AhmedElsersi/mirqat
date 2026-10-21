@@ -20,7 +20,8 @@
     "ayah_count": "{} ayahs",
     "progress": "{} of {} memorized",
     "not_started": "Not started",
-    "reading_only": "Reading only"
+    "reading_only": "Reading only",
+    "weak_spots": "Weak spots: {}"
   },
   "session_setup": {
     "range": "Ayah range",

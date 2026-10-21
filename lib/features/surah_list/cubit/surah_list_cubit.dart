@@ -118,6 +118,9 @@ class SurahListCubit extends Cubit<SurahListState> {
                           p.status == MemorizationStatus.inProgress,
                     )
                     .length,
+                weakCount: records
+                    .where((MemorizationProgress p) => p.isStumbled)
+                    .length,
                 readingOnly: readingOnly,
               ),
             ),

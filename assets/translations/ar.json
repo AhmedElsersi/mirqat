@@ -20,7 +20,8 @@
     "ayah_count": "{} آيات",
     "progress": "{} من {} محفوظة",
     "not_started": "لم يبدأ بعد",
-    "reading_only": "قراءة فقط"
+    "reading_only": "قراءة فقط",
+    "weak_spots": "مواضع ضعف: {}"
   },
   "session_setup": {
     "range": "نطاق الآيات",

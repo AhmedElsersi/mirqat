@@ -438,6 +438,7 @@ class LocaleKeys {
   static const String surahListProgress = 'surah_list.progress';
   static const String surahListReadingOnly = 'surah_list.reading_only';
   static const String surahListTitle = 'surah_list.title';
+  static const String surahListWeakSpots = 'surah_list.weak_spots';
 
   static const String tasmeeCount = 'tasmee.count';
   static const String tasmeeEnd = 'tasmee.end';

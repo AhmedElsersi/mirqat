@@ -13,6 +13,9 @@ import 'package:mirqat/features/home/widgets/juz_widgets.dart';
 import 'package:mirqat/features/mushaf/cubit/mushaf_cubit.dart';
 import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
+import 'package:mirqat/features/surah_list/widgets/surah_tile.dart';
+import 'package:mirqat/features/surah_list/widgets/weak_spots_marker.dart';
+import 'package:mirqat/data/repositories/progress_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../app_harness.dart';
@@ -207,6 +210,69 @@ void main() {
 
       expect(find.byType(PlaceTile), findsNothing);
       expect(find.byIcon(Icons.delete_outline), findsNothing);
+    });
+  });
+
+  group('weak spots on the surah list', () {
+    Future<void> stumble(WidgetTester tester, int surah, int ayah) => tester
+        .runAsync(() => sl<ProgressRepository>().markStumble(surah, ayah));
+
+    Finder fatihaRow() => find.ancestor(
+      of: find.text('الفاتحة'),
+      matching: find.byType(SurahRow),
+    );
+
+    testWidgets('a surah with none says nothing about them', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      expect(find.byType(WeakSpotsMarker), findsNothing);
+    });
+
+    testWidgets('a surah\'s row counts the ayahs marked in it, and follows a '
+        'mark cleared while it is on screen', (WidgetTester tester) async {
+      await stumble(tester, 1, 2);
+      await stumble(tester, 1, 2); // the same ayah twice is one place
+      await stumble(tester, 1, 5);
+      await harness.pumpApp(tester);
+
+      expect(
+        find.descendant(of: fatihaRow(), matching: find.text('مواضع ضعف: ٢')),
+        findsOneWidget,
+      );
+      expect(find.byType(WeakSpotsMarker), findsOneWidget);
+
+      await tester.runAsync(() async {
+        await sl<ProgressRepository>().clearStumble(1, 2);
+        // The list coalesces a burst of writes before it re-reads.
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+      });
+      await AppHarness.frames(tester, 400);
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await AppHarness.settle(tester);
+      expect(find.text('مواضع ضعف: ١'), findsOneWidget);
+    });
+
+    testWidgets('the grid shows it too, and a tile holds it at 320 dp', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await stumble(tester, 1, 3);
+      await harness.pumpApp(tester);
+      await AppHarness.setHomeView(tester, HomeViewMode.grid);
+
+      expect(
+        find.descendant(
+          of: find.byType(SurahTile).first,
+          matching: find.byType(WeakSpotsMarker),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
     });
   });
 }

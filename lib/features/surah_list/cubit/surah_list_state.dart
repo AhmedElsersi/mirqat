@@ -3,18 +3,24 @@ import 'package:equatable/equatable.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/surah.dart';
 
-/// One row of the home list: a surah plus how much of it is memorized.
+/// One row of the home list: a surah plus how much of it is memorized, and
+/// how many of its ayahs the reader has marked as places they stumble.
 class SurahListItem extends Equatable {
   const SurahListItem({
     required this.surah,
     required this.memorizedCount,
     required this.inProgressCount,
+    this.weakCount = 0,
     this.readingOnly = false,
   });
 
   final Surah surah;
   final int memorizedCount;
   final int inProgressCount;
+
+  /// Ayahs marked *I stumble here*. Shown quietly, and only when there are
+  /// any — where to look, never a score.
+  final int weakCount;
 
   /// No reciter has audio for this surah: it can be read but not memorized
   /// by session. Shown as a quiet marker, never by hiding or disabling the row.
@@ -30,6 +36,7 @@ class SurahListItem extends Equatable {
     surah,
     memorizedCount,
     inProgressCount,
+    weakCount,
     readingOnly,
   ];
 }
