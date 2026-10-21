@@ -12,7 +12,6 @@ import 'package:mirqat/features/about/screen/how_to_use_screen.dart';
 import 'package:mirqat/features/about/screen/idea_screen.dart';
 import 'package:mirqat/features/onboarding/screen/onboarding_screen.dart';
 import 'package:mirqat/features/settings/screen/settings_screen.dart';
-import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 import 'package:mirqat/services/app_info_service.dart';
 import 'package:mirqat/services/link_opener.dart';
 
@@ -60,16 +59,16 @@ void main() {
       await harness.pumpApp(tester);
 
       expect(find.byType(OnboardingScreen), findsOneWidget);
-      expect(find.byType(SurahRow), findsNothing);
+      expect(find.byType(NavigationBar), findsNothing);
 
       await AppHarness.tapAndSettle(tester, find.text('تخطٍّ'));
-      expect(find.byType(SurahRow), findsWidgets);
+      expect(find.byType(NavigationBar), findsWidgets);
       expect(await seenOnDisk(tester), isTrue);
 
       // The next launch goes straight home.
       await harness.pumpApp(tester);
       expect(find.byType(OnboardingScreen), findsNothing);
-      expect(find.byType(SurahRow), findsWidgets);
+      expect(find.byType(NavigationBar), findsWidgets);
     });
 
     testWidgets('read to the end, its last button starts the app', (
@@ -87,7 +86,7 @@ void main() {
       expect(find.text('التالي'), findsNothing);
 
       await AppHarness.tapAndSettle(tester, find.text('ابدأ'));
-      expect(find.byType(SurahRow), findsWidgets);
+      expect(find.byType(NavigationBar), findsWidgets);
       expect(await seenOnDisk(tester), isTrue);
     });
 

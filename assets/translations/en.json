@@ -540,5 +540,40 @@
     "at": "You had reached {} {}",
     "go": "Carry on",
     "dismiss": "No need"
+  },
+  "tabs": {
+    "today": "Today",
+    "mushaf": "Mushaf",
+    "hifz": "My hifz",
+    "settings": "Settings"
+  },
+  "today": {
+    "title": "Today's wird",
+    "start": "Start",
+    "empty_title": "What will you memorize today?",
+    "empty_body": "Set today's portion and your two reviews, or make a plan in days.",
+    "set": "Set the wird",
+    "plan": "Memorization plan",
+    "add": "Add it",
+    "due": "Due for review",
+    "all": "All ({})",
+    "continue": "Continue reading",
+    "mark": "Your mark",
+    "page": "Page {}",
+    "plan_progress": "{} of {}"
+  },
+  "my_hifz": {
+    "title": "My hifz",
+    "memorized": "Ayahs marked memorized",
+    "first_juz": "Juz 1",
+    "last_juz": "Juz 30",
+    "review": "Review",
+    "schedule": "Schedule",
+    "plan_none": "Memorize a passage in a set number of days",
+    "tools": "Strengthening",
+    "weak_hint": "Repeated more in your sessions",
+    "phrases": "{} phrases, and a drill to tell them apart",
+    "practice": "{} days, {} minutes listened",
+    "juz_map": "What is memorized, across the thirty ajzaa"
   }
 }

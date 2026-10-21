@@ -46,6 +46,14 @@ extension LocalisedDigitsInText on String {
   }
 }
 
+/// Parts of one line of details, joined the way the locale reads them.
+///
+/// Not a middle dot in Arabic: «·» set beside Arabic-Indic digits reads as
+/// a zero — «البقرة · ٦٢» looks like «٦٢٠» — so Arabic joins with its own
+/// comma. English keeps the dot, which no Western digit resembles.
+String joinDetails(Iterable<String> parts) =>
+    parts.join(_numberLocale.startsWith('ar') ? '، ' : ' · ');
+
 String get _numberLocale {
   final String locale = Intl.defaultLocale ?? 'en';
   return locale.startsWith('ar') ? 'ar_EG' : locale;

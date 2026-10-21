@@ -106,9 +106,9 @@ void main() {
       final BuildContext context = tester.element(find.byType(Scaffold).first);
       expect(Localizations.localeOf(context).languageCode, 'en');
       expect(Directionality.of(context), TextDirection.ltr);
-      // The wordmark is the brand's name, so it is the Arabic string on both
-      // locales (owner decision D1).
-      expect(find.text('اقرأ وارتق'), findsOneWidget);
+      // And the tabs speak English.
+      expect(find.text('Settings'), findsWidgets);
+      expect(find.text('Mushaf'), findsWidgets);
     });
 
     testWidgets('no user-facing string is a raw translation key', (

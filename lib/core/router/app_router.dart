@@ -29,7 +29,7 @@ import '../../features/settings/screen/session_settings_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/splash/screen/splash_screen.dart';
 import '../../features/stats/screen/stats_screen.dart';
-import '../../features/surah_list/screen/surah_list_screen.dart';
+import '../../features/home/screen/home_shell.dart';
 import '../../features/weak_spots/screen/weak_spots_screen.dart';
 import 'app_routes.dart';
 
@@ -88,7 +88,7 @@ class AppRouter {
         path: AppRoutes.surahListPath,
         name: AppRoutes.surahListName,
         builder: (BuildContext context, GoRouterState state) =>
-            const SurahListScreen(),
+            const HomeShell(),
       ),
       GoRoute(
         path: AppRoutes.progressPath,

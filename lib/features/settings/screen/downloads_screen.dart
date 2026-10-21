@@ -201,11 +201,13 @@ class _SavedRow extends StatelessWidget {
     final String reciterName = saved.reciter?.nameAr ?? pack.reciterId;
 
     final ThemeData theme = Theme.of(context);
-    final String details =
-        '$reciterName · '
-        '${LocaleKeys.downloadsSizeMb.tr(args: <String>[megabytes(pack.bytes)])}'
-        ' · '
-        '${LocaleKeys.downloadsBitrate.tr(args: <String>[pack.bitrate.toLocalisedString()])}';
+    final String details = joinDetails(<String>[
+      reciterName,
+      LocaleKeys.downloadsSizeMb.tr(args: <String>[megabytes(pack.bytes)]),
+      LocaleKeys.downloadsBitrate.tr(
+        args: <String>[pack.bitrate.toLocalisedString()],
+      ),
+    ]);
 
     return ListTile(
       contentPadding: EdgeInsetsDirectional.zero,

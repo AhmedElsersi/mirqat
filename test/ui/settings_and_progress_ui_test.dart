@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/features/home/screen/home_shell.dart';
+import 'package:mirqat/features/my_hifz/my_hifz_view.dart';
 import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
 import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
@@ -53,24 +55,31 @@ void main() {
   }
 
   group('settings', () {
-    testWidgets('the mutashabihat come first, open as a card per phrase, and '
-        'a card opens every ayah that phrase is in', (
+    testWidgets('the mutashabihat are a tap from My hifz, open as a card per '
+        'phrase, and a card opens every ayah that phrase is in', (
       WidgetTester tester,
     ) async {
-      await harness.pumpApp(tester);
-      await openSettings(tester);
+      await harness.pumpApp(tester, tab: HomeTab.hifz);
 
-      // First on the page: above the first group of settings.
-      final Finder entry = find.text(LocaleKeys.mutashabihatTitle.tr());
-      expect(entry, findsOneWidget);
-      expect(
-        tester.getTopLeft(entry).dy,
-        lessThan(
-          tester
-              .getTopLeft(find.text(LocaleKeys.settingsCardAppearance.tr()))
-              .dy,
-        ),
+      // Among the tools for keeping what is memorized — not in Settings.
+      final Finder entry = find.descendant(
+        of: find.byType(MyHifzView),
+        matching: find.text(LocaleKeys.mutashabihatTitle.tr()),
       );
+      await tester.scrollUntilVisible(
+        entry,
+        120,
+        scrollable: find
+            .descendant(
+              of: find.byType(MyHifzView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      // Visible is not yet tappable while a row only peeks over the edge.
+      await tester.ensureVisible(entry);
+      await tester.pumpAndSettle();
+      expect(entry, findsOneWidget);
 
       // Every card a phrase of the shipped file; the words load in real time.
       Future<void> letReadsLand() async {
@@ -129,11 +138,15 @@ void main() {
         'and the app follows at once', (WidgetTester tester) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
-      expect(find.text('الإعدادات'), findsOneWidget);
+      Finder title(String text) => find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text(text),
+      );
+      expect(title('الإعدادات'), findsOneWidget);
 
       await reveal(tester, find.text('English'));
       await AppHarness.tapAndSettle(tester, find.text('English'));
-      expect(find.text('Settings'), findsOneWidget);
+      expect(title('Settings'), findsOneWidget);
       expect(
         EasyLocalization.of(
           tester.element(find.byType(SettingsScreen)),
@@ -143,7 +156,7 @@ void main() {
 
       await reveal(tester, find.text('العربية'));
       await AppHarness.tapAndSettle(tester, find.text('العربية'));
-      expect(find.text('الإعدادات'), findsOneWidget);
+      expect(title('الإعدادات'), findsOneWidget);
     });
 
     testWidgets('opens the saved-recitations list, which starts empty', (
@@ -375,7 +388,7 @@ void main() {
       // follows it.
       await reveal(tester, find.text('شبكة'));
       await AppHarness.tapAndSettle(tester, find.text('شبكة'));
-      await AppHarness.tapAndSettle(tester, find.byType(BackButton));
+      await AppHarness.openTab(tester, HomeTab.mushaf);
 
       expect(find.byType(SurahTile), findsWidgets);
       expect(find.byType(SurahRow), findsNothing);
@@ -421,7 +434,7 @@ void main() {
     Future<void> openProgress(WidgetTester tester) async {
       await AppHarness.tapAndSettle(
         tester,
-        find.byIcon(Icons.insights_outlined).first,
+        find.byType(SurahProgressRing).first,
       );
     }
 
@@ -455,14 +468,14 @@ void main() {
       // the bar was stuck.
       await harness.pumpApp(tester);
 
-      expect(find.text('١ من ٧ محفوظة'), findsOneWidget);
+      expect(find.byTooltip('١ من ٧ محفوظة'), findsOneWidget);
     });
 
     testWidgets('the home row updates on the way back, with no restart', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
-      expect(find.text('لم يبدأ بعد'), findsWidgets);
+      expect(find.byTooltip('لم يبدأ بعد'), findsWidgets);
       expect(_fractionOfFirstRow(tester), 0);
 
       await openProgress(tester);
@@ -475,7 +488,7 @@ void main() {
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
       await _awaitProgressRefresh(tester);
 
-      expect(find.text('٢ من ٧ محفوظة'), findsOneWidget);
+      expect(find.byTooltip('٢ من ٧ محفوظة'), findsOneWidget);
       // And the bar itself moved, not just the caption.
       expect(_fractionOfFirstRow(tester), closeTo(2 / 7, 0.0001));
     });
@@ -488,7 +501,7 @@ void main() {
       await AppHarness.tapAndSettle(tester, find.text('الآية ١'));
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
       await _awaitProgressRefresh(tester);
-      expect(find.text('١ من ٧ محفوظة'), findsOneWidget);
+      expect(find.byTooltip('١ من ٧ محفوظة'), findsOneWidget);
 
       // Toggle it back off and return again: the stream has to carry the
       // decrease as readily as the increase.
@@ -497,7 +510,7 @@ void main() {
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
       await _awaitProgressRefresh(tester);
 
-      expect(find.text('لم يبدأ بعد'), findsWidgets);
+      expect(find.byTooltip('لم يبدأ بعد'), findsWidgets);
       expect(_fractionOfFirstRow(tester), 0);
     });
 
@@ -517,20 +530,20 @@ void main() {
 
       await _awaitProgressRefresh(tester);
       expect(find.byType(SurahRow), findsWidgets);
-      expect(find.text('١ من ٧ محفوظة'), findsOneWidget);
+      expect(find.byTooltip('١ من ٧ محفوظة'), findsOneWidget);
     });
   });
 }
 
-/// The first home row's progress-bar value.
+/// The first home row's progress-ring value.
 double? _fractionOfFirstRow(WidgetTester tester) => tester
-    .widget<LinearProgressIndicator>(
+    .widget<SurahProgressRing>(
       find.descendant(
         of: find.byType(SurahRow).first,
-        matching: find.byType(LinearProgressIndicator),
+        matching: find.byType(SurahProgressRing),
       ),
     )
-    .value;
+    .fraction;
 
 /// Waits out the cubit's coalesce window, then settles.
 ///

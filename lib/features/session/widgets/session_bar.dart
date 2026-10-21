@@ -510,9 +510,20 @@ class _Active extends StatelessWidget {
                 // wrap: on a narrow phone it shares the row with the buttons.
                 Flexible(
                   child: Text(
-                    '${LocaleKeys.playerRepeatHeader.tr(args: <String>[unit.repeatIndex.toLocalisedString(), unit.totalRepeats.toLocalisedString()])}'
-                    ' · '
-                    '${LocaleKeys.playerStepHeader.tr(args: <String>[(unit.stepIndex + 1).toLocalisedString(), steps.toLocalisedString()])}',
+                    joinDetails(<String>[
+                      LocaleKeys.playerRepeatHeader.tr(
+                        args: <String>[
+                          unit.repeatIndex.toLocalisedString(),
+                          unit.totalRepeats.toLocalisedString(),
+                        ],
+                      ),
+                      LocaleKeys.playerStepHeader.tr(
+                        args: <String>[
+                          (unit.stepIndex + 1).toLocalisedString(),
+                          steps.toLocalisedString(),
+                        ],
+                      ),
+                    ]),
                     textAlign: TextAlign.end,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,

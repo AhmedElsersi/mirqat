@@ -3,16 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/data/models/app_settings.dart';
+import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/domain/entities/ayah_ref.dart';
+import 'package:mirqat/domain/entities/daily_wird.dart';
 import 'package:mirqat/domain/entities/hifz_plan.dart';
 import 'package:mirqat/domain/entities/review_card.dart';
 import 'package:mirqat/features/review/cubit/review_cubit.dart';
-import 'package:mirqat/features/review/widgets/review_widgets.dart';
+import 'package:mirqat/features/today/today_view.dart';
 
 import '../fake_review_repository.dart';
 import '../localized.dart';
 import '../quran_db_fixtures.dart';
 
+/// The Today tab: the new portion first, the two reviews, a suggestion for
+/// before sleep or the morning if asked for, what is due, and the plan.
 void main() {
   setUpAll(ensureTestLocalization);
 
@@ -25,8 +30,11 @@ void main() {
     HifzPlan? plan,
     bool bookends = false,
     String? bookendTaken,
+    DailyWird wird = const <WirdPart, WirdRange>{},
     DateTime? now,
   }) async {
+    Intl.defaultLocale = 'ar';
+    addTearDown(() => Intl.defaultLocale = null);
     reviews = FakeReviewRepository();
     for (int i = 1; i <= dueCards; i++) {
       final int surah = (i - 1) % 3 + 1;
@@ -48,6 +56,11 @@ void main() {
     );
     addTearDown(cubit.close);
     await tester.runAsync(cubit.load);
+    final List<Surah> surahs = (await tester.runAsync(
+      () async => (await fixtureRepository().getSurahs()).getOrElse(
+        () => const <Surah>[],
+      ),
+    ))!;
     tester.view.physicalSize = const Size(320, 700);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -62,14 +75,15 @@ void main() {
             home: Scaffold(
               body: BlocProvider<ReviewCubit>.value(
                 value: cubit,
-                child: Column(
-                  children: <Widget>[
-                    TodayCard(
-                      plan: plan,
-                      bookends: bookends,
-                      bookendTaken: bookendTaken,
-                    ),
-                  ],
+                child: TodayView(
+                  settings: AppSettings(
+                    hifzPlan: plan,
+                    bookends: bookends,
+                    bookendTaken: bookendTaken,
+                    wird: wird,
+                  ),
+                  surahs: surahs,
+                  onWirdChanged: (_, _) async {},
                 ),
               ),
             ),
@@ -80,27 +94,35 @@ void main() {
     await settleLocalization(tester);
   }
 
-  testWidgets('nothing due: not drawn at all', (WidgetTester tester) async {
+  Finder dueRows() =>
+      find.byWidgetPredicate((Widget w) => w is ListTile && w.leading is! Icon);
+
+  testWidgets('nothing set and nothing due: one card that asks what to '
+      'memorize, and nothing else', (WidgetTester tester) async {
     await pump(tester, 0);
+    expect(find.text('ماذا تحفظ اليوم؟'), findsOneWidget);
+    expect(find.text('حدّد الوِرد'), findsOneWidget);
     expect(find.byType(ListTile), findsNothing);
-    expect(find.byType(Material).evaluate().length, lessThan(3));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a few due: one row each, and nothing overflows at 320 dp', (
     WidgetTester tester,
   ) async {
     await pump(tester, 2);
-    expect(find.byType(ListTile), findsNWidgets(2));
-    expect(find.byType(TierChip), findsNWidgets(2));
+    expect(find.text('حان موعد مراجعته'), findsOneWidget);
+    expect(dueRows(), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('many due: three rows, and the rest counted', (
+  testWidgets('many due: three rows, and the rest a tap away', (
     WidgetTester tester,
   ) async {
     await pump(tester, 5);
-    expect(find.byType(ListTile), findsNWidgets(TodayCard.shown));
-    expect(find.textContaining('2'), findsWidgets);
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pump();
+    expect(dueRows(), findsNWidgets(TodayView.shownDue));
+    expect(find.text('الكل (٥)'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -115,29 +137,37 @@ void main() {
     ],
   );
 
-  testWidgets('a plan in hand: its portion shows, even with nothing due', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('a plan in hand: its portion is the new portion, with a start '
+      'button, and its progress below', (WidgetTester tester) async {
     await pump(tester, 0, plan: plan);
-    expect(find.byType(ListTile), findsOneWidget);
-    expect(find.byIcon(Icons.today), findsOneWidget);
+    expect(find.text('ابدأ الحفظ'), findsOneWidget);
+    expect(find.text('حفظ اليوم: ١ من ٢'), findsOneWidget);
+    expect(find.text('خطة الحفظ'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the portion first, then the reviews', (
+  testWidgets('the reader\'s own new portion wins over the plan\'s', (
     WidgetTester tester,
   ) async {
-    await pump(tester, 2, plan: plan);
-    final List<ListTile> rows = tester
-        .widgetList<ListTile>(find.byType(ListTile))
-        .toList();
-    expect(rows, hasLength(3));
-    expect((rows.first.leading! as Icon).icon, Icons.today);
+    await pump(
+      tester,
+      0,
+      plan: plan,
+      wird: const <WirdPart, WirdRange>{
+        WirdPart.fresh: WirdRange(from: AyahRef(3, 1), to: AyahRef(3, 2)),
+      },
+    );
+    expect(find.text('حفظ اليوم: ١ من ٢'), findsNothing);
+    expect(find.textContaining('الآيات ١ - ٢'), findsOneWidget);
+    expect(find.text('ابدأ الحفظ'), findsOneWidget);
   });
 
-  testWidgets('a finished plan adds nothing', (WidgetTester tester) async {
+  testWidgets('a finished plan offers nothing to start', (
+    WidgetTester tester,
+  ) async {
     await pump(tester, 0, plan: plan.copyWith(completed: 2));
-    expect(find.byType(ListTile), findsNothing);
+    expect(find.text('ماذا تحفظ اليوم؟'), findsOneWidget);
+    expect(find.text('ابدأ الحفظ'), findsNothing);
   });
 
   group('bedtime and morning', () {
@@ -154,8 +184,7 @@ void main() {
       expect(find.byIcon(Icons.wb_twilight), findsOneWidget);
       expect(find.text('هذا الصباح: اقرأه من حفظك'), findsOneWidget);
       // Two cards were due: one is the morning's, one stays a review.
-      expect(find.byType(ListTile), findsNWidgets(2));
-      expect(find.byType(TierChip), findsOneWidget);
+      expect(dueRows(), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

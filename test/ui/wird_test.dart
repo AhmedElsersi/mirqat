@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/di/injection.dart';
@@ -8,7 +7,8 @@ import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/domain/entities/daily_wird.dart';
 import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
 import 'package:mirqat/features/session/cubit/session_cubit.dart';
-import 'package:mirqat/features/wird/widgets/wird_card.dart';
+import 'package:mirqat/features/home/screen/home_shell.dart';
+import 'package:mirqat/features/today/today_view.dart';
 import 'package:mirqat/services/audio/memorization_player_service.dart';
 
 import '../app_harness.dart';
@@ -64,14 +64,14 @@ void main() {
     });
   });
 
-  group('the home card', () {
+  group('the Today tab', () {
     testWidgets('with nothing set it offers to set the wird; a part added and '
         'saved is listed and kept', (WidgetTester tester) async {
-      await harness.pumpApp(tester);
-      expect(find.byType(WirdCard), findsOneWidget);
-      expect(find.text('ورد اليوم'), findsOneWidget);
+      await harness.pumpApp(tester, tab: HomeTab.today);
+      expect(find.byType(TodayView), findsOneWidget);
+      expect(find.text('ماذا تحفظ اليوم؟'), findsOneWidget);
 
-      await AppHarness.tapAndSettle(tester, find.text('حدّد'));
+      await AppHarness.tapAndSettle(tester, find.text('حدّد الوِرد'));
       // The first part is the new portion: add it, as it starts.
       await AppHarness.tapAndSettle(tester, find.text('إضافة').first);
       await tester.runAsync(() async {
@@ -81,20 +81,15 @@ void main() {
       });
       await AppHarness.settle(tester);
 
+      // Today's new portion is now the page's first card, ready to start.
       expect(
         find.descendant(
-          of: find.byType(WirdCard),
+          of: find.byType(TodayView),
           matching: find.text('سورة الفاتحة كاملة'),
         ),
         findsOneWidget,
       );
-      expect(
-        find.descendant(
-          of: find.byType(WirdCard),
-          matching: find.text('حفظ جديد'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('ابدأ الحفظ'), findsOneWidget);
       final AppSettings saved = await tester.runAsync(stored) as AppSettings;
       expect(saved.wird.keys, <WirdPart>[WirdPart.fresh]);
       expect(saved.onboardingSeen, isTrue, reason: 'nothing else is lost');
@@ -116,16 +111,10 @@ void main() {
           ),
         ),
       );
-      await harness.pumpApp(tester);
+      await harness.pumpApp(tester, tab: HomeTab.today);
       expect(find.text('مراجعة القريب'), findsOneWidget);
 
-      await AppHarness.openReading(
-        tester,
-        find.descendant(
-          of: find.byType(WirdCard),
-          matching: find.byType(ListTile),
-        ),
-      );
+      await AppHarness.openReading(tester, find.byTooltip('ابدأ المراجعة'));
       final SessionCubit session = BlocProvider.of<SessionCubit>(
         tester.element(find.byType(MushafView)),
       );

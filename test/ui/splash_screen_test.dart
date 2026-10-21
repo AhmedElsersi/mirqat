@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/constants/asset_paths.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/features/splash/screen/splash_screen.dart';
-import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 
 import '../app_harness.dart';
 
@@ -118,7 +117,7 @@ void main() {
       await pumpSplash(tester);
 
       expect(find.byType(SplashScreen), findsOneWidget);
-      expect(find.byType(SurahRow), findsNothing);
+      expect(find.byType(NavigationBar), findsNothing);
       // Both plates are on screen at t = 0 — the vista behind, the rock in
       // front. If the cave were missing, frame 0 would already be the plaza.
       expect(find.byType(Image), findsNWidgets(2));
@@ -135,7 +134,7 @@ void main() {
       await AppHarness.settle(tester);
 
       expect(find.byType(SplashScreen), findsNothing);
-      expect(find.byType(SurahRow), findsWidgets);
+      expect(find.byType(NavigationBar), findsWidgets);
     });
 
     testWidgets('a tap skips it, before the text has appeared', (
@@ -153,7 +152,7 @@ void main() {
       await AppHarness.settle(tester);
 
       expect(find.byType(SplashScreen), findsNothing);
-      expect(find.byType(SurahRow), findsWidgets);
+      expect(find.byType(NavigationBar), findsWidgets);
     });
 
     testWidgets('the wordmark and slogan arrive in the last stretch', (
@@ -230,20 +229,17 @@ void main() {
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
-      expect(find.byType(SurahRow), findsWidgets);
+      expect(find.byType(NavigationBar), findsWidgets);
       expect(find.byType(SplashScreen), findsNothing);
 
       // Navigating around must not reintroduce it: it is the first route, and
       // `go` replaced it rather than pushing over it, so there is nothing to
       // pop back to.
-      await AppHarness.tapAndSettle(
-        tester,
-        find.byIcon(Icons.settings_outlined),
-      );
+      await AppHarness.tapAndSettle(tester, find.byIcon(Icons.history));
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
 
       expect(find.byType(SplashScreen), findsNothing);
-      expect(find.byType(SurahRow), findsWidgets);
+      expect(find.byType(NavigationBar), findsWidgets);
     });
 
     testWidgets('leaves no timer or ticker behind', (

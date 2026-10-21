@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mirqat/features/home/screen/home_shell.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/features/home/widgets/juz_widgets.dart';
 import 'package:mirqat/features/mushaf/cubit/mushaf_cubit.dart';
@@ -392,6 +393,7 @@ class AppHarness {
     Locale locale = AppLocalization.arabic,
     bool settleAfter = true,
     bool skipSplash = true,
+    HomeTab? tab = HomeTab.mushaf,
   }) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(app(locale: locale));
@@ -410,6 +412,23 @@ class AppHarness {
     // Skipped by a test whose launch lands on a screen that never goes idle
     // under the fake clock — the mushaf, whose page load is real I/O.
     if (settleAfter) await settle(tester);
+    // Most tests are about the index: the app opens on Today, so they go to
+    // the Mushaf tab first, the way a reader would. Only where the tabs are
+    // what is on screen.
+    if (settleAfter && tab != null && tester.any(find.byType(NavigationBar))) {
+      await openTab(tester, tab);
+    }
+  }
+
+  /// Switches the home to [tab], by its button in the bar.
+  static Future<void> openTab(WidgetTester tester, HomeTab tab) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byType(NavigationDestination),
+      ).at(tab.index),
+    );
+    await settle(tester);
   }
 
   /// Taps through the launch animation and waits for the home screen.

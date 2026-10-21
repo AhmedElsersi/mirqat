@@ -239,6 +239,19 @@ class LocaleKeys {
   static const String mutashabihatSurah = 'mutashabihat.surah';
   static const String mutashabihatTitle = 'mutashabihat.title';
 
+  static const String myHifzFirstJuz = 'my_hifz.first_juz';
+  static const String myHifzJuzMap = 'my_hifz.juz_map';
+  static const String myHifzLastJuz = 'my_hifz.last_juz';
+  static const String myHifzMemorized = 'my_hifz.memorized';
+  static const String myHifzPhrases = 'my_hifz.phrases';
+  static const String myHifzPlanNone = 'my_hifz.plan_none';
+  static const String myHifzPractice = 'my_hifz.practice';
+  static const String myHifzReview = 'my_hifz.review';
+  static const String myHifzSchedule = 'my_hifz.schedule';
+  static const String myHifzTitle = 'my_hifz.title';
+  static const String myHifzTools = 'my_hifz.tools';
+  static const String myHifzWeakHint = 'my_hifz.weak_hint';
+
   static const String onboardingControlBody = 'onboarding.control_body';
   static const String onboardingControlTitle = 'onboarding.control_title';
   static const String onboardingMethodBody = 'onboarding.method_body';
@@ -477,6 +490,11 @@ class LocaleKeys {
   static const String surahListTitle = 'surah_list.title';
   static const String surahListWeakSpots = 'surah_list.weak_spots';
 
+  static const String tabsHifz = 'tabs.hifz';
+  static const String tabsMushaf = 'tabs.mushaf';
+  static const String tabsSettings = 'tabs.settings';
+  static const String tabsToday = 'tabs.today';
+
   static const String tasmeeCount = 'tasmee.count';
   static const String tasmeeEnd = 'tasmee.end';
   static const String tasmeeHint = 'tasmee.hint';
@@ -486,6 +504,20 @@ class LocaleKeys {
   static const String tasmeeStart = 'tasmee.start';
   static const String tasmeeTitle = 'tasmee.title';
   static const String tasmeeUndo = 'tasmee.undo';
+
+  static const String todayAdd = 'today.add';
+  static const String todayAll = 'today.all';
+  static const String todayContinue = 'today.continue';
+  static const String todayDue = 'today.due';
+  static const String todayEmptyBody = 'today.empty_body';
+  static const String todayEmptyTitle = 'today.empty_title';
+  static const String todayMark = 'today.mark';
+  static const String todayPage = 'today.page';
+  static const String todayPlan = 'today.plan';
+  static const String todayPlanProgress = 'today.plan_progress';
+  static const String todaySet = 'today.set';
+  static const String todayStart = 'today.start';
+  static const String todayTitle = 'today.title';
 
   static const String updateLater = 'update.later';
   static const String updateMaintenanceBody = 'update.maintenance_body';

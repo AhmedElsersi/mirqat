@@ -40,6 +40,8 @@ import '../../features/similar/cubit/phrase_cubit.dart';
 import '../../features/similar/cubit/similar_cubit.dart';
 import '../../features/settings/cubit/mushaf_download_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
+import '../../features/home/screen/home_shell.dart';
+import '../../features/my_hifz/cubit/my_hifz_cubit.dart';
 import '../../features/stats/cubit/stats_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
 import '../../features/update/cubit/update_cubit.dart';
@@ -316,6 +318,15 @@ Future<void> configureDependencies() async {
     () => BackupCubit(
       backupService: sl<BackupService>(),
       shareService: sl<ShareService>(),
+    ),
+  );
+  sl.registerLazySingleton<HomeTabs>(HomeTabs.new);
+  sl.registerFactory<MyHifzCubit>(
+    () => MyHifzCubit(
+      progressRepository: sl<ProgressRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+      mutashabihatRepository: sl<MutashabihatRepository>(),
     ),
   );
   sl.registerFactory<StatsCubit>(

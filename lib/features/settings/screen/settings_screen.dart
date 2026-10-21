@@ -5,8 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/desktop.dart';
-import '../../../core/di/injection.dart';
-import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/app_localization.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
@@ -16,9 +14,7 @@ import '../../../core/widgets/reciter_dropdown.dart';
 import '../../../core/widgets/session_controls.dart';
 import '../../../core/widgets/settings_card.dart';
 import '../../../data/models/app_settings.dart';
-import '../../../data/models/mutashabihat.dart';
 import '../../../data/models/reciter.dart';
-import '../../../data/repositories/mutashabihat_repository.dart';
 import '../../../services/app_version_service.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
@@ -50,7 +46,6 @@ class SettingsScreen extends StatelessWidget {
             child: ListView(
               padding: EdgeInsetsDirectional.all(16.r),
               children: <Widget>[
-                const _MutashabihatEntry(),
                 SettingsCard(
                   title: LocaleKeys.settingsCardAppearance.tr(),
                   icon: Icons.palette_outlined,
@@ -136,30 +131,6 @@ class SettingsScreen extends StatelessWidget {
                       onTap: () =>
                           context.pushNamed(AppRoutes.sessionSettingsName),
                     ),
-                    SettingsLinkRow(
-                      icon: Icons.save_alt,
-                      title: LocaleKeys.backupTitle.tr(),
-                      subtitle: LocaleKeys.backupHint.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.backupName),
-                    ),
-                    SettingsLinkRow(
-                      icon: Icons.insights_outlined,
-                      title: LocaleKeys.statsTitle.tr(),
-                      subtitle: LocaleKeys.statsHint.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.statsName),
-                    ),
-                    SettingsLinkRow(
-                      icon: Icons.flag_circle_outlined,
-                      title: LocaleKeys.planTitle.tr(),
-                      subtitle: LocaleKeys.planHint.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.hifzPlanName),
-                    ),
-                    SettingsLinkRow(
-                      icon: Icons.event_repeat,
-                      title: LocaleKeys.reviewTitle.tr(),
-                      subtitle: LocaleKeys.reviewHint.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.reviewsName),
-                    ),
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsetsDirectional.zero,
                       secondary: const Icon(Icons.bedtime_outlined),
@@ -167,12 +138,6 @@ class SettingsScreen extends StatelessWidget {
                       subtitle: Text(LocaleKeys.reviewBookendsHint.tr()),
                       value: settings.bookends,
                       onChanged: cubit.setBookends,
-                    ),
-                    SettingsLinkRow(
-                      icon: Icons.flag_outlined,
-                      title: LocaleKeys.weakSpotsTitle.tr(),
-                      subtitle: LocaleKeys.weakSpotsHint.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.weakSpotsName),
                     ),
                   ],
                 ),
@@ -301,20 +266,25 @@ class _ThemeControl extends StatelessWidget {
   Widget build(BuildContext context) {
     return SetupSection(
       label: LocaleKeys.settingsTheme.tr(),
-      child: RadioGroup<AppThemeMode>(
-        groupValue: settings.themeMode,
-        onChanged: (AppThemeMode? m) {
-          if (m != null) cubit.setThemeMode(m);
-        },
-        child: Column(
-          children: <Widget>[
-            for (final AppThemeMode mode in AppThemeMode.values)
-              RadioListTile<AppThemeMode>(
-                contentPadding: EdgeInsetsDirectional.zero,
-                title: Text(_label(mode).tr()),
+      // Three short choices, side by side: one row, not three.
+      child: SizedBox(
+        width: double.infinity,
+        child: SegmentedButton<AppThemeMode>(
+          showSelectedIcon: false,
+          segments: <ButtonSegment<AppThemeMode>>[
+            for (final AppThemeMode mode in <AppThemeMode>[
+              AppThemeMode.light,
+              AppThemeMode.system,
+              AppThemeMode.dark,
+            ])
+              ButtonSegment<AppThemeMode>(
                 value: mode,
+                label: Text(_label(mode).tr()),
               ),
           ],
+          selected: <AppThemeMode>{settings.themeMode},
+          onSelectionChanged: (Set<AppThemeMode> chosen) =>
+              cubit.setThemeMode(chosen.single),
         ),
       ),
     );
@@ -478,85 +448,4 @@ class _ReciterControl extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The way into the mutashabihat, first on the page: one card, the whole of
-/// it a tap. Not drawn at all while there is no data to browse.
-class _MutashabihatEntry extends StatefulWidget {
-  const _MutashabihatEntry();
-
-  @override
-  State<_MutashabihatEntry> createState() => _MutashabihatEntryState();
-}
-
-class _MutashabihatEntryState extends State<_MutashabihatEntry> {
-  // Read once and kept by the repository, so this costs nothing after the
-  // first time.
-  late final Future<MutashabihatIndex> _index = sl<MutashabihatRepository>()
-      .index();
-
-  @override
-  Widget build(BuildContext context) => FutureBuilder<MutashabihatIndex>(
-    future: _index,
-    builder: (BuildContext context, AsyncSnapshot<MutashabihatIndex> snap) {
-      final MutashabihatIndex? index = snap.data;
-      if (index == null || index.isEmpty) return const SizedBox.shrink();
-      final ThemeData theme = Theme.of(context);
-      final ColorScheme colors = theme.colorScheme;
-      return Padding(
-        padding: EdgeInsetsDirectional.only(bottom: 16.h),
-        child: Material(
-          color: colors.primary.withValues(alpha: 0.06),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
-            side: BorderSide(color: colors.primary.withValues(alpha: 0.4)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => context.pushNamed(AppRoutes.mutashabihatName),
-            child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(16.w, 14.h, 12.w, 14.h),
-              child: Row(
-                children: <Widget>[
-                  Icon(Icons.difference_outlined, color: colors.primary),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          LocaleKeys.mutashabihatTitle.tr(),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: colors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: 2.h),
-                        Text(
-                          LocaleKeys.mutashabihatHint.tr(),
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        SizedBox(height: 2.h),
-                        Text(
-                          LocaleKeys.mutashabihatShown.tr(
-                            args: <String>[
-                              index.phraseIds.length.toLocalisedString(),
-                            ],
-                          ),
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    },
-  );
 }
