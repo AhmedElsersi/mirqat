@@ -9,6 +9,8 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/playback_unit.dart';
+import '../../../core/widgets/range_label.dart';
+import '../../../domain/entities/interrupted_session.dart';
 import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/session_config.dart';
 import '../cubit/session_cubit.dart';
@@ -63,6 +65,10 @@ class SessionBar extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             if (state.gradeOffer != null) const _GradePrompt(),
+                            if (state.resumeOffer != null &&
+                                state.phase == SessionPhase.idle &&
+                                !state.tasmee)
+                              _ResumePrompt(state: state),
                             if (state.tasmee)
                               _Tasmee(state: state)
                             else
@@ -86,6 +92,88 @@ class SessionBar extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The session the app was closed in the middle of, offered back.
+class _ResumePrompt extends StatelessWidget {
+  const _ResumePrompt({required this.state});
+
+  final SessionState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final SessionCubit cubit = context.read<SessionCubit>();
+    final InterruptedSession offer = state.resumeOffer!;
+    final Surah? from = state.surah(offer.config.surahNumber);
+    final Surah? to = state.surah(offer.config.endSurahNumber);
+    if (from == null || to == null) return const SizedBox.shrink();
+    final Surah? here = state.surah(offer.at.surah);
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(8.w, 6.h, 4.w, 2.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(Icons.history, color: theme.colorScheme.primary),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      LocaleKeys.resumeTitle.tr(),
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    Text(
+                      rangeLabel(
+                        context,
+                        from: offer.config.start,
+                        to: offer.config.end,
+                        fromSurah: from,
+                        toSurah: to,
+                      ),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    if (here != null)
+                      Text(
+                        LocaleKeys.resumeAt.tr(
+                          args: <String>[
+                            _surahName(context, here),
+                            offer.at.ayah.toLocalisedString(),
+                          ],
+                        ),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                tooltip: LocaleKeys.resumeDismiss.tr(),
+                onPressed: cubit.dismissResume,
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: FilledButton.icon(
+              onPressed: state.ready ? cubit.resume : null,
+              icon: const Icon(Icons.play_arrow),
+              label: Text(LocaleKeys.resumeGo.tr()),
+            ),
+          ),
+          const Divider(height: 12),
+        ],
       ),
     );
   }

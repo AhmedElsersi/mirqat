@@ -20,6 +20,7 @@ import '../../../domain/engine/review_scheduler.dart';
 import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/hifz_plan.dart';
+import '../../../domain/entities/interrupted_session.dart';
 import '../../../domain/entities/practice_stats.dart';
 import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/playback_unit.dart';
@@ -58,6 +59,7 @@ class SessionCubit extends Cubit<SessionState> {
     ReviewScheduler reviewScheduler = const ReviewScheduler(),
     this.clock = DateTime.now,
     this.pauseSettleTime = const Duration(milliseconds: 600),
+    this.placeSaveDelay = const Duration(seconds: 3),
   }) : _quran = quranRepository,
        _reviews = reviewRepository,
        _practice = practiceRepository,
@@ -101,6 +103,18 @@ class SessionCubit extends Cubit<SessionState> {
   /// which is fine once and maddening thirty times a second.
   final Duration pauseSettleTime;
 
+  /// How long after an ayah begins its place is written down for resuming.
+  /// Not on every play: a write a second, for a whole session, is a lot of
+  /// writes to keep a place a few seconds more exact.
+  final Duration placeSaveDelay;
+  Timer? _placeTimer;
+  AyahRef? _placeToSave;
+
+  /// Moved on whenever the place is forgotten, so a save already under way
+  /// — reading the settings when the session was stopped — does not write a
+  /// finished session back as interrupted.
+  int _placeGeneration = 0;
+
   StreamSubscription<PlaybackMoment>? _unitSub;
   StreamSubscription<ja.PlayerState>? _stateSub;
   Timer? _pauseTimer;
@@ -128,6 +142,7 @@ class SessionCubit extends Cubit<SessionState> {
     );
     final Set<AyahRef> stumbled = await _readStumbled();
     if (isClosed) return;
+    final InterruptedSession? interrupted = settings.interruptedSession;
 
     emit(
       state.copyWith(
@@ -139,8 +154,85 @@ class SessionCubit extends Cubit<SessionState> {
             .firstOrNull,
         defaults: settings,
         stumbled: stumbled,
+        resumeOffer: interrupted != null && interrupted.isFresh(clock())
+            ? interrupted
+            : null,
       ),
     );
+  }
+
+  // --- picking an interrupted session up ------------------------------------
+
+  /// Takes up the session the app was closed in: its settings, its reciter
+  /// where they still have the range, and the drill of the ayah it had
+  /// reached — or the top, if the plan no longer holds that ayah.
+  Future<void> resume() async {
+    final InterruptedSession? offer = state.resumeOffer;
+    if (offer == null) return;
+    emit(state.copyWith(clearResumeOffer: true));
+    final Reciter? reciter = state.reciters
+        .where((Reciter r) => r.id == offer.reciterId)
+        .firstOrNull;
+    if (reciter != null) emit(state.copyWith(chosenReciter: reciter));
+    _apply(offer.config, rangeChosen: true);
+    final SessionPlan? plan = state.plan;
+    final Reciter? who = state.reciter;
+    if (plan == null || who == null) return;
+    _heard.clear();
+    await _run(
+      plan,
+      who,
+      startAtUnit: plan.firstUnitOf(offer.at) ?? 0,
+      autoplay: true,
+    );
+  }
+
+  /// Waves the offer away, and forgets the session.
+  Future<void> dismissResume() async {
+    emit(state.copyWith(clearResumeOffer: true));
+    await _forgetPlace();
+  }
+
+  void _schedulePlaceSave(AyahRef at) {
+    _placeToSave = at;
+    _placeTimer ??= Timer(placeSaveDelay, () {
+      _placeTimer = null;
+      unawaited(_savePlace());
+    });
+  }
+
+  /// Writes down where the running session is, for picking it up after the
+  /// app is closed under it.
+  Future<void> _savePlace() async {
+    final AyahRef? at = _placeToSave;
+    final SessionPlan? plan = state.activePlan;
+    final Reciter? reciter = state.activeReciter;
+    if (at == null || plan == null || reciter == null) return;
+    final int generation = _placeGeneration;
+    final AppSettings fresh = await _freshSettings();
+    if (generation != _placeGeneration) return;
+    await _settings.save(
+      fresh.copyWith(
+        interruptedSession: InterruptedSession(
+          config: plan.config,
+          reciterId: reciter.id,
+          at: at,
+          savedAt: clock(),
+        ),
+      ),
+    );
+  }
+
+  /// The session ended as sessions should — played out, or stopped on
+  /// purpose: there is nothing to pick up.
+  Future<void> _forgetPlace() async {
+    _placeTimer?.cancel();
+    _placeTimer = null;
+    _placeToSave = null;
+    _placeGeneration++;
+    final AppSettings fresh = await _freshSettings();
+    if (fresh.interruptedSession == null) return;
+    await _settings.save(fresh.copyWith(clearInterruptedSession: true));
   }
 
   // --- stumbles -------------------------------------------------------------
@@ -572,6 +664,7 @@ class SessionCubit extends Cubit<SessionState> {
         clearFailure: true,
         clearGradeOffer: true,
         clearSleep: true,
+        clearResumeOffer: true,
       ),
     );
     await _recordProgress();
@@ -654,6 +747,7 @@ class SessionCubit extends Cubit<SessionState> {
       if (!moment.recalling) {
         _played.update(moment.unit.ref, (int n) => n + 1, ifAbsent: () => 1);
         _heard.add(moment.unit.ref);
+        _schedulePlaceSave(moment.unit.ref);
       }
       emit(
         state.copyWith(currentUnit: moment.unit, recalling: moment.recalling),
@@ -682,7 +776,10 @@ class SessionCubit extends Cubit<SessionState> {
           _cancelSleep();
           emit(state.copyWith(clearSleep: true));
         }
-        if (justFinished) _offerGrade(plan.config, force: true);
+        if (justFinished) {
+          _offerGrade(plan.config, force: true);
+          unawaited(_forgetPlace());
+        }
       },
       // A connection lost mid-session surfaces here rather than at load. What
       // was recited up to that point is still worth keeping.
@@ -867,6 +964,7 @@ class SessionCubit extends Cubit<SessionState> {
     if (running != null && !state.finished) _offerGrade(running);
     _pauseTimer?.cancel();
     _cancelSleep();
+    await _forgetPlace();
     await _unitSub?.cancel();
     await _stateSub?.cancel();
     _unitSub = null;
@@ -1048,6 +1146,13 @@ class SessionCubit extends Cubit<SessionState> {
   Future<void> close() async {
     _pauseTimer?.cancel();
     _cancelSleep();
+    // Leaving the screen mid-session is an interruption: the place waiting
+    // to be written is written now, not lost with the timer.
+    if (_placeTimer != null) {
+      _placeTimer!.cancel();
+      _placeTimer = null;
+      await _savePlace();
+    }
     await _unitSub?.cancel();
     await _stateSub?.cancel();
     await _recordProgress();

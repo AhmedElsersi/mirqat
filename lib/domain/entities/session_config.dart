@@ -284,6 +284,67 @@ class SessionConfig extends Equatable {
     chainRecall: chainRecall ?? this.chainRecall,
   );
 
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'surah': surahNumber,
+    'startAyah': startAyah,
+    'endSurah': endSurahNumber,
+    'endAyah': endAyah,
+    'repeatCount': repeatCount,
+    'connectMode': connectMode.name,
+    'finalFullPass': finalFullPass,
+    'intraBlockPauseMs': intraBlockPauseMs,
+    'betweenRepeatPauseMs': betweenRepeatPauseMs,
+    'betweenStepsPauseMs': betweenStepsPauseMs,
+    'playbackSpeed': playbackSpeed,
+    'playIstiadhah': playIstiadhah,
+    'recallRounds': recallRounds,
+    'chainRecall': chainRecall,
+  };
+
+  /// Null for anything that is not a config this app wrote. Bounds are not
+  /// checked here: the plan builder checks them, against the catalog, and
+  /// refuses what does not fit.
+  static SessionConfig? fromMap(Object? raw) {
+    if (raw is! Map) return null;
+    int? i(String k) => raw[k] is int ? raw[k] as int : null;
+    final int? surah = i('surah');
+    final int? start = i('startAyah');
+    final int? endSurah = i('endSurah');
+    final int? end = i('endAyah');
+    final int? repeats = i('repeatCount');
+    final Object? speed = raw['playbackSpeed'];
+    final ConnectMode? mode = ConnectMode.values
+        .where((ConnectMode m) => m.name == raw['connectMode'])
+        .firstOrNull;
+    if (surah == null ||
+        start == null ||
+        endSurah == null ||
+        end == null ||
+        repeats == null ||
+        mode == null ||
+        speed is! num) {
+      return null;
+    }
+    return SessionConfig(
+      surahNumber: surah,
+      startAyah: start,
+      endSurahNumber: endSurah,
+      endAyah: end,
+      repeatCount: repeats,
+      connectMode: mode,
+      finalFullPass: raw['finalFullPass'] is bool
+          ? raw['finalFullPass'] as bool
+          : null,
+      intraBlockPauseMs: i('intraBlockPauseMs') ?? 0,
+      betweenRepeatPauseMs: i('betweenRepeatPauseMs') ?? 0,
+      betweenStepsPauseMs: i('betweenStepsPauseMs') ?? 0,
+      playbackSpeed: speed.toDouble(),
+      playIstiadhah: raw['playIstiadhah'] == true,
+      recallRounds: i('recallRounds') ?? 0,
+      chainRecall: raw['chainRecall'] == true,
+    );
+  }
+
   @override
   List<Object?> get props => <Object?>[
     surahNumber,

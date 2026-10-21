@@ -35,7 +35,11 @@ because the scheduler reads them.
 | 6a — hifz plan | done | `bacfb05` (its "behind schedule" line removed in 6b) |
 | 6b — quiet stats | done | `3ea5bc8` |
 | 7 — tasmee', reciting to a listener | done | `16cee2c` |
-| 8 — back up and restore progress | done | this commit |
+| 8 — back up and restore progress | done | `c477ea0` |
+| 9a — about the surah, in the ayah menu | done | `35e0296` |
+| 9b — quick presets | done | `fda6c1e` |
+| 9c — resume an interrupted session | done | this commit |
+| 9d — multiple reading marks | not taken: A.5 fixes one reading mark | — |
 
 ---
 

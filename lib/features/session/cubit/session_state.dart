@@ -4,6 +4,7 @@ import '../../../data/models/app_settings.dart';
 import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/ayah_ref.dart';
+import '../../../domain/entities/interrupted_session.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/session_config.dart';
@@ -84,6 +85,7 @@ class SessionState extends Equatable {
     this.sleepAtEndOfStep = false,
     this.tasmee = false,
     this.tasmeeMarks = const <AyahRef>[],
+    this.resumeOffer,
   });
 
   /// Whether the catalog, the reciters and the settings have been read.
@@ -171,6 +173,10 @@ class SessionState extends Equatable {
   /// The slips noted in this sitting, in the order they were noted — the
   /// last one is what undo takes back.
   final List<AyahRef> tasmeeMarks;
+
+  /// A session the app was closed in the middle of, offered back on the bar
+  /// until it is taken up, waved away, or a new session starts.
+  final InterruptedSession? resumeOffer;
 
   bool get isActive => phase == SessionPhase.active;
 
@@ -298,6 +304,8 @@ class SessionState extends Equatable {
     bool clearSleep = false,
     bool? tasmee,
     List<AyahRef>? tasmeeMarks,
+    InterruptedSession? resumeOffer,
+    bool clearResumeOffer = false,
   }) => SessionState(
     ready: ready ?? this.ready,
     surahs: surahs ?? this.surahs,
@@ -332,6 +340,7 @@ class SessionState extends Equatable {
         : (sleepAtEndOfStep ?? this.sleepAtEndOfStep),
     tasmee: tasmee ?? this.tasmee,
     tasmeeMarks: tasmeeMarks ?? this.tasmeeMarks,
+    resumeOffer: clearResumeOffer ? null : (resumeOffer ?? this.resumeOffer),
   );
 
   @override
@@ -363,5 +372,6 @@ class SessionState extends Equatable {
     sleepAtEndOfStep,
     tasmee,
     tasmeeMarks,
+    resumeOffer,
   ];
 }

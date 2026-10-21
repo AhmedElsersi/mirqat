@@ -20,6 +20,7 @@ import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
 import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
 import 'package:mirqat/domain/entities/hifz_plan.dart';
+import 'package:mirqat/domain/entities/interrupted_session.dart';
 import 'package:mirqat/domain/entities/plan_step.dart';
 import 'package:mirqat/domain/entities/practice_stats.dart';
 import 'package:mirqat/domain/entities/review_card.dart';
@@ -60,6 +61,8 @@ void main() {
     String? reciterId,
     bool measurable = true,
     AppSettings? stored,
+    Duration placeSaveDelay = const Duration(seconds: 3),
+    DateTime Function()? clock,
   }) async {
     settings = _Settings(stored ?? AppSettings(reciterId: reciterId));
     final ReciterCatalog catalog = ReciterCatalog(
@@ -78,8 +81,9 @@ void main() {
       keepAwakeService: const KeepAwakeService(),
       reviewRepository: reviews,
       practiceRepository: practice,
-      clock: () => DateTime(2026, 10, 19, 20),
+      clock: clock ?? () => DateTime(2026, 10, 19, 20),
       pauseSettleTime: Duration.zero,
+      placeSaveDelay: placeSaveDelay,
     );
     addTearDown(cubit.close);
     await cubit.load();
@@ -811,6 +815,71 @@ void main() {
     }
   });
 
+  group('the resume prompt at 320 dp', () {
+    for (final Locale locale in AppLocalization.supportedLocales) {
+      testWidgets('fits, and carries on when asked, in '
+          '${locale.languageCode}', (WidgetTester tester) async {
+        await ensureTestLocalization();
+        late SessionCubit cubit;
+        await tester.runAsync(() async {
+          cubit = await open(
+            stored: AppSettings(
+              reciterId: 'b',
+              interruptedSession: InterruptedSession(
+                config: const SessionConfig(
+                  surahNumber: 1,
+                  startAyah: 1,
+                  endSurahNumber: 2,
+                  endAyah: 3,
+                ),
+                reciterId: 'b',
+                at: const AyahRef(2, 1),
+                savedAt: DateTime(2026, 10, 19, 8),
+              ),
+            ),
+          );
+        });
+        Intl.defaultLocale = locale.toString();
+        addTearDown(() => Intl.defaultLocale = null);
+        tester.view.physicalSize = const Size(320, 640);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          localized(
+            ScreenUtilInit(
+              designSize: const Size(390, 844),
+              builder: (BuildContext context, _) => MaterialApp(
+                locale: context.locale,
+                supportedLocales: context.supportedLocales,
+                localizationsDelegates: context.localizationDelegates,
+                home: Scaffold(
+                  body: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: BlocProvider<SessionCubit>.value(
+                      value: cubit,
+                      child: SessionBar(visible: true, onOpenSettings: () {}),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            locale: locale,
+          ),
+        );
+        await settleLocalization(tester);
+        expect(tester.takeException(), isNull);
+        expect(find.byIcon(Icons.history), findsOneWidget);
+        await tester.runAsync(() async {
+          await tester.tap(find.byIcon(Icons.play_arrow).first);
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        });
+        await tester.pump();
+        expect(player.loads, hasLength(1));
+        await tester.runAsync(cubit.close);
+      });
+    }
+  });
+
   group('the playing bar at 320 dp', () {
     for (final Locale locale in AppLocalization.supportedLocales) {
       testWidgets('grade prompt, moon, repeat and counter fit, in '
@@ -893,6 +962,145 @@ void main() {
     test('the review tiers use the same presets', () {
       expect(ReviewItem.presetFor(ReviewTier.sabqi), SessionPreset.recent);
       expect(ReviewItem.presetFor(ReviewTier.manzil), SessionPreset.old);
+    });
+  });
+
+  group('picking up an interrupted session', () {
+    const Duration quick = Duration(milliseconds: 10);
+    Future<void> waitForSave() =>
+        Future<void>.delayed(const Duration(milliseconds: 40));
+
+    test('the place is written down shortly after each ayah begins', () async {
+      final SessionCubit cubit = await open(
+        reciterId: 'b',
+        placeSaveDelay: quick,
+      );
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      player.reach(cubit.state.activePlan!.units[4]);
+      await waitForSave();
+      final InterruptedSession? saved = settings.saved.last.interruptedSession;
+      expect(saved, isNotNull);
+      expect(saved!.at, cubit.state.activePlan!.units[4].ref);
+      expect(saved.reciterId, 'b');
+      expect(saved.config, cubit.state.activePlan!.config);
+    });
+
+    test('a session played out, or stopped on purpose, leaves nothing to '
+        'pick up', () async {
+      final SessionCubit cubit = await open(
+        reciterId: 'b',
+        placeSaveDelay: quick,
+      );
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      player.reach(cubit.state.activePlan!.units[1]);
+      await waitForSave();
+      await cubit.stop();
+      await waitForSave();
+      expect(settings.saved.last.interruptedSession, isNull);
+
+      await cubit.start();
+      player.reach(cubit.state.activePlan!.units[1]);
+      await waitForSave();
+      player.complete();
+      await waitForSave();
+      expect(settings.saved.last.interruptedSession, isNull);
+    });
+
+    test('leaving the screen mid-session writes the place at once', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      player.reach(cubit.state.activePlan!.units[2]);
+      await settle();
+      expect(
+        settings.saved.where((AppSettings s) => s.interruptedSession != null),
+        isEmpty,
+        reason: 'not yet: the save waits',
+      );
+      await cubit.close();
+      expect(settings.saved.last.interruptedSession!.at, s1a1);
+    });
+
+    final InterruptedSession left = InterruptedSession(
+      config: const SessionConfig(
+        surahNumber: 1,
+        startAyah: 1,
+        endAyah: 3,
+        repeatCount: 4,
+      ),
+      reciterId: 'b',
+      at: const AyahRef(1, 2),
+      savedAt: DateTime(2026, 10, 19, 8),
+    );
+
+    test(
+      'offered back the same day, with what it was and where it was',
+      () async {
+        final SessionCubit cubit = await open(
+          stored: AppSettings(reciterId: 'a', interruptedSession: left),
+        );
+        expect(cubit.state.resumeOffer, left);
+      },
+    );
+
+    test('not offered once a day has gone by', () async {
+      final SessionCubit cubit = await open(
+        stored: AppSettings(interruptedSession: left),
+        clock: () => DateTime(2026, 10, 20, 9),
+      );
+      expect(cubit.state.resumeOffer, isNull);
+    });
+
+    test(
+      'taken up: its settings, its reciter, from the drill of its ayah',
+      () async {
+        final SessionCubit cubit = await open(
+          stored: AppSettings(reciterId: 'a', interruptedSession: left),
+        );
+        await cubit.resume();
+        final SessionLoad load = player.loads.single;
+        expect(load.plan.config.repeatCount, 4);
+        expect(load.reciter.id, 'b');
+        final PlaybackUnit first = load.plan.units[load.startAtUnit];
+        expect(first.ref, const AyahRef(1, 2));
+        expect(first.stepType, StepType.learn);
+        expect(first.repeatIndex, 1);
+        expect(cubit.state.resumeOffer, isNull);
+      },
+    );
+
+    test('waved away, it is forgotten', () async {
+      final SessionCubit cubit = await open(
+        stored: AppSettings(interruptedSession: left),
+      );
+      await cubit.dismissResume();
+      expect(cubit.state.resumeOffer, isNull);
+      expect(settings.saved.last.interruptedSession, isNull);
+    });
+
+    test('a new session takes the offer away', () async {
+      final SessionCubit cubit = await open(
+        reciterId: 'b',
+        stored: AppSettings(reciterId: 'b', interruptedSession: left),
+      );
+      cubit.chooseRange(s2a1, s2a3);
+      await cubit.start();
+      expect(cubit.state.resumeOffer, isNull);
+    });
+
+    test('the settings and the place survive storage', () {
+      expect(InterruptedSession.fromMap(left.toMap()), left);
+      expect(SessionConfig.fromMap(left.config.toMap()), left.config);
+      expect(
+        AppSettings.fromMap(
+          AppSettings(interruptedSession: left).toMap(),
+        ).interruptedSession,
+        left,
+      );
+      expect(InterruptedSession.fromMap(<String, Object?>{'at': 'x'}), isNull);
+      expect(SessionConfig.fromMap(<String, Object?>{'surah': 1}), isNull);
     });
   });
 

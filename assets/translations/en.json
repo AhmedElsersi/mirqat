@@ -443,5 +443,11 @@
     "recent": "Recent review",
     "old": "Old review",
     "deep": "Deep drill"
+  },
+  "resume": {
+    "title": "A session left unfinished",
+    "at": "You had reached {} {}",
+    "go": "Carry on",
+    "dismiss": "No need"
   }
 }

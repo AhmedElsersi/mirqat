@@ -4,6 +4,7 @@ import '../../core/theme/quran_font.dart';
 import 'reading_position.dart';
 
 import '../../domain/entities/hifz_plan.dart';
+import '../../domain/entities/interrupted_session.dart';
 import '../../domain/entities/session_config.dart';
 
 /// Theme preference. A local enum rather than Flutter's ThemeMode so the data
@@ -187,6 +188,7 @@ class AppSettings extends Equatable {
     this.memorizationView = MemorizationView.off,
     this.showStumbles = true,
     this.hifzPlan,
+    this.interruptedSession,
     this.onboardingSeen = false,
     this.updatePromptedAt,
   });
@@ -280,6 +282,10 @@ class AppSettings extends Equatable {
   /// one. Null: no plan.
   final HifzPlan? hifzPlan;
 
+  /// The session the app was closed in the middle of, to offer back. Null:
+  /// none — the last one played out, or was stopped on purpose.
+  final InterruptedSession? interruptedSession;
+
   /// Whether the introduction has been shown. False for a fresh install —
   /// and for one updating from before there was an introduction, which is
   /// deliberate: that update is also when the player screen went away, and
@@ -325,6 +331,8 @@ class AppSettings extends Equatable {
     bool? showStumbles,
     HifzPlan? hifzPlan,
     bool clearHifzPlan = false,
+    InterruptedSession? interruptedSession,
+    bool clearInterruptedSession = false,
     bool? onboardingSeen,
     DateTime? updatePromptedAt,
   }) => AppSettings(
@@ -359,6 +367,9 @@ class AppSettings extends Equatable {
     memorizationView: memorizationView ?? this.memorizationView,
     showStumbles: showStumbles ?? this.showStumbles,
     hifzPlan: clearHifzPlan ? null : (hifzPlan ?? this.hifzPlan),
+    interruptedSession: clearInterruptedSession
+        ? null
+        : (interruptedSession ?? this.interruptedSession),
     onboardingSeen: onboardingSeen ?? this.onboardingSeen,
     updatePromptedAt: updatePromptedAt ?? this.updatePromptedAt,
   );
@@ -400,6 +411,7 @@ class AppSettings extends Equatable {
     'memorizationView': memorizationView.storageValue,
     'showStumbles': showStumbles,
     'hifzPlan': hifzPlan?.toMap(),
+    'interruptedSession': interruptedSession?.toMap(),
     'onboardingSeen': onboardingSeen,
     'updatePromptedAt': updatePromptedAt?.millisecondsSinceEpoch,
   };
@@ -461,6 +473,7 @@ class AppSettings extends Equatable {
     memorizationView: MemorizationView.fromStorage(map['memorizationView']),
     showStumbles: map['showStumbles'] != false,
     hifzPlan: HifzPlan.fromMap(map['hifzPlan']),
+    interruptedSession: InterruptedSession.fromMap(map['interruptedSession']),
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
     updatePromptedAt: map['updatePromptedAt'] is int
         ? DateTime.fromMillisecondsSinceEpoch(map['updatePromptedAt'] as int)
@@ -513,6 +526,7 @@ class AppSettings extends Equatable {
     memorizationView,
     showStumbles,
     hifzPlan,
+    interruptedSession,
     onboardingSeen,
     updatePromptedAt,
   ];
