@@ -12,8 +12,7 @@ The document is in two halves: English first, then the same ideas in Arabic.
 
 > **Where each idea stands** — built, waiting on data, or not taken — is the
 > status table in `docs/IMPLEMENTATION_PLAN.md`. Every idea below is built
-> except: the mutashabihat data (the feature is built and waits on a QUL
-> download, §4), multiple reading marks (the contract fixes one), streaks
+> except: multiple reading marks (the contract fixes one), streaks
 > (refused by the brand guide, §6), and the three package blockers.
 >
 > **حال كل فكرة** في جدول الحال في `docs/IMPLEMENTATION_PLAN.md`. بُنيت الأفكار
@@ -95,14 +94,15 @@ already has progress tracking and session plans to build on:
 
 ### 4. Mutashabihat — the confusable verses
 
-> **Status:** built in October 2026 and waiting on its data. QUL's
-> *Mutashabihat ul Quran* (resource 73) is served only to a signed-in
-> account. To switch the feature on: sign in at qul.tarteel.ai, download
-> the JSON zip from https://qul.tarteel.ai/resources/mutashabihat/73, then
-> run `python3 tool/build_mutashabihat.py path/to/the.zip`. It checks every
-> reference against `quran.db`, refuses a source that disagrees, and writes
-> `assets/data/mutashabihat.json`; *Similar ayahs* then appears on the
-> ayah menu of every ayah that has one.
+> **Status:** built in October 2026; its data was imported on 21 October
+> 2026. QUL's *Mutashabihat ul Quran* (resource 73) is served only to a
+> signed-in account; its JSON zip (named `.json.bz2` on download, but a zip)
+> is rebuilt with `python3 tool/build_mutashabihat.py path/to/the.zip
+> --leave-out 4970:48:10`. The tool checks every reference against
+> `quran.db` and refuses a source that disagrees; the one reference that
+> does — phrase 4970 in 48:10, recorded past the ayah's last word — is left
+> out by name. 807 of 814 phrases are kept; the 7 found in more than 40
+> ayahs are too common to be what confuses a reader.
 
 The most common failure of established memorization is sliding from one ayah into its
 near-twin elsewhere. Several dedicated apps exist for this alone.
@@ -265,13 +265,13 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ٤. المتشابهات — الآيات المتقاربات
 
-> **الحال:** بُنيت الميزة في أكتوبر ٢٠٢٦ وتنتظر بياناتها. «متشابهات القرآن»
-> في QUL (المورد ٧٣) لا يُنزَّل إلا بحساب مسجَّل. لتفعيلها: سجّل الدخول في
-> qul.tarteel.ai ونزّل ملف JSON المضغوط من الرابط أعلاه، ثم شغّل
-> `python3 tool/build_mutashabihat.py path/to/the.zip`. يتحقق الأمر من كل
-> إحالة على `quran.db` ويرفض المصدر إن خالفه، ثم يكتب
-> `assets/data/mutashabihat.json`؛ فيظهر «آيات متشابهة» في قائمة كل آية لها
-> نظير.
+> **الحال:** بُنيت الميزة في أكتوبر ٢٠٢٦، وأُدخلت بياناتها في ٢١ أكتوبر ٢٠٢٦.
+> «متشابهات القرآن» في QUL (المورد ٧٣) لا يُنزَّل إلا بحساب مسجَّل، ويُعاد بناؤه
+> بالأمر `python3 tool/build_mutashabihat.py path/to/the.zip --leave-out 4970:48:10`.
+> يتحقق الأمر من كل إحالة على `quran.db` ويرفض المصدر إن خالفه؛ والإحالة
+> الوحيدة المخالفة — العبارة ٤٩٧٠ في الآية ٤٨:١٠، مسجّلة إلى ما بعد آخر كلمة
+> في الآية — تُستبعد باسمها. أُبقي ٨٠٧ عبارات من ٨١٤، واستُبعدت ٧ ترد في أكثر
+> من ٤٠ آية لشيوعها. ويظهر «آيات متشابهة» في قائمة كل آية لها نظير.
 
 أشيعُ خللٍ في الحفظ المستقر هو الانزلاق من آيةٍ إلى شبيهتها في موضع آخر، وقد قامت
 تطبيقات كاملة على هذا وحده.

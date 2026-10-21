@@ -24,6 +24,18 @@ What it may leave out is said on the command line and in the output:
                   not what makes two ayahs easy to confuse, and listing its
                   hundreds of ayahs beside each one buries the ones that are.
   --min-words N   phrases shorter than N words (default 2).
+  --leave-out PHRASE:SURAH:AYAH
+                  one reference of one phrase, named after looking at it,
+                  where the source itself is wrong. Repeatable. Every
+                  reference it names must exist, or the build is refused —
+                  so a leave-out cannot outlive the error it was for. The
+                  phrase keeps its other ayahs.
+
+Known errors in resource 73 (as downloaded 2026-10-21), and the leave-out
+each needs:
+
+  4970:48:10  "فسيؤتيه أجرا عظيما" — words 23-25 of 48:10, the ayah's end —
+              is recorded as 23-27, past the ayah's 25 words.
 
 Output, compact and ordered so an unchanged source rebuilds byte-identical:
 
@@ -67,11 +79,18 @@ def recited_word_counts(db_path: str) -> dict:
     return counts
 
 
-def build(phrases: dict, counts: dict, max_ayahs: int, min_words: int):
+def build(
+    phrases: dict,
+    counts: dict,
+    max_ayahs: int,
+    min_words: int,
+    leave_out: frozenset = frozenset(),
+):
     """(kept phrases, problems, how many left out by each filter)."""
     kept = []
     problems = []
     too_common = too_short = single = 0
+    unused = set(leave_out)
 
     for raw_id, phrase in phrases.items():
         try:
@@ -86,6 +105,9 @@ def build(phrases: dict, counts: dict, max_ayahs: int, min_words: int):
 
         rows = []
         for key, ranges in occurrences.items():
+            if (pid, key) in leave_out:
+                unused.discard((pid, key))
+                continue
             if key not in counts:
                 problems.append(f"phrase {pid}: {key} is not an ayah of quran.db")
                 continue
@@ -119,6 +141,8 @@ def build(phrases: dict, counts: dict, max_ayahs: int, min_words: int):
             continue
         kept.append({"id": pid, "ayahs": sorted(rows)})
 
+    for pid, key in sorted(unused):
+        problems.append(f"--leave-out {pid}:{key} names no reference of the source")
     kept.sort(key=lambda p: p["id"])
     return kept, problems, {"too_common": too_common, "too_short": too_short, "single": single}
 
@@ -130,6 +154,7 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=OUT)
     ap.add_argument("--max-ayahs", type=int, default=40)
     ap.add_argument("--min-words", type=int, default=2)
+    ap.add_argument("--leave-out", action="append", default=[], metavar="PHRASE:SURAH:AYAH")
     args = ap.parse_args(argv)
 
     phrases = load_phrases(args.source)
@@ -137,8 +162,20 @@ def main(argv=None) -> int:
         print(f"{args.source}: no phrases", file=sys.stderr)
         return 1
 
+    leave_out = set()
+    for spec in args.leave_out:
+        parts = spec.split(":")
+        if len(parts) != 3 or not all(x.isdigit() for x in parts):
+            print(f"--leave-out {spec!r}: expected PHRASE:SURAH:AYAH", file=sys.stderr)
+            return 1
+        leave_out.add((int(parts[0]), f"{parts[1]}:{parts[2]}"))
+
     kept, problems, left_out = build(
-        phrases, recited_word_counts(args.db), args.max_ayahs, args.min_words
+        phrases,
+        recited_word_counts(args.db),
+        args.max_ayahs,
+        args.min_words,
+        frozenset(leave_out),
     )
     if problems:
         print(f"REFUSED: {len(problems)} references disagree with {args.db}:", file=sys.stderr)
@@ -159,6 +196,8 @@ def main(argv=None) -> int:
         f"{args.max_ayahs} ayahs, {left_out['too_short']} shorter than "
         f"{args.min_words} words, {left_out['single']} in one ayah only)"
     )
+    for pid, key in sorted(leave_out):
+        print(f"     left out by hand: phrase {pid} in {key}")
     return 0
 
 

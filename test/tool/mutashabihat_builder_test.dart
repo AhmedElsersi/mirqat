@@ -156,6 +156,72 @@ void main() {
         expect('${r.stderr}', contains('1:9'));
       });
 
+      group('--leave-out', () {
+        // The shape of resource 73's one known error: a range running past
+        // the end of its ayah (2:112 has 17 recited words).
+        Map<String, Object?> withBadReference() => source(
+          extra: <String, Object?>{
+            '9': <String, Object?>{
+              'ayah': <String, Object?>{
+                '2:112': <List<int>>[
+                  <int>[16, 19],
+                ],
+                '2:62': <List<int>>[
+                  <int>[23, 24],
+                ],
+                '5:69': <List<int>>[
+                  <int>[19, 20],
+                ],
+              },
+            },
+          },
+        );
+
+        test(
+          'drops the one reference named, and keeps the phrase\'s others',
+          () {
+            final ProcessResult r = run(
+              write(withBadReference()).path,
+              <String>['--leave-out', '9:2:112'],
+            );
+            expect(r.exitCode, 0, reason: '${r.stderr}');
+            expect(
+              '${r.stdout}',
+              contains('left out by hand: phrase 9 in 2:112'),
+            );
+            final Map<String, dynamic> json =
+                jsonDecode(out.readAsStringSync()) as Map<String, dynamic>;
+            final Map<String, dynamic> nine = (json['phrases'] as List<dynamic>)
+                .cast<Map<String, dynamic>>()
+                .singleWhere((Map<String, dynamic> p) => p['id'] == 9);
+            expect(nine['ayahs'], <List<int>>[
+              <int>[2, 62, 23, 24],
+              <int>[5, 69, 19, 20],
+            ]);
+          },
+        );
+
+        test('naming a reference the source does not have refuses the build, '
+            'so a leave-out cannot outlive its error', () {
+          final ProcessResult r = run(write(source()).path, <String>[
+            '--leave-out',
+            '9:2:112',
+          ]);
+          expect(r.exitCode, isNot(0));
+          expect('${r.stderr}', contains('9:2:112'));
+          expect(out.existsSync(), isFalse);
+        });
+
+        test('is refused when it is not PHRASE:SURAH:AYAH', () {
+          final ProcessResult r = run(write(source()).path, <String>[
+            '--leave-out',
+            '2:112',
+          ]);
+          expect(r.exitCode, isNot(0));
+          expect(out.existsSync(), isFalse);
+        });
+      });
+
       test('a phrase in more ayahs than asked for is left out, and said', () {
         final ProcessResult r = run(write(source()).path, <String>[
           '--max-ayahs',

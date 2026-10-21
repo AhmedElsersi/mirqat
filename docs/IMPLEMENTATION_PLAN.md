@@ -31,7 +31,7 @@ because the scheduler reads them.
 | (asked for) mushaf font page | done | `80e0018` |
 | 3 — review ladder, grading, today | done | `8c5f8ee` |
 | 4 — sleep timer, listen, three more | done | `06c89fc` |
-| 5 — mutashabihat | built; data awaits a QUL download (see NEW_IDEAS §4) | `951792d` |
+| 5 — mutashabihat | built; data imported 2026-10-21 (807 phrases, one QUL reference left out) | `951792d` |
 | 6a — hifz plan | done | `bacfb05` (its "behind schedule" line removed in 6b) |
 | 6b — quiet stats | done | `3ea5bc8` |
 | 7 — tasmee', reciting to a listener | done | `16cee2c` |
