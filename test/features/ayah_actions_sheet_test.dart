@@ -26,6 +26,8 @@ void main() {
     Locale locale = AppLocalization.arabic,
     bool isStumbled = false,
     List<SimilarRef> similar = const <SimilarRef>[],
+    int? juzFirst,
+    int? juzLast,
     bool canPlay = true,
   }) async {
     Intl.defaultLocale = locale.toString();
@@ -49,6 +51,8 @@ void main() {
                 hasChosenRange: false,
                 isStumbled: isStumbled,
                 similar: similar,
+                juzFirst: juzFirst,
+                juzLast: juzLast,
               ),
             ),
           ),
@@ -171,5 +175,16 @@ void main() {
     await tester.tap(entry(Icons.flag_outlined));
     await tester.pumpAndSettle();
     expect(chosen, AyahAction.stumble);
+  });
+
+  testWidgets('the surah line says which juz it is in, or which it spans', (
+    WidgetTester tester,
+  ) async {
+    await pump(tester, juzFirst: 29, juzLast: 29);
+    expect(find.text('سورة مكية · عدد آياتها ٣٠ · الجزء ٢٩'), findsOneWidget);
+    await pump(tester, juzFirst: 1, juzLast: 3);
+    expect(find.textContaining('الأجزاء ١–٣'), findsOneWidget);
+    await pump(tester);
+    expect(find.text('سورة مكية · عدد آياتها ٣٠'), findsOneWidget);
   });
 }

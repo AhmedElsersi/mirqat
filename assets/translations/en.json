@@ -179,7 +179,9 @@
     "makki": "Makki",
     "madani": "Madani",
     "similar_resembles": "Resembles: {}",
-    "similar_more": "and {} more"
+    "similar_more": "and {} more",
+    "juz_one": "Juz {}",
+    "juz_span": "Juz {}–{}"
   },
   "downloads": {
     "section": "Offline audio",

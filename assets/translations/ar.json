@@ -179,7 +179,9 @@
     "makki": "مكية",
     "madani": "مدنية",
     "similar_resembles": "تشبه: {}",
-    "similar_more": "و{} غيرها"
+    "similar_more": "و{} غيرها",
+    "juz_one": "الجزء {}",
+    "juz_span": "الأجزاء {}–{}"
   },
   "downloads": {
     "section": "الصوت دون إنترنت",

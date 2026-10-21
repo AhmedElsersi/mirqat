@@ -172,6 +172,8 @@ class LocaleKeys {
   static const String mushafHizbThreeQuartersLabel =
       'mushaf.hizb_three_quarters_label';
   static const String mushafJuzLabel = 'mushaf.juz_label';
+  static const String mushafJuzOne = 'mushaf.juz_one';
+  static const String mushafJuzSpan = 'mushaf.juz_span';
   static const String mushafListenFromHere = 'mushaf.listen_from_here';
   static const String mushafMadani = 'mushaf.madani';
   static const String mushafMakki = 'mushaf.makki';

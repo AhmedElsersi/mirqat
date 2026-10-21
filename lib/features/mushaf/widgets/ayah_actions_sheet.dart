@@ -58,6 +58,8 @@ class AyahActionsSheet extends StatelessWidget {
     this.isMarked = false,
     this.isStumbled = false,
     this.similar = const <SimilarRef>[],
+    this.juzFirst,
+    this.juzLast,
     this.canShare = false,
     super.key,
   });
@@ -84,6 +86,11 @@ class AyahActionsSheet extends StatelessWidget {
   final List<SimilarRef> similar;
 
   bool get hasSimilar => similar.isNotEmpty;
+
+  /// The juz the surah begins and ends in, said beside where it was
+  /// revealed. Null when the catalog could not say.
+  final int? juzFirst;
+  final int? juzLast;
 
   /// How many are named before the rest are only counted.
   static const int named = 2;
@@ -139,16 +146,30 @@ class AyahActionsSheet extends StatelessWidget {
                   // Where the surah stands, from the catalog: where it was
                   // revealed and how long it is — a moment's orientation.
                   Text(
-                    LocaleKeys.mushafSurahAbout.tr(
-                      args: <String>[
-                        switch (surah.revelationPlace) {
-                          RevelationPlace.makkah => LocaleKeys.mushafMakki.tr(),
-                          RevelationPlace.madinah =>
-                            LocaleKeys.mushafMadani.tr(),
-                        },
-                        surah.ayahCount.toLocalisedString(),
-                      ],
-                    ),
+                    <String>[
+                      LocaleKeys.mushafSurahAbout.tr(
+                        args: <String>[
+                          switch (surah.revelationPlace) {
+                            RevelationPlace.makkah =>
+                              LocaleKeys.mushafMakki.tr(),
+                            RevelationPlace.madinah =>
+                              LocaleKeys.mushafMadani.tr(),
+                          },
+                          surah.ayahCount.toLocalisedString(),
+                        ],
+                      ),
+                      if (juzFirst != null && juzLast != null)
+                        juzFirst == juzLast
+                            ? LocaleKeys.mushafJuzOne.tr(
+                                args: <String>[juzFirst!.toLocalisedString()],
+                              )
+                            : LocaleKeys.mushafJuzSpan.tr(
+                                args: <String>[
+                                  juzFirst!.toLocalisedString(),
+                                  juzLast!.toLocalisedString(),
+                                ],
+                              ),
+                    ].join(' · '),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

@@ -17,7 +17,7 @@ The document is in two halves: English first, then the same ideas in Arabic.
 > | | |
 > |---|---|
 > | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat, browsing, named twins and the drill, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup (with Android send and pick), §9 presets, resume, about-the-surah |
-> | **Partly done** | §9 presets are fixed, not saved by the reader; the surah line has no juz span |
+> | **Partly done** | §9 presets are fixed, not saved by the reader |
 > | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
 > | **Blocked on a package** | daily reminder · record-and-compare |
 >
@@ -28,7 +28,7 @@ The document is in two halves: English first, then the same ideas in Arabic.
 > | | |
 > |---|---|
 > | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها وتسمية الشبيهات والتمرين، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي (مع الإرسال والاختيار على أندرويد)، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
-> | **تمّ بعضه** | §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
+> | **تمّ بعضه** | §٩ الإعدادات ثابتة لا يحفظها القارئ |
 > | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
 > | **ينتظر حزمة** | التنبيه اليومي · سجّل وقارن |
 
@@ -262,9 +262,11 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 > **Status:** resume **done** (`292d69e`). Presets **partly done**
 > (`fda6c1e`): four fixed ones — new, recent, old, deep — not ones the
-> reader saves from the form. About-the-surah **partly done** (`35e0296`):
-> Makki/Madani and the ayah count, in every ayah's menu rather than the
-> surah header; the juz span is not shown. Multiple reading marks: **not
+> reader saves from the form. About-the-surah **done** (`35e0296`, juz span
+> later): Makki/Madani, the ayah count and the juz it lies in — *Juz 1–3*
+> — worked out from `quran.db`'s own juz starts. *Built differently:* it
+> is in every ayah's menu rather than the surah header, so it is there
+> wherever the reader is in the surah. Multiple reading marks: **not
 > taken** — CLAUDE.md A.5 fixes one reading mark, so it is a product
 > decision.
 
@@ -487,8 +489,10 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 > **الحال:** الاستئناف **تمّ** (`292d69e`). والإعدادات المسماة **تمّ بعضها**
 > (`fda6c1e`): أربعة ثابتة — جديد، قريب، بعيد، تثبيت — لا يحفظها القارئ من
-> النموذج. وسطر «عن هذه السورة» **تمّ بعضه** (`35e0296`): مكية/مدنية وعدد الآيات،
-> في قائمة كل آية لا في رأس السورة، وبلا مدى الأجزاء. وعلامات القراءة المتعددة
+> النموذج. وسطر «عن هذه السورة» **تمّ** (`35e0296`، ومدى الأجزاء بعدُ): مكية/مدنية
+> وعدد الآيات والأجزاء التي تقع فيها — *الأجزاء ١–٣* — محسوبةً من بدايات الأجزاء
+> في `quran.db`. *على غير ما في الفكرة:* في قائمة كل آية لا في رأس السورة، فهو حاضر
+> حيثما كان القارئ من السورة. وعلامات القراءة المتعددة
 > **لن تُؤخذ** — العقد A.5 يحدّها بعلامة واحدة، فهي قرار منتج.
 
 - **علامات قراءة متعددة** بألوان متمايزة (العلامة اليوم واحدة)، لكلٍّ الشريطُ والقائمة
