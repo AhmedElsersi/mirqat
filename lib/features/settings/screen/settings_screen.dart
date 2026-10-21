@@ -132,6 +132,12 @@ class SettingsScreen extends StatelessWidget {
                           context.pushNamed(AppRoutes.sessionSettingsName),
                     ),
                     SettingsLinkRow(
+                      icon: Icons.event_repeat,
+                      title: LocaleKeys.reviewTitle.tr(),
+                      subtitle: LocaleKeys.reviewHint.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.reviewsName),
+                    ),
+                    SettingsLinkRow(
                       icon: Icons.flag_outlined,
                       title: LocaleKeys.weakSpotsTitle.tr(),
                       subtitle: LocaleKeys.weakSpotsHint.tr(),

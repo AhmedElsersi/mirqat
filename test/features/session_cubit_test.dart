@@ -13,6 +13,7 @@ import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
 import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
 import 'package:mirqat/domain/entities/plan_step.dart';
+import 'package:mirqat/domain/entities/review_card.dart';
 import 'package:mirqat/domain/entities/session_config.dart';
 import 'package:mirqat/domain/entities/session_plan.dart';
 import 'package:mirqat/features/session/cubit/session_cubit.dart';
@@ -22,6 +23,7 @@ import 'package:mirqat/services/audio/ayah_duration_service.dart';
 import 'package:mirqat/services/audio/reciter_catalog.dart';
 import 'package:mirqat/services/keep_awake_service.dart';
 
+import '../fake_review_repository.dart';
 import '../fake_session_player.dart';
 import '../quran_db_fixtures.dart';
 
@@ -32,11 +34,13 @@ void main() {
   late _Settings settings;
   late FakeSessionPlayer player;
   late _Progress progress;
+  late FakeReviewRepository reviews;
 
   setUp(() {
     quran = fixtureRepository();
     player = FakeSessionPlayer();
     progress = _Progress();
+    reviews = FakeReviewRepository();
   });
 
   Future<SessionCubit> open({
@@ -59,6 +63,8 @@ void main() {
       playerService: player,
       progressRepository: progress,
       keepAwakeService: const KeepAwakeService(),
+      reviewRepository: reviews,
+      clock: () => DateTime(2026, 10, 19, 20),
       pauseSettleTime: Duration.zero,
     );
     addTearDown(cubit.close);
@@ -679,6 +685,79 @@ void main() {
       );
       expect(cubit.state.phase, SessionPhase.idle);
       expect(player.loads, isEmpty);
+    });
+  });
+
+  group('grading what was recited', () {
+    Future<SessionCubit> recited({bool all = true}) async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      await cubit.start();
+      final SessionPlan plan = cubit.state.activePlan!;
+      for (final PlaybackUnit u in plan.units) {
+        if (!all && u.ref == s1a3) continue;
+        player.reach(u);
+        await settle();
+      }
+      return cubit;
+    }
+
+    test('a session played out asks how it went', () async {
+      final SessionCubit cubit = await recited();
+      player.complete();
+      await settle();
+      expect(cubit.state.gradeOffer, (from: s1a1, to: s1a3));
+    });
+
+    test('stopped after every ayah was heard, it asks too', () async {
+      final SessionCubit cubit = await recited();
+      await cubit.stop();
+      expect(cubit.state.gradeOffer, (from: s1a1, to: s1a3));
+      expect(cubit.state.phase, SessionPhase.idle, reason: 'still asked');
+    });
+
+    test('stopped before the range was heard through, it does not', () async {
+      final SessionCubit cubit = await recited(all: false);
+      await cubit.stop();
+      expect(cubit.state.gradeOffer, isNull);
+    });
+
+    test(
+      'the first grade starts the range on the ladder; the next moves it',
+      () async {
+        final SessionCubit cubit = await recited();
+        await cubit.stop();
+        await cubit.grade(Grade.solid);
+        expect(cubit.state.gradeOffer, isNull);
+        final ReviewCard first = reviews.cards.values.single;
+        expect(first.id, '1:1-1:3');
+        expect(first.step, 0);
+        expect(first.due, DateTime(2026, 10, 20));
+
+        await cubit.start();
+        for (final PlaybackUnit u in cubit.state.activePlan!.units) {
+          player.reach(u);
+          await settle();
+        }
+        await cubit.stop();
+        await cubit.grade(Grade.solid);
+        expect(reviews.cards.values.single.step, 1);
+      },
+    );
+
+    test('waving it away writes nothing', () async {
+      final SessionCubit cubit = await recited();
+      await cubit.stop();
+      cubit.dismissGrade();
+      expect(cubit.state.gradeOffer, isNull);
+      expect(reviews.cards, isEmpty);
+    });
+
+    test('a new session takes the old question away', () async {
+      final SessionCubit cubit = await recited();
+      await cubit.stop();
+      await cubit.start();
+      expect(cubit.state.gradeOffer, isNull);
     });
   });
 

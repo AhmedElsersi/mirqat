@@ -26,6 +26,10 @@ class AppRoutes {
   static const String searchPath = '/search';
   static const String searchName = 'search';
 
+  /// Every range kept on the review ladder.
+  static const String reviewsPath = '/reviews';
+  static const String reviewsName = 'reviews';
+
   /// Every ayah the reader stumbles at.
   static const String weakSpotsPath = '/weak-spots';
   static const String weakSpotsName = 'weak_spots';

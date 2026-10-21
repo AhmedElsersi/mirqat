@@ -9,18 +9,22 @@ import '../../data/datasources/quran_database.dart';
 import '../../data/datasources/quran_local_data_source.dart';
 import '../../data/datasources/quran_pages_local_data_source.dart';
 import '../../data/datasources/reading_history_local_data_source.dart';
+import '../../data/datasources/review_local_data_source.dart';
 import '../../data/datasources/settings_local_data_source.dart';
 import '../../data/repositories/downloads_repository.dart';
 import '../../data/repositories/progress_repository.dart';
 import '../../data/repositories/quran_pages_repository.dart';
 import '../../data/repositories/quran_repository.dart';
 import '../../data/repositories/reading_history_repository.dart';
+import '../../data/repositories/review_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
+import '../../domain/engine/review_scheduler.dart';
 import '../../features/about/cubit/app_info_cubit.dart';
 import '../../features/home/cubit/home_index_cubit.dart';
 import '../../features/mushaf/cubit/mushaf_cubit.dart';
 import '../../features/progress/cubit/progress_cubit.dart';
+import '../../features/review/cubit/review_cubit.dart';
 import '../../features/search/cubit/search_cubit.dart';
 import '../../features/session/cubit/audio_pack_cubit.dart';
 import '../../features/session/cubit/session_cubit.dart';
@@ -66,7 +70,7 @@ Future<void> configureDependencies() async {
     () => QuranPagesLocalDataSourceImpl(sl<QuranDatabase>()),
   );
 
-  // The boxes have to be open before anything reads them, so these three are
+  // The boxes have to be open before anything reads them, so these are
   // constructed eagerly rather than lazily.
   final ProgressLocalDataSourceImpl progress = ProgressLocalDataSourceImpl();
   await progress.open();
@@ -82,6 +86,13 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<ReadingHistoryLocalDataSource>(() => history);
   sl.registerLazySingleton<ReadingHistoryRepository>(
     () => ReadingHistoryRepositoryImpl(sl<ReadingHistoryLocalDataSource>()),
+  );
+
+  final ReviewLocalDataSourceImpl reviews = ReviewLocalDataSourceImpl();
+  await reviews.open();
+  sl.registerLazySingleton<ReviewLocalDataSource>(() => reviews);
+  sl.registerLazySingleton<ReviewRepository>(
+    () => ReviewRepositoryImpl(sl<ReviewLocalDataSource>()),
   );
 
   // Its own database, and lazily: unlike the Hive boxes it opens itself on
@@ -113,6 +124,7 @@ Future<void> configureDependencies() async {
 
   // --- Domain ---
   sl.registerLazySingleton<RepetitionPlanBuilder>(RepetitionPlanBuilder.new);
+  sl.registerLazySingleton<ReviewScheduler>(ReviewScheduler.new);
 
   // --- Services ---
   sl.registerLazySingleton<KeepAwakeService>(KeepAwakeService.new);
@@ -212,6 +224,8 @@ Future<void> configureDependencies() async {
       playerService: sl<MemorizationPlayerService>(),
       progressRepository: sl<ProgressRepository>(),
       keepAwakeService: sl<KeepAwakeService>(),
+      reviewRepository: sl<ReviewRepository>(),
+      reviewScheduler: sl<ReviewScheduler>(),
     ),
   );
   sl.registerFactory<AudioPackCubit>(
@@ -228,6 +242,13 @@ Future<void> configureDependencies() async {
     () => ProgressCubit(
       quranRepository: sl<QuranRepository>(),
       progressRepository: sl<ProgressRepository>(),
+    ),
+  );
+  sl.registerFactory<ReviewCubit>(
+    () => ReviewCubit(
+      quranRepository: sl<QuranRepository>(),
+      reviewRepository: sl<ReviewRepository>(),
+      reviewScheduler: sl<ReviewScheduler>(),
     ),
   );
   sl.registerFactory<WeakSpotsCubit>(

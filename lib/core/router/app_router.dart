@@ -11,6 +11,7 @@ import '../../features/mushaf/mushaf_args.dart';
 import '../../features/mushaf/screen/mushaf_screen.dart';
 import '../../features/onboarding/screen/onboarding_screen.dart';
 import '../../features/progress/screen/progress_screen.dart';
+import '../../features/review/screen/reviews_screen.dart';
 import '../../features/search/screen/search_screen.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/settings/cubit/settings_state.dart';
@@ -105,6 +106,12 @@ class AppRouter {
         name: AppRoutes.searchName,
         builder: (BuildContext context, GoRouterState state) =>
             const SearchScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.reviewsPath,
+        name: AppRoutes.reviewsName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const ReviewsScreen(),
       ),
       GoRoute(
         path: AppRoutes.weakSpotsPath,

@@ -22,6 +22,8 @@ import '../../home/cubit/home_index_state.dart';
 import '../../home/widgets/juz_widgets.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../../mushaf/reading_section.dart';
+import '../../review/cubit/review_cubit.dart';
+import '../../review/widgets/review_widgets.dart';
 import '../../settings/cubit/settings_cubit.dart';
 import '../../settings/cubit/settings_state.dart';
 import '../../update/cubit/update_cubit.dart';
@@ -50,6 +52,7 @@ class SurahListScreen extends StatelessWidget {
         BlocProvider<HomeIndexCubit>(
           create: (_) => sl<HomeIndexCubit>()..load(),
         ),
+        BlocProvider<ReviewCubit>(create: (_) => sl<ReviewCubit>()..load()),
       ],
       child: const _SurahListView(),
     );
@@ -180,6 +183,9 @@ class _SurahListViewState extends State<_SurahListView> {
         body: DesktopWidth(
           child: Column(
             children: <Widget>[
+              // What is due for review first: the day's work, before the
+              // way back to where the reader stopped.
+              const TodayCard(),
               if (last != null)
                 _ContinueCard(
                   place: last,

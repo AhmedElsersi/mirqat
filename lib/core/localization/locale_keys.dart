@@ -217,6 +217,28 @@ class LocaleKeys {
       'session_setup.connect_cumulative';
   static const String sessionSetupConnectCumulativeHint =
       'session_setup.connect_cumulative_hint';
+  static const String reviewTitle = 'review.title';
+  static const String reviewHint = 'review.hint';
+  static const String reviewEmpty = 'review.empty';
+  static const String reviewToday = 'review.today';
+  static const String reviewAll = 'review.all';
+  static const String reviewMore = 'review.more';
+  static const String reviewStart = 'review.start';
+  static const String reviewForget = 'review.forget';
+  static const String reviewForgetConfirm = 'review.forget_confirm';
+  static const String reviewLastGrade = 'review.last_grade';
+  static const String reviewDueToday = 'review.due_today';
+  static const String reviewDueTomorrow = 'review.due_tomorrow';
+  static const String reviewDueOn = 'review.due_on';
+  static const String reviewOverdue = 'review.overdue';
+  static const String reviewTierSabaq = 'review.tier_sabaq';
+  static const String reviewTierSabqi = 'review.tier_sabqi';
+  static const String reviewTierManzil = 'review.tier_manzil';
+  static const String reviewGradeQuestion = 'review.grade_question';
+  static const String reviewGradeLater = 'review.grade_later';
+  static const String reviewGradeSolid = 'review.grade_solid';
+  static const String reviewGradeShaky = 'review.grade_shaky';
+  static const String reviewGradeForgot = 'review.grade_forgot';
   static const String mushafFontTitle = 'mushaf_font.title';
   static const String mushafFontHint = 'mushaf_font.hint';
   static const String mushafFontFace = 'mushaf_font.face';

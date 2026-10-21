@@ -7,6 +7,7 @@ import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/playback_unit.dart';
+import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/session_config.dart';
 import '../cubit/session_cubit.dart';
 import '../cubit/session_state.dart';
@@ -55,24 +56,103 @@ class SessionBar extends StatelessWidget {
                           horizontal: 6.w,
                           vertical: 4.h,
                         ),
-                        child: switch (state.phase) {
-                          SessionPhase.idle => _Idle(
-                            state: state,
-                            onOpenSettings: onOpenSettings,
-                          ),
-                          SessionPhase.loading => const _Loading(),
-                          SessionPhase.active => _Active(
-                            state: state,
-                            onOpenSettings: onOpenSettings,
-                          ),
-                          SessionPhase.failed => _Failed(state: state),
-                        },
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            if (state.gradeOffer != null) const _GradePrompt(),
+                            switch (state.phase) {
+                              SessionPhase.idle => _Idle(
+                                state: state,
+                                onOpenSettings: onOpenSettings,
+                              ),
+                              SessionPhase.loading => const _Loading(),
+                              SessionPhase.active => _Active(
+                                state: state,
+                                onOpenSettings: onOpenSettings,
+                              ),
+                              SessionPhase.failed => _Failed(state: state),
+                            },
+                          ],
+                        ),
                       ),
                     ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "How did it go?" once a range has been recited through: three answers
+/// that set when it comes back for review, and a way to leave it unanswered.
+class _GradePrompt extends StatelessWidget {
+  const _GradePrompt();
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final SessionCubit cubit = context.read<SessionCubit>();
+
+    Widget answer(Grade grade, String label, Color color) => Expanded(
+      child: Padding(
+        padding: EdgeInsetsDirectional.symmetric(horizontal: 3.w),
+        child: OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: color,
+            side: BorderSide(color: color),
+            padding: EdgeInsetsDirectional.symmetric(horizontal: 4.w),
+          ),
+          onPressed: () => cubit.grade(grade),
+          child: Text(label, maxLines: 1, overflow: TextOverflow.fade),
+        ),
+      ),
+    );
+
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(8.w, 6.h, 4.w, 2.h),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  LocaleKeys.reviewGradeQuestion.tr(),
+                  style: theme.textTheme.titleSmall,
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                tooltip: LocaleKeys.reviewGradeLater.tr(),
+                onPressed: cubit.dismissGrade,
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+          Row(
+            children: <Widget>[
+              answer(
+                Grade.solid,
+                LocaleKeys.reviewGradeSolid.tr(),
+                theme.colorScheme.primary,
+              ),
+              answer(
+                Grade.shaky,
+                LocaleKeys.reviewGradeShaky.tr(),
+                theme.colorScheme.secondary,
+              ),
+              answer(
+                Grade.forgot,
+                LocaleKeys.reviewGradeForgot.tr(),
+                theme.colorScheme.error,
+              ),
+            ],
+          ),
+          const Divider(height: 12),
+        ],
       ),
     );
   }

@@ -13,7 +13,10 @@ import '../../../data/models/surah.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
+import '../../../data/repositories/review_repository.dart';
 import '../../../domain/engine/repetition_plan_builder.dart';
+import '../../../domain/engine/review_scheduler.dart';
+import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/session_config.dart';
@@ -46,8 +49,13 @@ class SessionCubit extends Cubit<SessionState> {
     required MemorizationPlayerService playerService,
     required ProgressRepository progressRepository,
     required KeepAwakeService keepAwakeService,
+    required ReviewRepository reviewRepository,
+    ReviewScheduler reviewScheduler = const ReviewScheduler(),
+    this.clock = DateTime.now,
     this.pauseSettleTime = const Duration(milliseconds: 600),
   }) : _quran = quranRepository,
+       _reviews = reviewRepository,
+       _scheduler = reviewScheduler,
        _settings = settingsRepository,
        _reciters = reciterCatalog,
        _durations = durationService,
@@ -65,6 +73,16 @@ class SessionCubit extends Cubit<SessionState> {
   final MemorizationPlayerService _player;
   final ProgressRepository _progress;
   final KeepAwakeService _keepAwake;
+  final ReviewRepository _reviews;
+  final ReviewScheduler _scheduler;
+  /// Today, as far as the review ladder is concerned. A test hands in its
+  /// own.
+  final DateTime Function() clock;
+
+  /// Every ayah heard at least once since the session was started from the
+  /// top. A session stopped before all of its range was heard has nothing to
+  /// grade: the reader did not recite it through.
+  final Set<AyahRef> _heard = <AyahRef>{};
 
   /// How long a pause slider has to rest before a running session is
   /// re-queued with the new gaps. Re-queuing restarts the ayah being heard,
@@ -479,7 +497,14 @@ class SessionCubit extends Cubit<SessionState> {
     final SessionPlan? plan = state.plan;
     final Reciter? reciter = state.reciter;
     if (plan == null || reciter == null) return;
-    emit(state.copyWith(phase: SessionPhase.loading, clearFailure: true));
+    _heard.clear();
+    emit(
+      state.copyWith(
+        phase: SessionPhase.loading,
+        clearFailure: true,
+        clearGradeOffer: true,
+      ),
+    );
     await _recordProgress();
     unawaited(_rememberRange(plan.config));
     await _run(plan, reciter, startAtUnit: 0, autoplay: true);
@@ -497,7 +522,10 @@ class SessionCubit extends Cubit<SessionState> {
     // Said before anything is awaited: the question has been answered, and
     // whoever asked it must see that now, not when the new queue has loaded.
     emit(state.copyWith(phase: SessionPhase.loading, clearFailure: true));
-    if (restart) await _recordProgress();
+    if (restart) {
+      _heard.clear();
+      await _recordProgress();
+    }
     await _run(plan, reciter, startAtUnit: at, autoplay: true);
   }
 
@@ -550,6 +578,7 @@ class SessionCubit extends Cubit<SessionState> {
       // plays are counted.
       if (!moment.recalling) {
         _played.update(moment.unit.ref, (int n) => n + 1, ifAbsent: () => 1);
+        _heard.add(moment.unit.ref);
       }
       emit(
         state.copyWith(currentUnit: moment.unit, recalling: moment.recalling),
@@ -558,10 +587,12 @@ class SessionCubit extends Cubit<SessionState> {
     _stateSub = _player.playerStateStream.listen(
       (ja.PlayerState s) {
         final bool finished = s.processingState == ja.ProcessingState.completed;
+        final bool justFinished = finished && !state.finished;
         emit(
           state.copyWith(playing: s.playing && !finished, finished: finished),
         );
         if (finished) unawaited(_recordProgress());
+        if (justFinished) _offerGrade(plan.config, force: true);
       },
       // A connection lost mid-session surfaces here rather than at load. What
       // was recited up to that point is still worth keeping.
@@ -668,6 +699,8 @@ class SessionCubit extends Cubit<SessionState> {
   /// Ends the session: what was recited is written down, the lock screen is
   /// cleared, and the bar goes back to offering a start.
   Future<void> stop() async {
+    final SessionConfig? running = state.activePlan?.config;
+    if (running != null && !state.finished) _offerGrade(running);
     _pauseTimer?.cancel();
     await _unitSub?.cancel();
     await _stateSub?.cancel();
@@ -683,6 +716,48 @@ class SessionCubit extends Cubit<SessionState> {
     await _keepAwake.setEnabled(enabled);
     if (!isClosed) emit(state.copyWith(keepAwake: enabled));
   }
+
+  // --- self-grading --------------------------------------------------------
+
+  /// Asks how [config]'s range went — when the session played out ([force]),
+  /// or was stopped once every ayah of it had been heard.
+  void _offerGrade(SessionConfig config, {bool force = false}) {
+    if (isClosed) return;
+    if (!force) {
+      final List<AyahRef> range = RepetitionPlanBuilder.rangeOf(
+        config,
+        state.ayahCounts,
+      );
+      if (range.isEmpty || !range.every(_heard.contains)) return;
+    }
+    emit(state.copyWith(gradeOffer: (from: config.start, to: config.end)));
+  }
+
+  /// The reader's grade for the range just recited: its review card is
+  /// started, or moved along the ladder. A card that cannot be written costs
+  /// the grade, never the session.
+  Future<void> grade(Grade grade) async {
+    final ({AyahRef from, AyahRef to})? offer = state.gradeOffer;
+    if (offer == null) return;
+    emit(state.copyWith(clearGradeOffer: true));
+    final DateTime now = clock();
+    final ReviewCard? existing = (await _reviews.get(
+      ReviewCard.idFor(offer.from, offer.to),
+    )).getOrElse(() => null);
+    await _reviews.save(
+      existing == null
+          ? _scheduler.start(
+              from: offer.from,
+              to: offer.to,
+              grade: grade,
+              now: now,
+            )
+          : _scheduler.grade(existing, grade, now),
+    );
+  }
+
+  /// Waves the question away. Nothing is written.
+  void dismissGrade() => emit(state.copyWith(clearGradeOffer: true));
 
   /// Writes what was actually recited, then clears the tally so a stop
   /// followed by a completion cannot double-count.

@@ -21,6 +21,16 @@ no new package, no network beyond A.2 rule 3, ayah text only through
 Order is by value and by dependency: stumble marks come before the scheduler
 because the scheduler reads them.
 
+**Status**
+
+| Phase | State | Commit |
+|---|---|---|
+| 1a — what comes next? | done | `3a3f249` |
+| 1b — memorization view | done | `3c05ad8` |
+| 2 — stumble marks, weak spots | done | `1dd3af2` |
+| (asked for) mushaf font page | done | `80e0018` |
+| 3 — review ladder, grading, today | done | this commit |
+
 ---
 
 ## Phase 1 — Finish recall (§1)

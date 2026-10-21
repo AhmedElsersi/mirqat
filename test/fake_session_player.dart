@@ -70,6 +70,9 @@ class FakeSessionPlayer implements MemorizationPlayerService {
   @override
   Stream<PlayerState> get playerStateStream => _states.stream;
 
+  /// The queue has played out.
+  void complete() => _states.add(PlayerState(false, ProcessingState.completed));
+
   @override
   Future<void> play() async {
     playCalls++;

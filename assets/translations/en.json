@@ -335,5 +335,29 @@
     "only_matching": "Only typefaces made for this mushaf's script are offered, so every mark in it is drawn as it is, never changed.",
     "hafs_v22": "Uthmanic Hafs — version 2.2 (default)",
     "hafs_v18": "Uthmanic Hafs — version 0.18"
+  },
+  "review": {
+    "title": "Review",
+    "hint": "The passages you memorized, and when each is next reviewed",
+    "empty": "Nothing to review yet. When you finish a memorization session, grade how it went and the passage joins your review schedule.",
+    "today": "Today's review · {}",
+    "all": "All",
+    "more": "and {} more",
+    "start": "Start review",
+    "forget": "Remove from review",
+    "forget_confirm": "This passage leaves the review schedule. Your memorization record stays as it is.",
+    "last_grade": "Last: {}",
+    "due_today": "Today",
+    "due_tomorrow": "Tomorrow",
+    "due_on": "On {}",
+    "overdue": "Overdue",
+    "tier_sabaq": "New",
+    "tier_sabqi": "Recent",
+    "tier_manzil": "Old",
+    "grade_question": "How well did you hold this passage?",
+    "grade_later": "Not now",
+    "grade_solid": "Solid",
+    "grade_shaky": "Shaky",
+    "grade_forgot": "Forgot"
   }
 }
