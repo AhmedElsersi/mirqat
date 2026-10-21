@@ -31,6 +31,15 @@ class AppRoutes {
   static const String similarPath = '/similar';
   static const String similarName = 'similar';
 
+  /// Every phrase the Quran repeats across its ayahs, one card each.
+  static const String mutashabihatPath = '/mutashabihat';
+  static const String mutashabihatName = 'mutashabihat';
+
+  /// One such phrase and every ayah it occurs in. The phrase id, an `int`,
+  /// in `state.extra`.
+  static const String mutashabihatPhrasePath = '/mutashabihat/phrase';
+  static const String mutashabihatPhraseName = 'mutashabihat-phrase';
+
   /// The reader's practice, in plain numbers.
   static const String statsPath = '/stats';
   static const String statsName = 'stats';

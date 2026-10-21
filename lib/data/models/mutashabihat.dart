@@ -115,6 +115,37 @@ class MutashabihatIndex {
 
   bool hasSimilar(AyahRef ref) => _byAyah.containsKey(ref);
 
+  /// Every phrase, in the order the mushaf first reaches it — by its
+  /// earliest ayah, then by where in that ayah it starts.
+  List<int> get phraseIds {
+    final Map<int, PhraseOccurrence> first = <int, PhraseOccurrence>{
+      for (final int id in _byPhrase.keys) id: occurrencesOf(id).first,
+    };
+    final List<int> ids = _byPhrase.keys.toList();
+    ids.sort((int a, int b) {
+      final PhraseOccurrence x = first[a]!;
+      final PhraseOccurrence y = first[b]!;
+      final int byRef = x.ref.compareTo(y.ref);
+      if (byRef != 0) return byRef;
+      final int byWord = x.fromWord - y.fromWord;
+      return byWord != 0 ? byWord : a - b;
+    });
+    return ids;
+  }
+
+  /// Where the phrase [id] occurs, in mushaf order; empty for a phrase the
+  /// index does not hold.
+  List<PhraseOccurrence> occurrencesOf(int id) {
+    final List<PhraseOccurrence> out = List<PhraseOccurrence>.of(
+      _byPhrase[id] ?? const <PhraseOccurrence>[],
+    );
+    out.sort((PhraseOccurrence a, PhraseOccurrence b) {
+      final int byRef = a.ref.compareTo(b.ref);
+      return byRef != 0 ? byRef : a.fromWord - b.fromWord;
+    });
+    return out;
+  }
+
   /// The phrases of [ref] that are shared with some other ayah.
   List<PhraseOccurrence> phrasesIn(AyahRef ref) =>
       _byAyah[ref] ?? const <PhraseOccurrence>[];

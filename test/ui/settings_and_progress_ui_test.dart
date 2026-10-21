@@ -12,6 +12,8 @@ import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/features/settings/screen/downloads_screen.dart';
 import 'package:mirqat/features/settings/screen/mushaf_download_screen.dart';
 import 'package:mirqat/features/settings/screen/mushaf_font_screen.dart';
+import 'package:mirqat/features/similar/screen/mutashabihat_screen.dart';
+import 'package:mirqat/features/similar/screen/phrase_screen.dart';
 import 'package:mirqat/core/localization/locale_keys.dart';
 import 'package:mirqat/core/widgets/settings_card.dart';
 import 'package:mirqat/features/about/screen/developer_screen.dart';
@@ -51,6 +53,53 @@ void main() {
   }
 
   group('settings', () {
+    testWidgets('the mutashabihat come first, open as a card per phrase, and '
+        'a card opens every ayah that phrase is in', (
+      WidgetTester tester,
+    ) async {
+      await harness.pumpApp(tester);
+      await openSettings(tester);
+
+      // First on the page: above the first group of settings.
+      final Finder entry = find.text(LocaleKeys.mutashabihatTitle.tr());
+      expect(entry, findsOneWidget);
+      expect(
+        tester.getTopLeft(entry).dy,
+        lessThan(
+          tester
+              .getTopLeft(find.text(LocaleKeys.settingsCardAppearance.tr()))
+              .dy,
+        ),
+      );
+
+      // Every card a phrase of the shipped file; the words load in real time.
+      Future<void> letReadsLand() async {
+        for (int i = 0; i < 30; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump();
+        }
+      }
+
+      await AppHarness.tapAndSettle(tester, entry);
+      await letReadsLand();
+      expect(find.byType(MutashabihatScreen), findsOneWidget);
+      expect(find.text('العبارات: ٨٠٧'), findsOneWidget);
+      expect(find.byType(AyahText), findsWidgets);
+
+      await tester.runAsync(() async {
+        await tester.tap(find.byType(Card).first);
+        await tester.pump();
+      });
+      await letReadsLand();
+      await AppHarness.frames(tester, 400);
+      expect(find.byType(PhraseScreen), findsOneWidget);
+      // Two ayahs at least, each a card with its words drawn.
+      expect(find.byIcon(Icons.headphones_outlined), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('lists the reciter rather than hardcoding a label', (
       WidgetTester tester,
     ) async {
@@ -308,6 +357,7 @@ void main() {
 
       // Settings is the only place this is chosen now; the home screen just
       // follows it.
+      await reveal(tester, find.text('شبكة'));
       await AppHarness.tapAndSettle(tester, find.text('شبكة'));
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
 

@@ -380,6 +380,20 @@
     "listen": "Listen to this ayah",
     "source": "Similar phrases from QUL's “Mutashabihat ul Quran”; the shared words are shaded."
   },
+  "mutashabihat": {
+    "title": "Mutashabihat",
+    "hint": "The phrases the Quran repeats across ayahs, and where each one occurs",
+    "intro": "Each card is a phrase found in more than one ayah. Open it to see every ayah it occurs in, surah by surah, with the shared words shaded.",
+    "all_surahs": "All surahs",
+    "surah": "Surah",
+    "counts": "Ayahs: {} · Surahs: {}",
+    "first_at": "First occurs: {}",
+    "shown": "Phrases: {}",
+    "none_in_surah": "No shared phrases in this surah.",
+    "empty": "The mutashabihat data has not been added yet.",
+    "phrase_title": "Shared phrase",
+    "in_surah": "Surah {} · Ayahs: {}"
+  },
   "plan": {
     "title": "Memorization plan",
     "hint": "Memorize a passage in a set number of days, a balanced portion each day",

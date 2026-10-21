@@ -34,6 +34,8 @@ import '../../features/search/cubit/search_cubit.dart';
 import '../../features/session/cubit/audio_pack_cubit.dart';
 import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
+import '../../features/similar/cubit/mutashabihat_cubit.dart';
+import '../../features/similar/cubit/phrase_cubit.dart';
 import '../../features/similar/cubit/similar_cubit.dart';
 import '../../features/settings/cubit/mushaf_download_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
@@ -265,6 +267,20 @@ Future<void> configureDependencies() async {
   );
   sl.registerFactory<SimilarCubit>(
     () => SimilarCubit(
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
+  sl.registerFactory<MutashabihatCubit>(
+    () => MutashabihatCubit(
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
+  sl.registerFactory<PhraseCubit>(
+    () => PhraseCubit(
       mutashabihatRepository: sl<MutashabihatRepository>(),
       quranRepository: sl<QuranRepository>(),
       pagesRepository: sl<QuranPagesRepository>(),

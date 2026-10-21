@@ -31,6 +31,24 @@ class ComparedAyah extends Equatable {
   /// The phrases shared, as they fall in this ayah.
   final List<PhraseOccurrence> shared;
 
+  /// [ref] with its words read from `quran.db`; null for an ayah whose
+  /// surah or words cannot be read — not shown, never shown short.
+  static Future<ComparedAyah?> load(
+    QuranPagesRepository pages,
+    Map<int, Surah> surahs,
+    AyahRef ref,
+    List<PhraseOccurrence> shared,
+  ) async {
+    final Surah? surah = surahs[ref.surah];
+    if (surah == null) return null;
+    final List<Word> words = (await pages.wordsForAyah(
+      ref.surah,
+      ref.ayah,
+    )).getOrElse(() => const <Word>[]);
+    if (words.isEmpty) return null;
+    return ComparedAyah(ref: ref, surah: surah, words: words, shared: shared);
+  }
+
   bool isShared(Word w) =>
       !w.isMarker && shared.any((PhraseOccurrence o) => o.covers(w.position));
 
@@ -85,20 +103,8 @@ class SimilarCubit extends Cubit<SimilarState> {
         s.number: s,
     };
 
-    Future<ComparedAyah?> compared(
-      AyahRef r,
-      List<PhraseOccurrence> shared,
-    ) async {
-      final Surah? surah = byNumber[r.surah];
-      if (surah == null) return null;
-      final List<Word> words = (await _pages.wordsForAyah(
-        r.surah,
-        r.ayah,
-      )).getOrElse(() => const <Word>[]);
-      // An ayah whose words cannot be read is not shown, never shown short.
-      if (words.isEmpty) return null;
-      return ComparedAyah(ref: r, surah: surah, words: words, shared: shared);
-    }
+    Future<ComparedAyah?> compared(AyahRef r, List<PhraseOccurrence> shared) =>
+        ComparedAyah.load(_pages, byNumber, r, shared);
 
     final ComparedAyah? target = await compared(ref, index.phrasesIn(ref));
     if (isClosed) return;
