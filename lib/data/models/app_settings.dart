@@ -5,6 +5,7 @@ import 'reading_position.dart';
 
 import '../../domain/entities/hifz_plan.dart';
 import '../../domain/entities/interrupted_session.dart';
+import '../../domain/entities/saved_preset.dart';
 import '../../domain/entities/session_config.dart';
 
 /// Theme preference. A local enum rather than Flutter's ThemeMode so the data
@@ -189,6 +190,7 @@ class AppSettings extends Equatable {
     this.showStumbles = true,
     this.bookends = false,
     this.bookendTaken,
+    this.savedPresets = const <SavedPreset>[],
     this.hifzPlan,
     this.interruptedSession,
     this.onboardingSeen = false,
@@ -289,6 +291,9 @@ class AppSettings extends Equatable {
   /// is not made again. Null: none yet.
   final String? bookendTaken;
 
+  /// Ways of working the reader named and saved, oldest first.
+  final List<SavedPreset> savedPresets;
+
   /// The reader's plan to memorize a range in so many days, if they made
   /// one. Null: no plan.
   final HifzPlan? hifzPlan;
@@ -342,6 +347,7 @@ class AppSettings extends Equatable {
     bool? showStumbles,
     bool? bookends,
     String? bookendTaken,
+    List<SavedPreset>? savedPresets,
     HifzPlan? hifzPlan,
     bool clearHifzPlan = false,
     InterruptedSession? interruptedSession,
@@ -381,6 +387,7 @@ class AppSettings extends Equatable {
     showStumbles: showStumbles ?? this.showStumbles,
     bookends: bookends ?? this.bookends,
     bookendTaken: bookendTaken ?? this.bookendTaken,
+    savedPresets: savedPresets ?? this.savedPresets,
     hifzPlan: clearHifzPlan ? null : (hifzPlan ?? this.hifzPlan),
     interruptedSession: clearInterruptedSession
         ? null
@@ -427,6 +434,9 @@ class AppSettings extends Equatable {
     'showStumbles': showStumbles,
     'bookends': bookends,
     'bookendTaken': bookendTaken,
+    'savedPresets': <Map<String, dynamic>>[
+      for (final SavedPreset p in savedPresets) p.toMap(),
+    ],
     'hifzPlan': hifzPlan?.toMap(),
     'interruptedSession': interruptedSession?.toMap(),
     'onboardingSeen': onboardingSeen,
@@ -493,6 +503,11 @@ class AppSettings extends Equatable {
     bookendTaken: map['bookendTaken'] is String
         ? map['bookendTaken'] as String
         : null,
+    savedPresets: <SavedPreset>[
+      if (map['savedPresets'] is List)
+        for (final Object? raw in map['savedPresets'] as List)
+          ?SavedPreset.fromMap(raw),
+    ],
     hifzPlan: HifzPlan.fromMap(map['hifzPlan']),
     interruptedSession: InterruptedSession.fromMap(map['interruptedSession']),
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
@@ -548,6 +563,7 @@ class AppSettings extends Equatable {
     showStumbles,
     bookends,
     bookendTaken,
+    savedPresets,
     hifzPlan,
     interruptedSession,
     onboardingSeen,

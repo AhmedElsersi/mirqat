@@ -16,6 +16,7 @@ import '../../../data/models/reciter.dart';
 import '../../settings/cubit/settings_cubit.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/ayah_ref.dart';
+import '../../../domain/entities/saved_preset.dart';
 import '../../../domain/entities/session_config.dart';
 import '../session_request.dart';
 import 'audio_pack_tile.dart';
@@ -492,6 +493,10 @@ class _Presets extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SessionCubit cubit = context.read<SessionCubit>();
+    final List<SavedPreset> saved = context
+        .select<SessionCubit, List<SavedPreset>>(
+          (SessionCubit c) => c.state.defaults.savedPresets,
+        );
     Widget chip(String label, VoidCallback onTap) =>
         ActionChip(label: Text(label), onPressed: onTap);
     return SetupSection(
@@ -517,9 +522,57 @@ class _Presets extends StatelessWidget {
             LocaleKeys.presetsListen.tr(),
             () => cubit.applyPreset(SessionPreset.listenLoop),
           ),
+          for (final SavedPreset p in saved)
+            InputChip(
+              label: Text(p.name),
+              onPressed: () => cubit.applySaved(p),
+              deleteButtonTooltipMessage: LocaleKeys.presetsDelete.tr(),
+              onDeleted: () => _confirmDelete(context, cubit, p.name),
+            ),
+          ActionChip(
+            // Not "add": the steppers below are + buttons, and a save is not
+            // one more of something.
+            avatar: const Icon(Icons.bookmark_add_outlined),
+            label: Text(LocaleKeys.presetsSave.tr()),
+            onPressed: () => _askName(context, cubit),
+          ),
         ],
       ),
     );
+  }
+
+  static Future<void> _askName(BuildContext context, SessionCubit cubit) async {
+    final String? chosen = await showDialog<String>(
+      context: context,
+      builder: (_) => const _PresetNameDialog(),
+    );
+    if (chosen != null && chosen.trim().isNotEmpty) {
+      await cubit.savePreset(chosen);
+    }
+  }
+
+  static Future<void> _confirmDelete(
+    BuildContext context,
+    SessionCubit cubit,
+    String name,
+  ) async {
+    final bool? yes = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialog) => AlertDialog(
+        content: Text(LocaleKeys.presetsDeleteConfirm.tr(args: <String>[name])),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(false),
+            child: Text(LocaleKeys.commonCancel.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialog).pop(true),
+            child: Text(LocaleKeys.presetsDelete.tr()),
+          ),
+        ],
+      ),
+    );
+    if (yes ?? false) await cubit.deletePreset(name);
   }
 }
 
@@ -687,6 +740,48 @@ class PendingChangeActions extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    ],
+  );
+}
+
+/// Asks what to call the form's way of working. Its own widget, so the
+/// field's controller lives exactly as long as the dialog does — through
+/// the closing animation, after the answer is already given.
+class _PresetNameDialog extends StatefulWidget {
+  const _PresetNameDialog();
+
+  @override
+  State<_PresetNameDialog> createState() => _PresetNameDialogState();
+}
+
+class _PresetNameDialogState extends State<_PresetNameDialog> {
+  final TextEditingController _name = TextEditingController();
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(LocaleKeys.presetsSaveTitle.tr()),
+    content: TextField(
+      controller: _name,
+      autofocus: true,
+      maxLength: SavedPreset.maxNameLength,
+      decoration: InputDecoration(hintText: LocaleKeys.presetsSaveHint.tr()),
+      onSubmitted: (String v) => Navigator.of(context).pop(v),
+    ),
+    actions: <Widget>[
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: Text(LocaleKeys.commonCancel.tr()),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.of(context).pop(_name.text),
+        child: Text(LocaleKeys.presetsSaveAction.tr()),
       ),
     ],
   );

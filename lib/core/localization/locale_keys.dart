@@ -265,10 +265,16 @@ class LocaleKeys {
   static const String playerStop = 'player.stop';
 
   static const String presetsDeep = 'presets.deep';
+  static const String presetsDelete = 'presets.delete';
+  static const String presetsDeleteConfirm = 'presets.delete_confirm';
   static const String presetsListen = 'presets.listen';
   static const String presetsNew = 'presets.new';
   static const String presetsOld = 'presets.old';
   static const String presetsRecent = 'presets.recent';
+  static const String presetsSave = 'presets.save';
+  static const String presetsSaveAction = 'presets.save_action';
+  static const String presetsSaveHint = 'presets.save_hint';
+  static const String presetsSaveTitle = 'presets.save_title';
   static const String presetsTitle = 'presets.title';
 
   static const String progressMarkMemorized = 'progress.mark_memorized';

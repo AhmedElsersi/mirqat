@@ -484,7 +484,13 @@
     "recent": "Recent review",
     "old": "Old review",
     "deep": "Deep drill",
-    "listen": "Listen"
+    "listen": "Listen",
+    "save": "Save as preset",
+    "save_title": "Name this way of working",
+    "save_hint": "e.g. Fajr review",
+    "save_action": "Save",
+    "delete": "Remove",
+    "delete_confirm": "Remove “{}”?"
   },
   "resume": {
     "title": "A session left unfinished",

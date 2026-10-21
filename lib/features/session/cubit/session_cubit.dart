@@ -21,6 +21,7 @@ import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/hifz_plan.dart';
 import '../../../domain/entities/interrupted_session.dart';
+import '../../../domain/entities/saved_preset.dart';
 import '../../../domain/entities/practice_stats.dart';
 import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/playback_unit.dart';
@@ -510,6 +511,58 @@ class SessionCubit extends Cubit<SessionState> {
   /// the reader to say start again or carry on.
   void applyPreset(SessionPreset preset) =>
       _change((SessionConfig c) => preset.applyTo(c));
+
+  /// A way of working the reader saved, laid over the form like the others.
+  void applySaved(SavedPreset saved) => applyPreset(
+    SessionPreset(
+      repeatCount: saved.repeatCount,
+      connectMode: saved.connectMode,
+      recallRounds: saved.recallRounds,
+      chainRecall: saved.chainRecall,
+    ),
+  );
+
+  /// Saves the form's way of working under [name]. The same name again
+  /// replaces it; past [SavedPreset.maxSaved] the oldest goes.
+  Future<void> savePreset(String name) async {
+    final SessionConfig? c = state.config;
+    String trimmed = name.trim();
+    if (c == null || trimmed.isEmpty) return;
+    if (trimmed.length > SavedPreset.maxNameLength) {
+      trimmed = trimmed.substring(0, SavedPreset.maxNameLength).trim();
+    }
+    final AppSettings fresh = await _freshSettings();
+    final List<SavedPreset> kept = <SavedPreset>[
+      for (final SavedPreset p in fresh.savedPresets)
+        if (p.name != trimmed) p,
+      SavedPreset.of(trimmed, c),
+    ];
+    await _saveDefaults(
+      fresh.copyWith(
+        savedPresets: kept.length > SavedPreset.maxSaved
+            ? kept.sublist(kept.length - SavedPreset.maxSaved)
+            : kept,
+      ),
+    );
+  }
+
+  Future<void> deletePreset(String name) async {
+    final AppSettings fresh = await _freshSettings();
+    await _saveDefaults(
+      fresh.copyWith(
+        savedPresets: <SavedPreset>[
+          for (final SavedPreset p in fresh.savedPresets)
+            if (p.name != name) p,
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveDefaults(AppSettings next) async {
+    final result = await _settings.save(next);
+    if (isClosed) return;
+    result.fold((Failure _) {}, (_) => emit(state.copyWith(defaults: next)));
+  }
 
   void setFinalFullPass(bool value) =>
       _change((SessionConfig c) => c.copyWith(finalFullPass: value));

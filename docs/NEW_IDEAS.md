@@ -16,8 +16,7 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat, browsing, named twins and the drill, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup (with Android send and pick), §9 presets, resume, about-the-surah |
-> | **Partly done** | §9 presets are fixed, not saved by the reader |
+> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks and the surah-list heatmap, §4 mutashabihat, browsing, named twins and the drill, §5 sleep timer, "three more", the listen loop and the bookends, §6 hifz plan and quiet stats, §7 tasmee', §8 backup (with Android send and pick), §9 presets (fixed and the reader's own), resume, about-the-surah with its juz |
 > | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
 > | **Blocked on a package** | daily reminder · record-and-compare |
 >
@@ -27,8 +26,7 @@ The document is in two halves: English first, then the same ideas in Arabic.
 >
 > | | |
 > |---|---|
-> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها وتسمية الشبيهات والتمرين، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي (مع الإرسال والاختيار على أندرويد)، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
-> | **تمّ بعضه** | §٩ الإعدادات ثابتة لا يحفظها القارئ |
+> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر وخريطة الضعف على الفهرس، §٤ المتشابهات وتصفّحها وتسمية الشبيهات والتمرين، §٥ مؤقّت النوم و«ثلاثًا أيضًا» وحلقة السماع وطرفا الليل والنهار، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي (مع الإرسال والاختيار على أندرويد)، §٩ الإعدادات المسماة (الثابتة وما يحفظه القارئ) والاستئناف وسطر السورة بأجزائها |
 > | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
 > | **ينتظر حزمة** | التنبيه اليومي · سجّل وقارن |
 
@@ -260,9 +258,12 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### 9. Smaller touches
 
-> **Status:** resume **done** (`292d69e`). Presets **partly done**
-> (`fda6c1e`): four fixed ones — new, recent, old, deep — not ones the
-> reader saves from the form. About-the-surah **done** (`35e0296`, juz span
+> **Status:** resume **done** (`292d69e`). Presets **done** (`fda6c1e`, saving
+> later): the fixed ones — new, recent, old, deep, listen — and the
+> reader's own: *Save as preset* in the session sheet names the form's way
+> of working (repeats, joining, recall rounds, the chain test), and it sits
+> beside them as a chip, removable with a confirmation. Six at most; the
+> same name replaces. About-the-surah **done** (`35e0296`, juz span
 > later): Makki/Madani, the ayah count and the juz it lies in — *Juz 1–3*
 > — worked out from `quran.db`'s own juz starts. *Built differently:* it
 > is in every ayah's menu rather than the surah header, so it is there
@@ -487,9 +488,10 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ٩. لمسات أصغر
 
-> **الحال:** الاستئناف **تمّ** (`292d69e`). والإعدادات المسماة **تمّ بعضها**
-> (`fda6c1e`): أربعة ثابتة — جديد، قريب، بعيد، تثبيت — لا يحفظها القارئ من
-> النموذج. وسطر «عن هذه السورة» **تمّ** (`35e0296`، ومدى الأجزاء بعدُ): مكية/مدنية
+> **الحال:** الاستئناف **تمّ** (`292d69e`). والإعدادات المسماة **تمّت** (`fda6c1e`، والحفظ بعدُ):
+> الثابتة — جديد، قريب، بعيد، تثبيت، استماع — وما يحفظه القارئ بنفسه: «احفظ كإعداد»
+> في نافذة الجلسة يسمّي طريقة النموذج (التكرار، والجمع، وجولات الاسترجاع، وتمرين
+> الربط)، فتصير شريحةً بجوارها تُحذف بعد تأكيد. ستٌّ على الأكثر، والاسم نفسه يستبدلها. وسطر «عن هذه السورة» **تمّ** (`35e0296`، ومدى الأجزاء بعدُ): مكية/مدنية
 > وعدد الآيات والأجزاء التي تقع فيها — *الأجزاء ١–٣* — محسوبةً من بدايات الأجزاء
 > في `quran.db`. *على غير ما في الفكرة:* في قائمة كل آية لا في رأس السورة، فهو حاضر
 > حيثما كان القارئ من السورة. وعلامات القراءة المتعددة

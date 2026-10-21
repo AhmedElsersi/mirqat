@@ -148,6 +148,39 @@ void main() {
     });
   });
 
+  group('presets of the reader\'s own', () {
+    testWidgets('one is saved from the sheet by name, shows as a chip, and '
+        'can be removed', (WidgetTester tester) async {
+      await openFatiha(tester);
+      await AppHarness.openSessionSheet(tester);
+
+      await AppHarness.tapAndRun(tester, find.text('احفظ كإعداد'));
+      expect(find.text('اسم هذه الطريقة'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).last, 'مراجعة الفجر');
+      await AppHarness.tapAndRun(tester, find.text('احفظ'));
+
+      expect(find.widgetWithText(InputChip, 'مراجعة الفجر'), findsOneWidget);
+      expect(
+        sessionOf(tester).state.defaults.savedPresets.single.name,
+        'مراجعة الفجر',
+      );
+
+      await AppHarness.tapAndRun(
+        tester,
+        find.descendant(
+          of: find.widgetWithText(InputChip, 'مراجعة الفجر'),
+          matching: find.byTooltip('حذف'),
+        ),
+      );
+      await AppHarness.tapAndRun(
+        tester,
+        find.widgetWithText(FilledButton, 'حذف'),
+      );
+      expect(find.widgetWithText(InputChip, 'مراجعة الفجر'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('the reciter field', () {
     testWidgets('is a dropdown that shows the portrait and both names, and '
         'lists everyone the same way', (WidgetTester tester) async {

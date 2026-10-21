@@ -19,6 +19,7 @@ import 'package:mirqat/data/repositories/settings_repository.dart';
 import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
 import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
+import 'package:mirqat/domain/entities/saved_preset.dart';
 import 'package:mirqat/domain/entities/hifz_plan.dart';
 import 'package:mirqat/domain/entities/interrupted_session.dart';
 import 'package:mirqat/domain/entities/plan_step.dart';
@@ -978,6 +979,101 @@ void main() {
       cubit.applyPreset(SessionPreset.deep);
       expect(cubit.state.hasPendingChange, isTrue);
       expect(player.loads, hasLength(1));
+    });
+
+    test('the reader saves a way of working by name, and it comes back as it '
+        'was', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      cubit.applyPreset(SessionPreset.deep);
+      await cubit.savePreset('  Fajr review  ');
+
+      final SavedPreset saved = settings.saved.last.savedPresets.single;
+      expect(saved.name, 'Fajr review');
+      expect(saved.repeatCount, 7);
+      expect(saved.connectMode, ConnectMode.cumulative);
+      expect(saved.recallRounds, 2);
+      expect(saved.chainRecall, isTrue);
+      expect(cubit.state.defaults.savedPresets, <SavedPreset>[saved]);
+
+      cubit.resetToDefaults();
+      expect(cubit.state.config!.repeatCount, isNot(7));
+      cubit.applySaved(saved);
+      expect(cubit.state.config!.repeatCount, 7);
+      expect(cubit.state.config!.recallRounds, 2);
+      expect(cubit.state.config!.chainRecall, isTrue);
+      expect(cubit.state.config!.start, s1a1, reason: 'the range is kept');
+    });
+
+    test(
+      'the same name replaces; past six the oldest goes; delete removes',
+      () async {
+        final SessionCubit cubit = await open(reciterId: 'b');
+        cubit.chooseRange(s1a1, s1a3);
+        for (int i = 1; i <= 7; i++) {
+          await cubit.savePreset('p$i');
+        }
+        expect(
+          settings.saved.last.savedPresets.map((SavedPreset p) => p.name),
+          <String>['p2', 'p3', 'p4', 'p5', 'p6', 'p7'],
+        );
+        cubit.setRepeatCount(9);
+        await cubit.savePreset('p4');
+        expect(settings.saved.last.savedPresets, hasLength(6));
+        expect(settings.saved.last.savedPresets.last.name, 'p4');
+        expect(settings.saved.last.savedPresets.last.repeatCount, 9);
+
+        await cubit.deletePreset('p2');
+        expect(
+          settings.saved.last.savedPresets.map((SavedPreset p) => p.name),
+          <String>['p3', 'p5', 'p6', 'p7', 'p4'],
+        );
+        await cubit.savePreset('   ');
+        expect(
+          settings.saved.last.savedPresets,
+          hasLength(5),
+          reason: 'no name',
+        );
+      },
+    );
+
+    test('stored presets are read forgivingly', () {
+      final AppSettings back = AppSettings.fromMap(<String, dynamic>{
+        'savedPresets': <Object?>[
+          const SavedPreset(
+            name: 'A',
+            repeatCount: 3,
+            connectMode: ConnectMode.continuous,
+            recallRounds: 1,
+            chainRecall: false,
+          ).toMap(),
+          <String, dynamic>{
+            'name': 'no mode',
+            'repeatCount': 3,
+            'recallRounds': 0,
+          },
+          <String, dynamic>{
+            'name': 'too many',
+            'repeatCount': 999,
+            'connectMode': 'none',
+            'recallRounds': 99,
+          },
+          'not a map',
+        ],
+      });
+      expect(back.savedPresets.map((SavedPreset p) => p.name), <String>[
+        'A',
+        'too many',
+      ]);
+      expect(back.savedPresets.last.repeatCount, SessionConfig.maxRepeatCount);
+      expect(
+        back.savedPresets.last.recallRounds,
+        SessionConfig.maxRecallRounds,
+      );
+      expect(
+        AppSettings.fromMap(const <String, dynamic>{}).savedPresets,
+        isEmpty,
+      );
     });
 
     test('the review tiers use the same presets', () {
