@@ -7,46 +7,23 @@ import 'package:go_router/go_router.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/range_label.dart';
 import '../../../data/models/surah.dart';
+import '../../../domain/entities/hifz_plan.dart';
+import '../../hifz_plan/screen/hifz_plan_screen.dart' show openPortion;
 import '../../../domain/engine/review_scheduler.dart';
 import '../../../domain/entities/review_card.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../cubit/review_cubit.dart';
 
-String _surahName(BuildContext context, Surah s) =>
-    context.locale.languageCode == 'ar' ? s.nameAr : s.nameEn;
-
-/// A card's range in words: «سورة الملك كاملة», «سورة البقرة · الآيات ١ - ٥»,
-/// «من الإخلاص ٣ إلى الفلق ٢».
-String reviewRangeLabel(BuildContext context, ReviewItem item) {
-  final ReviewCard c = item.card;
-  final String from = _surahName(context, item.fromSurah);
-  if (c.from.surah != c.to.surah) {
-    return LocaleKeys.sessionRangeCross.tr(
-      args: <String>[
-        from,
-        c.from.ayah.toLocalisedString(),
-        _surahName(context, item.toSurah),
-        c.to.ayah.toLocalisedString(),
-      ],
-    );
-  }
-  if (c.from.ayah == 1 && c.to.ayah == item.fromSurah.ayahCount) {
-    return LocaleKeys.sessionRangeWhole.tr(args: <String>[from]);
-  }
-  if (c.from.ayah == c.to.ayah) {
-    return LocaleKeys.sessionRangeSingle.tr(
-      args: <String>[from, c.from.ayah.toLocalisedString()],
-    );
-  }
-  return LocaleKeys.sessionRangeSame.tr(
-    args: <String>[
-      from,
-      c.from.ayah.toLocalisedString(),
-      c.to.ayah.toLocalisedString(),
-    ],
-  );
-}
+/// A card's range in words.
+String reviewRangeLabel(BuildContext context, ReviewItem item) => rangeLabel(
+  context,
+  from: item.card.from,
+  to: item.card.to,
+  fromSurah: item.fromSurah,
+  toSurah: item.toSurah,
+);
 
 String tierLabel(ReviewTier tier) => switch (tier) {
   ReviewTier.sabaq => LocaleKeys.reviewTierSabaq.tr(),
@@ -112,7 +89,10 @@ class TierChip extends StatelessWidget {
 /// The home's "today": the ranges due for review, a tap each from playing,
 /// and the way to every range kept. Not drawn at all when nothing is due.
 class TodayCard extends StatelessWidget {
-  const TodayCard({super.key});
+  const TodayCard({this.plan, super.key});
+
+  /// The reader's hifz plan, whose portion for today comes first.
+  final HifzPlan? plan;
 
   /// More than this and the card would push the index off a phone's screen;
   /// the rest are a tap away.
@@ -122,7 +102,15 @@ class TodayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ReviewState state = context.watch<ReviewCubit>().state;
     final List<ReviewItem> due = state.dueToday;
-    if (due.isEmpty) return const SizedBox.shrink();
+    final Portion? portion = plan?.current;
+    final Surah? portionFrom = portion == null
+        ? null
+        : state.surahs[portion.from.surah];
+    final Surah? portionTo = portion == null
+        ? null
+        : state.surahs[portion.to.surah];
+    final bool showPortion = portionFrom != null && portionTo != null;
+    if (due.isEmpty && !showPortion) return const SizedBox.shrink();
     final ThemeData theme = Theme.of(context);
     final DateTime now = context.read<ReviewCubit>().clock();
 
@@ -144,18 +132,51 @@ class TodayCard extends StatelessWidget {
                   SizedBox(width: 8.w),
                   Expanded(
                     child: Text(
-                      LocaleKeys.reviewToday.tr(
-                        args: <String>[due.length.toLocalisedString()],
-                      ),
+                      due.isEmpty
+                          ? LocaleKeys.reviewTodayTitle.tr()
+                          : LocaleKeys.reviewToday.tr(
+                              args: <String>[due.length.toLocalisedString()],
+                            ),
                       style: theme.textTheme.titleSmall,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => context.pushNamed(AppRoutes.reviewsName),
-                    child: Text(LocaleKeys.reviewAll.tr()),
-                  ),
+                  if (due.isNotEmpty)
+                    TextButton(
+                      onPressed: () => context.pushNamed(AppRoutes.reviewsName),
+                      child: Text(LocaleKeys.reviewAll.tr()),
+                    ),
                 ],
               ),
+              if (showPortion)
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsetsDirectional.zero,
+                  leading: Icon(Icons.today, color: theme.colorScheme.primary),
+                  title: Text(
+                    rangeLabel(
+                      context,
+                      from: portion!.from,
+                      to: portion.to,
+                      fromSurah: portionFrom,
+                      toSurah: portionTo,
+                    ),
+                  ),
+                  subtitle: Text(
+                    LocaleKeys.planTodayShort.tr(
+                      args: <String>[
+                        (plan!.completed + 1).toLocalisedString(),
+                        plan!.portions.length.toLocalisedString(),
+                      ],
+                    ),
+                    style: theme.textTheme.labelSmall,
+                  ),
+                  trailing: IconButton(
+                    tooltip: LocaleKeys.planStart.tr(),
+                    onPressed: () => openPortion(context, portion),
+                    icon: const Icon(Icons.play_circle_outline),
+                  ),
+                  onTap: () => openPortion(context, portion),
+                ),
               for (final ReviewItem item in due.take(shown))
                 ListTile(
                   dense: true,

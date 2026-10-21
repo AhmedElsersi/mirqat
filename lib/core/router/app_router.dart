@@ -6,6 +6,7 @@ import '../../features/about/screen/developer_screen.dart';
 import '../../features/about/screen/idea_screen.dart';
 import '../../features/about/screen/how_to_use_screen.dart';
 import '../../features/about/screen/info_page_screen.dart';
+import '../../features/hifz_plan/screen/hifz_plan_screen.dart';
 import '../../features/history/screen/history_screen.dart';
 import '../../features/mushaf/mushaf_args.dart';
 import '../../features/mushaf/screen/mushaf_screen.dart';
@@ -114,6 +115,12 @@ class AppRouter {
         name: AppRoutes.similarName,
         builder: (BuildContext context, GoRouterState state) =>
             SimilarScreen(ayah: state.extra! as AyahRef),
+      ),
+      GoRoute(
+        path: AppRoutes.hifzPlanPath,
+        name: AppRoutes.hifzPlanName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const HifzPlanScreen(),
       ),
       GoRoute(
         path: AppRoutes.reviewsPath,

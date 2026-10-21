@@ -22,6 +22,7 @@ import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
 import '../../domain/engine/review_scheduler.dart';
 import '../../features/about/cubit/app_info_cubit.dart';
+import '../../features/hifz_plan/cubit/hifz_plan_cubit.dart';
 import '../../features/home/cubit/home_index_cubit.dart';
 import '../../features/mushaf/cubit/mushaf_cubit.dart';
 import '../../features/progress/cubit/progress_cubit.dart';
@@ -254,6 +255,12 @@ Future<void> configureDependencies() async {
       mutashabihatRepository: sl<MutashabihatRepository>(),
       quranRepository: sl<QuranRepository>(),
       pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
+  sl.registerFactory<HifzPlanCubit>(
+    () => HifzPlanCubit(
+      quranRepository: sl<QuranRepository>(),
+      settingsRepository: sl<SettingsRepository>(),
     ),
   );
   sl.registerFactory<ReviewCubit>(

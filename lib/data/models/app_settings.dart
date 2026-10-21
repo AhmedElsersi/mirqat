@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../core/theme/quran_font.dart';
 import 'reading_position.dart';
 
+import '../../domain/entities/hifz_plan.dart';
 import '../../domain/entities/session_config.dart';
 
 /// Theme preference. A local enum rather than Flutter's ThemeMode so the data
@@ -185,6 +186,7 @@ class AppSettings extends Equatable {
     this.showReadingRibbon = true,
     this.memorizationView = MemorizationView.off,
     this.showStumbles = true,
+    this.hifzPlan,
     this.onboardingSeen = false,
     this.updatePromptedAt,
   });
@@ -274,6 +276,10 @@ class AppSettings extends Equatable {
   /// default; the marks still make the drill longer either way.
   final bool showStumbles;
 
+  /// The reader's plan to memorize a range in so many days, if they made
+  /// one. Null: no plan.
+  final HifzPlan? hifzPlan;
+
   /// Whether the introduction has been shown. False for a fresh install —
   /// and for one updating from before there was an introduction, which is
   /// deliberate: that update is also when the player screen went away, and
@@ -317,6 +323,8 @@ class AppSettings extends Equatable {
     bool? showReadingRibbon,
     MemorizationView? memorizationView,
     bool? showStumbles,
+    HifzPlan? hifzPlan,
+    bool clearHifzPlan = false,
     bool? onboardingSeen,
     DateTime? updatePromptedAt,
   }) => AppSettings(
@@ -350,6 +358,7 @@ class AppSettings extends Equatable {
     showReadingRibbon: showReadingRibbon ?? this.showReadingRibbon,
     memorizationView: memorizationView ?? this.memorizationView,
     showStumbles: showStumbles ?? this.showStumbles,
+    hifzPlan: clearHifzPlan ? null : (hifzPlan ?? this.hifzPlan),
     onboardingSeen: onboardingSeen ?? this.onboardingSeen,
     updatePromptedAt: updatePromptedAt ?? this.updatePromptedAt,
   );
@@ -390,6 +399,7 @@ class AppSettings extends Equatable {
     'showReadingRibbon': showReadingRibbon,
     'memorizationView': memorizationView.storageValue,
     'showStumbles': showStumbles,
+    'hifzPlan': hifzPlan?.toMap(),
     'onboardingSeen': onboardingSeen,
     'updatePromptedAt': updatePromptedAt?.millisecondsSinceEpoch,
   };
@@ -450,6 +460,7 @@ class AppSettings extends Equatable {
     showReadingRibbon: map['showReadingRibbon'] as bool? ?? true,
     memorizationView: MemorizationView.fromStorage(map['memorizationView']),
     showStumbles: map['showStumbles'] != false,
+    hifzPlan: HifzPlan.fromMap(map['hifzPlan']),
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
     updatePromptedAt: map['updatePromptedAt'] is int
         ? DateTime.fromMillisecondsSinceEpoch(map['updatePromptedAt'] as int)
@@ -501,6 +512,7 @@ class AppSettings extends Equatable {
     showReadingRibbon,
     memorizationView,
     showStumbles,
+    hifzPlan,
     onboardingSeen,
     updatePromptedAt,
   ];

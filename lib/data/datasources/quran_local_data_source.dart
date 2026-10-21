@@ -4,6 +4,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../../core/constants/asset_paths.dart';
 import '../../core/error/exceptions.dart';
+import '../../domain/entities/ayah_ref.dart';
 import '../models/ayah.dart';
 import '../models/ayah_search_hit.dart';
 import '../models/ayah_timing.dart';
@@ -40,6 +41,15 @@ abstract class QuranLocalDataSource {
   /// `tool/build_quran_data.py`, and what comes back is the `text` column
   /// verbatim (CLAUDE.md A.2 rule 1).
   Future<List<AyahSearchHit>> searchAyahs(String needle, {required int limit});
+
+  /// Every ayah from [from] to [to], in mushaf order, with how long it is to
+  /// recite: the letters of its `text_search` column, spaces left out. That
+  /// column is derived at build time and never rendered, so measuring it
+  /// touches no text the reader sees (CLAUDE.md A.2 rule 1).
+  Future<List<({AyahRef ref, int weight})>> ayahWeights(
+    AyahRef from,
+    AyahRef to,
+  );
 
   Future<List<Reciter>> getReciters();
 
@@ -134,6 +144,28 @@ class QuranLocalDataSourceImpl implements QuranLocalDataSource {
     return List<AyahSearchHit>.unmodifiable(
       rows.map(AyahSearchHit.fromDbRow),
     );
+  }
+
+  @override
+  Future<List<({AyahRef ref, int weight})>> ayahWeights(
+    AyahRef from,
+    AyahRef to,
+  ) async {
+    final Database db = await _database.open();
+    final List<Map<String, Object?>> rows = await db.rawQuery(
+      'SELECT surah, ayah, LENGTH(REPLACE(text_search, \' \', \'\')) AS w '
+      'FROM ayahs WHERE id BETWEEN '
+      '(SELECT id FROM ayahs WHERE surah = ? AND ayah = ?) AND '
+      '(SELECT id FROM ayahs WHERE surah = ? AND ayah = ?) ORDER BY id',
+      <int>[from.surah, from.ayah, to.surah, to.ayah],
+    );
+    return <({AyahRef ref, int weight})>[
+      for (final Map<String, Object?> r in rows)
+        (
+          ref: AyahRef(r['surah']! as int, r['ayah']! as int),
+          weight: (r['w'] as int?) ?? 1,
+        ),
+    ];
   }
 
   @override

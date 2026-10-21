@@ -12,6 +12,7 @@ import 'package:mirqat/data/repositories/settings_repository.dart';
 import 'package:mirqat/domain/engine/repetition_plan_builder.dart';
 import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/domain/entities/playback_unit.dart';
+import 'package:mirqat/domain/entities/hifz_plan.dart';
 import 'package:mirqat/domain/entities/plan_step.dart';
 import 'package:mirqat/domain/entities/review_card.dart';
 import 'package:mirqat/domain/entities/session_config.dart';
@@ -878,6 +879,57 @@ void main() {
       cubit.dismissGrade();
       expect(cubit.state.gradeOffer, isNull);
       expect(reviews.cards, isEmpty);
+    });
+
+    final HifzPlan plan = HifzPlan(
+      from: s1a1,
+      to: s2a3,
+      days: 2,
+      started: DateTime(2026, 10, 19),
+      portions: const <Portion>[Portion(s1a1, s1a3), Portion(s2a1, s2a3)],
+    );
+
+    Future<SessionCubit> recitedWithPlan(AyahRef from, AyahRef to) async {
+      final SessionCubit cubit = await open(
+        stored: AppSettings(reciterId: 'b', hifzPlan: plan),
+      );
+      cubit.chooseRange(from, to);
+      await cubit.start();
+      for (final PlaybackUnit u in cubit.state.activePlan!.units) {
+        player.reach(u);
+        await settle();
+      }
+      await cubit.stop();
+      return cubit;
+    }
+
+    test('today\'s portion graded held moves the plan on', () async {
+      final SessionCubit cubit = await recitedWithPlan(s1a1, s1a3);
+      await cubit.grade(Grade.shaky);
+      expect(settings.saved.last.hifzPlan!.completed, 1);
+      expect(settings.saved.last.reciterId, 'b');
+    });
+
+    test('forgotten, the plan waits', () async {
+      final SessionCubit cubit = await recitedWithPlan(s1a1, s1a3);
+      await cubit.grade(Grade.forgot);
+      expect(
+        settings.saved.where((AppSettings s) => s.hifzPlan?.completed == 1),
+        isEmpty,
+      );
+    });
+
+    test('another range — even one inside the portion — is not the day\'s '
+        'work', () async {
+      final SessionCubit cubit = await recitedWithPlan(
+        s1a1,
+        const AyahRef(1, 2),
+      );
+      await cubit.grade(Grade.solid);
+      expect(
+        settings.saved.where((AppSettings s) => s.hifzPlan?.completed == 1),
+        isEmpty,
+      );
     });
 
     test('a new session takes the old question away', () async {

@@ -31,7 +31,8 @@ because the scheduler reads them.
 | (asked for) mushaf font page | done | `80e0018` |
 | 3 — review ladder, grading, today | done | `8c5f8ee` |
 | 4 — sleep timer, listen, three more | done | `06c89fc` |
-| 5 — mutashabihat | built; data awaits a QUL download (see NEW_IDEAS §4) | this commit |
+| 5 — mutashabihat | built; data awaits a QUL download (see NEW_IDEAS §4) | `951792d` |
+| 6a — hifz plan | done | this commit |
 
 ---
 

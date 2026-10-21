@@ -31,6 +31,10 @@ class AppRoutes {
   static const String similarPath = '/similar';
   static const String similarName = 'similar';
 
+  /// The hifz plan: made, and followed.
+  static const String hifzPlanPath = '/plan';
+  static const String hifzPlanName = 'hifz_plan';
+
   /// Every range kept on the review ladder.
   static const String reviewsPath = '/reviews';
   static const String reviewsName = 'reviews';

@@ -18,6 +18,7 @@ import '../../../domain/engine/repetition_plan_builder.dart';
 import '../../../domain/engine/review_scheduler.dart';
 import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/ayah_ref.dart';
+import '../../../domain/entities/hifz_plan.dart';
 import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/session_config.dart';
@@ -860,6 +861,25 @@ class SessionCubit extends Cubit<SessionState> {
             )
           : _scheduler.grade(existing, grade, now),
     );
+    if (grade != Grade.forgot) await _advancePlan(offer.from, offer.to);
+  }
+
+  /// Today's portion of the hifz plan, recited through and held: the plan
+  /// moves on to the next. Only that exact portion counts — a range that
+  /// happens to overlap it is not the day's work done.
+  Future<void> _advancePlan(AyahRef from, AyahRef to) async {
+    final AppSettings settings = await _freshSettings();
+    final HifzPlan? plan = settings.hifzPlan;
+    final Portion? today = plan?.current;
+    if (plan == null || today == null || today.from != from || today.to != to) {
+      return;
+    }
+    final AppSettings next = settings.copyWith(
+      hifzPlan: plan.copyWith(completed: plan.completed + 1),
+    );
+    final result = await _settings.save(next);
+    if (isClosed) return;
+    result.fold((Failure _) {}, (_) => emit(state.copyWith(defaults: next)));
   }
 
   /// Waves the question away. Nothing is written.

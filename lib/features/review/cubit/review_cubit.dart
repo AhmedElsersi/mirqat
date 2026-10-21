@@ -63,6 +63,7 @@ class ReviewState extends Equatable {
   const ReviewState({
     this.status = LoadStatus.initial,
     this.items = const <ReviewItem>[],
+    this.surahs = const <int, Surah>{},
     this.errorMessage,
   });
 
@@ -71,6 +72,9 @@ class ReviewState extends Equatable {
   /// Every card: the due ones first — new, recent, kept — then the rest by
   /// the day they fall due.
   final List<ReviewItem> items;
+
+  /// The catalog by number, to name ranges that are not cards.
+  final Map<int, Surah> surahs;
   final String? errorMessage;
 
   List<ReviewItem> get dueToday => <ReviewItem>[
@@ -79,7 +83,7 @@ class ReviewState extends Equatable {
   ];
 
   @override
-  List<Object?> get props => <Object?>[status, items, errorMessage];
+  List<Object?> get props => <Object?>[status, items, surahs, errorMessage];
 }
 
 /// The review ladder as the reader sees it: what is due today, and every
@@ -141,6 +145,7 @@ class ReviewCubit extends Cubit<ReviewState> {
     emit(
       ReviewState(
         status: LoadStatus.ready,
+        surahs: byNumber,
         items: <ReviewItem>[
           for (final ReviewCard c in <ReviewCard>[...due, ...later])
             ?_itemFor(c, byNumber, now),

@@ -361,7 +361,8 @@
     "grade_later": "Not now",
     "grade_solid": "Solid",
     "grade_shaky": "Shaky",
-    "grade_forgot": "Forgot"
+    "grade_forgot": "Forgot",
+    "today_title": "Today"
   },
   "sleep": {
     "title": "Sleep timer",
@@ -376,5 +377,24 @@
     "count": "Ayahs sharing its wording ({})",
     "listen": "Listen to this ayah",
     "source": "Similar phrases from QUL's “Mutashabihat ul Quran”; the shared words are shaded."
+  },
+  "plan": {
+    "title": "Memorization plan",
+    "hint": "Memorize a passage in a set number of days, a balanced portion each day",
+    "intro": "Choose what to memorize and in how many days. It is cut into daily portions of about equal length, never splitting an ayah. Today's portion appears on the home page.",
+    "range": "What to memorize",
+    "days": "Number of days",
+    "preview": "{} ayahs, about {} a day",
+    "create": "Start the plan",
+    "progress": "{} of {} portions memorized",
+    "behind": "Days behind schedule: {}",
+    "finished": "The plan is complete. May Allah bless it.",
+    "today": "Today's portion",
+    "today_short": "Today's portion · {} of {}",
+    "start": "Start",
+    "how_it_moves": "When you finish today's portion and grade it Solid or Shaky, the plan moves on to the next portion.",
+    "day": "Day {}",
+    "delete": "Give up the plan",
+    "delete_confirm": "The plan is removed. What you memorized, and its review schedule, stay as they are."
   }
 }
