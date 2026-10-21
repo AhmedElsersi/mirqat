@@ -17,7 +17,8 @@ enum AyahAction {
   /// handed to the platform's share sheet.
   share,
 
-  /// A session from this ayah to the end of its surah, started at once.
+  /// A memorization session from this ayah to the end of its surah, with
+  /// the session's repeats and joining, started at once.
   playFromHere,
 
   /// The rest of the surah recited straight through, once, with nothing
@@ -228,7 +229,7 @@ class AyahActionsSheet extends StatelessWidget {
             if (canPlay) ...<Widget>[
               action(
                 AyahAction.playFromHere,
-                Icons.play_arrow_outlined,
+                Icons.repeat,
                 LocaleKeys.mushafPlayFromHere.tr(),
               ),
               action(

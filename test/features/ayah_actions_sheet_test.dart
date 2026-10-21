@@ -130,9 +130,17 @@ void main() {
     (WidgetTester tester) async {
       await pump(tester);
       expect(entry(Icons.headphones_outlined), findsOneWidget);
+      expect(entry(Icons.repeat), findsOneWidget);
+      // Two different things, and the menu says so: one memorizes, with
+      // repeats and joining, the other plays the rest once.
+      expect(find.text('احفظ من هذه الآية إلى آخر السورة'), findsOneWidget);
+      expect(
+        find.text('استمع من هنا إلى آخر السورة، مرة واحدة'),
+        findsOneWidget,
+      );
       await pump(tester, canPlay: false);
       expect(entry(Icons.headphones_outlined), findsNothing);
-      expect(entry(Icons.play_arrow_outlined), findsNothing);
+      expect(entry(Icons.repeat), findsNothing);
     },
   );
 
