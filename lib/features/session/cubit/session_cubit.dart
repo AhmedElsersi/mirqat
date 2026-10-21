@@ -509,8 +509,10 @@ class SessionCubit extends Cubit<SessionState> {
   /// Lays [preset] over the settings as they stand — one tap for a way of
   /// working. Like any other change, under a running session it waits for
   /// the reader to say start again or carry on.
-  void applyPreset(SessionPreset preset) =>
-      _change((SessionConfig c) => preset.applyTo(c));
+  void applyPreset(SessionPreset preset, {String? key}) {
+    _change((SessionConfig c) => preset.applyTo(c));
+    if (key != null) _choosePreset(key);
+  }
 
   /// A way of working the reader saved, laid over the form like the others.
   void applySaved(SavedPreset saved) => applyPreset(
@@ -520,7 +522,18 @@ class SessionCubit extends Cubit<SessionState> {
       recallRounds: saved.recallRounds,
       chainRecall: saved.chainRecall,
     ),
+    key: savedPresetKey(saved.name),
   );
+
+  /// The key a saved way of working is shown as chosen by.
+  static String savedPresetKey(String name) => 'saved:$name';
+
+  /// Notes [key] as the chip chosen, against the form as it now stands.
+  void _choosePreset(String key) {
+    final SessionConfig? c = state.config;
+    if (c == null) return;
+    emit(state.copyWith(presetKey: key, presetWay: c));
+  }
 
   /// Saves the form's way of working under [name]. The same name again
   /// replaces it; past [SavedPreset.maxSaved] the oldest goes.
@@ -644,7 +657,7 @@ class SessionCubit extends Cubit<SessionState> {
   // --- defaults ------------------------------------------------------------
 
   /// Reloads the tuning from the persisted defaults, leaving the range alone.
-  void resetToDefaults() {
+  void resetToDefaults({String? key}) {
     final SessionConfig? c = state.config;
     if (c == null) return;
     final SessionConfig d = _fromDefaults(state.defaults);
@@ -667,6 +680,7 @@ class SessionCubit extends Cubit<SessionState> {
       ),
       rangeChosen: state.rangeChosen,
     );
+    if (key != null) _choosePreset(key);
   }
 
   /// The settings as they are stored *now*, to change one thing in. Not the

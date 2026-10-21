@@ -86,6 +86,8 @@ class SessionState extends Equatable {
     this.tasmee = false,
     this.tasmeeMarks = const <AyahRef>[],
     this.resumeOffer,
+    this.presetKey,
+    this.presetWay,
   });
 
   /// Whether the catalog, the reciters and the settings have been read.
@@ -177,6 +179,24 @@ class SessionState extends Equatable {
   /// A session the app was closed in the middle of, offered back on the bar
   /// until it is taken up, waved away, or a new session starts.
   final InterruptedSession? resumeOffer;
+
+  /// The way of working last chosen in the sheet — a key the sheet names its
+  /// chips by — and the form's way of working as that choice left it.
+  final String? presetKey;
+  final SessionConfig? presetWay;
+
+  /// The chip to show as chosen: the last one tapped, for as long as the form
+  /// still works the way it set. Changing one of its values by hand leaves
+  /// none chosen, rather than one that no longer says what the form does.
+  String? get activePreset {
+    final SessionConfig? c = config;
+    final SessionConfig? way = presetWay;
+    if (presetKey == null || c == null || way == null) return null;
+    return _wayOf(c) == _wayOf(way) ? presetKey : null;
+  }
+
+  static (int, ConnectMode, int, bool) _wayOf(SessionConfig c) =>
+      (c.repeatCount, c.connectMode, c.recallRounds, c.chainRecall);
 
   bool get isActive => phase == SessionPhase.active;
 
@@ -306,6 +326,8 @@ class SessionState extends Equatable {
     List<AyahRef>? tasmeeMarks,
     InterruptedSession? resumeOffer,
     bool clearResumeOffer = false,
+    String? presetKey,
+    SessionConfig? presetWay,
   }) => SessionState(
     ready: ready ?? this.ready,
     surahs: surahs ?? this.surahs,
@@ -341,6 +363,8 @@ class SessionState extends Equatable {
     tasmee: tasmee ?? this.tasmee,
     tasmeeMarks: tasmeeMarks ?? this.tasmeeMarks,
     resumeOffer: clearResumeOffer ? null : (resumeOffer ?? this.resumeOffer),
+    presetKey: presetKey ?? this.presetKey,
+    presetWay: presetWay ?? this.presetWay,
   );
 
   @override
@@ -373,5 +397,7 @@ class SessionState extends Equatable {
     tasmee,
     tasmeeMarks,
     resumeOffer,
+    presetKey,
+    presetWay,
   ];
 }

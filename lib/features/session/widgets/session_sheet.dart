@@ -497,34 +497,51 @@ class _Presets extends StatelessWidget {
         .select<SessionCubit, List<SavedPreset>>(
           (SessionCubit c) => c.state.defaults.savedPresets,
         );
-    Widget chip(String label, VoidCallback onTap) =>
-        ActionChip(label: Text(label), onPressed: onTap);
+    final String? chosen = context.select<SessionCubit, String?>(
+      (SessionCubit c) => c.state.activePreset,
+    );
+    // Choice chips: the one in use is marked, the way a choice is anywhere
+    // else in the sheet.
+    Widget chip(String key, String label, VoidCallback onTap) => ChoiceChip(
+      label: Text(label),
+      selected: chosen == key,
+      onSelected: (_) => onTap(),
+    );
     return SetupSection(
       label: LocaleKeys.presetsTitle.tr(),
       child: Wrap(
         spacing: 8.w,
         runSpacing: 4.h,
         children: <Widget>[
-          chip(LocaleKeys.presetsNew.tr(), cubit.resetToDefaults),
           chip(
+            'new',
+            LocaleKeys.presetsNew.tr(),
+            () => cubit.resetToDefaults(key: 'new'),
+          ),
+          chip(
+            'recent',
             LocaleKeys.presetsRecent.tr(),
-            () => cubit.applyPreset(SessionPreset.recent),
+            () => cubit.applyPreset(SessionPreset.recent, key: 'recent'),
           ),
           chip(
+            'old',
             LocaleKeys.presetsOld.tr(),
-            () => cubit.applyPreset(SessionPreset.old),
+            () => cubit.applyPreset(SessionPreset.old, key: 'old'),
           ),
           chip(
+            'deep',
             LocaleKeys.presetsDeep.tr(),
-            () => cubit.applyPreset(SessionPreset.deep),
+            () => cubit.applyPreset(SessionPreset.deep, key: 'deep'),
           ),
           chip(
+            'listen',
             LocaleKeys.presetsListen.tr(),
-            () => cubit.applyPreset(SessionPreset.listenLoop),
+            () => cubit.applyPreset(SessionPreset.listenLoop, key: 'listen'),
           ),
           for (final SavedPreset p in saved)
             InputChip(
               label: Text(p.name),
+              selected: chosen == SessionCubit.savedPresetKey(p.name),
               onPressed: () => cubit.applySaved(p),
               deleteButtonTooltipMessage: LocaleKeys.presetsDelete.tr(),
               onDeleted: () => _confirmDelete(context, cubit, p.name),

@@ -972,6 +972,37 @@ void main() {
       expect(cubit.state.plan!.units.any((PlaybackUnit u) => u.asked), isFalse);
     });
 
+    test('the chip tapped shows as chosen until one of its values is changed '
+        'by hand; a new range keeps it', () async {
+      final SessionCubit cubit = await open(reciterId: 'b');
+      cubit.chooseRange(s1a1, s1a3);
+      expect(cubit.state.activePreset, isNull);
+
+      cubit.applyPreset(SessionPreset.deep, key: 'deep');
+      expect(cubit.state.activePreset, 'deep');
+      cubit.chooseRange(const AyahRef(1, 2), s1a3);
+      expect(cubit.state.activePreset, 'deep');
+
+      cubit.applyPreset(SessionPreset.recent, key: 'recent');
+      expect(cubit.state.activePreset, 'recent');
+      cubit.setRepeatCount(cubit.state.config!.repeatCount + 1);
+      expect(cubit.state.activePreset, isNull);
+
+      cubit.resetToDefaults(key: 'new');
+      expect(cubit.state.activePreset, 'new');
+
+      cubit.applySaved(
+        const SavedPreset(
+          name: 'Fajr',
+          repeatCount: 3,
+          connectMode: ConnectMode.none,
+          recallRounds: 1,
+          chainRecall: false,
+        ),
+      );
+      expect(cubit.state.activePreset, SessionCubit.savedPresetKey('Fajr'));
+    });
+
     test('under a running session, a preset waits to be told', () async {
       final SessionCubit cubit = await open(reciterId: 'b');
       cubit.chooseRange(s1a1, s1a3);
