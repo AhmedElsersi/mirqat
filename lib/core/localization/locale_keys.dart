@@ -215,6 +215,15 @@ class LocaleKeys {
   static const String mushafFontHint = 'mushaf_font.hint';
   static const String mushafFontOnlyMatching = 'mushaf_font.only_matching';
   static const String mushafFontPreview = 'mushaf_font.preview';
+  static const String mushafFontQpcFontsCount = 'mushaf_font.qpc_fonts_count';
+  static const String mushafFontQpcFontsDelete = 'mushaf_font.qpc_fonts_delete';
+  static const String mushafFontQpcFontsDownloadAll = 'mushaf_font.qpc_fonts_download_all';
+  static const String mushafFontQpcFontsDownloading = 'mushaf_font.qpc_fonts_downloading';
+  static const String mushafFontQpcFontsFailed = 'mushaf_font.qpc_fonts_failed';
+  static const String mushafFontQpcFontsStop = 'mushaf_font.qpc_fonts_stop';
+  static const String mushafFontQpcFontsTitle = 'mushaf_font.qpc_fonts_title';
+  static const String mushafFontQpcV2 = 'mushaf_font.qpc_v2';
+  static const String mushafFontQpcV2Hint = 'mushaf_font.qpc_v2_hint';
   static const String mushafFontTitle = 'mushaf_font.title';
 
   static const String mutashabihatAllSurahs = 'mutashabihat.all_surahs';

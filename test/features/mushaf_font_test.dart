@@ -76,10 +76,23 @@ void main() {
       }
     });
 
-    test('each face has a family of its own', () {
+    test('each bundled face has a family of its own; the fetched one draws '
+        'its text in the default face, its pages in per-page families', () {
+      final List<QuranFont> bundled = <QuranFont>[
+        for (final QuranFont f in QuranFont.values)
+          if (f.assetPath != null) f,
+      ];
       expect(
-        QuranFont.values.map(AppTextStyles.quranFamilyOf).toSet(),
-        hasLength(QuranFont.values.length),
+        bundled.map(AppTextStyles.quranFamilyOf).toSet(),
+        hasLength(bundled.length),
+      );
+      expect(
+        AppTextStyles.quranFamilyOf(QuranFont.qpcV2),
+        AppTextStyles.quranFontFamily,
+      );
+      expect(
+        AppTextStyles.qpcPageFamily(3),
+        isNot(AppTextStyles.qpcPageFamily(4)),
       );
     });
   });
@@ -126,8 +139,14 @@ void main() {
       await open(tester);
       expect(cubit.state.previewAyah, isNotNull);
       expect(tester.takeException(), isNull);
-      // The preview, and one sample per face.
-      expect(find.byType(AyahText), findsNWidgets(1 + QuranFont.values.length));
+      // The preview, and one sample per bundled face; the page-font face is
+      // described instead.
+      expect(
+        find.byType(AyahText),
+        findsNWidgets(
+          1 + QuranFont.values.where((QuranFont f) => !f.pageFonts).length,
+        ),
+      );
       expect(
         find.byType(RadioListTile<QuranFont>),
         findsNWidgets(QuranFont.values.length),
@@ -139,7 +158,10 @@ void main() {
       WidgetTester tester,
     ) async {
       await open(tester);
-      for (final QuranFont font in QuranFont.values) {
+      for (final QuranFont font in <QuranFont>[
+        for (final QuranFont f in QuranFont.values)
+          if (!f.pageFonts) f,
+      ]) {
         final Finder option = find.byWidgetPredicate(
           (Widget w) => w is RadioListTile<QuranFont> && w.value == font,
         );

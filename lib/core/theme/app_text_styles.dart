@@ -38,6 +38,9 @@ class AppTextStyles {
   static String quranFamilyOf(QuranFont font) => switch (font) {
     QuranFont.hafsV22 => quranFontFamily,
     QuranFont.hafsV18 => 'QuranUthmaniV18',
+    // Its pages are drawn in their own fonts (see [mushafGlyph]); any other
+    // text in that setting is the default face's.
+    QuranFont.qpcV2 => quranFontFamily,
   };
 
   static TextStyle get displayLarge => TextStyle(
@@ -99,6 +102,21 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
     height: 2.0,
   );
+
+  /// The family a QPC V2 page font is registered under, at runtime, by
+  /// `QpcFontService`. Named here, like every Quran family.
+  static String qpcPageFamily(int page) => 'QpcV2Page$page';
+
+  /// One word of a QPC V2 page, drawn from its glyph code in the font of
+  /// [page]. Exact logical pixels, like [mushafWord].
+  ///
+  /// Call this from `AyahText` only, like [ayah].
+  static TextStyle mushafGlyph({required double fontSize, required int page}) =>
+      TextStyle(
+        fontFamily: qpcPageFamily(page),
+        fontSize: fontSize,
+        fontWeight: FontWeight.w400,
+      );
 
   /// One word on a mushaf page.
   ///

@@ -43,13 +43,20 @@ pair N times, and continues that pattern until the selected range is memorized.
    tool's `searchable()` by `test/core/search_text_db_test.dart`, which replays it
    over every ayah of the built database. Neither function is ever handed ayah text
    anywhere in `lib/`.
+   **The QPC V2 face does not breach this either.** It draws a mushaf page from
+   `words.glyph_v2` — each word's glyph code in the KFGQPC QCF2 font of its own page —
+   which the build pins to the very word `quran.db` holds by its text, or stops. The glyph
+   is the same word in that print's hand; `text` is untouched and is what every other
+   face, search and comparison use, and what a page falls back to while its font has
+   not arrived.
 2. **No surah-specific or reciter-specific code.** No `if (surah == 1)`, no hardcoded ayah
    counts, no hardcoded reciter IDs, no switch on surah number anywhere. Surahs come from
    `quran.db`, reciters from `reciters.json` and the audio manifest; both are pure data.
 3. **Network: public HTTPS GETs only.** The app may fetch the audio manifest, ayah audio
    and audio packs from the CDN; ayah audio from the host a manifest reciter's `audioPath`
    names in full (A.5, *a reciter without packs*); `app.json` from the same Pages site as
-   the manifest, and the one portrait it may name; and nothing else. No backend, no
+   the manifest, and the one portrait it may name; the QPC V2 page fonts, from the
+   manifest's `baseUrl` (A.5, *QPC V2 page fonts*); and nothing else. No backend, no
    accounts, no Firebase, no analytics, no crash reporting. `app.json` is the **only**
    remote config, and it is deliberately narrow: what the app says about itself, and which
    versions the stores are on (A.5). It is a static file anyone can read — nothing is
@@ -123,6 +130,8 @@ lib/
                      AudioAvailability, AyahDurationService, AudioPackService,
                      PackFetcher, MemorizationPlayerService, SessionPreambles,
                      PlaybackQueue, SessionMediaControls
+    QpcFontService   the QPC V2 page fonts: fetched a page at a time from the CDN, held to
+                     `assets/data/qpc_v2_fonts.json`, kept beside the audio, registered
     AppInfoService   `app.json`: about, goal, developer, update rules — cached, refreshed
     AppVersionService, update_policy   the running version, and what to say about it
     LinkOpener       hands an address to the device — mail, browser, WhatsApp
@@ -216,10 +225,23 @@ Read-only SQLite, built by `tool/build_quran_data.py` from the QUL sources in
 surahs(id, name_ar, name_translit, ayah_count, revelation, start_page, basmala_mode)
 ayahs (id, surah, ayah, text, page, juz, hizb, rub, text_search,
        sajda, sajda_type, first_word_id, last_word_id)
-words (id, surah, ayah, position, text, is_marker, page, line)
-lines (page, line, line_type, is_centered, surah_number, first_word_id, last_word_id)
+words (id, surah, ayah, position, text, is_marker, page, line,
+       glyph_v2, page_v2, line_v2)
+lines    (page, line, line_type, is_centered, surah_number, first_word_id, last_word_id)
+lines_v2 (the same, for the QPC V2 print)
 meta  (key, value)
 ```
+
+- `glyph_v2`, `page_v2`, `line_v2` and `lines_v2` are the QPC V2 print (the Madinah
+  mushaf's second KFGQPC edition), from `data/sources/qpc-v2-words.json`
+  (`tool/fetch_qpc_v2.py`, the public quran.com API serving QUL's data). The words and
+  their order are the same in both prints; a few dozen pages and some lines break
+  differently, so that print has its own page and line for every word and its own
+  lines. Where it sets two of `quran.db`'s words as one glyph («بَعۡدَ مَا», three
+  times) the second word's glyph is empty and it is drawn by the first. Headings take
+  the V1 layout's heading lines in reading order, on the lines the V2 print leaves
+  without words. `MushafLayout` picks the table and the page column; every page lookup
+  follows the layout of the reader's face.
 
 - `rub` is the rub' al-hizb, 1..240 — four to a hizb, from Tanzil's quarter starts
   (`data/sources/quran-metadata-rub.json`), verified at build time to agree with QUL's
@@ -470,6 +492,20 @@ the card is the first ayah of the last page read, as before). `SettingsRepositor
 broadcasts every save and `SettingsCubit` takes it up, and a writer that is not the
 settings cubit reads the stored map afresh before changing its one field. Without both, the
 next save writes a stale copy over what the others changed.
+
+### QPC V2 page fonts
+
+The QPC V2 face is 604 fonts, one per page (about 200 MB; 136 MB gzipped), so none
+ships. `tool/build_qpc_fonts.py` packs them deterministically (gzip, mtime 0) and writes
+`assets/data/qpc_v2_fonts.json` — each page's path, size and sha256 — and
+`tool/publish_fonts.dart` uploads them under `fonts/qpc-v2/pNNN.ttf.gz` beside the audio,
+refusing a path that already holds other bytes. `QpcFontService` fetches a page's font the
+first time that page is drawn in this face (or all of them, from the font page), checks
+length then digest against the bundled list before using it, unpacks it into
+`fonts/qpc_v2/` under application support, and registers it as
+`AppTextStyles.qpcPageFamily(page)`. Until a page's font is in, the page is drawn from its
+text in the bundled face, in the V2 layout; a failed fetch is quiet and retried after a
+minute.
 
 ### `assets/audio/silence_400ms.wav`
 A single short silent clip, used as a gap spacer inside the playback queue.

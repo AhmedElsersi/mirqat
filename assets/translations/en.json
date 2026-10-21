@@ -369,7 +369,16 @@
     "preview": "Preview",
     "only_matching": "Only typefaces made for this mushaf's script are offered, so every mark in it is drawn as it is, never changed.",
     "hafs_v22": "Uthmanic Hafs — version 2.2 (default)",
-    "hafs_v18": "Uthmanic Hafs — version 0.18"
+    "hafs_v18": "Uthmanic Hafs — version 0.18",
+    "qpc_v2": "Madinah Mushaf — QPC V2",
+    "qpc_v2_hint": "Each page in its own font, as the Madinah Mushaf prints it, line for line. A page's font is downloaded the first time you open it; until it arrives, the page is shown in the bundled font.",
+    "qpc_fonts_title": "Page fonts",
+    "qpc_fonts_count": "On this device: {} of {}",
+    "qpc_fonts_download_all": "Download every page's font ({})",
+    "qpc_fonts_downloading": "Downloading… {} of {}",
+    "qpc_fonts_stop": "Stop",
+    "qpc_fonts_delete": "Delete the page fonts",
+    "qpc_fonts_failed": "{} could not be downloaded; each will be fetched when its page is opened."
   },
   "review": {
     "title": "Review",

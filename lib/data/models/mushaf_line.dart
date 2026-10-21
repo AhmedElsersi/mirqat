@@ -1,6 +1,32 @@
 import 'package:equatable/equatable.dart';
 
 import '../../core/error/exceptions.dart';
+import '../../core/theme/quran_font.dart';
+
+/// Which printed layout a page's lines follow — which table of `quran.db`
+/// they are read from. The words, their order and their pages are the same
+/// in both; only where some lines break differs.
+enum MushafLayout {
+  /// The KFGQPC Hafs 15-line layout (QUL's V1 lines), which the Unicode
+  /// faces are set in.
+  hafs('lines', 'page'),
+
+  /// The QPC V2 print's own 15-line layout, which its page fonts are drawn
+  /// to: each of those fonts holds the words of one page, sized for its
+  /// lines.
+  qpcV2('lines_v2', 'page_v2');
+
+  const MushafLayout(this.table, this.pageColumn);
+
+  /// The table of this layout's lines, and the column of `words` holding
+  /// the page each word is printed on in it — the two prints break a few
+  /// dozen pages differently.
+  final String table;
+  final String pageColumn;
+
+  /// The layout [font] is drawn to.
+  static MushafLayout forFont(QuranFont font) => font.pageFonts ? qpcV2 : hafs;
+}
 
 /// What a mushaf line renders, from `quran.db`'s `lines.line_type`.
 enum LineType {

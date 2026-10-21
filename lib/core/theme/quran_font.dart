@@ -17,14 +17,30 @@ enum QuranFont {
   hafsV22('hafs_v22', 'assets/fonts/UthmanicHafs_V22.ttf'),
 
   /// The same script, version 0.18: the earlier cut of the face.
-  hafsV18('hafs_v18', 'assets/fonts/KFGQPCHafs-Uthmanic-v18.ttf');
+  hafsV18('hafs_v18', 'assets/fonts/KFGQPCHafs-Uthmanic-v18.ttf'),
+
+  /// The KFGQPC QPC V2 print: not one font but 604, one for each page, each
+  /// drawing its page's words from the glyph codes `quran.db` keeps for
+  /// them (`words.glyph_v2`), laid out by that print's own lines. None ships:
+  /// a page's font is fetched from the CDN when the page is first drawn
+  /// (`QpcFontService`). Everything that is not a mushaf page — and a page
+  /// whose font has not arrived — is drawn in [textFace].
+  qpcV2('qpc_v2', null);
 
   const QuranFont(this.storageValue, this.assetPath);
 
   final String storageValue;
 
-  /// The font file, as declared in `pubspec.yaml`.
-  final String assetPath;
+  /// The font file, as declared in `pubspec.yaml`. Null for a face that is
+  /// fetched rather than bundled.
+  final String? assetPath;
+
+  /// Whether this face draws mushaf pages from per-page fonts and glyph
+  /// codes, in the QPC V2 layout.
+  bool get pageFonts => this == qpcV2;
+
+  /// The bundled face that draws the text itself wherever this one does not.
+  QuranFont get textFace => assetPath == null ? fallback : this;
 
   static const QuranFont fallback = QuranFont.hafsV22;
 

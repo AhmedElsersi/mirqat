@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -42,6 +43,7 @@ class MushafPageView extends StatefulWidget {
     this.isHeldBack,
     this.textScale = 1,
     this.bottomInset = 0,
+    this.glyphPages = const <int>{},
     super.key,
   });
 
@@ -110,6 +112,11 @@ class MushafPageView extends StatefulWidget {
   /// the last lines can be brought out from under the bar.
   final double bottomInset;
 
+  /// The pages whose QPC V2 fonts are registered. Under that face, a word
+  /// whose page is here is drawn from its glyph; any other is drawn from its
+  /// text in the bundled face, in the same place, until its font arrives.
+  final Set<int> glyphPages;
+
   @override
   State<MushafPageView> createState() => _MushafPageViewState();
 }
@@ -133,20 +140,69 @@ class _MushafPageViewState extends State<MushafPageView> {
   /// the measurements are dropped when the reader changes it.
   QuranFont _font = QuranFont.fallback;
 
-  double _width(Word w) => _widthPerEm.putIfAbsent(
-    w.id,
-    () =>
-        AyahText.mushafWordWidth(
+  double _width(Word w) => _widthPerEm.putIfAbsent(w.id, () {
+    final (String? glyph, int? page) = _glyphOf(w);
+    return AyahText.mushafWordWidth(
           w.text,
           fontSize: _referenceSize,
           font: _font,
+          glyph: glyph,
+          glyphPage: page,
         ) /
-        _referenceSize,
-  );
+        _referenceSize;
+  });
 
   double get _lineHeight => _lineHeightPerEm ??=
-      AyahText.mushafLineHeight(fontSize: _referenceSize, font: _font) /
+      AyahText.mushafLineHeight(
+        fontSize: _referenceSize,
+        font: _font,
+        glyphPage:
+            _font.pageFonts && widget.glyphPages.contains(widget.page.number)
+            ? widget.page.number
+            : null,
+      ) /
       _referenceSize;
+
+  /// Whether a line of text is set centred. The layout says so for its own
+  /// short lines; under the QPC V2 face the print's own short lines — a
+  /// surah's last, before the next heading — are told by their length,
+  /// since that print breaks some of them elsewhere than the layout the
+  /// flags were written for. Its full lines fill the width by design.
+  bool _centres(
+    List<Word> words,
+    bool centered,
+    double fontSize,
+    double width,
+  ) {
+    if (centered || !_font.pageFonts) return centered;
+    final List<Word> drawn = _drawn(words);
+    if (drawn.isEmpty) return false;
+    final double natural =
+        drawn.map(_width).reduce((double a, double b) => a + b) * fontSize +
+        fontSize * _minGapEm * (drawn.length - 1);
+    return natural < width * 0.75;
+  }
+
+  /// The words of a line as they are drawn: all of them, but under the QPC
+  /// V2 face a word whose glyph is empty is left out — the V2 print sets it
+  /// and the word before as one glyph (see `words.glyph_v2`), drawn by that
+  /// word, and an empty child would take a gap of its own on a justified
+  /// line.
+  List<Word> _drawn(List<Word> words) => <Word>[
+    for (final Word w in words)
+      if (_glyphOf(w).$1 != '') w,
+  ];
+
+  /// [w]'s QPC V2 glyph and the page whose font draws it, when this face
+  /// draws pages that way and that font is in; otherwise none, and the word
+  /// is drawn from its text.
+  (String?, int?) _glyphOf(Word w) {
+    final String? glyph = w.glyphV2;
+    final int? page = w.pageV2;
+    if (!_font.pageFonts || glyph == null || page == null) return (null, null);
+    if (!widget.glyphPages.contains(page)) return (null, null);
+    return (glyph, page);
+  }
 
   /// The ayah the reader has uncovered by tapping one of its covered words,
   /// under the memorization view. One at a time; the next tap covers it
@@ -232,6 +288,11 @@ class _MushafPageViewState extends State<MushafPageView> {
       _peeked = null;
     }
     if (old.memorizationView != widget.memorizationView) _peeked = null;
+    // A font arrived: the words it draws measure differently now.
+    if (!setEquals(old.glyphPages, widget.glyphPages)) {
+      _widthPerEm.clear();
+      _lineHeightPerEm = null;
+    }
   }
 
   /// A tap anywhere on the page. While an ayah is uncovered it covers it
@@ -332,7 +393,7 @@ class _MushafPageViewState extends State<MushafPageView> {
                 SizedBox(
                   height: pitch,
                   width: width,
-                  child: _line(context, line, fontSize),
+                  child: _line(context, line, fontSize, width),
                 ),
             ],
           );
@@ -422,7 +483,7 @@ class _MushafPageViewState extends State<MushafPageView> {
     double size = double.infinity;
     for (final PageLine line in widget.page.lines) {
       final List<Word> words = switch (line) {
-        AyahLine(:final List<Word> words) => words,
+        AyahLine(:final List<Word> words) => _drawn(words),
         BasmalaLine(:final List<Word> words) => words,
         SurahHeaderLine() => const <Word>[],
       };
@@ -437,34 +498,47 @@ class _MushafPageViewState extends State<MushafPageView> {
     return size * _safety;
   }
 
-  Widget _line(BuildContext context, PageLine line, double fontSize) =>
-      switch (line) {
-        SurahHeaderLine(:final surah) => _SurahHeader(
-          name: surah.nameAr,
+  Widget _line(
+    BuildContext context,
+    PageLine line,
+    double fontSize,
+    double width,
+  ) => switch (line) {
+    SurahHeaderLine(:final surah) => _SurahHeader(
+      name: surah.nameAr,
+      fontSize: fontSize,
+    ),
+    BasmalaLine(:final List<Word> words) => _centred(<Widget>[
+      // Belongs to no ayah: drawn, never tappable.
+      for (final Word w in words)
+        AyahText.word(
+          text: w.text,
           fontSize: fontSize,
+          glyph: _glyphOf(w).$1,
+          glyphPage: _glyphOf(w).$2,
         ),
-        BasmalaLine(:final List<Word> words) => _centred(<Widget>[
-          // Belongs to no ayah: drawn, never tappable.
-          for (final Word w in words)
-            AyahText.word(text: w.text, fontSize: fontSize),
-        ], fontSize),
-        AyahLine(:final List<Word> words, :final bool centered) => CustomPaint(
-          painter: _TintBands(
-            widths: <double>[for (final Word w in words) _width(w) * fontSize],
-            tints: <WordTint>[for (final Word w in words) _tintFor(w)],
-            underlined: <bool>[for (final Word w in words) _isStumbled(w)],
-            centredGap: centered ? fontSize * _minGapEm : null,
-            bandHeight: fontSize * _lineHeight,
-            colors: Theme.of(context).colorScheme,
-          ),
-          child: centered
-              ? _centred(_words(words, fontSize), fontSize)
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: _words(words, fontSize),
-                ),
-        ),
-      };
+    ], fontSize),
+    AyahLine(:final List<Word> words, :final bool centered) => CustomPaint(
+      painter: _TintBands(
+        widths: <double>[
+          for (final Word w in _drawn(words)) _width(w) * fontSize,
+        ],
+        tints: <WordTint>[for (final Word w in _drawn(words)) _tintFor(w)],
+        underlined: <bool>[for (final Word w in _drawn(words)) _isStumbled(w)],
+        centredGap: _centres(words, centered, fontSize, width)
+            ? fontSize * _minGapEm
+            : null,
+        bandHeight: fontSize * _lineHeight,
+        colors: Theme.of(context).colorScheme,
+      ),
+      child: _centres(words, centered, fontSize, width)
+          ? _centred(_words(_drawn(words), fontSize), fontSize)
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: _words(_drawn(words), fontSize),
+            ),
+    ),
+  };
 
   Widget _centred(List<Widget> children, double fontSize) => Row(
     mainAxisAlignment: MainAxisAlignment.center,
@@ -484,6 +558,8 @@ class _MushafPageViewState extends State<MushafPageView> {
         // does not break at every ayah's end.
         AyahText.word(
           text: w.text,
+          glyph: _glyphOf(w).$1,
+          glyphPage: _glyphOf(w).$2,
           fontSize: fontSize,
           isMarker: true,
           tint: _tintFor(w),
@@ -496,6 +572,8 @@ class _MushafPageViewState extends State<MushafPageView> {
           onTap: _onPageTap,
           child: AyahText.word(
             text: w.text,
+            glyph: _glyphOf(w).$1,
+            glyphPage: _glyphOf(w).$2,
             fontSize: fontSize,
             heldBack: true,
           ),
@@ -515,6 +593,8 @@ class _MushafPageViewState extends State<MushafPageView> {
               widthFactor: 1,
               child: AyahText.word(
                 text: w.text,
+                glyph: _glyphOf(w).$1,
+                glyphPage: _glyphOf(w).$2,
                 fontSize: fontSize,
                 tint: _tintFor(w),
                 paintsTint: false,

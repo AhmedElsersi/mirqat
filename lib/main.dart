@@ -20,7 +20,9 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/quran_font.dart';
 import 'core/theme/window_chrome.dart';
 import 'core/widgets/ayah_text.dart';
+import 'data/datasources/quran_pages_local_data_source.dart';
 import 'data/models/app_settings.dart';
+import 'data/models/mushaf_line.dart';
 import 'features/settings/cubit/settings_cubit.dart';
 import 'features/update/cubit/update_cubit.dart';
 import 'features/update/widgets/update_gate.dart';
@@ -93,6 +95,8 @@ class IqraWartaqApp extends StatefulWidget {
   @override
   State<IqraWartaqApp> createState() => _IqraWartaqAppState();
 }
+// review the whole app, and if you can suggest a better design do it as screens in a new folder call it design in the project directory make it modern and suitable to the
+// app idea and scope
 
 class _IqraWartaqAppState extends State<IqraWartaqApp>
     with WidgetsBindingObserver {
@@ -122,6 +126,9 @@ class _IqraWartaqAppState extends State<IqraWartaqApp>
     _settingsSub = cubit.stream.listen((SettingsState state) {
       final ThemeMode next = _themeModeOf(state.settings.themeMode);
       final QuranFont font = state.settings.quranFont;
+      // Every page lookup follows the print the face is drawn to: a surah
+      // opened from the index lands on its page in that print.
+      sl<QuranPagesLocalDataSource>().activeLayout = MushafLayout.forFont(font);
       if (!mounted || (next == _themeMode && font == _quranFont)) return;
       setState(() {
         _themeMode = next;

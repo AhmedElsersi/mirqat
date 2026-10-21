@@ -87,10 +87,16 @@ void main() {
     expect(needed.length, greaterThan(40));
   });
 
-  for (final QuranFont font in QuranFont.values) {
+  // The bundled faces draw the text itself. The QPC V2 face draws a page
+  // from glyph codes in that page's own font, fetched at run time; what it
+  // draws when a font is missing is its bundled text face, checked here.
+  for (final QuranFont font in <QuranFont>[
+    for (final QuranFont f in QuranFont.values)
+      if (f.assetPath != null) f,
+  ]) {
     test('${font.name} has a glyph for every codepoint quran.db holds', () {
       final Set<int> missing = needed.difference(
-        cmapCodepoints(font.assetPath),
+        cmapCodepoints(font.assetPath!),
       );
       expect(
         missing.map((int c) => 'U+${c.toRadixString(16).toUpperCase()}'),
@@ -105,6 +111,14 @@ void main() {
       );
     });
   }
+
+  test('a fetched face draws its fallback text in a bundled one', () {
+    for (final QuranFont font in QuranFont.values) {
+      expect(font.textFace.assetPath, isNotNull, reason: font.name);
+    }
+    expect(QuranFont.qpcV2.textFace, QuranFont.fallback);
+    expect(QuranFont.fromStorage('qpc_v2'), QuranFont.qpcV2);
+  });
 
   test('Amiri Quran is not offered, and this is why: it lacks a mark the '
       'text uses — in this encoding a mark of the KFGQPC script', () {

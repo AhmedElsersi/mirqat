@@ -14,6 +14,8 @@ Sources expected in data/sources/ :
     quran-metadata-rub.json         (rub' al-hizb quarters, from Tanzil's
                                      quran-data.xml quarter starts)
     quran-metadata-sajda.json       (optional fallback)
+    qpc-v2-words.json               the QPC V2 print, word by word: glyph code,
+                                    page and line (tool/fetch_qpc_v2.py)
 
 Usage:
     python3 tools/build_quran_data.py
@@ -34,6 +36,7 @@ SCRIPT_DB = SRC / "qpc-hafs-word-by-word.db"
 LAYOUT_DB = SRC / "qpc-v1-15-lines.db"
 SURAH_JSON = SRC / "quran-metadata-surah-name.json"
 AYAH_JSON = SRC / "quran-metadata-ayah.json"
+V2_JSON = SRC / "qpc-v2-words.json"
 
 ARABIC_DIGITS = set("٠١٢٣٤٥٦٧٨٩")
 
@@ -77,12 +80,27 @@ CREATE TABLE words (
   text      TEXT NOT NULL,
   is_marker INTEGER NOT NULL DEFAULT 0,
   page      INTEGER,
-  line      INTEGER
+  line      INTEGER,
+  glyph_v2  TEXT,
+  page_v2   INTEGER,
+  line_v2   INTEGER
 );
 CREATE INDEX idx_word_page ON words(page, line);
+CREATE INDEX idx_word_page_v2 ON words(page_v2, line_v2);
 CREATE INDEX idx_word_ayah ON words(surah, ayah, position);
 
 CREATE TABLE lines (
+  page          INTEGER NOT NULL,
+  line          INTEGER NOT NULL,
+  line_type     TEXT NOT NULL,
+  is_centered   INTEGER NOT NULL DEFAULT 0,
+  surah_number  INTEGER,
+  first_word_id INTEGER,
+  last_word_id  INTEGER,
+  PRIMARY KEY (page, line)
+);
+
+CREATE TABLE lines_v2 (
   page          INTEGER NOT NULL,
   line          INTEGER NOT NULL,
   line_type     TEXT NOT NULL,
@@ -252,6 +270,116 @@ def load_layout(out):
     if orphans:
         die(f"{orphans:,} words are not covered by any layout line — your layout DB and "
             f"script DB are not a matching pair")
+
+
+def load_v2(out):
+    """The QPC V2 print laid over the words: each word's glyph in its page's
+    font, and the page and line that print puts it on; then that print's own
+    lines, in `lines_v2`.
+
+    Pinned by text, never by position: a V2 word must be the very word
+    quran.db holds — the same KFGQPC Hafs text — or the build stops. Where
+    the V2 print sets two of quran.db's words as one glyph («بَعۡدَ مَا», three
+    times), the first word carries the glyph and the second an empty one: it
+    is drawn by its neighbour, and keeps its own place to be tapped.
+    """
+    v2 = json.loads(V2_JSON.read_text(encoding="utf-8"))["words"]
+    by_ayah = {}
+    for s, a, pos, kind, glyph, page, line, text in v2:
+        by_ayah.setdefault((s, a), []).append((pos, kind, glyph, page, line, text))
+    ours = {}
+    for wid, s, a, text, marker in out.execute(
+            "SELECT id, surah, ayah, text, is_marker FROM words ORDER BY id"):
+        ours.setdefault((s, a), []).append((wid, text, marker))
+    if set(by_ayah) != set(ours):
+        die("qpc-v2-words.json and the script DB do not hold the same ayahs")
+
+    updates, joined, moved = [], [], []
+    for key, mine in ours.items():
+        theirs = sorted(by_ayah[key])
+        i = j = 0
+        last_place = None
+        while i < len(mine) and j < len(theirs):
+            wid, text, marker = mine[i]
+            _, kind, glyph, page, line, vtext = theirs[j]
+            if (kind == "end") != bool(marker):
+                die(f"{key[0]}:{key[1]}: word {i + 1} is a marker in one print only")
+            # An ayah's number closes it: it can never sit before the ayah's
+            # last word. The source has it so once (84:21, the sajda), and
+            # the marker goes to that word's line.
+            if marker and last_place is not None and (page, line) < last_place:
+                moved.append(f"{key[0]}:{key[1]}")
+                page, line = last_place
+            last_place = (page, line)
+            if vtext == text:
+                updates.append((glyph, page, line, wid))
+                i += 1
+            elif i + 1 < len(mine) and vtext == f"{text} {mine[i + 1][1]}":
+                updates.append((glyph, page, line, wid))
+                updates.append(("", page, line, mine[i + 1][0]))
+                joined.append(f"{key[0]}:{key[1]}")
+                i += 2
+            else:
+                die(f"{key[0]}:{key[1]}: word {i + 1} is «{text}» here and "
+                    f"«{vtext}» in the V2 print")
+            j += 1
+        if i != len(mine) or j != len(theirs):
+            die(f"{key[0]}:{key[1]}: the two prints do not end together")
+    out.executemany(
+        "UPDATE words SET glyph_v2 = ?, page_v2 = ?, line_v2 = ? WHERE id = ?",
+        updates)
+    print(f"  V2 glyphs: {len(updates):,} words; set as one glyph with the next "
+          f"word: {', '.join(joined)}; marker moved after its ayah: "
+          f"{', '.join(moved) or 'none'}")
+    build_lines_v2(out)
+
+
+def build_lines_v2(out):
+    """`lines_v2`: the V2 print's lines. A line of text is the words the V2
+    print puts on it. A heading or basmala line holds no words, so it is
+    whatever line of a page the words leave empty — and which heading it is
+    comes from the V1 layout's own heading lines, taken in the same reading
+    order: both prints head the same surahs in the same order, only on lines
+    that sit elsewhere. Each is checked to fall between the surah before and
+    the surah it opens."""
+    word_lines = out.execute(
+        "SELECT page_v2, line_v2, MIN(id), MAX(id), COUNT(*) FROM words "
+        "GROUP BY page_v2, line_v2 ORDER BY page_v2, line_v2").fetchall()
+    for page, line, first, last, n in word_lines:
+        if last - first + 1 != n:
+            die(f"V2 page {page} line {line}: its words are not one run")
+    lines_per_page = dict(out.execute(
+        "SELECT page, COUNT(*) FROM lines GROUP BY page").fetchall())
+    used = {(p, l) for p, l, *_ in word_lines}
+    empty = [(p, l) for p in sorted(lines_per_page)
+             for l in range(1, lines_per_page[p] + 1) if (p, l) not in used]
+    headings = out.execute(
+        "SELECT line_type, surah_number FROM lines WHERE line_type <> 'ayah' "
+        "ORDER BY page, line").fetchall()
+    if len(empty) != len(headings):
+        die(f"the V2 print leaves {len(empty)} lines without words; the V1 "
+            f"layout has {len(headings)} heading lines")
+    centred = {(f, l) for f, l in out.execute(
+        "SELECT first_word_id, last_word_id FROM lines "
+        "WHERE line_type = 'ayah' AND is_centered = 1").fetchall()}
+    first_of = dict(((s, p), (pg, ln)) for s, p, pg, ln in out.execute(
+        "SELECT surah, 0, page_v2, line_v2 FROM words WHERE ayah = 1 AND "
+        "position = 1").fetchall())
+    rows = [(p, l, "ayah", 1 if (f, la) in centred or p <= 2 else 0, None, f, la)
+            for p, l, f, la, _ in word_lines]
+    heading = None
+    for (p, l), (kind, surah) in zip(empty, headings):
+        # A basmala line names no surah: it belongs to the heading above it.
+        heading = surah if surah not in (None, "") else heading
+        opens = first_of.get((heading, 0))
+        if opens is None or (p, l) >= opens:
+            die(f"V2 page {p} line {l} would head surah {heading}, which does "
+                f"not begin after it")
+        rows.append((p, l, kind, 0, surah, None, None))
+    out.executemany(
+        "INSERT INTO lines_v2 (page, line, line_type, is_centered, surah_number,"
+        " first_word_id, last_word_id) VALUES (?,?,?,?,?,?,?)", rows)
+    print(f"  V2 lines: {len(rows):,} ({len(empty)} headings and basmalas)")
 
 
 def build_ayahs(out):
@@ -497,6 +625,20 @@ def verify(out):
         ("An-Nas has 6 ayahs",
          "SELECT ayah_count FROM surahs WHERE id = 114", 6),
         ("last page is 604", "SELECT MAX(page) FROM ayahs", 604),
+        ("every word has a V2 glyph",
+         "SELECT COUNT(*) FROM words WHERE glyph_v2 IS NULL", 0),
+        ("every word has a V2 place",
+         "SELECT COUNT(*) FROM words WHERE page_v2 IS NULL OR line_v2 IS NULL", 0),
+        ("604 V2 pages", "SELECT COUNT(DISTINCT page) FROM lines_v2", 604),
+        ("no V2 page over 15 lines",
+         "SELECT COUNT(*) FROM (SELECT page FROM lines_v2 GROUP BY page "
+         "HAVING COUNT(*) > 15)", 0),
+        ("every V2 page has as many lines as its V1 page",
+         "SELECT COUNT(*) FROM (SELECT page, COUNT(*) AS n FROM lines GROUP BY page) a "
+         "JOIN (SELECT page, COUNT(*) AS n FROM lines_v2 GROUP BY page) b "
+         "USING (page) WHERE a.n <> b.n", 0),
+        ("V2 headings: 114 surahs named",
+         "SELECT COUNT(*) FROM lines_v2 WHERE line_type = 'surah_name'", 114),
     ]
     failed = []
     for label, sql, expected in checks:
@@ -527,7 +669,7 @@ def main():
         inspect()
         return
 
-    for p in (SCRIPT_DB, LAYOUT_DB, SURAH_JSON):
+    for p in (SCRIPT_DB, LAYOUT_DB, SURAH_JSON, V2_JSON):
         if not p.exists():
             die(f"missing source file: {p}")
         if p.stat().st_size == 0:
@@ -551,7 +693,8 @@ def main():
     apply_ranges(out, SRC / "quran-metadata-rub.json", "rub", "rub_number", 240)
     apply_sajdas(out, SRC / "quran-metadata-sajda.json")
     cross_check_ayahs(out, AYAH_JSON, skip_text="--no-text-check" in sys.argv)
-    out.execute("INSERT INTO meta (key, value) VALUES ('schema_version', '3')")
+    load_v2(out)
+    out.execute("INSERT INTO meta (key, value) VALUES ('schema_version', '4')")
     out.commit()
 
     print("\nverifying:")

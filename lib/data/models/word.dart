@@ -17,6 +17,8 @@ class Word extends Equatable {
     required this.isMarker,
     required this.page,
     required this.line,
+    this.glyphV2,
+    this.pageV2,
   });
 
   final int id;
@@ -37,6 +39,16 @@ class Word extends Equatable {
   final int page;
   final int line;
 
+  /// This word's glyph in the QPC V2 font of its own [page]: one codepoint
+  /// that only that page's font draws, and draws as this word. The text the
+  /// reader sees in that face is the same word; [text] stays what every
+  /// other face, search and comparison use. Null where the build had none.
+  final String? glyphV2;
+
+  /// The page the QPC V2 print sets this word on — the page whose font draws
+  /// [glyphV2]. Usually [page]; a few dozen pages break differently there.
+  final int? pageV2;
+
   factory Word.fromRow(Map<String, Object?> row) => Word(
     id: row['id']! as int,
     surahNumber: row['surah']! as int,
@@ -46,6 +58,8 @@ class Word extends Equatable {
     isMarker: (row['is_marker']! as int) != 0,
     page: row['page']! as int,
     line: row['line']! as int,
+    glyphV2: row['glyph_v2'] as String?,
+    pageV2: row['page_v2'] as int?,
   );
 
   @override
@@ -58,5 +72,7 @@ class Word extends Equatable {
     isMarker,
     page,
     line,
+    glyphV2,
+    pageV2,
   ];
 }

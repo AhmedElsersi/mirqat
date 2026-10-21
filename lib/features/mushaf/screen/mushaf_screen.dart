@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -15,6 +17,7 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/mushaf_line.dart';
 import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_position.dart';
 import '../../../data/models/surah.dart';
@@ -22,6 +25,7 @@ import '../../../data/models/word.dart';
 import '../../../data/models/mutashabihat.dart';
 import '../../../data/repositories/mutashabihat_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
+import '../../../services/qpc_font_service.dart';
 import '../../../services/share_service.dart';
 import '../../session/cubit/session_cubit.dart';
 import '../../session/cubit/session_state.dart';
@@ -30,6 +34,7 @@ import '../../session/session_request.dart';
 import '../../session/widgets/session_bar.dart';
 import '../../session/widgets/session_sheet.dart';
 import '../../settings/cubit/settings_cubit.dart';
+import '../../settings/cubit/settings_state.dart';
 import '../../surah_list/widgets/error_view.dart';
 import '../cubit/mushaf_cubit.dart';
 import '../cubit/mushaf_page.dart';
@@ -53,11 +58,14 @@ class MushafScreen extends StatelessWidget {
     return MultiBlocProvider(
       providers: <BlocProvider<dynamic>>[
         BlocProvider<MushafCubit>(
-          create: (_) => sl<MushafCubit>()
+          create: (BuildContext context) => sl<MushafCubit>()
             ..init(
               initialAyah: args.initialAyah,
               initialPage: args.initialPage ?? 1,
               section: args.section,
+              layout: MushafLayout.forFont(
+                context.read<SettingsCubit>().state.settings.quranFont,
+              ),
             ),
         ),
         // The session belongs to the reading screen: it plays over this text
@@ -288,6 +296,14 @@ class _MushafViewState extends State<MushafView> with WidgetsBindingObserver {
 
     return MultiBlocListener(
       listeners: <BlocListener<dynamic, dynamic>>[
+        // A face drawn to the other print lays the pages out by its lines.
+        BlocListener<SettingsCubit, SettingsState>(
+          listenWhen: (SettingsState a, SettingsState b) =>
+              a.settings.quranFont.pageFonts != b.settings.quranFont.pageFonts,
+          listener: (BuildContext context, SettingsState state) => context
+              .read<MushafCubit>()
+              .setLayout(MushafLayout.forFont(state.settings.quranFont)),
+        ),
         // What "play" would mean follows the page, until the reader chooses.
         BlocListener<MushafCubit, MushafState>(
           listenWhen: (MushafState a, MushafState b) =>
@@ -822,7 +838,15 @@ class _PageSlot extends StatelessWidget {
                 (SettingsCubit c) => c.state.settings.memorizationView,
               );
 
-        return MushafPageView(
+        // Under the QPC V2 face a page is drawn in its own font, and a
+        // basmala line in page 1's, whose words it is. Asked for here, where
+        // the page is about to be drawn; it is drawn from the bundled face
+        // until they are in.
+        final bool pageFonts = context.select<SettingsCubit, bool>(
+          (SettingsCubit c) => c.state.settings.quranFont.pageFonts,
+        );
+        Widget view(Set<int> glyphPages) => MushafPageView(
+          glyphPages: glyphPages,
           page: page,
           linesPerFullPage: state.linesPerFullPage,
           textScale: textScale,
@@ -843,6 +867,24 @@ class _PageSlot extends StatelessWidget {
           onWordLongPress: (Word word) => _openAyah(context, cubit, word),
           onWordTap: tasmee ? (Word word) => _noteSlip(context, word) : null,
           bottomInset: bottomInset,
+        );
+        if (!pageFonts) return view(const <int>{});
+
+        final QpcFontService fonts = sl<QpcFontService>();
+        final Set<int> wanted = <int>{
+          pageNumber,
+          if (page.lines.any((PageLine l) => l is BasmalaLine)) 1,
+        };
+        if (!fonts.loaded.value.containsAll(wanted)) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            for (final int p in wanted) {
+              unawaited(fonts.ensure(p));
+            }
+          });
+        }
+        return ValueListenableBuilder<Set<int>>(
+          valueListenable: fonts.loaded,
+          builder: (_, Set<int> loaded, _) => view(loaded),
         );
       },
     );

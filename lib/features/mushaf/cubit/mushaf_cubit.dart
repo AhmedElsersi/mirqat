@@ -59,6 +59,11 @@ class MushafCubit extends Cubit<MushafState> {
   final Map<int, Future<void>> _building = <int, Future<void>>{};
   int _requestToken = 0;
 
+  /// Which printed layout the pages follow: the one the reader's face is
+  /// drawn to (see `QuranFont.layout`).
+  MushafLayout _layout = MushafLayout.hafs;
+  MushafLayout get layout => _layout;
+
   /// Opens at [initialAyah]'s page when given, otherwise at [initialPage].
   /// With a [section], only that surah or juz is on show, and the opening
   /// page is held inside it.
@@ -66,7 +71,9 @@ class MushafCubit extends Cubit<MushafState> {
     AyahRef? initialAyah,
     int initialPage = 1,
     SectionRequest? section,
+    MushafLayout layout = MushafLayout.hafs,
   }) async {
+    _layout = layout;
     emit(state.copyWith(status: LoadStatus.loading));
     try {
       final int pageCount = await _unwrap(_pages.pageCount());
@@ -88,7 +95,11 @@ class MushafCubit extends Cubit<MushafState> {
       final int wanted = initialAyah == null
           ? (section == null ? initialPage : resolved!.firstPage)
           : await _unwrap(
-              _pages.pageForAyah(initialAyah.surah, initialAyah.ayah),
+              _pages.pageForAyah(
+                initialAyah.surah,
+                initialAyah.ayah,
+                layout: _layout,
+              ),
             );
       final int start = wanted.clamp(
         resolved?.firstPage ?? 1,
@@ -157,7 +168,7 @@ class MushafCubit extends Cubit<MushafState> {
     }
 
     final int firstPage = await _unwrap(
-      _pages.pageForAyah(first.surah, first.ayah),
+      _pages.pageForAyah(first.surah, first.ayah, layout: _layout),
     );
     return ReadingSection(
       kind: request.kind,
@@ -165,7 +176,9 @@ class MushafCubit extends Cubit<MushafState> {
       first: first,
       last: last,
       firstPage: firstPage,
-      lastPage: await _unwrap(_pages.pageForAyah(last.surah, last.ayah)),
+      lastPage: await _unwrap(
+        _pages.pageForAyah(last.surah, last.ayah, layout: _layout),
+      ),
       total: total,
       leadPage: await _leadPageOf(first, firstPage),
     );
@@ -176,7 +189,9 @@ class MushafCubit extends Cubit<MushafState> {
   /// line of one page and their first ayah at the top of the next.
   Future<int?> _leadPageOf(AyahRef first, int firstPage) async {
     if (first.ayah != 1) return null;
-    final int? heading = await _unwrap(_pages.surahHeadingPage(first.surah));
+    final int? heading = await _unwrap(
+      _pages.surahHeadingPage(first.surah, layout: _layout),
+    );
     return heading != null && heading < firstPage ? heading : null;
   }
 
@@ -207,7 +222,7 @@ class MushafCubit extends Cubit<MushafState> {
       final int start = at == null
           ? section.firstPage
           : (await _unwrap(
-              _pages.pageForAyah(at.surah, at.ayah),
+              _pages.pageForAyah(at.surah, at.ayah, layout: _layout),
             )).clamp(section.firstPage, section.lastPage);
       if (isClosed) return;
 
@@ -227,6 +242,38 @@ class MushafCubit extends Cubit<MushafState> {
       await ensurePage(start);
       _warmNeighbours(start);
       unawaited(recordPosition());
+    } on _Failed catch (e) {
+      if (!isClosed) emit(state.copyWith(errorMessage: e.failure.message));
+    }
+  }
+
+  /// Lays the pages out by [layout] from now on — the reader chose a face
+  /// drawn to another print. The pages built so far are dropped and the
+  /// reader stays on the page they were on; a surah or juz on show is
+  /// resolved again, since a heading may sit on another page in the other
+  /// print.
+  Future<void> setLayout(MushafLayout layout) async {
+    if (layout == _layout) return;
+    _layout = layout;
+    if (state.status != LoadStatus.ready) return;
+    try {
+      final ReadingSection? old = state.section;
+      final ReadingSection? section = old == null
+          ? null
+          : await _resolve(old.request);
+      if (isClosed) return;
+      _building.clear();
+      emit(
+        state.copyWith(
+          section: section,
+          epoch: state.epoch + 1,
+          pages: const <int, MushafPage>{},
+          failedPages: const <int, String>{},
+          initialPage: state.currentPage,
+        ),
+      );
+      await ensurePage(state.currentPage);
+      _warmNeighbours(state.currentPage);
     } on _Failed catch (e) {
       if (!isClosed) emit(state.copyWith(errorMessage: e.failure.message));
     }
@@ -284,7 +331,9 @@ class MushafCubit extends Cubit<MushafState> {
 
   Future<Either<Failure, MushafPage>> _buildPage(int page) async {
     try {
-      final List<MushafLine> lines = await _unwrap(_pages.linesForPage(page));
+      final List<MushafLine> lines = await _unwrap(
+        _pages.linesForPage(page, layout: _layout),
+      );
 
       // One query for every word on the page, then each line takes its range.
       final List<MushafLine> ranged = <MushafLine>[
@@ -317,7 +366,7 @@ class MushafCubit extends Cubit<MushafState> {
       // show, not from the neighbour's lines above it.
       final Word? firstShown = partial ? _firstWord(shown) : null;
       final PageInfo? info = await _unwrap(
-        _pages.pageInfo(page, fromWordId: firstShown?.id),
+        _pages.pageInfo(page, fromWordId: firstShown?.id, layout: _layout),
       );
 
       return Right<Failure, MushafPage>(
@@ -345,7 +394,9 @@ class MushafCubit extends Cubit<MushafState> {
     if (section == null || lead == null || page != section.firstPage) {
       return const <PageLine>[];
     }
-    final List<MushafLine> lines = await _unwrap(_pages.linesForPage(lead));
+    final List<MushafLine> lines = await _unwrap(
+      _pages.linesForPage(lead, layout: _layout),
+    );
     return _inSection(<PageLine>[
       for (final MushafLine line in lines)
         if (line.lineType != LineType.ayah)
@@ -498,7 +549,11 @@ class MushafCubit extends Cubit<MushafState> {
       return;
     }
 
-    final Either<Failure, int> page = await _pages.pageForAyah(surah, ayah);
+    final Either<Failure, int> page = await _pages.pageForAyah(
+      surah,
+      ayah,
+      layout: _layout,
+    );
     if (isClosed) return;
     await page.fold(
       (Failure f) async => emit(state.copyWith(errorMessage: f.message)),

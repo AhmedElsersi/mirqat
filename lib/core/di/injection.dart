@@ -58,6 +58,7 @@ import '../../services/audio/pack_fetcher.dart';
 import '../../services/audio/reciter_catalog.dart';
 import '../../services/keep_awake_service.dart';
 import '../../services/link_opener.dart';
+import '../../services/qpc_font_service.dart';
 import '../../services/reciter_image_cache.dart';
 import '../../services/share_service.dart';
 
@@ -170,6 +171,14 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<ReciterImageCache>(
     () => ReciterImageCache(audioStorage: sl<AudioStorage>()),
     dispose: (ReciterImageCache c) => c.close(),
+  );
+  sl.registerLazySingleton<QpcFontService>(
+    () => QpcFontService(
+      assets: sl<AssetReader>(),
+      manifestService: sl<ManifestService>(),
+      audioStorage: sl<AudioStorage>(),
+    ),
+    dispose: (QpcFontService s) => s.close(),
   );
   sl.registerLazySingleton<AudioResolver>(
     () => AudioResolver(

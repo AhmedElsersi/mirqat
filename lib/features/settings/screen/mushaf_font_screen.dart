@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/desktop.dart';
+import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/theme/quran_font.dart';
@@ -13,8 +16,10 @@ import '../../../core/widgets/session_controls.dart';
 import '../../../core/widgets/settings_card.dart';
 import '../../../data/models/app_settings.dart';
 import '../../../data/models/ayah.dart';
+import '../../../services/qpc_font_service.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
+import 'downloads_screen.dart' show megabytes;
 
 /// The mushaf's face and its size, with a real ayah drawn the way the pages
 /// will draw it — chosen here, on a page of its own, rather than guessed at
@@ -61,6 +66,7 @@ class MushafFontScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (settings.quranFont.pageFonts) const _QpcFonts(),
                     Padding(
                       padding: EdgeInsetsDirectional.only(top: 4.h),
                       child: Text(
@@ -164,7 +170,14 @@ class _FontOption extends StatelessWidget {
       contentPadding: EdgeInsetsDirectional.zero,
       value: font,
       title: Text(_nameKey(font).tr()),
-      subtitle: ayah == null
+      // Its pages are drawn in fonts fetched page by page: said in words, not
+      // shown in a face the sample would only borrow.
+      subtitle: font.pageFonts
+          ? Text(
+              LocaleKeys.mushafFontQpcV2Hint.tr(),
+              style: Theme.of(context).textTheme.bodySmall,
+            )
+          : ayah == null
           ? null
           : QuranFontScope(
               font: font,
@@ -180,5 +193,152 @@ class _FontOption extends StatelessWidget {
   static String _nameKey(QuranFont font) => switch (font) {
     QuranFont.hafsV22 => LocaleKeys.mushafFontHafsV22,
     QuranFont.hafsV18 => LocaleKeys.mushafFontHafsV18,
+    QuranFont.qpcV2 => LocaleKeys.mushafFontQpcV2,
   };
+}
+
+/// The QPC V2 page fonts on this device: how many, every one fetched at
+/// once for reading offline, or all of them removed.
+class _QpcFonts extends StatefulWidget {
+  const _QpcFonts();
+
+  @override
+  State<_QpcFonts> createState() => _QpcFontsState();
+}
+
+class _QpcFontsState extends State<_QpcFonts> {
+  final QpcFontService _fonts = sl<QpcFontService>();
+  int? _onDevice;
+  ({int pages, int bytes})? _totals;
+  (int, int)? _progress;
+  bool _stop = false;
+  int _failed = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+  }
+
+  Future<void> _refresh() async {
+    final int count = await _fonts.downloadedCount();
+    final ({int pages, int bytes}) totals = await _fonts.totals();
+    if (!mounted) return;
+    setState(() {
+      _onDevice = count;
+      _totals = totals;
+    });
+  }
+
+  Future<void> _downloadAll() async {
+    setState(() {
+      _stop = false;
+      _failed = 0;
+      _progress = (0, _totals?.pages ?? 0);
+    });
+    final int failed = await _fonts.downloadAll(
+      onProgress: (int done, int total) {
+        if (mounted) setState(() => _progress = (done, total));
+      },
+      cancelled: () => _stop || !mounted,
+    );
+    if (!mounted) return;
+    setState(() {
+      _progress = null;
+      _failed = failed;
+    });
+    await _refresh();
+  }
+
+  Future<void> _delete() async {
+    await _fonts.deleteAll();
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ({int pages, int bytes})? totals = _totals;
+    final int? onDevice = _onDevice;
+    final (int, int)? progress = _progress;
+    if (totals == null || onDevice == null) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(8.w, 4.h, 8.w, 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            LocaleKeys.mushafFontQpcFontsTitle.tr(),
+            style: theme.textTheme.titleSmall,
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            LocaleKeys.mushafFontQpcFontsCount.tr(
+              args: <String>[
+                onDevice.toLocalisedString(),
+                totals.pages.toLocalisedString(),
+              ],
+            ),
+            style: theme.textTheme.bodySmall,
+          ),
+          SizedBox(height: 8.h),
+          if (progress != null) ...<Widget>[
+            LinearProgressIndicator(
+              value: progress.$2 == 0 ? null : progress.$1 / progress.$2,
+            ),
+            SizedBox(height: 4.h),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    LocaleKeys.mushafFontQpcFontsDownloading.tr(
+                      args: <String>[
+                        progress.$1.toLocalisedString(),
+                        progress.$2.toLocalisedString(),
+                      ],
+                    ),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _stop = true),
+                  child: Text(LocaleKeys.mushafFontQpcFontsStop.tr()),
+                ),
+              ],
+            ),
+          ] else ...<Widget>[
+            if (onDevice < totals.pages)
+              OutlinedButton.icon(
+                onPressed: _downloadAll,
+                icon: const Icon(Icons.download_outlined),
+                label: Text(
+                  LocaleKeys.mushafFontQpcFontsDownloadAll.tr(
+                    args: <String>[
+                      LocaleKeys.downloadsSizeMb.tr(
+                        args: <String>[megabytes(totals.bytes)],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (onDevice > 0)
+              TextButton.icon(
+                onPressed: _delete,
+                icon: const Icon(Icons.delete_outline),
+                label: Text(LocaleKeys.mushafFontQpcFontsDelete.tr()),
+              ),
+            if (_failed > 0)
+              Text(
+                LocaleKeys.mushafFontQpcFontsFailed.tr(
+                  args: <String>[_failed.toLocalisedString()],
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
 }

@@ -115,6 +115,8 @@ class AyahText extends StatefulWidget {
        heldBack = false,
        paintsTint = true,
        veiled = false,
+       glyph = null,
+       glyphPage = null,
        tint = WordTint.none;
 
   /// One word of a mushaf page line, byte-for-byte from quran.db.
@@ -130,6 +132,8 @@ class AyahText extends StatefulWidget {
     this.heldBack = false,
     this.paintsTint = true,
     this.veiled = false,
+    this.glyph,
+    this.glyphPage,
     super.key,
   }) : ayahs = null,
        _word = true,
@@ -155,6 +159,8 @@ class AyahText extends StatefulWidget {
        heldBack = false,
        paintsTint = true,
        veiled = false,
+       glyph = null,
+       glyphPage = null,
        tint = WordTint.none;
 
   /// Verbatim ayah text, byte-for-byte from `quran.db`. Never generated, never
@@ -197,6 +203,14 @@ class AyahText extends StatefulWidget {
   /// the next build with `veiled: false` is the hand lifting.
   final bool veiled;
 
+  /// [AyahText.word] only: the word's QPC V2 glyph code (`words.glyph_v2`)
+  /// and the page whose font draws it. Given both, the word is drawn from the
+  /// glyph in that page's font — the same word, in the QPC V2 print's hand;
+  /// [text] is what it is in every other face. The caller gives them only
+  /// once that page's font is registered.
+  final String? glyph;
+  final int? glyphPage;
+
   /// The colour behind a tinted word, or null for none. Shared with the page,
   /// which paints a marked run as one band along the line, so that a marked
   /// ayah reads as a stroke of highlighter and not as a row of boxes.
@@ -211,28 +225,49 @@ class AyahText extends StatefulWidget {
     WordTint.veiled => colors.primary.withValues(alpha: 0.1),
   };
 
-  /// Width of [text] as [AyahText.word] draws it at [fontSize] in [font].
+  /// Width of [text] as [AyahText.word] draws it at [fontSize] in [font] —
+  /// or of [glyph] in [glyphPage]'s font, when both are given.
   static double mushafWordWidth(
     String text, {
     required double fontSize,
     QuranFont font = QuranFont.fallback,
-  }) => _mushafPainter(text, fontSize, font).width;
+    String? glyph,
+    int? glyphPage,
+  }) => _mushafPainter(text, fontSize, font, glyph, glyphPage).width;
 
   /// Natural line height of the mushaf face at [fontSize], tall marks
-  /// included.
+  /// included — of [glyphPage]'s font, when given.
   static double mushafLineHeight({
     required double fontSize,
     QuranFont font = QuranFont.fallback,
-  }) => _mushafPainter(' ', fontSize, font).preferredLineHeight;
+    int? glyphPage,
+  }) => _mushafPainter(
+    ' ',
+    fontSize,
+    font,
+    glyphPage == null ? null : ' ',
+    glyphPage,
+  ).preferredLineHeight;
+
+  static TextStyle _wordStyle(
+    double fontSize,
+    QuranFont font,
+    String? glyph,
+    int? glyphPage,
+  ) => glyph != null && glyphPage != null
+      ? AppTextStyles.mushafGlyph(fontSize: fontSize, page: glyphPage)
+      : AppTextStyles.mushafWord(fontSize: fontSize, font: font);
 
   static TextPainter _mushafPainter(
     String text,
     double fontSize,
     QuranFont font,
+    String? glyph,
+    int? glyphPage,
   ) => TextPainter(
     text: TextSpan(
-      text: text,
-      style: AppTextStyles.mushafWord(fontSize: fontSize, font: font),
+      text: glyph != null && glyphPage != null ? glyph : text,
+      style: _wordStyle(fontSize, font, glyph, glyphPage),
     ),
     textDirection: TextDirection.rtl,
     textScaler: TextScaler.noScaling,
@@ -318,15 +353,22 @@ class _AyahTextState extends State<AyahText> {
     final QuranFont font = QuranFontScope.of(context);
 
     if (widget._word) {
+      final bool drawnAsGlyph =
+          widget.glyph != null && widget.glyphPage != null;
       return Text(
-        widget.text,
+        drawnAsGlyph ? widget.glyph! : widget.text,
         textDirection: TextDirection.rtl,
         textScaler: TextScaler.noScaling,
         // One word never wraps. No maxLines: that would clip, and scripture
         // is never truncated (CLAUDE.md A.2 rule 7).
         softWrap: false,
-        style: AppTextStyles.mushafWord(fontSize: widget.fontSize, font: font)
-            .copyWith(
+        style:
+            AyahText._wordStyle(
+              widget.fontSize,
+              font,
+              widget.glyph,
+              widget.glyphPage,
+            ).copyWith(
               // A veiled word keeps its place and its width; only its ink is
               // withheld, for the reader to supply from memory.
               color: (widget.isMarker ? colors.primary : colors.onSurface)
