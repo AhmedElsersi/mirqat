@@ -198,6 +198,7 @@ class LocaleKeys {
   static const String mushafSetRangeStart = 'mushaf.set_range_start';
   static const String mushafShare = 'mushaf.share';
   static const String mushafShareAyah = 'mushaf.share_ayah';
+  static const String mushafSharePage = 'mushaf.share_page';
   static const String mushafSimilarAyahs = 'mushaf.similar_ayahs';
   static const String mushafSimilarMore = 'mushaf.similar_more';
   static const String mushafSimilarResembles = 'mushaf.similar_resembles';

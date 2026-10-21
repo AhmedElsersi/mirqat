@@ -88,6 +88,34 @@ class AyahShareCard extends StatelessWidget {
   );
 }
 
+/// Captures what [boundary] draws — a [RepaintBoundary]'s key — and hands it
+/// to the platform's share sheet. False when there was nothing to capture or
+/// the share did not go.
+Future<bool> shareBoundary(
+  GlobalKey boundary, {
+  required String filename,
+  required String caption,
+}) async {
+  final RenderObject? render = boundary.currentContext?.findRenderObject();
+  if (render is! RenderRepaintBoundary) return false;
+
+  // 3x the card's logical size: crisp on any feed the image lands in.
+  final ui.Image image = await render.toImage(pixelRatio: 3);
+  try {
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    if (png == null) return false;
+    return sl<ShareService>().shareImage(
+      png.buffer.asUint8List(),
+      filename: filename,
+      text: caption,
+    );
+  } finally {
+    image.dispose();
+  }
+}
+
 /// Shows the card a long-pressed ayah would be shared as, and shares it.
 ///
 /// The card is laid out at its full size inside a [RepaintBoundary] and only
@@ -114,7 +142,11 @@ class _AyahShareDialogState extends State<AyahShareDialog> {
 
     final String caption =
         '${LocaleKeys.mushafAyahReference.tr(args: <String>[_surahName(context), widget.ayah.number.toLocalisedString()])} — ${LocaleKeys.appName.tr()}';
-    final bool shared = await _captureAndShare(caption);
+    final bool shared = await shareBoundary(
+      _card,
+      filename: 'ayah_${widget.ayah.surahNumber}_${widget.ayah.number}.png',
+      caption: caption,
+    );
 
     if (!mounted) return;
     if (shared) {
@@ -124,27 +156,6 @@ class _AyahShareDialogState extends State<AyahShareDialog> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(LocaleKeys.commonError.tr())));
-    }
-  }
-
-  Future<bool> _captureAndShare(String caption) async {
-    final RenderObject? render = _card.currentContext?.findRenderObject();
-    if (render is! RenderRepaintBoundary) return false;
-
-    // 3x the card's logical size: crisp on any feed the image lands in.
-    final ui.Image image = await render.toImage(pixelRatio: 3);
-    try {
-      final ByteData? png = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
-      if (png == null) return false;
-      return sl<ShareService>().shareImage(
-        png.buffer.asUint8List(),
-        filename: 'ayah_${widget.ayah.surahNumber}_${widget.ayah.number}.png',
-        text: caption,
-      );
-    } finally {
-      image.dispose();
     }
   }
 

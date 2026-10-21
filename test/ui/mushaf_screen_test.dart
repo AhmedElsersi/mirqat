@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_actions_sheet.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_share_dialog.dart';
 import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
+import 'package:mirqat/features/mushaf/widgets/page_share_dialog.dart';
 import 'package:mirqat/features/session/widgets/session_bar.dart';
 import 'package:mirqat/features/mushaf/widgets/paper_turn.dart';
 import 'package:mirqat/data/models/app_settings.dart';
@@ -309,10 +311,7 @@ void main() {
 
       double room() => tester
           .state<ScrollableState>(
-            find.descendant(
-              of: pageView(1),
-              matching: find.byType(Scrollable),
-            ),
+            find.descendant(of: pageView(1), matching: find.byType(Scrollable)),
           )
           .position
           .maxScrollExtent;
@@ -443,6 +442,81 @@ void main() {
       expect(File(path).lengthSync(), greaterThan(0));
       // Handed over, so the dialog has closed.
       expect(find.byType(AyahShareDialog), findsNothing);
+    });
+
+    testWidgets('the page an ayah is on can be shared whole: drawn as the '
+        'reading view draws it, nothing to scroll, handed over as a png', (
+      WidgetTester tester,
+    ) async {
+      final MushafCubit cubit = await openMushaf(tester);
+
+      final List<MethodCall> calls = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('com.mirqat.app/share'),
+        (MethodCall call) async {
+          calls.add(call);
+          return null;
+        },
+      );
+
+      // A full page of fifteen lines is the most a card has to hold: shown
+      // first, straight from the dialog, to see that it fits.
+      await real(tester, () => cubit.ensurePage(3));
+      unawaited(
+        showDialog<void>(
+          context: tester.element(find.byType(MushafView)),
+          builder: (_) => PageShareDialog(
+            page: cubit.state.pages[3]!,
+            linesPerFullPage: cubit.state.linesPerFullPage,
+          ),
+        ),
+      );
+      await frames(tester);
+      for (final ScrollableState s in tester.stateList<ScrollableState>(
+        find.descendant(
+          of: find.byType(PageShareCard),
+          matching: find.byType(Scrollable),
+        ),
+      )) {
+        expect(s.position.maxScrollExtent, 0, reason: 'a full page fits whole');
+      }
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text(LocaleKeys.commonCancel.tr()));
+      await frames(tester);
+      expect(find.byType(PageShareDialog), findsNothing);
+
+      // And from the menu, as a reader reaches it.
+      await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.text(LocaleKeys.mushafSharePage.tr()));
+      await frames(tester);
+
+      final Finder card = find.byType(PageShareCard);
+      expect(card, findsOneWidget);
+      final MushafPageView drawn = tester.widget(
+        find.descendant(of: card, matching: find.byType(MushafPageView)),
+      );
+      expect(drawn.page, cubit.state.pages[1]);
+      expect(drawn.highlighted, isNull);
+      expect(drawn.ribbon, isFalse);
+      expect(tester.takeException(), isNull);
+
+      await tester.runAsync(() async {
+        await tester.tap(find.text(LocaleKeys.mushafShare.tr()));
+        await tester.pump();
+        for (int i = 0; i < 200 && calls.isEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      });
+      await frames(tester);
+
+      expect(calls, hasLength(1));
+      final Map<Object?, Object?> args =
+          calls.single.arguments as Map<Object?, Object?>;
+      expect(args['mimeType'], 'image/png');
+      expect(args['path']! as String, endsWith('page_1.png'));
+      expect(File(args['path']! as String).lengthSync(), greaterThan(0));
+      expect(find.byType(PageShareDialog), findsNothing);
     });
 
     testWidgets('an ayah can be marked as where the reader stopped: the sheet '

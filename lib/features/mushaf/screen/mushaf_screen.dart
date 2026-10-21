@@ -40,6 +40,7 @@ import '../widgets/ayah_actions_sheet.dart';
 import '../widgets/ayah_share_dialog.dart';
 import '../widgets/mushaf_fold.dart';
 import '../widgets/mushaf_page_view.dart';
+import '../widgets/page_share_dialog.dart';
 import '../widgets/paper_turn.dart';
 
 class MushafScreen extends StatelessWidget {
@@ -938,6 +939,17 @@ class _PageSlot extends StatelessWidget {
         await settings.clearReadingMark();
       case AyahAction.share:
         if (context.mounted) await _shareAyah(context, surah, ayah);
+      case AyahAction.sharePage:
+        final MushafPage? page = cubit.state.pages[word.page];
+        if (page != null && context.mounted) {
+          await showDialog<void>(
+            context: context,
+            builder: (_) => PageShareDialog(
+              page: page,
+              linesPerFullPage: cubit.state.linesPerFullPage,
+            ),
+          );
+        }
       case AyahAction.listenFromHere:
         await session.applyRequest(
           SessionRequest(

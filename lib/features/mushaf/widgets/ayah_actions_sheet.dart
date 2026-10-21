@@ -17,6 +17,10 @@ enum AyahAction {
   /// handed to the platform's share sheet.
   share,
 
+  /// Share the whole page the ayah is on as an image, drawn as the reading
+  /// view draws it.
+  sharePage,
+
   /// The rest of the surah recited straight through, once, with nothing
   /// drilled — listening, the way talqeen begins.
   listenFromHere,
@@ -216,12 +220,18 @@ class AyahActionsSheet extends StatelessWidget {
                   ],
                 ),
               ),
-            if (canShare)
+            if (canShare) ...<Widget>[
               action(
                 AyahAction.share,
                 Icons.adaptive.share,
                 LocaleKeys.mushafShareAyah.tr(),
               ),
+              action(
+                AyahAction.sharePage,
+                Icons.menu_book_outlined,
+                LocaleKeys.mushafSharePage.tr(),
+              ),
+            ],
             if (canPlay) ...<Widget>[
               action(
                 AyahAction.listenFromHere,
