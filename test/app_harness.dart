@@ -32,6 +32,10 @@ import 'package:mirqat/data/repositories/reading_history_repository.dart';
 import 'package:mirqat/data/repositories/settings_repository.dart';
 import 'package:mirqat/data/models/reading_position.dart';
 import 'package:mirqat/data/datasources/reading_history_local_data_source.dart';
+import 'package:mirqat/data/datasources/practice_local_data_source.dart';
+import 'package:mirqat/data/datasources/settings_local_data_source.dart';
+import 'package:mirqat/data/repositories/practice_repository.dart';
+import 'package:mirqat/domain/entities/practice_stats.dart';
 import 'package:mirqat/data/models/reciter.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/core/router/app_router.dart';
@@ -135,6 +139,25 @@ class _FixedManifestReader implements AssetReader {
   Future<String> loadString(String path) async => contents;
 }
 
+/// The bundled `app.json` — about, goal, the developer's card — with its
+/// `update` and `maintenance` sections removed, so what the stores are on
+/// never decides whether a test can see the app.
+class _WithoutReleaseRules implements AssetReader {
+  const _WithoutReleaseRules();
+
+  @override
+  Future<String> loadString(String path) async {
+    final Map<String, dynamic> json =
+        jsonDecode(await const FileAssetReader().loadString(path))
+            as Map<String, dynamic>;
+    return jsonEncode(
+      json
+        ..remove('update')
+        ..remove('maintenance'),
+    );
+  }
+}
+
 /// Boots the app the way `main` does, against a throwaway Hive directory.
 ///
 /// Hive is initialised once per test file rather than per test: closing and
@@ -203,9 +226,13 @@ class AppHarness {
     // `app.json` the same way: the bundled copy off disk, a network that is
     // never there, and no cache. And a version, since package_info_plus has no
     // implementation here either.
+    // The update rules and the closed sign are taken out: the bundled file
+    // follows what is published, and a release moving `latest` past
+    // [installedVersion] once put an update prompt over every test in the
+    // suite. update_gate_test publishes its own rules.
     sl.unregister<AppInfoService>();
     sl.registerLazySingleton<AppInfoService>(
-      () => offlineAppInfo(const FileAssetReader()),
+      () => offlineAppInfo(const _WithoutReleaseRules()),
       dispose: (AppInfoService s) => s.dispose(),
     );
     sl.unregister<AppVersionService>();
@@ -291,14 +318,30 @@ class AppHarness {
       () => ReadingHistoryRepositoryImpl(sl<ReadingHistoryLocalDataSource>()),
     );
 
+    // The same, for what a session writes as the reading screen closes: the
+    // place it had reached, so it can be picked up (settings), and the day's
+    // practice. flutter_test unmounts the tree under the fake clock once the
+    // test body is done, so those writes always start where they cannot
+    // finish. A fresh store per test, too, so nothing needs clearing.
+    // Persistence itself is settings_persistence_test's and
+    // practice_persistence_test's to cover.
+    sl.unregister<SettingsRepository>();
+    sl.unregister<SettingsLocalDataSource>();
+    sl.registerLazySingleton<SettingsLocalDataSource>(InMemorySettings.new);
+    sl.registerLazySingleton<SettingsRepository>(
+      () => SettingsRepositoryImpl(sl<SettingsLocalDataSource>()),
+    );
+    sl.unregister<PracticeRepository>();
+    sl.unregister<PracticeLocalDataSource>();
+    sl.registerLazySingleton<PracticeLocalDataSource>(InMemoryPractice.new);
+    sl.registerLazySingleton<PracticeRepository>(
+      () => PracticeRepositoryImpl(sl<PracticeLocalDataSource>()),
+    );
+
     await Hive.box<Map<dynamic, dynamic>>(AppConstants.progressBoxName).clear();
     await Hive.box<Map<dynamic, dynamic>>(
       AppConstants.reviewCardsBoxName,
     ).clear();
-    await Hive.box<Map<dynamic, dynamic>>(
-      AppConstants.practiceDaysBoxName,
-    ).clear();
-    await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
     // Every test but the introduction's own starts as someone who has already
     // seen it; [freshInstall] puts that back. The home is pinned to the list:
     // the app's own default is the mushaf, which would throw the reading view
@@ -318,7 +361,6 @@ class AppHarness {
   /// the app's own mushaf default would open the reading view over the test,
   /// and its real database load cannot complete inside the test zone.
   static Future<void> freshInstall() async {
-    await Hive.box<Map<dynamic, dynamic>>(AppConstants.settingsBoxName).clear();
     await sl<SettingsRepository>().save(
       const AppSettings(homeViewMode: HomeViewMode.list),
     );
@@ -616,4 +658,43 @@ class InMemoryReadingHistory implements ReadingHistoryLocalDataSource {
   @override
   Future<void> write(List<ReadingPosition> positions) async =>
       _positions = List<ReadingPosition>.unmodifiable(positions);
+}
+
+/// Settings held in a field, for widget tests. See where it is registered
+/// for why the real, Hive-backed one cannot be used under them.
+class InMemorySettings implements SettingsLocalDataSource {
+  AppSettings _settings = const AppSettings();
+
+  @override
+  Future<void> open() async {}
+
+  @override
+  Future<AppSettings> read() async => _settings;
+
+  @override
+  Future<void> write(AppSettings settings) async => _settings = settings;
+}
+
+/// The practice log held in a map, for widget tests, for the same reason.
+class InMemoryPractice implements PracticeLocalDataSource {
+  final Map<DateTime, PracticeDay> _days = <DateTime, PracticeDay>{};
+
+  static DateTime _day(DateTime at) => DateTime(at.year, at.month, at.day);
+
+  @override
+  Future<void> open() async {}
+
+  @override
+  Future<void> add(DateTime day, PracticeDay practice) async =>
+      _days[_day(day)] = (_days[_day(day)] ?? const PracticeDay()).plus(
+        practice,
+      );
+
+  @override
+  Future<void> set(DateTime day, PracticeDay practice) async =>
+      _days[_day(day)] = practice;
+
+  @override
+  Future<Map<DateTime, PracticeDay>> all() async =>
+      Map<DateTime, PracticeDay>.of(_days);
 }

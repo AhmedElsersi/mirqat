@@ -11,6 +11,8 @@ import 'package:mirqat/features/progress/screen/progress_screen.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/features/settings/screen/downloads_screen.dart';
 import 'package:mirqat/features/settings/screen/mushaf_download_screen.dart';
+import 'package:mirqat/features/settings/screen/mushaf_font_screen.dart';
+import 'package:mirqat/core/localization/locale_keys.dart';
 import 'package:mirqat/core/widgets/settings_card.dart';
 import 'package:mirqat/features/about/screen/developer_screen.dart';
 import 'package:mirqat/features/about/screen/how_to_use_screen.dart';
@@ -221,19 +223,20 @@ void main() {
         'the page', (WidgetTester tester) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
+      // The size is set beside the face, on the mushaf font page.
+      await reveal(tester, find.text(LocaleKeys.mushafFontTitle.tr()));
+      await AppHarness.tapAndSettle(
+        tester,
+        find.text(LocaleKeys.mushafFontTitle.tr()),
+      );
+      expect(find.byType(MushafFontScreen), findsOneWidget);
       await reveal(tester, find.byType(Slider));
 
       // The sample is scripture in the mushaf face, not interface text.
-      expect(
-        find.descendant(
-          of: find.byType(SettingsCard).first,
-          matching: find.byType(AyahText),
-        ),
-        findsOneWidget,
-      );
+      expect(find.byType(AyahText), findsWidgets);
 
       final SettingsCubit cubit = BlocProvider.of<SettingsCubit>(
-        tester.element(find.byType(SettingsScreen)),
+        tester.element(find.byType(MushafFontScreen)),
       );
       await tester.runAsync(() async {
         await cubit.setArabicFontSize(36);
