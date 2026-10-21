@@ -41,6 +41,14 @@ because the scheduler reads them.
 | 9b — quick presets | done | `fda6c1e` |
 | 9c — resume an interrupted session | done | `292d69e` |
 | 9d — multiple reading marks | not taken: A.5 fixes one reading mark | — |
+| 10a — weak spots on the surah list (§3) | done | `eea3f0f` |
+| 10b — Listen preset: a range M times (§5) | done | `ef8e353` |
+| 10c — bedtime and morning bookends (§5) | done | `c658394` |
+| 10d — the ayah menu names the twins (§4) | done | `66e6cf0` |
+| 10e — mutashabihat drill (§4) | done | `ae26644` |
+| 10f — Android backup: send a copy, choose one back (§8) | done | `77e3515` |
+| 10g — juz span on the surah line (§9) | done | `d3cf3cc`, fixed in `1b2138a` |
+| 10h — presets of the reader's own (§9) | done | `71889cf` |
 
 ---
 
