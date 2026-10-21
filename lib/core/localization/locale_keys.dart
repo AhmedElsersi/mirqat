@@ -191,7 +191,6 @@ class LocaleKeys {
   static const String mushafMemorizeAyah = 'mushaf.memorize_ayah';
   static const String mushafOpen = 'mushaf.open';
   static const String mushafPage = 'mushaf.page';
-  static const String mushafPlayFromHere = 'mushaf.play_from_here';
   static const String mushafSectionEnd = 'mushaf.section_end';
   static const String mushafSectionNext = 'mushaf.section_next';
   static const String mushafSectionPrevious = 'mushaf.section_previous';

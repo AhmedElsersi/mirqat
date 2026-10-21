@@ -938,9 +938,6 @@ class _PageSlot extends StatelessWidget {
         await settings.clearReadingMark();
       case AyahAction.share:
         if (context.mounted) await _shareAyah(context, surah, ayah);
-      case AyahAction.playFromHere:
-        session.chooseRange(ayah, AyahRef(surah.number, surah.ayahCount));
-        await session.start();
       case AyahAction.listenFromHere:
         await session.applyRequest(
           SessionRequest(
