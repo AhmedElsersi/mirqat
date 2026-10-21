@@ -10,6 +10,17 @@ per rule A.2.5. Nothing here touches ayah text bytes or recitation audio (rules 
 
 The document is in two halves: English first, then the same ideas in Arabic.
 
+> **Where each idea stands** — built, waiting on data, or not taken — is the
+> status table in `docs/IMPLEMENTATION_PLAN.md`. Every idea below is built
+> except: the mutashabihat data (the feature is built and waits on a QUL
+> download, §4), multiple reading marks (the contract fixes one), streaks
+> (refused by the brand guide, §6), and the three package blockers.
+>
+> **حال كل فكرة** في جدول الحال في `docs/IMPLEMENTATION_PLAN.md`. بُنيت الأفكار
+> كلها إلا: بيانات المتشابهات (الميزة جاهزة وتنتظر تنزيلًا من QUL، §٤)، وتعدّد
+> علامات القراءة (العقد يحدّها بعلامة واحدة)، والأيام المتتالية (يمنعها دليل
+> الهوية، §٦)، والعوائق الثلاثة.
+
 ---
 
 ## English
