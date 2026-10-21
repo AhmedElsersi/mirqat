@@ -1,0 +1,57 @@
+<!-- title: إعدادات الجلسة -->
+<div class="mushaf" aria-hidden="true">
+  <div class="frame"><div class="page">{{page 562}}</div></div>
+</div>
+<div class="scrim"></div>
+
+<!-- The way of working first — most sessions are one tap here — then the
+     range and the two numbers that matter. Everything else folds away. -->
+<section class="sheet" style="max-height:90%">
+  <div class="grabber"></div>
+  <div class="row"><h2 class="h2 grow">جلسة جديدة</h2><button class="icon-btn" aria-label="إغلاق"><i data-lucide="x"></i></button></div>
+
+  <div class="field-label">طريقة الجلسة</div>
+  <div class="chips">
+    <span class="chip on"><i data-lucide="sprout"></i> حفظ جديد</span>
+    <span class="chip"><i data-lucide="rotate-ccw"></i> مراجعة القريب</span>
+    <span class="chip"><i data-lucide="library"></i> مراجعة القديم</span>
+    <span class="chip"><i data-lucide="anchor"></i> تثبيت</span>
+    <span class="chip"><i data-lucide="headphones"></i> استماع</span>
+    <span class="chip"><i data-lucide="bookmark"></i> مراجعة الفجر</span>
+  </div>
+
+  <div class="field-label">النطاق</div>
+  <div class="list">
+    <div class="li"><span class="ico"><i data-lucide="arrow-down-to-line"></i></span>
+      <div class="grow"><p class="muted tiny">من</p><p class="h3">سورة {{surah 67}} · الآية {{n 1}}</p></div>
+      <i data-lucide="chevron-left" class="chev"></i></div>
+    <div class="li"><span class="ico"><i data-lucide="arrow-up-to-line"></i></span>
+      <div class="grow"><p class="muted tiny">إلى</p><p class="h3">سورة {{surah 67}} · الآية {{n 5}}</p></div>
+      <i data-lucide="chevron-left" class="chev"></i></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div><div class="field-label">التكرار</div>
+      <div class="stepper"><button aria-label="زِد"><i data-lucide="plus"></i></button><b>٣</b><button aria-label="أنقِص"><i data-lucide="minus"></i></button></div></div>
+    <div><div class="field-label">الاسترجاع</div>
+      <div class="stepper"><button aria-label="زِد"><i data-lucide="plus"></i></button><b>١</b><button aria-label="أنقِص"><i data-lucide="minus"></i></button></div></div>
+  </div>
+
+  <div class="field-label">طريقة الوصل</div>
+  <div class="seg"><span class="on">تراكمي</span><span>متصل</span><span>بدون وصل</span></div>
+  <p class="muted tiny" style="margin:8px 4px 0">آية، ثم آيتان، ثم ثلاث — تقف على كل درجة قبل التي فوقها.</p>
+
+  <div class="list" style="margin-top:16px">
+    <div class="li"><span class="ico"><i data-lucide="link-2"></i></span>
+      <div class="grow"><p class="h3">اختبار الوصل</p><p class="muted tiny">ما بعدها؟ في آخر الجلسة</p></div><span class="switch"></span></div>
+    <div class="li"><span class="ico"><i data-lucide="settings-2"></i></span>
+      <div class="grow"><p class="h3">القارئ والصوت والوقفات</p><p class="muted tiny">أحمد خليل شاهين · سرعة ١٫٠ · مؤقّت النوم</p></div><i data-lucide="chevron-left" class="chev"></i></div>
+  </div>
+
+  <p class="muted small" style="text-align:center;margin:16px 0 10px">٩ درجات، ٢٧ تلاوة · نحو ١٤ دقيقة</p>
+  <button class="btn btn-primary btn-block"><i data-lucide="play"></i> ابدأ</button>
+  <div class="row" style="justify-content:center;margin-top:6px">
+    <button class="btn" style="height:40px;font-size:13.5px"><i data-lucide="bookmark-plus"></i> احفظ كطريقة</button>
+    <button class="btn" style="height:40px;font-size:13.5px"><i data-lucide="ear"></i> سمِّع على غيرك</button>
+  </div>
+</section>

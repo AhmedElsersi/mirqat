@@ -1,0 +1,91 @@
+<!-- title: اليوم -->
+<div class="scroll">
+  <header class="topbar">
+    <div class="grow">
+      <p class="eyebrow">الثلاثاء، ٢١ أكتوبر</p>
+      <h1 class="h1">وِرد اليوم</h1>
+    </div>
+    <button class="icon-btn filled" aria-label="البحث"><i data-lucide="search"></i></button>
+  </header>
+
+  <!-- The one thing to do now: today's new portion, a tap from starting. -->
+  <section class="hero">
+    <div class="row">
+      <span class="tag gold">حفظ جديد</span>
+      <span class="grow"></span>
+      <span class="ladder" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="now"></i><i></i></span>
+    </div>
+    <h2 class="h2" style="margin-top:14px;font-size:22px">سورة {{surah 67}} · الآيات {{n 1}}–{{n 5}}</h2>
+    <p class="muted small" style="margin-top:4px">تراكمي، ٣ تكرارات · جولة استرجاع · نحو ١٤ دقيقة</p>
+    <div class="row" style="margin-top:18px">
+      <button class="btn btn-on-hero"><i data-lucide="play"></i> ابدأ الحفظ</button>
+      <span class="grow"></span>
+      <button class="icon-btn" style="color:var(--hero-text)" aria-label="إعدادات الجلسة"><i data-lucide="sliders-horizontal"></i></button>
+    </div>
+  </section>
+
+  <!-- The two reviews the reader set, side by side. -->
+  <div class="pair">
+    <article class="card">
+      <span class="tag">مراجعة القريب</span>
+      <p class="h3" style="margin-top:10px">سورة {{surah 66}}</p>
+      <p class="muted small">الآيات {{n 1}}–{{n 12}}</p>
+      <div class="row push" style="padding-top:12px">
+        <span class="muted tiny grow">تكراران · استرجاع</span>
+        <button class="play soft" aria-label="ابدأ"><i data-lucide="play"></i></button>
+      </div>
+    </article>
+    <article class="card">
+      <span class="tag">مراجعة القديم</span>
+      <p class="h3" style="margin-top:10px">{{surah 78}} – {{surah 114}}</p>
+      <p class="muted small">جزء عمّ</p>
+      <div class="row push" style="padding-top:12px">
+        <span class="muted tiny grow">متصل · اختبار الوصل</span>
+        <button class="play soft" aria-label="ابدأ"><i data-lucide="play"></i></button>
+      </div>
+    </article>
+  </div>
+
+  <!-- A suggestion, said as one. Gone once taken. -->
+  <div class="card row" style="margin-top:12px;background:var(--surface-2);border-color:transparent">
+    <span class="ico" style="background:var(--surface)"><i data-lucide="moon-star"></i></span>
+    <div class="grow">
+      <p class="h3">قبل النوم</p>
+      <p class="muted small">استمع إلى حفظ اليوم مرة أخرى</p>
+    </div>
+    <i data-lucide="chevron-left" class="chev"></i>
+  </div>
+
+  <div class="section-title"><h2 class="h2">حان موعد مراجعته</h2><a class="link">الكل (٥)</a></div>
+  <div class="list">
+    <div class="li">
+      <span class="ladder" aria-hidden="true"><i class="done"></i><i class="now"></i><i></i><i></i></span>
+      <div class="grow"><p class="h3">سورة {{surah 18}}، {{n 1}}–{{n 10}}</p><p class="muted tiny">قريب · آخر تقييم: متقَن</p></div>
+      <button class="play soft" aria-label="ابدأ"><i data-lucide="play"></i></button>
+    </div>
+    <div class="li">
+      <span class="ladder" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i></span>
+      <div class="grow"><p class="h3">سورة {{surah 36}}، {{n 1}}–{{n 27}}</p><p class="muted tiny">قديم · آخر تقييم: متذبذب</p></div>
+      <button class="play soft" aria-label="ابدأ"><i data-lucide="play"></i></button>
+    </div>
+  </div>
+
+  <div class="section-title"><h2 class="h2">تابع القراءة</h2></div>
+  <div class="card row">
+    <span class="ico" style="color:var(--gold)"><i data-lucide="bookmark"></i></span>
+    <div class="grow"><p class="h3">سورة {{surah 3}} · الآية {{n 14}}</p><p class="muted tiny">صفحة {{n 51}} · علامتك</p></div>
+    <i data-lucide="chevron-left" class="chev"></i>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="row"><span class="h3 grow">خطة الحفظ · جزء عمّ في ٦٠ يومًا</span><span class="muted tiny">١٢ من ٦٠</span></div>
+    <div class="bar" style="margin-top:10px"><i style="width:20%"></i></div>
+  </div>
+</div>
+
+<nav class="tabbar">
+  <a class="tab on"><span class="pill"><i data-lucide="sunrise"></i></span>اليوم</a>
+  <a class="tab"><span class="pill"><i data-lucide="book-open"></i></span>المصحف</a>
+  <a class="tab"><span class="pill"><i data-lucide="layers"></i></span>حفظي</a>
+  <a class="tab"><span class="pill"><i data-lucide="settings-2"></i></span>الإعدادات</a>
+</nav>
