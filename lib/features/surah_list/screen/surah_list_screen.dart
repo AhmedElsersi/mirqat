@@ -22,6 +22,7 @@ import '../../home/cubit/home_index_state.dart';
 import '../../home/widgets/juz_widgets.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../../mushaf/reading_section.dart';
+import '../../wird/widgets/wird_card.dart';
 import '../../review/cubit/review_cubit.dart';
 import '../../review/widgets/review_widgets.dart';
 import '../../settings/cubit/settings_cubit.dart';
@@ -190,6 +191,16 @@ class _SurahListViewState extends State<_SurahListView> {
                 bookends: settings.settings.bookends,
                 bookendTaken: settings.settings.bookendTaken,
                 onBookendTaken: context.read<SettingsCubit>().takeBookend,
+              ),
+              // The reader's own wird: what they set to memorize and review.
+              WirdCard(
+                wird: settings.settings.wird,
+                surahs: context.select<SurahListCubit, List<Surah>>(
+                  (SurahListCubit c) => <Surah>[
+                    for (final SurahListItem i in c.state.items) i.surah,
+                  ],
+                ),
+                onChanged: context.read<SettingsCubit>().setWird,
               ),
               if (last != null)
                 _ContinueCard(

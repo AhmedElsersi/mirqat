@@ -10,12 +10,12 @@ import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/widgets/ayah_end_field.dart';
 import '../../../core/widgets/range_label.dart';
 import '../../../core/widgets/session_controls.dart';
 import '../../../core/widgets/settings_card.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/engine/hifz_planner.dart';
-import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/hifz_plan.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../../session/session_request.dart';
@@ -106,7 +106,7 @@ class _MakePlan extends StatelessWidget {
           title: LocaleKeys.planRange.tr(),
           icon: Icons.straighten,
           children: <Widget>[
-            _End(
+            AyahEndField(
               label: LocaleKeys.sessionSetupFrom.tr(),
               surahs: state.surahs,
               value: state.from,
@@ -114,7 +114,7 @@ class _MakePlan extends StatelessWidget {
               isEnd: false,
             ),
             SizedBox(height: 12.h),
-            _End(
+            AyahEndField(
               label: LocaleKeys.sessionSetupTo.tr(),
               surahs: <Surah>[
                 for (final Surah s in state.surahs)
@@ -164,87 +164,6 @@ class _MakePlan extends StatelessWidget {
           onPressed: state.saving || ayahs == 0 ? null : cubit.create,
           icon: const Icon(Icons.flag_circle_outlined),
           label: Text(LocaleKeys.planCreate.tr()),
-        ),
-      ],
-    );
-  }
-}
-
-/// One end of the range: a surah, and an ayah of it.
-class _End extends StatelessWidget {
-  const _End({
-    required this.label,
-    required this.surahs,
-    required this.value,
-    required this.onChanged,
-    required this.isEnd,
-  });
-
-  final String label;
-  final List<Surah> surahs;
-  final AyahRef value;
-  final ValueChanged<AyahRef> onChanged;
-
-  /// Picking another surah means its last ayah at the far end, its first at
-  /// the near one.
-  final bool isEnd;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool arabic = context.locale.languageCode == 'ar';
-    final Surah? surah = surahs
-        .where((Surah s) => s.number == value.surah)
-        .firstOrNull;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        SizedBox(height: 4.h),
-        Row(
-          children: <Widget>[
-            Expanded(
-              flex: 3,
-              child: DropdownButtonFormField<int>(
-                key: ValueKey<String>(
-                  '${isEnd ? 'to' : 'from'}-${surah?.number}',
-                ),
-                initialValue: surah?.number,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: LocaleKeys.sessionSurah.tr(),
-                  isDense: true,
-                ),
-                items: <DropdownMenuItem<int>>[
-                  for (final Surah s in surahs)
-                    DropdownMenuItem<int>(
-                      value: s.number,
-                      child: Text(
-                        '${s.number.toLocalisedString()}. '
-                        '${arabic ? s.nameAr : s.nameEn}',
-                      ),
-                    ),
-                ],
-                onChanged: (int? n) {
-                  if (n == null || n == value.surah) return;
-                  final Surah picked = surahs.firstWhere(
-                    (Surah s) => s.number == n,
-                  );
-                  onChanged(AyahRef(n, isEnd ? picked.ayahCount : 1));
-                },
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              flex: 2,
-              child: StepperField(
-                value: value.ayah,
-                min: 1,
-                max: surah?.ayahCount ?? value.ayah,
-                formatValue: (int v) => v.toLocalisedString(),
-                onChanged: (int a) => onChanged(AyahRef(value.surah, a)),
-              ),
-            ),
-          ],
         ),
       ],
     );

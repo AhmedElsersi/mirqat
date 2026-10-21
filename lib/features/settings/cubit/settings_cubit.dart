@@ -12,6 +12,7 @@ import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
+import '../../../domain/entities/daily_wird.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../services/app_version_service.dart';
 import '../../../services/audio/reciter_catalog.dart';
@@ -168,6 +169,18 @@ class SettingsCubit extends Cubit<SettingsState> {
   /// The reader took a bookend suggestion up: it is not made again.
   Future<void> takeBookend(String key) =>
       _save(state.settings.copyWith(bookendTaken: key));
+
+  /// Sets one part of today's wird, or clears it with null.
+  Future<void> setWird(WirdPart part, WirdRange? range) => _save(
+    state.settings.copyWith(
+      wird: <WirdPart, WirdRange>{
+        for (final MapEntry<WirdPart, WirdRange> e
+            in state.settings.wird.entries)
+          if (e.key != part) e.key: e.value,
+        part: ?range,
+      },
+    ),
+  );
 
   /// The introduction has been read through, or skipped: either way it is
   /// not shown on its own again. It stays one tap away, under How to use.

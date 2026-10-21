@@ -292,7 +292,7 @@
     "recall_title": "Recite from memory",
     "recall_body": "The session settings have Recall rounds: after an ayah is repeated, the app stays silent for its length while you recite it from memory, then plays it once to confirm. And Test the links: at the end of the session each ayah is played, the app falls silent while you recite the one after it from memory, then plays it as the answer.",
     "presets_title": "Ways of working",
-    "presets_body": "The session settings offer ready ways of working: New portion, Recent review, Old review, Deep drill, and Listen, which recites the range straight through with no testing. Set things as you like, tap “Save as preset” and give it a name, and it becomes a chip beside them; the × on it removes it.",
+    "presets_body": "The session settings offer ready ways of working: New portion, Recent review, Old review, Deep drill, and Listen, which recites the range straight through with no testing. Set things as you like, tap “Save as preset” and give it a name, and it becomes a chip beside them; the × on it removes it. On the home page, the Today's wird card holds a range for each of New portion, Recent review and Old review: each stays until you change it, and opens in one tap on its range, worked its own way.",
     "change_title": "Change things mid-session",
     "change_body": "Speed and pauses change at once. For the reciter, the range, the repeats and the way of joining you are asked: start again, or carry on from the current ayah?",
     "view_title": "Memorization view",
@@ -514,6 +514,16 @@
     "save_action": "Save",
     "delete": "Remove",
     "delete_confirm": "Remove “{}”?"
+  },
+  "wird": {
+    "title": "Today's wird",
+    "set": "Set",
+    "edit": "Edit",
+    "empty": "Set what you memorize and what you review, and each is a tap away here.",
+    "hint": "Each has a range you choose, and it stays until you change it. Each opens its own way: a new portion with your settings, a review with its own.",
+    "add": "Add",
+    "remove": "Remove",
+    "save": "Save"
   },
   "resume": {
     "title": "A session left unfinished",

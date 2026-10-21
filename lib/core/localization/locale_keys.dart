@@ -495,4 +495,13 @@ class LocaleKeys {
   static const String weakSpotsEmpty = 'weak_spots.empty';
   static const String weakSpotsHint = 'weak_spots.hint';
   static const String weakSpotsTitle = 'weak_spots.title';
+
+  static const String wirdAdd = 'wird.add';
+  static const String wirdEdit = 'wird.edit';
+  static const String wirdEmpty = 'wird.empty';
+  static const String wirdHint = 'wird.hint';
+  static const String wirdRemove = 'wird.remove';
+  static const String wirdSave = 'wird.save';
+  static const String wirdSet = 'wird.set';
+  static const String wirdTitle = 'wird.title';
 }

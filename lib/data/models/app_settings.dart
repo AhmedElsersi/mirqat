@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../core/theme/quran_font.dart';
 import 'reading_position.dart';
 
+import '../../domain/entities/daily_wird.dart';
 import '../../domain/entities/hifz_plan.dart';
 import '../../domain/entities/interrupted_session.dart';
 import '../../domain/entities/saved_preset.dart';
@@ -191,6 +192,7 @@ class AppSettings extends Equatable {
     this.bookends = false,
     this.bookendTaken,
     this.savedPresets = const <SavedPreset>[],
+    this.wird = const <WirdPart, WirdRange>{},
     this.hifzPlan,
     this.interruptedSession,
     this.onboardingSeen = false,
@@ -294,6 +296,10 @@ class AppSettings extends Equatable {
   /// Ways of working the reader named and saved, oldest first.
   final List<SavedPreset> savedPresets;
 
+  /// The ranges the reader set for today's wird — new, recent, old — each
+  /// kept until they change it.
+  final DailyWird wird;
+
   /// The reader's plan to memorize a range in so many days, if they made
   /// one. Null: no plan.
   final HifzPlan? hifzPlan;
@@ -348,6 +354,7 @@ class AppSettings extends Equatable {
     bool? bookends,
     String? bookendTaken,
     List<SavedPreset>? savedPresets,
+    DailyWird? wird,
     HifzPlan? hifzPlan,
     bool clearHifzPlan = false,
     InterruptedSession? interruptedSession,
@@ -388,6 +395,7 @@ class AppSettings extends Equatable {
     bookends: bookends ?? this.bookends,
     bookendTaken: bookendTaken ?? this.bookendTaken,
     savedPresets: savedPresets ?? this.savedPresets,
+    wird: wird ?? this.wird,
     hifzPlan: clearHifzPlan ? null : (hifzPlan ?? this.hifzPlan),
     interruptedSession: clearInterruptedSession
         ? null
@@ -437,6 +445,7 @@ class AppSettings extends Equatable {
     'savedPresets': <Map<String, dynamic>>[
       for (final SavedPreset p in savedPresets) p.toMap(),
     ],
+    'wird': dailyWirdToMap(wird),
     'hifzPlan': hifzPlan?.toMap(),
     'interruptedSession': interruptedSession?.toMap(),
     'onboardingSeen': onboardingSeen,
@@ -508,6 +517,7 @@ class AppSettings extends Equatable {
         for (final Object? raw in map['savedPresets'] as List)
           ?SavedPreset.fromMap(raw),
     ],
+    wird: dailyWirdFromMap(map['wird']),
     hifzPlan: HifzPlan.fromMap(map['hifzPlan']),
     interruptedSession: InterruptedSession.fromMap(map['interruptedSession']),
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
@@ -564,6 +574,7 @@ class AppSettings extends Equatable {
     bookends,
     bookendTaken,
     savedPresets,
+    wird,
     hifzPlan,
     interruptedSession,
     onboardingSeen,

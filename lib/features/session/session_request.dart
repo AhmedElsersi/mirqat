@@ -110,14 +110,24 @@ class SessionRequest extends Equatable {
     required this.from,
     required this.to,
     this.preset = const SessionPreset(),
+    this.presetKey,
     this.autostart = false,
   });
 
   final AyahRef from;
   final AyahRef to;
   final SessionPreset preset;
+
+  /// The sheet's chip that [preset] is, to show as chosen. Null: none.
+  final String? presetKey;
   final bool autostart;
 
   @override
-  List<Object?> get props => <Object?>[from, to, preset, autostart];
+  List<Object?> get props => <Object?>[
+    from,
+    to,
+    preset,
+    presetKey,
+    autostart,
+  ];
 }

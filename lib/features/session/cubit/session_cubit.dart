@@ -391,6 +391,7 @@ class SessionCubit extends Cubit<SessionState> {
     final SessionConfig? config = state.config;
     if (config == null) return;
     _apply(request.preset.applyTo(config), rangeChosen: true);
+    if (request.presetKey case final String key) _choosePreset(key);
     if (request.autostart && state.canStart) await start();
   }
 
