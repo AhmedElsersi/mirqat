@@ -10,15 +10,31 @@ per rule A.2.5. Nothing here touches ayah text bytes or recitation audio (rules 
 
 The document is in two halves: English first, then the same ideas in Arabic.
 
-> **Where each idea stands** — built, waiting on data, or not taken — is the
-> status table in `docs/IMPLEMENTATION_PLAN.md`. Every idea below is built
-> except: multiple reading marks (the contract fixes one), streaks
-> (refused by the brand guide, §6), and the three package blockers.
+> **Where each idea stands** is said under each section (*Status*), with
+> the commits in `docs/IMPLEMENTATION_PLAN.md`. Each status names what was
+> built, what was built differently from the idea, and any problem left.
 >
-> **حال كل فكرة** في جدول الحال في `docs/IMPLEMENTATION_PLAN.md`. بُنيت الأفكار
-> كلها إلا: بيانات المتشابهات (الميزة جاهزة وتنتظر تنزيلًا من QUL، §٤)، وتعدّد
-> علامات القراءة (العقد يحدّها بعلامة واحدة)، والأيام المتتالية (يمنعها دليل
-> الهوية، §٦)، والعوائق الثلاثة.
+> | | |
+> |---|---|
+> | **Done** | §1 recall, §2 review ladder and Today, §3 stumble marks, §4 mutashabihat and browsing, §5 sleep timer and "three more", §6 hifz plan and quiet stats, §7 tasmee', §8 backup, §9 presets, resume, about-the-surah |
+> | **Partly done** | §3 surah list shows memorized, not weak spots · §4 menu entry does not name the twins · §5 "listen" plays once, not M times · §9 presets are fixed, not saved by the reader; the surah line has no juz span |
+> | **Not built yet** | §4 mutashabihat drill · §5 bedtime and morning bookends |
+> | **Problem in a built feature** | §8 on Android the backup sits in the app's own folder, hard to reach since Android 11 and deleted with the app |
+> | **Not taken** | §9 multiple reading marks (CLAUDE.md A.5 fixes one) · streaks (BRAND_GUIDE §6) |
+> | **Blocked on a package** | daily reminder · record-and-compare · system share sheet |
+>
+> **حال كل فكرة** مذكور تحت قسمها (*الحال*)، والإيداعات في
+> `docs/IMPLEMENTATION_PLAN.md`. يذكر كل «حال» ما بُني، وما بُني على غير ما في
+> الفكرة، وما بقي فيه من مشكلة.
+>
+> | | |
+> |---|---|
+> | **تمّ** | §١ الاسترجاع، §٢ سلّم المراجعة وبطاقة اليوم، §٣ علامات التعثر، §٤ المتشابهات وتصفّحها، §٥ مؤقّت النوم و«ثلاثًا أيضًا»، §٦ خطة الحفظ والإحصاء الهادئ، §٧ التسميع، §٨ النسخ الاحتياطي، §٩ الإعدادات المسماة والاستئناف وسطر السورة |
+> | **تمّ بعضه** | §٣ فهرس السور يُظهر المحفوظ لا مواضع الضعف · §٤ خيار القائمة لا يسمّي الشبيهات · §٥ «استمع» يُسمِع مرة لا مرات · §٩ الإعدادات ثابتة لا يحفظها القارئ؛ وسطر السورة بلا مدى الأجزاء |
+> | **لم يُبنَ بعد** | §٤ تمرين المتشابهات · §٥ طرفا الليل والنهار |
+> | **مشكلة في ميزة مبنية** | §٨ النسخة على أندرويد في مجلد التطبيق نفسه، يصعب بلوغه منذ أندرويد ١١، ويُحذف بحذف التطبيق |
+> | **لن يُؤخذ** | §٩ علامات قراءة متعددة (العقد A.5 يحدّها بواحدة) · الأيام المتتالية (دليل الهوية §٦) |
+> | **ينتظر حزمة** | التنبيه اليومي · سجّل وقارن · نافذة المشاركة النظامية |
 
 ---
 
@@ -26,11 +42,14 @@ The document is in two halves: English first, then the same ideas in Arabic.
 
 ### 1. Recall mode — the session tests, not just teaches
 
-> **Status:** the core shipped in October 2026 — recall rounds
-> (`SessionConfig.recallRounds`): recite-into-the-gap after each learn step,
-> the ayah veiled on the page, the answer played once. Still open from this
-> section: self-grading, which belongs with the scheduler (§2). The chaining
-> drill and progressive fading shipped after it.
+> **Status: done.** Recall rounds (`786003d`): recite into the gap, the ayah
+> veiled on the page, the answer played once. The veil and progressive
+> fading are the *memorization view* (`3c05ad8`): off / first words /
+> ayah markers only, a tap on a covered word to peek. "What comes next?"
+> (`3a3f249`). Self-grading (`8c5f8ee`), with the scheduler.
+> *Built differently:* the grade is one for the session's whole range,
+> not one per ayah — one tap, as the idea asked, and the ladder keeps
+> ranges, not ayahs.
 
 The single highest-value addition. Learning science is clear that *retrieval* — making
 yourself produce the ayah — strengthens memory far more than another passive listen
@@ -61,6 +80,14 @@ yourself produce the ayah — strengthens memory far more than another passive l
 
 ### 2. A review scheduler — sabaq, sabqi, manzil as a feature
 
+> **Status: done** (`8c5f8ee`, presets `fda6c1e`). The 1–3–7–14–30–90-day
+> ladder, solid/shaky/forgot after a session, the Today card, and the
+> new/recent/old presets. *Built differently:* the tier comes from a
+> range's age — under 7 days sabaq, under 30 sabqi, then manzil — and
+> manzil reviews fall due by the ladder, not by a fixed juz-a-day rotation.
+> A review left from an earlier day is "due now", never "overdue"
+> (BRAND_GUIDE §6).
+
 The traditional madrasa structure maps beautifully onto spaced repetition, and the app
 already has progress tracking and session plans to build on:
 
@@ -83,6 +110,12 @@ already has progress tracking and session plans to build on:
 
 ### 3. Trouble spots — remember where it breaks
 
+> **Status: stumble marks done** (`1dd3af2`): *I stumble here* in the ayah
+> menu, a dotted underline on the page, two extra repeats inside any
+> session, and the Weak spots screen that launches a session over them.
+> **Heatmap partly done:** each surah row already shows how much of it is
+> memorized; how much is marked weak is not shown yet.
+
 - **Mark a stumble.** During a session or plain reading, the ayah's existing menu gets
   *I stumble here*. Stumble-marked ayahs: get extra repetitions automatically when
   they fall inside a session, show a subtle tint in reading (like the reading mark,
@@ -103,6 +136,11 @@ already has progress tracking and session plans to build on:
 > that does — phrase 4970 in 48:10, recorded as words 23-27 of an ayah of
 > 25 — is corrected by name to 23-25, the ayah's last three words. 807 of 814 phrases are kept; the 7 found in more than 40
 > ayahs are too common to be what confuses a reader.
+> Since then the whole list can be browsed from the top of Settings
+> (`3c101ed`): a card per phrase, narrowed by surah, each opening every
+> ayah it is in. **Partly done:** the ayah menu says *Similar ayahs* but
+> does not name them (*this resembles 2:48 / 2:123*). **Not built yet:**
+> the drill.
 
 The most common failure of established memorization is sliding from one ayah into its
 near-twin elsewhere. Several dedicated apps exist for this alone.
@@ -122,6 +160,12 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### 5. Listening that serves memorization
 
+> **Status:** sleep timer and "this ayah again ×3" **done** (`06c89fc`) —
+> the extra repeats are a button on the session bar, not a long press.
+> **Listen-only loop partly done:** *Listen from here* plays to the end of
+> the surah straight through, once; repeating the range M times is not
+> built yet. **Bedtime and morning bookends: not built yet.**
+
 - **Listen-only loop.** "Play this range on repeat M times" with no drill structure —
   for the commute, for cooking, for the pre-memorization familiarization pass that
   talqeen traditionally begins with. It is the session engine with repetitions=1 and
@@ -138,6 +182,13 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### 6. Plans and habit
 
+> **Status:** hifz plan **done** (`bacfb05`): a passage in N days, split by
+> recited length; a day's portion counts once it is graded solid or shaky.
+> Quiet stats **done** (`3ea5bc8`): totals only. *Problem found and
+> fixed:* the first draft counted a streak and said how far the plan was
+> behind; both were removed under BRAND_GUIDE §6. Daily reminder: still
+> **[blocker]**.
+
 - **A khatmah-of-hifz plan.** Pick a goal — e.g. Juz ʿAmma in 90 days — and the app
   divides it into daily portions by ayah weight (the admin tool's `recitationWeight`
   arithmetic already measures how long text takes to recite; reuse the idea, not the
@@ -153,6 +204,12 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### 7. Tasmee' — reciting to someone
 
+> **Status: hand-the-phone done** (`16cee2c`). *Built differently:* a slip
+> is noted at its ayah (as a stumble mark), not at the word, and the
+> session does not replay from there — the listener follows a voice, so a
+> slip is said back at once with an undo, and ending leads to Weak spots.
+> Record-and-compare: still **[blocker]**.
+
 - **Hand-the-phone mode.** The listener holds the phone and sees the page; the reciter
   sees nothing. The listener taps a word where a mistake happened — it is recorded as
   a stumble mark (§3) and the session can replay from there. No second device, no
@@ -165,6 +222,16 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### 8. Export, portability, peace of mind
 
+> **Status: done, with a problem** (`c477ea0`). Export writes one JSON
+> file; import merges it and never deletes. On iOS the file is in the
+> app's folder in the Files app. **Problem:** on Android it is written to
+> the app's own external folder (`Android/data/<app>/files`), which the
+> Files app cannot open since Android 11, and which is deleted when the
+> app is uninstalled — so moving to a new phone needs a computer. The app
+> already has a native share channel of its own (the shared ayah image
+> uses it), so the file can be handed to the system share sheet with no
+> new package; that is the fix.
+
 - **Progress export/import as a file.** One JSON of progress, marks, and the review
   ladder, written to a user-chosen place and read back on a new phone. Keeps the
   no-account promise while removing the fear of losing years of review history.
@@ -173,6 +240,14 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
   `share_plus`]** — the file-based version first.
 
 ### 9. Smaller touches
+
+> **Status:** resume **done** (`292d69e`). Presets **partly done**
+> (`fda6c1e`): four fixed ones — new, recent, old, deep — not ones the
+> reader saves from the form. About-the-surah **partly done** (`35e0296`):
+> Makki/Madani and the ayah count, in every ayah's menu rather than the
+> surah header; the juz span is not shown. Multiple reading marks: **not
+> taken** — CLAUDE.md A.5 fixes one reading mark, so it is a product
+> decision.
 
 - **Multiple reading marks** in distinct tints (the current mark is one), each with the
   same ribbon and menu behavior — hifz naturally keeps several places at once (sabaq,
@@ -206,10 +281,12 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ١. وضع الاسترجاع — جلسة تَختبر لا تُسمِع فحسب
 
-> **الحال:** نُفِّذ الأساس في أكتوبر ٢٠٢٦ — جولات الاسترجاع
-> (`SessionConfig.recallRounds`): القراءة في الفراغ بعد كل خطوة تعلُّم، والآية
-> مستورة على الصفحة، والجواب يُسمَع مرة. ثم نُفِّذ تمرين «ما بعدها؟» وتدرّج
-> الإخفاء، وبقي التقييم الذاتي وموضعه مع جدول المراجعة (§٢).
+> **الحال: تمّ.** جولات الاسترجاع (`786003d`): القراءة في الفراغ، والآية مستورة،
+> والجواب يُسمَع مرة. والستر وتدرّج الإخفاء هما *عرض الحفظ* (`3c05ad8`): بلا
+> ستر / أوائل الكلمات / علامات الآيات وحدها، ولمسة على كلمة مستورة تكشفها. وتمرين
+> «ما بعدها؟» (`3a3f249`). والتقييم الذاتي (`8c5f8ee`) مع جدول المراجعة.
+> *على غير ما في الفكرة:* التقييم واحدٌ لنطاق الجلسة كله لا لكل آية — لمسة
+> واحدة كما طُلب، والسلّم يحفظ النطاقات لا الآيات.
 
 أعلى الإضافات قيمةً. علم التعلّم قاطع في أن *الاسترجاع* — أن تُخرج الآية من صدرك —
 يرسّخ الحفظ أضعاف ما يرسّخه سماعٌ آخر (أثر الاختبار). الجلسة اليوم تُسمِع فقط؛ هذه
@@ -237,6 +314,12 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ٢. جدول المراجعة — السبق والسبقي والمنزل ميزةً في التطبيق
 
+> **الحال: تمّ** (`8c5f8ee`، والإعدادات `fda6c1e`). سلّم ١–٣–٧–١٤–٣٠–٩٠ يومًا،
+> ومتقَن/متذبذب/نسيت بعد الجلسة، وبطاقة اليوم، وإعدادات جديد/قريب/بعيد. *على غير
+> ما في الفكرة:* الطبقة من عمر النطاق — دون ٧ أيام سبق، ودون ٣٠ سبقي، ثم منزل —
+> ومراجعة المنزل يحين وقتها بالسلّم لا بدورة جزءٍ في اليوم. والمراجعة الباقية من
+> يوم سابق «حان وقتها» لا «متأخرة» (دليل الهوية §٦).
+
 نظام الكتاتيب الموروث ينطبق انطباقًا حسنًا على التكرار المتباعد، وفي التطبيق أصلًا
 تتبّعُ تقدمٍ وخططُ جلسات يُبنى عليها:
 
@@ -256,6 +339,11 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ٣. مواضع التعثر — تذكّرْ أين ينقطع الحبل
 
+> **الحال: علامات التعثر تمّت** (`1dd3af2`): «أتعثر هنا» في قائمة الآية، وخط
+> منقّط تحتها في الصفحة، وتكراران زائدان في كل جلسة، وشاشة مواضع الضعف تُطلق
+> جلسة عليها. **خريطة الضعف تمّ بعضها:** صفّ السورة يُظهر مقدار المحفوظ منها،
+> ولا يُظهر بعدُ مقدار الموسوم ضعفًا.
+
 - **علامة تعثّر.** في الجلسة أو في القراءة، يُزاد في قائمة الآية خيار *أتعثر هنا*.
   الآيات الموسومة: تنال تكرارًا زائدًا آليًّا متى وقعت في جلسة، وتُظلَّل تظليلًا
   خفيفًا في القراءة (كعلامة القراءة، بإذن القارئ)، وتُجمع في شاشة «مواضع الضعف»
@@ -272,6 +360,9 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 > الوحيدة المخالفة — العبارة ٤٩٧٠ في الآية ٤٨:١٠، مسجّلة كلماتٍ ٢٣–٢٧ وفي الآية
 > ٢٥ كلمة — تُصحَّح باسمها إلى ٢٣–٢٥، أي آخر ثلاث كلمات في الآية. أُبقي ٨٠٧ عبارات من ٨١٤، واستُبعدت ٧ ترد في أكثر
 > من ٤٠ آية لشيوعها. ويظهر «آيات متشابهة» في قائمة كل آية لها نظير.
+> ثم صار تصفّح القائمة كلها من أعلى الإعدادات (`3c101ed`): بطاقة لكل عبارة،
+> وتضييقٌ بالسورة، وكل بطاقة تفتح كل آية ترد فيها. **تمّ بعضه:** قائمة الآية تقول
+> «آيات متشابهة» ولا تسمّيها (*تشبه ٢:٤٨ / ٢:١٢٣*). **لم يُبنَ بعد:** التمرين.
 
 أشيعُ خللٍ في الحفظ المستقر هو الانزلاق من آيةٍ إلى شبيهتها في موضع آخر، وقد قامت
 تطبيقات كاملة على هذا وحده.
@@ -290,6 +381,11 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ٥. سماعٌ في خدمة الحفظ
 
+> **الحال:** مؤقّت النوم و«هذه الآية ثلاثًا أيضًا» **تمّا** (`06c89fc`) — والزيادة
+> زرٌّ في شريط الجلسة لا ضغطة مطولة. **حلقة السماع تمّ بعضها:** «استمع من هنا»
+> يُسمِع إلى آخر السورة مرة واحدة متصلة؛ وتكرار النطاق كذا مرة لم يُبنَ بعد.
+> **طرفا الليل والنهار: لم يُبنيا بعد.**
+
 - **حلقة سماع فقط.** «شغّل هذا النطاق مكررًا كذا مرة» بلا بنية تدريس — للطريق
   وللمطبخ، ولجولة الاستئناس التي يُفتتح بها التلقين تقليدًا. هي محرك الجلسة بتكرارٍ
   واحد وبلا جمع؛ أغلبها واجهة.
@@ -302,6 +398,12 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
   على الشريط تغذّي الصفّ دون إعادة بناء الخطة.
 
 ### ٦. الخطط والعادة
+
+> **الحال:** خطة الحفظ **تمّت** (`bacfb05`): مقطعٌ في عدد من الأيام، مقسومٌ على
+> طول التلاوة؛ ويُحسب قدرُ اليوم متى قُيِّم متقَنًا أو متذبذبًا. والإحصاء الهادئ
+> **تمّ** (`3ea5bc8`): مجاميع فقط. *مشكلة وُجدت وأُصلحت:* المسودة الأولى عدّت
+> أيامًا متتالية وذكرت تأخر الخطة؛ فحُذف الأمران وفق دليل الهوية §٦. والتنبيه
+> اليومي ما زال **[عائق]**.
 
 - **خطة ختمة حفظ.** يختار القارئ غايةً — جزء عمّ في ٩٠ يومًا مثلًا — فيقسمها التطبيق
   مقاطعَ يومية على وزن الآيات (حسابُ `recitationWeight` في أداة الإدارة يقيس أصلًا
@@ -316,6 +418,11 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ٧. التسميع — القراءة على مُسمِّع
 
+> **الحال: وضع ناول الهاتف تمّ** (`16cee2c`). *على غير ما في الفكرة:* يُقيَّد
+> الخطأ عند آيته (علامةَ تعثّر) لا عند الكلمة، ولا تُعاد الجلسة من هناك — فالمسمِّع
+> يتبع صوتًا، فيُعلَن القيد فورًا مع «تراجع»، وينتهي إلى مواضع الضعف. وسجّل وقارن
+> ما زال **[عائق]**.
+
 - **وضع ناولِ الهاتف.** يمسك المُسمِّعُ الهاتفَ ويرى الصفحة، والقارئ لا يرى شيئًا.
   يلمس المُسمِّع الكلمةَ التي وقع عندها الخطأ — فتُقيَّد علامةَ تعثّر (§٣) ويعيد
   التشغيل من هناك إن شاء. لا جهاز ثانٍ ولا حساب ولا شبكة: أقدم ممارسات الحفظ،
@@ -326,12 +433,26 @@ near-twin elsewhere. Several dedicated apps exist for this alone.
 
 ### ٨. التصدير والنقل وطمأنينة البال
 
+> **الحال: تمّ، وفيه مشكلة** (`c477ea0`). التصدير يكتب ملف JSON واحدًا، والاستيراد
+> يدمجه ولا يحذف شيئًا. وعلى iOS يظهر الملف في مجلد التطبيق في تطبيق «الملفات».
+> **المشكلة:** على أندرويد يُكتب في مجلد التطبيق الخارجي (`Android/data/<app>/files`)،
+> وتطبيق الملفات لا يفتحه منذ أندرويد ١١، ويُحذف بحذف التطبيق — فالانتقال إلى
+> هاتف جديد يحتاج حاسوبًا. وللتطبيق قناة مشاركة أصلية خاصة به (تستعملها صورة
+> الآية)، فيمكن تسليم الملف لنافذة المشاركة النظامية بلا حزمة جديدة؛ وذلك هو
+> الإصلاح.
+
 - **تصدير التقدم واستيراده ملفًّا.** ملف JSON واحد بالتقدم والعلامات وسلّم المراجعة،
   يُكتب حيث يختار القارئ ويُسترد على هاتف جديد. يحفظ عهدَ «لا حسابات» ويرفع خوفَ
   ضياع سنين من المراجعة. الكتابة في مجلد مستندات التطبيق لا تحتاج حزمة؛ أما نافذة
   المشاركة النظامية فتحتاج **[عائق: `share_plus`]** — فليُقدَّم الحل الملفي أولًا.
 
 ### ٩. لمسات أصغر
+
+> **الحال:** الاستئناف **تمّ** (`292d69e`). والإعدادات المسماة **تمّ بعضها**
+> (`fda6c1e`): أربعة ثابتة — جديد، قريب، بعيد، تثبيت — لا يحفظها القارئ من
+> النموذج. وسطر «عن هذه السورة» **تمّ بعضه** (`35e0296`): مكية/مدنية وعدد الآيات،
+> في قائمة كل آية لا في رأس السورة، وبلا مدى الأجزاء. وعلامات القراءة المتعددة
+> **لن تُؤخذ** — العقد A.5 يحدّها بعلامة واحدة، فهي قرار منتج.
 
 - **علامات قراءة متعددة** بألوان متمايزة (العلامة اليوم واحدة)، لكلٍّ الشريطُ والقائمة
   نفسها — فالحفظ بطبعه يمسك مواضعَ عدة (السبق والسبقي والمنزل ثلاث علامات بالفطرة).
