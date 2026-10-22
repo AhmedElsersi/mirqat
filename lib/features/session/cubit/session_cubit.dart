@@ -1021,6 +1021,11 @@ class SessionCubit extends Cubit<SessionState> {
     );
   }
 
+  /// "Reveal it": the reader has recited the ayah back, or would rather
+  /// hear it now, so the silence of the recall gap gives way to the play
+  /// that answers it.
+  Future<void> revealRecall() => _player.skipRecallGap();
+
   Future<void> nextStep() => _player.skipToNextStep();
 
   Future<void> previousStep() => _player.skipToPreviousStep();

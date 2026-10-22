@@ -9,6 +9,7 @@ import '../../core/localization/locale_keys.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/ladder_mark.dart';
+import '../../core/widgets/panel.dart';
 import '../../domain/entities/hifz_plan.dart';
 import '../../domain/entities/practice_stats.dart';
 import '../../domain/entities/review_card.dart';
@@ -59,7 +60,7 @@ class MyHifzView extends StatelessWidget {
           ],
         ),
         SizedBox(height: 14.h),
-        _Card(
+        AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -106,7 +107,7 @@ class MyHifzView extends StatelessWidget {
             ],
           ),
         ),
-        _Title(
+        SectionTitle(
           title: LocaleKeys.myHifzReview.tr(),
           action: LocaleKeys.myHifzSchedule.tr(),
           onAction: () => context.pushNamed(AppRoutes.reviewsName),
@@ -116,7 +117,7 @@ class MyHifzView extends StatelessWidget {
             for (final ReviewTier tier in ReviewTier.values) ...<Widget>[
               if (tier != ReviewTier.values.first) SizedBox(width: 10.w),
               Expanded(
-                child: _Card(
+                child: AppCard(
                   onTap: () => context.pushNamed(AppRoutes.reviewsName),
                   child: Column(
                     children: <Widget>[
@@ -140,14 +141,14 @@ class MyHifzView extends StatelessWidget {
           ],
         ),
         SizedBox(height: 12.h),
-        _Card(
+        AppCard(
           onTap: () => context.pushNamed(AppRoutes.hifzPlanName),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  const _Icon(Icons.flag_circle_outlined),
+                  const TileIcon(Icons.flag_circle_outlined),
                   SizedBox(width: 12.w),
                   Expanded(
                     child: Column(
@@ -192,8 +193,8 @@ class MyHifzView extends StatelessWidget {
             ],
           ),
         ),
-        _Title(title: LocaleKeys.myHifzTools.tr()),
-        _Card(
+        SectionTitle(title: LocaleKeys.myHifzTools.tr()),
+        AppCard(
           padding: EdgeInsetsDirectional.zero,
           child: Column(
             children: <Widget>[
@@ -290,82 +291,6 @@ class _JuzMap extends StatelessWidget {
   }
 }
 
-class _Title extends StatelessWidget {
-  const _Title({required this.title, this.action, this.onAction});
-
-  final String title;
-  final String? action;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(4.w, 24.h, 4.w, 8.h),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          if (action != null)
-            TextButton(onPressed: onAction, child: Text(action!)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Card extends StatelessWidget {
-  const _Card({required this.child, this.onTap, this.padding});
-
-  final Widget child;
-  final VoidCallback? onTap;
-  final EdgeInsetsGeometry? padding;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    return Material(
-      color: colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18.r),
-        side: BorderSide(color: colors.outline),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: padding ?? EdgeInsetsDirectional.all(16.r),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _Icon extends StatelessWidget {
-  const _Icon(this.icon, {this.color});
-
-  final IconData icon;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 40.r,
-    height: 40.r,
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(12.r),
-    ),
-    child: Icon(icon, color: color),
-  );
-}
-
 class _Row extends StatelessWidget {
   const _Row({
     required this.icon,
@@ -388,7 +313,7 @@ class _Row extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return ListTile(
       onTap: onTap,
-      leading: _Icon(icon, color: iconColor),
+      leading: TileIcon(icon, color: iconColor),
       title: Text(title, style: theme.textTheme.titleSmall),
       subtitle: Text(subtitle),
       trailing: Row(

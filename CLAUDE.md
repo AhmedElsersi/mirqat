@@ -94,7 +94,9 @@ lib/
     constants/       AppConstants, AssetPaths
     extensions/
     widgets/         AyahText — the only widget allowed to render Quranic text;
-                     SettingsCard, the session form, the Islamic frame
+                     SettingsCard, the session form, the Islamic frame; and
+                     panel.dart — the card, tag, label, row icon and progress
+                     bar every screen outside the mushaf is built from
   data/
     models/          Surah, Ayah, Word, MushafLine, Reciter, MemorizationProgress, ...
     datasources/     QuranDatabase, QuranLocalDataSource, QuranPagesLocalDataSource,
@@ -128,8 +130,9 @@ lib/
     settings/        cubit + screens            (settings in cards; session settings,
                                                  saved recitations, and the whole
                                                  mushaf for one reciter, as pages)
-    about/           cubit + screens            (how to use, our goal, about us,
-                                                 the developer)
+    about/           cubit + screens            (how to use; and one page for
+                                                 the goal, who we are, whose
+                                                 idea it was and the developer)
     onboarding/      screen                     (the introduction, first launch)
     update/          cubit + widget             (the update prompt, over the whole app)
   services/

@@ -78,21 +78,36 @@ class SessionSettingsScreen extends StatelessWidget {
                 title: LocaleKeys.settingsDefaultRangeBehaviour.tr(),
                 icon: Icons.straighten,
                 children: <Widget>[
-                  RadioGroup<RangeBehaviour>(
-                    groupValue: settings.defaultRangeBehaviour,
-                    onChanged: (RangeBehaviour? b) {
-                      if (b != null) cubit.setDefaultRangeBehaviour(b);
-                    },
-                    child: Column(
-                      children: <Widget>[
+                  // Two choices, so a segmented control rather than two
+                  // radio rows: both are read at once, and the chosen one
+                  // is seen without reading either.
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<RangeBehaviour>(
+                      showSelectedIcon: false,
+                      segments: <ButtonSegment<RangeBehaviour>>[
                         for (final RangeBehaviour behaviour
                             in RangeBehaviour.values)
-                          RadioListTile<RangeBehaviour>(
-                            contentPadding: EdgeInsetsDirectional.zero,
-                            title: Text(_rangeLabel(behaviour).tr()),
+                          ButtonSegment<RangeBehaviour>(
                             value: behaviour,
+                            label: Text(
+                              _rangeLabel(behaviour).tr(),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                       ],
+                      selected: <RangeBehaviour>{
+                        settings.defaultRangeBehaviour,
+                      },
+                      onSelectionChanged: (Set<RangeBehaviour> picked) =>
+                          cubit.setDefaultRangeBehaviour(picked.first),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    LocaleKeys.settingsDefaultRangeHint.tr(),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],

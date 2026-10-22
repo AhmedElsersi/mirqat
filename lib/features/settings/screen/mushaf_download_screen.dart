@@ -8,6 +8,7 @@ import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/reciter_avatar.dart';
 import '../../../data/models/audio_pack.dart';
 import '../../../data/models/reciter.dart';
@@ -59,7 +60,12 @@ class MushafDownloadScreen extends StatelessWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                for (final ReciterOffline entry in state.reciters)
+                // A run under way is what the screen is about while it
+                // lasts, so it leads; the rest keep their order under it.
+                for (final ReciterOffline entry in <ReciterOffline>[
+                  ...state.reciters.where((ReciterOffline e) => e.isRunning),
+                  ...state.reciters.where((ReciterOffline e) => !e.isRunning),
+                ])
                   _ReciterCard(
                     entry: entry,
                     // One run at a time, so a reciter's button stands down
@@ -106,57 +112,83 @@ class _ReciterCard extends StatelessWidget {
     final Reciter reciter = entry.reciter;
     final PendingDownloads pending = entry.pending;
 
+    final String attribution = reciter.attribution.of(
+      context.locale.languageCode,
+    );
+
     return Padding(
       padding: EdgeInsetsDirectional.only(bottom: 12.h),
-      child: Material(
-        color: colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-          side: BorderSide(color: colors.outline),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: EdgeInsetsDirectional.all(14.r),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  ReciterAvatar(reciter: reciter, diameter: 40),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          reciter.nameAr,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+      child: AppCard(
+        border: entry.isRunning ? colors.primary : null,
+        padding: EdgeInsetsDirectional.all(14.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                ReciterAvatar(reciter: reciter, diameter: 40),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        reciter.nameAr,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        LocaleKeys.downloadsWholeOnDevice.tr(
+                          args: <String>[
+                            pending.onDevice.toLocalisedString(),
+                            pending.offered.toLocalisedString(),
+                          ],
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                      // Whom the recitation is served through, where the
+                      // reciter credits a library for it.
+                      if (attribution.isNotEmpty)
                         Text(
-                          LocaleKeys.downloadsWholeOnDevice.tr(
-                            args: <String>[
-                              pending.onDevice.toLocalisedString(),
-                              pending.offered.toLocalisedString(),
-                            ],
-                          ),
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          attribution,
+                          style: theme.textTheme.labelSmall?.copyWith(
                             color: colors.onSurfaceVariant,
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
-                  _Action(entry: entry, blocked: blocked, cubit: cubit),
-                ],
+                ),
+                _Action(entry: entry, blocked: blocked, cubit: cubit),
+              ],
+            ),
+            // How much of this reciter is already here, before any run:
+            // the count above says it, and the bar shows it.
+            if (!entry.isRunning && pending.offered > 0) ...<Widget>[
+              SizedBox(height: 12.h),
+              ProgressBar(
+                value: pending.onDevice / pending.offered,
+                height: 5.r,
               ),
-              SizedBox(height: 10.h),
-              _Status(entry: entry),
             ],
-          ),
+            SizedBox(height: 10.h),
+            _Status(entry: entry),
+            // The one thing a reader has to know before starting: it needs
+            // the app left open.
+            if (entry.isRunning) ...<Widget>[
+              SizedBox(height: 8.h),
+              Text(
+                LocaleKeys.downloadsWholeKeepOpen.tr(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/core/di/injection.dart';
@@ -72,8 +73,8 @@ void main() {
       expect(find.text('ماذا تحفظ اليوم؟'), findsOneWidget);
 
       await AppHarness.tapAndSettle(tester, find.text('حدّد الوِرد'));
-      // The first part is the new portion: add it, as it starts.
-      await AppHarness.tapAndSettle(tester, find.text('إضافة').first);
+      // The first part is the new portion: switch it on, as it starts.
+      await AppHarness.tapAndSettle(tester, find.byType(Switch).first);
       await tester.runAsync(() async {
         await tester.tap(find.text('احفظ'));
         await tester.pump();

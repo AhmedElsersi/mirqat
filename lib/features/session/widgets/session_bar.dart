@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/ladder_mark.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
@@ -466,6 +467,13 @@ class _Active extends StatelessWidget {
     final PlaybackUnit? unit = state.currentUnit;
     final int steps = state.activePlan?.stepCount ?? 0;
 
+    // A recall round is the reader's turn, not the reciter's: the bar says
+    // what is being asked, and offers the two things they may want — the
+    // answer now, or a note that this is where they slip.
+    if (state.recalling && !state.finished && unit != null) {
+      return _Recall(state: state, unit: unit, onOpenSettings: onOpenSettings);
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -618,6 +626,124 @@ class _Active extends StatelessWidget {
     return state.recalling
         ? LocaleKeys.playerRecallNow.tr(args: <String>[reference])
         : reference;
+  }
+}
+
+/// The bar during a recall gap: the ayah's place, the silence as a bar, and
+/// the reader's two answers — reveal it, or mark this as a place they slip.
+class _Recall extends StatelessWidget {
+  const _Recall({
+    required this.state,
+    required this.unit,
+    required this.onOpenSettings,
+  });
+
+  final SessionState state;
+  final PlaybackUnit unit;
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final SessionCubit cubit = context.read<SessionCubit>();
+    final String reference = LocaleKeys.mushafAyahReference.tr(
+      args: <String>[
+        _surahName(context, state.surah(unit.surahNumber)),
+        unit.ayahNumber.toLocalisedString(),
+      ],
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 12.w, 0),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 38.r,
+                height: 38.r,
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.mic_none, size: 20.r),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      LocaleKeys.playerRecallNow.tr(args: <String>[reference]),
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    Text(
+                      LocaleKeys.playerRecallHint.tr(),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(12.w, 10.h, 12.w, 0),
+          child: Wrap(
+            spacing: 8.w,
+            runSpacing: 4.h,
+            children: <Widget>[
+              ActionChip(
+                avatar: const Icon(Icons.visibility_outlined),
+                onPressed: cubit.revealRecall,
+                label: Text(LocaleKeys.playerRecallReveal.tr()),
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.flag_outlined),
+                onPressed: () => _markStumble(context, cubit),
+                label: Text(LocaleKeys.mushafStumbleHere.tr()),
+              ),
+            ],
+          ),
+        ),
+        Row(
+          children: <Widget>[
+            const _BackButton(),
+            const Spacer(),
+            IconButton.filled(
+              onPressed: cubit.togglePlayPause,
+              iconSize: 30.r,
+              tooltip: state.playing
+                  ? LocaleKeys.playerPause.tr()
+                  : LocaleKeys.playerPlay.tr(),
+              icon: Icon(state.playing ? Icons.pause : Icons.play_arrow),
+            ),
+            IconButton(
+              onPressed: cubit.stop,
+              tooltip: LocaleKeys.playerStop.tr(),
+              icon: const Icon(Icons.stop),
+            ),
+            const Spacer(),
+            IconButton(
+              onPressed: onOpenSettings,
+              tooltip: LocaleKeys.readerSessionSettings.tr(),
+              icon: const Icon(Icons.tune),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _markStumble(BuildContext context, SessionCubit cubit) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final String said = LocaleKeys.mushafStumbleMarked.tr();
+    await cubit.markStumble(unit.ref);
+    messenger.showSnackBar(SnackBar(content: Text(said)));
   }
 }
 

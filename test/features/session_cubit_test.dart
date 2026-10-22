@@ -1542,6 +1542,11 @@ void main() {
       expect(cubit.state.recalling, isTrue);
       expect(cubit.state.currentUnit, asked);
 
+      // "Reveal it" asks the player to cut the silence short; the gap ends
+      // when the answering play arrives, as it would have anyway.
+      await cubit.revealRecall();
+      expect(player.revealed, 1);
+
       player.reach(asked);
       await settle();
       expect(cubit.state.recalling, isFalse);

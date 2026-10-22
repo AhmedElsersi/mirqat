@@ -6,9 +6,11 @@ import 'package:mirqat/features/my_hifz/my_hifz_view.dart';
 import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
 import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
+import 'package:mirqat/core/widgets/panel.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mirqat/core/widgets/reciter_avatar.dart';
 import 'package:mirqat/core/widgets/session_controls.dart';
+import 'package:mirqat/data/models/memorization_progress.dart';
 import 'package:mirqat/features/progress/screen/progress_screen.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/features/settings/screen/downloads_screen.dart';
@@ -18,9 +20,8 @@ import 'package:mirqat/features/similar/screen/mutashabihat_screen.dart';
 import 'package:mirqat/features/similar/screen/phrase_screen.dart';
 import 'package:mirqat/core/localization/locale_keys.dart';
 import 'package:mirqat/core/widgets/settings_card.dart';
-import 'package:mirqat/features/about/screen/developer_screen.dart';
+import 'package:mirqat/features/about/screen/about_screen.dart';
 import 'package:mirqat/features/about/screen/how_to_use_screen.dart';
-import 'package:mirqat/features/about/screen/info_page_screen.dart';
 import 'package:mirqat/features/settings/screen/session_settings_screen.dart';
 import 'package:mirqat/features/settings/screen/settings_screen.dart';
 import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
@@ -98,7 +99,7 @@ void main() {
       expect(find.byType(AyahText), findsWidgets);
 
       await tester.runAsync(() async {
-        await tester.tap(find.byType(Card).first);
+        await tester.tap(find.byType(AppCard).first);
         await tester.pump();
       });
       await letReadsLand();
@@ -342,8 +343,9 @@ void main() {
       expect(seen, hasLength(5));
     });
 
-    testWidgets('the about card leads to how to use, our goal, about us and '
-        'the developer', (WidgetTester tester) async {
+    testWidgets('the about card leads to how to use and to the about page', (
+      WidgetTester tester,
+    ) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
 
@@ -357,9 +359,9 @@ void main() {
       }
 
       await visit('طريقة الاستخدام', HowToUseScreen);
-      await visit('هدفنا', InfoPageScreen);
-      await visit('من نحن', InfoPageScreen);
-      await visit('عن المطوّر', DeveloperScreen);
+      // Our goal, who we are, whose idea it was and the developer are one
+      // page now, under one row.
+      await visit('عن اقرأ وارتق', AboutScreen);
     });
 
     testWidgets('bedtime and morning is off until the reader turns it on', (
@@ -445,12 +447,14 @@ void main() {
       await openProgress(tester);
 
       expect(find.byType(ProgressScreen), findsOneWidget);
-      expect(find.text('لم يبدأ'), findsNWidgets(7));
+      // A cell per ayah, carrying its number and its state as a tint — the
+      // state is said in words once, in the legend.
+      expect(find.byType(AyahCell), findsNWidgets(7));
+      expect(_memorized(tester), isEmpty);
 
-      await AppHarness.tapAndSettle(tester, find.text('الآية ٣'));
+      await AppHarness.tapAndSettle(tester, _cell('٣'));
 
-      expect(find.text('محفوظة'), findsOneWidget);
-      expect(find.text('لم يبدأ'), findsNWidgets(6));
+      expect(_memorized(tester), <int>[3]);
     });
 
     testWidgets('a memorized ayah survives a restart', (
@@ -459,7 +463,7 @@ void main() {
       await harness.pumpApp(tester);
       await openProgress(tester);
 
-      await AppHarness.tapAndSettle(tester, find.text('الآية ١'));
+      await AppHarness.tapAndSettle(tester, _cell('١'));
 
       // Restarting proves the mark was written, not just shown. It does NOT
       // prove the home row updates while the app is running — a restart
@@ -479,8 +483,8 @@ void main() {
       expect(_fractionOfFirstRow(tester), 0);
 
       await openProgress(tester);
-      await AppHarness.tapAndSettle(tester, find.text('الآية ١'));
-      await AppHarness.tapAndSettle(tester, find.text('الآية ٢'));
+      await AppHarness.tapAndSettle(tester, _cell('١'));
+      await AppHarness.tapAndSettle(tester, _cell('٢'));
 
       // Back to the home screen. `pushNamed` left it mounted underneath, so
       // nothing rebuilds it and nothing re-runs its loader — the count has to
@@ -498,7 +502,7 @@ void main() {
     ) async {
       await harness.pumpApp(tester);
       await openProgress(tester);
-      await AppHarness.tapAndSettle(tester, find.text('الآية ١'));
+      await AppHarness.tapAndSettle(tester, _cell('١'));
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
       await _awaitProgressRefresh(tester);
       expect(find.byTooltip('١ من ٧ محفوظة'), findsOneWidget);
@@ -506,7 +510,7 @@ void main() {
       // Toggle it back off and return again: the stream has to carry the
       // decrease as readily as the increase.
       await openProgress(tester);
-      await AppHarness.tapAndSettle(tester, find.text('الآية ١'));
+      await AppHarness.tapAndSettle(tester, _cell('١'));
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
       await _awaitProgressRefresh(tester);
 
@@ -519,7 +523,7 @@ void main() {
     ) async {
       await harness.pumpApp(tester);
       await openProgress(tester);
-      await AppHarness.tapAndSettle(tester, find.text('الآية ١'));
+      await AppHarness.tapAndSettle(tester, _cell('١'));
       await AppHarness.tapAndSettle(tester, find.byType(BackButton));
 
       // Mid-refresh the rows must still be on screen. A background re-read
@@ -534,6 +538,16 @@ void main() {
     });
   });
 }
+
+/// One ayah's cell on the progress screen, by the number it carries.
+Finder _cell(String number) => find.widgetWithText(AyahCell, number);
+
+/// The ayahs the progress screen is currently showing as memorized.
+List<int> _memorized(WidgetTester tester) => tester
+    .widgetList<AyahCell>(find.byType(AyahCell))
+    .where((AyahCell c) => c.record.status == MemorizationStatus.memorized)
+    .map((AyahCell c) => c.record.ayahNumber)
+    .toList();
 
 /// The first home row's progress-ring value.
 double? _fractionOfFirstRow(WidgetTester tester) => tester

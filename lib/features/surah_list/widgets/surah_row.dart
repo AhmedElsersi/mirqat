@@ -102,13 +102,20 @@ class SurahProgressRing extends StatelessWidget {
   const SurahProgressRing({
     required this.fraction,
     required this.caption,
-    required this.onTap,
+    this.onTap,
+    this.diameter,
     super.key,
   });
 
   final double fraction;
   final String caption;
-  final VoidCallback onTap;
+
+  /// Null where the ring is already on the surah's own screen and there is
+  /// nowhere further to go.
+  final VoidCallback? onTap;
+
+  /// The ring itself; the widget takes a little more than this around it.
+  final double? diameter;
 
   @override
   Widget build(BuildContext context) {
@@ -122,10 +129,10 @@ class SurahProgressRing extends StatelessWidget {
         onTap: onTap,
         radius: 24.r,
         child: SizedBox.square(
-          dimension: 44.r,
+          dimension: (diameter ?? 30.r) + 14.r,
           child: Center(
             child: SizedBox.square(
-              dimension: 30.r,
+              dimension: diameter ?? 30.r,
               // Painted, not a progress indicator: that widget is the app's
               // "loading" spinner, and a ring here says how much, not wait.
               child: CustomPaint(
@@ -137,7 +144,11 @@ class SurahProgressRing extends StatelessWidget {
                 ),
                 child: fraction >= 1
                     ? Center(
-                        child: Icon(Icons.check, size: 16.r, color: done),
+                        child: Icon(
+                          Icons.check,
+                          size: (diameter ?? 30.r) * 0.53,
+                          color: done,
+                        ),
                       )
                     : null,
               ),

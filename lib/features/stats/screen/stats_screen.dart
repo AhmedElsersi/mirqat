@@ -7,6 +7,8 @@ import '../../../core/desktop.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/widgets/ladder_mark.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../domain/entities/practice_stats.dart';
 import '../cubit/stats_cubit.dart';
 
@@ -28,40 +30,71 @@ class StatsScreen extends StatelessWidget {
             if (s == null) {
               return const Center(child: CircularProgressIndicator());
             }
+            final ThemeData theme = Theme.of(context);
             return ListView(
-              padding: EdgeInsetsDirectional.all(16.r),
+              padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 32.h),
               children: <Widget>[
-                Wrap(
-                  spacing: 12.w,
-                  runSpacing: 12.h,
+                AppCard(
+                  padding: EdgeInsetsDirectional.all(18.r),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              LocaleKeys.statsDays.tr(),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              s.daysPractised.toLocalisedString(),
+                              style: theme.textTheme.displaySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              LocaleKeys.statsDaysHint.tr(),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      LadderMark(current: s.daysPractised == 0 ? 0 : 3),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Row(
                   children: <Widget>[
-                    _Tile(
-                      icon: Icons.calendar_today_outlined,
-                      value: s.daysPractised,
-                      label: LocaleKeys.statsDays.tr(),
+                    Expanded(
+                      child: _Stat(
+                        value: s.minutesListened,
+                        label: LocaleKeys.statsMinutes.tr(),
+                      ),
                     ),
-                    _Tile(
-                      icon: Icons.headphones_outlined,
-                      value: s.minutesListened,
-                      label: LocaleKeys.statsMinutes.tr(),
-                    ),
-                    _Tile(
-                      icon: Icons.repeat,
-                      value: s.plays,
-                      label: LocaleKeys.statsPlays.tr(),
-                    ),
-                    _Tile(
-                      icon: Icons.check_circle_outline,
-                      value: s.memorizedAyahs,
-                      label: LocaleKeys.statsMemorized.tr(),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: _Stat(
+                        value: s.plays,
+                        label: LocaleKeys.statsPlays.tr(),
+                      ),
                     ),
                   ],
                 ),
-                SizedBox(height: 16.h),
+                SizedBox(height: 12.h),
+                _Stat(
+                  value: s.memorizedAyahs,
+                  label: LocaleKeys.statsMemorized.tr(),
+                ),
+                SizedBox(height: 18.h),
                 Text(
                   LocaleKeys.statsNote.tr(),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -73,35 +106,36 @@ class StatsScreen extends StatelessWidget {
   );
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile({required this.icon, required this.value, required this.label});
+/// One number, and what it counts.
+class _Stat extends StatelessWidget {
+  const _Stat({required this.value, required this.label});
 
-  final IconData icon;
   final int value;
   final String label;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return SizedBox(
-      width: 150.w,
-      child: Card(
-        margin: EdgeInsetsDirectional.zero,
-        child: Padding(
-          padding: EdgeInsetsDirectional.all(12.r),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(icon, color: theme.colorScheme.primary),
-              SizedBox(height: 6.h),
-              Text(
-                value.toLocalisedString(),
-                style: theme.textTheme.titleLarge,
-              ),
-              Text(label, style: theme.textTheme.bodySmall),
-            ],
+    return AppCard(
+      padding: EdgeInsetsDirectional.all(16.r),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Text(
+            value.toLocalisedString(),
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
+          SizedBox(height: 2.h),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }

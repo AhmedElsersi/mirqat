@@ -7,9 +7,8 @@ import 'package:mirqat/core/di/injection.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/data/datasources/asset_reader.dart';
 import 'package:mirqat/data/repositories/settings_repository.dart';
-import 'package:mirqat/features/about/screen/developer_screen.dart';
+import 'package:mirqat/features/about/screen/about_screen.dart';
 import 'package:mirqat/features/about/screen/how_to_use_screen.dart';
-import 'package:mirqat/features/about/screen/idea_screen.dart';
 import 'package:mirqat/features/onboarding/screen/onboarding_screen.dart';
 import 'package:mirqat/features/settings/screen/settings_screen.dart';
 import 'package:mirqat/services/app_info_service.dart';
@@ -202,17 +201,31 @@ void main() {
         find.byIcon(Icons.settings_outlined),
       );
       expect(find.byType(SettingsScreen), findsOneWidget);
+      // Our goal, who we are, whose idea it was and the developer are one
+      // page now, reached by one row.
       await tester.scrollUntilVisible(
-        find.text('عن المطوّر'),
+        find.text('عن اقرأ وارتق'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
       // The last row on the page: visible is not yet tappable while it is
       // only peeking over the bottom edge.
-      await tester.ensureVisible(find.text('عن المطوّر'));
+      await tester.ensureVisible(find.text('عن اقرأ وارتق'));
       await tester.pumpAndSettle();
-      await AppHarness.tapAndSettle(tester, find.text('عن المطوّر'));
-      expect(find.byType(DeveloperScreen), findsOneWidget);
+      await AppHarness.tapAndSettle(tester, find.text('عن اقرأ وارتق'));
+      expect(find.byType(AboutScreen), findsOneWidget);
+    }
+
+    /// The about page is one page of several sections now, so what a test
+    /// asserts on is often below the fold.
+    Future<void> reveal(WidgetTester tester, Finder target) async {
+      await tester.scrollUntilVisible(
+        target,
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.ensureVisible(target);
+      await tester.pumpAndSettle();
     }
 
     void useAppInfo(Map<String, dynamic> json) {
@@ -244,6 +257,7 @@ void main() {
       });
       await openDeveloper(tester);
 
+      await reveal(tester, find.text('فلان'));
       expect(find.text('فلان'), findsOneWidget);
       expect(find.text('البريد الإلكتروني'), findsOneWidget);
       expect(find.text('واتساب'), findsOneWidget);
@@ -257,6 +271,7 @@ void main() {
     ) async {
       final _Links links = useLinks();
       await openDeveloper(tester);
+      await reveal(tester, find.text('البريد الإلكتروني'));
 
       await AppHarness.tapAndSettle(tester, find.text('البريد الإلكتروني'));
 
@@ -269,6 +284,7 @@ void main() {
     ) async {
       final _Links links = useLinks()..succeed = false;
       await openDeveloper(tester);
+      await reveal(tester, find.text('البريد الإلكتروني'));
 
       await AppHarness.tapAndSettle(tester, find.text('البريد الإلكتروني'));
 
@@ -282,6 +298,7 @@ void main() {
     ) async {
       useAppInfo(<String, dynamic>{});
       await openDeveloper(tester);
+      await reveal(tester, find.text('مطوّر التطبيق'));
 
       expect(find.text('مطوّر التطبيق'), findsOneWidget);
       expect(find.text('للتواصل'), findsNothing);
@@ -296,20 +313,21 @@ void main() {
           find.byIcon(Icons.settings_outlined),
         );
         await tester.scrollUntilVisible(
-          find.text('فكرة التطبيق'),
+          find.text('عن اقرأ وارتق'),
           200,
           scrollable: find.byType(Scrollable).first,
         );
-        await tester.ensureVisible(find.text('فكرة التطبيق'));
+        await tester.ensureVisible(find.text('عن اقرأ وارتق'));
         await tester.pumpAndSettle();
-        await AppHarness.tapAndSettle(tester, find.text('فكرة التطبيق'));
-        expect(find.byType(IdeaScreen), findsOneWidget);
+        await AppHarness.tapAndSettle(tester, find.text('عن اقرأ وارتق'));
+        expect(find.byType(AboutScreen), findsOneWidget);
       }
 
       testWidgets('credits its owner from the copy that ships', (
         WidgetTester tester,
       ) async {
         await openIdea(tester);
+        await reveal(tester, find.text('سعيد العكش'));
 
         expect(find.text('سعيد العكش'), findsOneWidget);
         expect(find.text('صاحب فكرة التطبيق'), findsOneWidget);

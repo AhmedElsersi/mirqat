@@ -106,6 +106,43 @@ void main() {
       expect(find.text('سورة الفاتحة · الآية ٣'), findsOneWidget);
     });
 
+    testWidgets('a recall round asks the ayah back, and the bar offers the '
+        'answer and the stumble', (WidgetTester tester) async {
+      await openFatiha(tester);
+      sessionOf(tester).setRecallRounds(1);
+      await pressStart(tester);
+
+      final PlaybackUnit asked = player().loads.single.plan.units.firstWhere(
+        (PlaybackUnit u) => u.asked,
+      );
+      await tester.runAsync(() async {
+        player().recall(asked);
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+      });
+      await AppHarness.frames(tester, 300);
+
+      // The bar says whose turn it is, and what the silence is for.
+      expect(
+        find.textContaining('اقرأ من حفظك'),
+        findsOneWidget,
+        reason: 'the silence reads as the session hanging without this',
+      );
+      expect(find.text('اكشفها'), findsOneWidget);
+      expect(find.text('أتعثّر هنا'), findsOneWidget);
+      // The step skips are out of the way: they move whole steps, and this
+      // is the one moment inside one.
+      expect(find.byIcon(Icons.skip_next), findsNothing);
+
+      await AppHarness.tapAndRun(tester, find.text('اكشفها'));
+      expect(player().revealed, 1);
+
+      await AppHarness.tapAndRun(tester, find.text('أتعثّر هنا'));
+      expect(
+        sessionOf(tester).state.stumbled,
+        contains(AyahRef(asked.surahNumber, asked.ayahNumber)),
+      );
+    });
+
     testWidgets('the step buttons and pause reach the player', (
       WidgetTester tester,
     ) async {

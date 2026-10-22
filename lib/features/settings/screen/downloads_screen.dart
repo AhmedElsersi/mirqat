@@ -3,20 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/desktop.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/reciter_avatar.dart';
 import '../../../data/models/audio_pack.dart';
+import '../../surah_list/widgets/surah_row.dart' show NumberDiamond;
 import '../cubit/downloads_cubit.dart';
 import '../cubit/downloads_state.dart';
 
 /// What is saved for offline listening, and what it costs.
 ///
-/// A surah can be downloaded from the reader's session settings, where the
-/// surah is already in front of the reader. It can only be *freed* from there
-/// too, which is fine while there is one — this screen is for the day there
-/// are thirty.
+/// The total leads the screen rather than closing it, and a reciter's two
+/// bulk actions — re-download what is stale, free the lot — sit on that
+/// reciter's own row instead of as text buttons under their surahs.
 class DownloadsScreen extends StatelessWidget {
   const DownloadsScreen({super.key});
 
@@ -25,53 +29,118 @@ class DownloadsScreen extends StatelessWidget {
     create: (_) => sl<DownloadsCubit>()..load(),
     child: Scaffold(
       appBar: AppBar(title: Text(LocaleKeys.downloadsSavedTitle.tr())),
-      body: BlocBuilder<DownloadsCubit, DownloadsState>(
-        builder: (BuildContext context, DownloadsState state) {
-          if (state.status.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final DownloadsCubit cubit = context.read<DownloadsCubit>();
+      body: DesktopWidth(
+        child: BlocBuilder<DownloadsCubit, DownloadsState>(
+          builder: (BuildContext context, DownloadsState state) {
+            if (state.status.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final DownloadsCubit cubit = context.read<DownloadsCubit>();
 
-          if (state.saved.isEmpty && state.failed.isEmpty) {
-            return _Empty(message: state.errorMessage);
-          }
+            if (state.saved.isEmpty && state.failed.isEmpty) {
+              return _Empty(message: state.errorMessage);
+            }
 
-          final Map<String, List<SavedRecitation>> grouped = state.byReciter;
+            final Map<String, List<SavedRecitation>> grouped = state.byReciter;
 
-          return ListView(
-            padding: EdgeInsetsDirectional.all(16.r),
-            children: <Widget>[
-              if (state.busy)
-                Padding(
-                  padding: EdgeInsetsDirectional.only(bottom: 12.h),
-                  child: const LinearProgressIndicator(),
+            return ListView(
+              padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 32.h),
+              children: <Widget>[
+                if (state.busy)
+                  Padding(
+                    padding: EdgeInsetsDirectional.only(bottom: 12.h),
+                    child: const LinearProgressIndicator(),
+                  ),
+                _Total(
+                  bytes: state.totalBytes,
+                  surahs: state.saved.length,
+                  error: state.errorMessage,
                 ),
-              for (final MapEntry<String, List<SavedRecitation>> entry
-                  in grouped.entries)
-                _ReciterGroup(
-                  reciterId: entry.key,
-                  items: entry.value,
-                  cubit: cubit,
-                  busy: state.busy,
-                ),
-              if (state.failed.isNotEmpty)
-                _FailedGroup(
-                  items: state.failed,
-                  cubit: cubit,
-                  busy: state.busy,
-                ),
-              const Divider(height: 1),
-              _Total(bytes: state.totalBytes, error: state.errorMessage),
-            ],
-          );
-        },
+                for (final MapEntry<String, List<SavedRecitation>> entry
+                    in grouped.entries)
+                  _ReciterGroup(
+                    reciterId: entry.key,
+                    items: entry.value,
+                    cubit: cubit,
+                    busy: state.busy,
+                  ),
+                if (state.failed.isNotEmpty)
+                  _FailedGroup(
+                    items: state.failed,
+                    cubit: cubit,
+                    busy: state.busy,
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     ),
   );
 }
 
+/// What it all costs, at the top: the first thing anyone opens this for.
+class _Total extends StatelessWidget {
+  const _Total({required this.bytes, required this.surahs, this.error});
+
+  final int bytes;
+  final int surahs;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return AppCard(
+      padding: EdgeInsetsDirectional.all(16.r),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const TileIcon(Icons.sd_storage_outlined),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      LocaleKeys.downloadsSizeMb.tr(
+                        args: <String>[megabytes(bytes)],
+                      ),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      LocaleKeys.downloadsSavedCount.tr(
+                        args: <String>[surahs.toLocalisedString()],
+                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (error != null) ...<Widget>[
+            SizedBox(height: 10.h),
+            Text(
+              error!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 /// One reciter's saved surahs, with the two actions that apply to all of
-/// them.
+/// them on the reciter's own row.
 class _ReciterGroup extends StatelessWidget {
   const _ReciterGroup({
     required this.reciterId,
@@ -88,35 +157,71 @@ class _ReciterGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final String name = items.first.reciter?.nameAr ?? reciterId;
+    final SavedRecitation first = items.first;
+    final String name = first.reciter?.nameAr ?? reciterId;
     final bool hasStale = items.any((SavedRecitation s) => s.pack.isStale);
+    final int bytes = items.fold<int>(
+      0,
+      (int sum, SavedRecitation s) => sum + s.pack.bytes,
+    );
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Padding(
-          padding: EdgeInsetsDirectional.only(top: 8.h, bottom: 4.h),
-          child: Text(name, style: theme.textTheme.titleSmall),
-        ),
-        for (final SavedRecitation saved in items)
-          _SavedRow(saved: saved, cubit: cubit),
-        Row(
-          children: <Widget>[
-            if (hasStale)
-              TextButton.icon(
-                onPressed: busy ? null : () => cubit.redownloadStale(reciterId),
-                icon: const Icon(Icons.refresh),
-                label: Text(LocaleKeys.downloadsRedownloadReciter.tr()),
+        FieldLabel(name),
+        AppCard(
+          padding: EdgeInsetsDirectional.zero,
+          child: Column(
+            children: <Widget>[
+              ListTile(
+                leading: first.reciter == null
+                    ? const TileIcon(Icons.person_outline)
+                    : ReciterAvatar(reciter: first.reciter!, diameter: 40),
+                title: Text(
+                  LocaleKeys.downloadsSavedCount.tr(
+                    args: <String>[items.length.toLocalisedString()],
+                  ),
+                  style: theme.textTheme.titleSmall,
+                ),
+                subtitle: Text(
+                  joinDetails(<String>[
+                    LocaleKeys.downloadsBitrate.tr(
+                      args: <String>[first.pack.bitrate.toLocalisedString()],
+                    ),
+                    LocaleKeys.downloadsSizeMb.tr(
+                      args: <String>[megabytes(bytes)],
+                    ),
+                  ]),
+                ),
+                trailing: PopupMenuButton<void>(
+                  enabled: !busy,
+                  tooltip: LocaleKeys.commonMore.tr(),
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<void>>[
+                    if (hasStale)
+                      PopupMenuItem<void>(
+                        onTap: () => cubit.redownloadStale(reciterId),
+                        child: _MenuRow(
+                          icon: Icons.refresh,
+                          label: LocaleKeys.downloadsRedownloadReciter.tr(),
+                        ),
+                      ),
+                    PopupMenuItem<void>(
+                      onTap: () => cubit.deleteReciter(reciterId),
+                      child: _MenuRow(
+                        icon: Icons.delete_sweep_outlined,
+                        label: LocaleKeys.downloadsDeleteReciter.tr(),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: busy ? null : () => cubit.deleteReciter(reciterId),
-              icon: const Icon(Icons.delete_sweep_outlined),
-              label: Text(LocaleKeys.downloadsDeleteReciter.tr()),
-            ),
-          ],
+              for (final SavedRecitation saved in items) ...<Widget>[
+                const Divider(height: 1),
+                _SavedRow(saved: saved, cubit: cubit, busy: busy),
+              ],
+            ],
+          ),
         ),
-        SizedBox(height: 8.h),
       ],
     );
   }
@@ -139,140 +244,132 @@ class _FailedGroup extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Padding(
-          padding: EdgeInsetsDirectional.only(top: 8.h, bottom: 4.h),
-          child: Text(
-            LocaleKeys.downloadsFailedRow.tr(),
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.error,
+        FieldLabel(LocaleKeys.downloadsFailedRow.tr()),
+        AppCard(
+          padding: EdgeInsetsDirectional.zero,
+          child: Column(
+            children: <Widget>[
+              for (final SavedRecitation saved in items) ...<Widget>[
+                if (saved != items.first) const Divider(height: 1),
+                ListTile(
+                  leading: TileIcon(
+                    Icons.cloud_off_outlined,
+                    color: theme.colorScheme.error,
+                  ),
+                  title: Text(
+                    saved.surah?.nameAr ??
+                        saved.pack.surahNumber.toLocalisedString(),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  subtitle: Text(
+                    joinDetails(<String>[
+                      saved.reciter?.nameAr ?? saved.pack.reciterId,
+                      LocaleKeys.downloadsFailed.tr(),
+                    ]),
+                  ),
+                  trailing: IconButton(
+                    onPressed: busy ? null : () => cubit.delete(saved),
+                    tooltip: LocaleKeys.downloadsDelete.tr(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        SizedBox(height: 12.h),
+        OutlinedButton.icon(
+          onPressed: busy ? null : cubit.retryFailed,
+          icon: const Icon(Icons.refresh),
+          label: Text(
+            LocaleKeys.downloadsRetryFailed.tr(
+              args: <String>[items.length.toLocalisedString()],
             ),
           ),
         ),
-        for (final SavedRecitation saved in items)
-          ListTile(
-            contentPadding: EdgeInsetsDirectional.zero,
-            leading: Icon(Icons.error_outline, color: theme.colorScheme.error),
-            title: Text(
-              saved.surah?.nameAr ?? saved.pack.surahNumber.toLocalisedString(),
-            ),
-            subtitle: Text(saved.reciter?.nameAr ?? saved.pack.reciterId),
-            trailing: IconButton(
-              onPressed: busy ? null : () => cubit.delete(saved),
-              tooltip: LocaleKeys.downloadsDelete.tr(),
-              icon: const Icon(Icons.close),
-            ),
-          ),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton.icon(
-            onPressed: busy ? null : cubit.retryFailed,
-            icon: const Icon(Icons.refresh),
-            label: Text(
-              LocaleKeys.downloadsRetryFailed.tr(
-                args: <String>[items.length.toLocalisedString()],
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 8.h),
       ],
     );
   }
 }
 
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: <Widget>[
+      Icon(icon),
+      SizedBox(width: 10.w),
+      Flexible(child: Text(label)),
+    ],
+  );
+}
+
+/// One saved surah: which it is, what it cost, and the way to free it.
 class _SavedRow extends StatelessWidget {
-  const _SavedRow({required this.saved, required this.cubit});
+  const _SavedRow({
+    required this.saved,
+    required this.cubit,
+    required this.busy,
+  });
 
   final SavedRecitation saved;
   final DownloadsCubit cubit;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
     final InstalledPack pack = saved.pack;
-    // A surah or reciter the catalog no longer knows still has to name itself,
-    // or the row would be an anonymous delete button.
+    // A surah the catalog no longer knows still has to name itself, or the
+    // row would be an anonymous delete button.
     final String surahName =
         saved.surah?.nameAr ??
         LocaleKeys.commonAyahNumber.tr(
           args: <String>[pack.surahNumber.toLocalisedString()],
         );
-    final String reciterName = saved.reciter?.nameAr ?? pack.reciterId;
 
     final ThemeData theme = Theme.of(context);
-    final String details = joinDetails(<String>[
-      reciterName,
-      LocaleKeys.downloadsSizeMb.tr(args: <String>[megabytes(pack.bytes)]),
-      LocaleKeys.downloadsBitrate.tr(
-        args: <String>[pack.bitrate.toLocalisedString()],
-      ),
-    ]);
-
     return ListTile(
-      contentPadding: EdgeInsetsDirectional.zero,
-      leading: Icon(
-        pack.isStale ? Icons.history : Icons.offline_pin_outlined,
-        color: pack.isStale ? theme.colorScheme.tertiary : null,
-      ),
-      title: Text(surahName),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(details),
-          // Stale audio still plays — a superseded take beats silence — so
-          // this is a note, not a warning, and the re-download is offered
-          // beside the reciter rather than forced here.
-          if (pack.isStale)
-            Text(
-              LocaleKeys.downloadsStale.tr(),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.tertiary,
-              ),
-            ),
-        ],
-      ),
-      isThreeLine: pack.isStale,
-      trailing: IconButton(
-        onPressed: () => cubit.delete(saved),
-        tooltip: LocaleKeys.downloadsDelete.tr(),
-        icon: const Icon(Icons.delete_outline),
-      ),
-    );
-  }
-}
-
-class _Total extends StatelessWidget {
-  const _Total({required this.bytes, this.error});
-
-  final int bytes;
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsetsDirectional.only(top: 16.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      leading: NumberDiamond(number: pack.surahNumber),
+      title: Text(surahName, style: theme.textTheme.titleSmall),
+      subtitle: Wrap(
+        spacing: 8.w,
+        runSpacing: 4.h,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: <Widget>[
           Text(
-            LocaleKeys.downloadsSavedTotal.tr(args: <String>[megabytes(bytes)]),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            LocaleKeys.downloadsSizeMb.tr(
+              args: <String>[megabytes(pack.bytes)],
             ),
           ),
-          if (error != null)
-            Padding(
-              padding: EdgeInsetsDirectional.only(top: 8.h),
-              child: Text(
-                error!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-              ),
+          // Stale audio still plays — a superseded take beats silence — so
+          // this is a tag, not a warning, and the re-download beside it asks
+          // rather than insists.
+          if (pack.isStale)
+            AppTag(label: LocaleKeys.downloadsStale.tr(), tone: AppColors.gold),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (pack.isStale)
+            IconButton(
+              onPressed: busy
+                  ? null
+                  : () => cubit.redownloadStale(pack.reciterId),
+              tooltip: LocaleKeys.downloadsRedownloadReciter.tr(),
+              icon: const Icon(Icons.refresh),
             ),
+          IconButton(
+            onPressed: busy ? null : () => cubit.delete(saved),
+            tooltip: LocaleKeys.downloadsDelete.tr(),
+            icon: const Icon(Icons.delete_outline),
+          ),
         ],
       ),
     );

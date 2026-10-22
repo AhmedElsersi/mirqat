@@ -12,6 +12,7 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/theme/quran_font.dart';
 import '../../../core/widgets/ayah_text.dart';
 import '../../../core/widgets/islamic_frame.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/session_controls.dart';
 import '../../../core/widgets/settings_card.dart';
 import '../../../data/models/app_settings.dart';
@@ -66,7 +67,6 @@ class MushafFontScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (settings.quranFont.pageFonts) const _QpcFonts(),
                     Padding(
                       padding: EdgeInsetsDirectional.only(top: 4.h),
                       child: Text(
@@ -92,6 +92,27 @@ class MushafFontScreen extends StatelessWidget {
                       onChanged: (double v) =>
                           cubit.setArabicFontSize(v.roundToDouble()),
                     ),
+                    // Where the printed page is reproduced line for line.
+                    // Said as a way back to it, not as a mark on the track:
+                    // a reader who has gone past it wants it back in a tap.
+                    if (settings.arabicFontSize !=
+                        AppSettings.defaultArabicFontSize)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton(
+                          onPressed: () => cubit.setArabicFontSize(
+                            AppSettings.defaultArabicFontSize,
+                          ),
+                          child: Text(
+                            LocaleKeys.mushafFontDefaultSize.tr(
+                              args: <String>[
+                                AppSettings.defaultArabicFontSize
+                                    .toLocalisedFixed(0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     // What the slider does to a page is not obvious from a
                     // sample, so it is said: past the middle, the page is no
                     // longer the printed page line for line.
@@ -103,6 +124,12 @@ class MushafFontScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (settings.quranFont.pageFonts)
+                  SettingsCard(
+                    title: LocaleKeys.mushafFontQpcFontsTitle.tr(),
+                    icon: Icons.download_outlined,
+                    children: const <Widget>[_QpcFonts()],
+                  ),
               ],
             ),
           );
@@ -268,20 +295,21 @@ class _QpcFontsState extends State<_QpcFonts> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
-            LocaleKeys.mushafFontQpcFontsTitle.tr(),
-            style: theme.textTheme.titleSmall,
-          ),
-          SizedBox(height: 4.h),
-          Text(
             LocaleKeys.mushafFontQpcFontsCount.tr(
               args: <String>[
                 onDevice.toLocalisedString(),
                 totals.pages.toLocalisedString(),
               ],
             ),
-            style: theme.textTheme.bodySmall,
+            style: theme.textTheme.titleSmall,
           ),
           SizedBox(height: 8.h),
+          // How much of the mushaf is already here, before any fetch.
+          ProgressBar(
+            value: totals.pages == 0 ? 0 : onDevice / totals.pages,
+            height: 5.r,
+          ),
+          SizedBox(height: 10.h),
           if (progress != null) ...<Widget>[
             LinearProgressIndicator(
               value: progress.$2 == 0 ? null : progress.$1 / progress.$2,

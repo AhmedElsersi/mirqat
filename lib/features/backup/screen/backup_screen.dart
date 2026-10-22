@@ -7,12 +7,16 @@ import '../../../core/desktop.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
-import '../../../core/widgets/settings_card.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../services/backup_service.dart';
 import '../cubit/backup_cubit.dart';
 
 /// The reader's progress, saved to a file and taken back in — to move to a
 /// new phone, or to keep somewhere safe. No account: the file is theirs.
+///
+/// What a copy holds is four tags rather than a paragraph, and the path is
+/// set latin and read from the left, whatever the interface language.
 class BackupScreen extends StatelessWidget {
   const BackupScreen({super.key});
 
@@ -27,122 +31,187 @@ class BackupScreen extends StatelessWidget {
             final ThemeData theme = Theme.of(context);
             final BackupCubit cubit = context.read<BackupCubit>();
             return ListView(
-              padding: EdgeInsetsDirectional.all(16.r),
+              padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 32.h),
               children: <Widget>[
+                AppCard(
+                  padding: EdgeInsetsDirectional.all(16.r),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          const TileIcon(Icons.save_alt),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: Text(
+                              LocaleKeys.backupNoAccount.tr(),
+                              style: theme.textTheme.titleSmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 14.h),
+                      Wrap(
+                        spacing: 8.w,
+                        runSpacing: 8.h,
+                        children: <Widget>[
+                          AppTag(label: LocaleKeys.backupHoldsProgress.tr()),
+                          AppTag(label: LocaleKeys.backupHoldsReviews.tr()),
+                          AppTag(label: LocaleKeys.backupHoldsWeakSpots.tr()),
+                          AppTag(label: LocaleKeys.backupHoldsPlan.tr()),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                FieldLabel(LocaleKeys.backupExport.tr()),
+                AppCard(
+                  padding: EdgeInsetsDirectional.all(16.r),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          minimumSize: Size(0, 48.r),
+                        ),
+                        onPressed: state.busy ? null : cubit.export,
+                        icon: const Icon(Icons.save_alt),
+                        label: Text(LocaleKeys.backupExportNow.tr()),
+                      ),
+                      if (state.exportedTo != null) ...<Widget>[
+                        SizedBox(height: 12.h),
+                        Text(
+                          LocaleKeys.backupSavedAt.tr(),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                        SizedBox(height: 6.h),
+                        _Path(path: state.exportedTo!),
+                        if (cubit.canShare) ...<Widget>[
+                          SizedBox(height: 10.h),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: ActionChip(
+                              avatar: const Icon(Icons.ios_share),
+                              onPressed: cubit.shareExported,
+                              label: Text(LocaleKeys.backupShare.tr()),
+                            ),
+                          ),
+                        ],
+                      ],
+                      if (state.failed) ...<Widget>[
+                        SizedBox(height: 8.h),
+                        Text(
+                          LocaleKeys.backupExportFailed.tr(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                FieldLabel(LocaleKeys.backupImport.tr()),
+                AppCard(
+                  padding: EdgeInsetsDirectional.all(16.r),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      if (cubit.canPick) ...<Widget>[
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: Size(0, 48.r),
+                          ),
+                          onPressed: state.busy
+                              ? null
+                              : () => _confirmPick(context, cubit),
+                          icon: const Icon(Icons.file_open_outlined),
+                          label: Text(LocaleKeys.backupPick.tr()),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          LocaleKeys.backupPickHint.tr(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                      ],
+                      if (state.files.isEmpty)
+                        Text(
+                          LocaleKeys.backupNone.tr(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      else
+                        for (final BackupFile f in state.files)
+                          ListTile(
+                            contentPadding: EdgeInsetsDirectional.zero,
+                            leading: const TileIcon(Icons.description_outlined),
+                            title: Text(
+                              f.name,
+                              textDirection: TextDirection.ltr,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                            trailing: TextButton(
+                              onPressed: state.busy
+                                  ? null
+                                  : () => _confirmImport(context, cubit, f),
+                              child: Text(LocaleKeys.backupImportThis.tr()),
+                            ),
+                          ),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed: state.busy ? null : cubit.load,
+                          icon: const Icon(Icons.refresh),
+                          label: Text(LocaleKeys.backupRefresh.tr()),
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        LocaleKeys.backupWhere.tr(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (state.folder != null) ...<Widget>[
+                        SizedBox(height: 6.h),
+                        _Path(path: state.folder!),
+                      ],
+                      if (state.refusal != null) ...<Widget>[
+                        SizedBox(height: 10.h),
+                        Text(
+                          switch (state.refusal!) {
+                            BackupRefusal.notABackup =>
+                              LocaleKeys.backupNotABackup.tr(),
+                            BackupRefusal.newerVersion =>
+                              LocaleKeys.backupNewer.tr(),
+                            BackupRefusal.unreadable =>
+                              LocaleKeys.backupUnreadable.tr(),
+                          },
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                if (state.merged != null) ...<Widget>[
+                  SizedBox(height: 12.h),
+                  _Merged(merge: state.merged!),
+                ],
+
+                SizedBox(height: 16.h),
                 Text(
                   LocaleKeys.backupIntro.tr(),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
-                ),
-                SizedBox(height: 16.h),
-                SettingsCard(
-                  title: LocaleKeys.backupExport.tr(),
-                  icon: Icons.upload_file_outlined,
-                  children: <Widget>[
-                    FilledButton.icon(
-                      onPressed: state.busy ? null : cubit.export,
-                      icon: const Icon(Icons.save_alt),
-                      label: Text(LocaleKeys.backupExportNow.tr()),
-                    ),
-                    if (state.exportedTo != null) ...<Widget>[
-                      SizedBox(height: 8.h),
-                      Text(LocaleKeys.backupSavedAt.tr()),
-                      SelectableText(
-                        state.exportedTo!,
-                        textDirection: TextDirection.ltr,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      if (cubit.canShare) ...<Widget>[
-                        SizedBox(height: 8.h),
-                        OutlinedButton.icon(
-                          onPressed: cubit.shareExported,
-                          icon: const Icon(Icons.ios_share),
-                          label: Text(LocaleKeys.backupShare.tr()),
-                        ),
-                      ],
-                    ],
-                    if (state.failed)
-                      Text(
-                        LocaleKeys.backupExportFailed.tr(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
-                        ),
-                      ),
-                  ],
-                ),
-                SettingsCard(
-                  title: LocaleKeys.backupImport.tr(),
-                  icon: Icons.download_outlined,
-                  children: <Widget>[
-                    if (cubit.canPick) ...<Widget>[
-                      FilledButton.icon(
-                        onPressed: state.busy
-                            ? null
-                            : () => _confirmPick(context, cubit),
-                        icon: const Icon(Icons.file_open_outlined),
-                        label: Text(LocaleKeys.backupPick.tr()),
-                      ),
-                      Text(
-                        LocaleKeys.backupPickHint.tr(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      SizedBox(height: 12.h),
-                    ],
-                    Text(
-                      LocaleKeys.backupWhere.tr(),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    if (state.folder != null)
-                      SelectableText(
-                        state.folder!,
-                        textDirection: TextDirection.ltr,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    SizedBox(height: 8.h),
-                    if (state.files.isEmpty)
-                      Text(
-                        LocaleKeys.backupNone.tr(),
-                        style: theme.textTheme.bodySmall,
-                      )
-                    else
-                      for (final BackupFile f in state.files)
-                        ListTile(
-                          contentPadding: EdgeInsetsDirectional.zero,
-                          leading: const Icon(Icons.description_outlined),
-                          title: Text(f.name, textDirection: TextDirection.ltr),
-                          trailing: TextButton(
-                            onPressed: state.busy
-                                ? null
-                                : () => _confirmImport(context, cubit, f),
-                            child: Text(LocaleKeys.backupImportThis.tr()),
-                          ),
-                        ),
-                    TextButton.icon(
-                      onPressed: state.busy ? null : cubit.load,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(LocaleKeys.backupRefresh.tr()),
-                    ),
-                    if (state.merged != null) _Merged(merge: state.merged!),
-                    if (state.refusal != null)
-                      Text(
-                        switch (state.refusal!) {
-                          BackupRefusal.notABackup =>
-                            LocaleKeys.backupNotABackup.tr(),
-                          BackupRefusal.newerVersion =>
-                            LocaleKeys.backupNewer.tr(),
-                          BackupRefusal.unreadable =>
-                            LocaleKeys.backupUnreadable.tr(),
-                        },
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
-                        ),
-                      ),
-                  ],
                 ),
               ],
             );
@@ -189,23 +258,68 @@ class BackupScreen extends StatelessWidget {
   }
 }
 
+/// A path: latin, read from the left, and selectable — it is often typed
+/// into something else.
+class _Path extends StatelessWidget {
+  const _Path({required this.path});
+
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsetsDirectional.all(10.r),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10.r),
+      ),
+      child: SelectableText(
+        path,
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.left,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontFamily: 'monospace',
+        ),
+      ),
+    );
+  }
+}
+
+/// What an import took in, said once it has happened.
 class _Merged extends StatelessWidget {
   const _Merged({required this.merge});
 
   final BackupMerge merge;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsetsDirectional.only(top: 8.h),
-    child: Text(
-      LocaleKeys.backupMerged.tr(
-        args: <String>[
-          merge.ayahs.toLocalisedString(),
-          merge.reviews.toLocalisedString(),
-          merge.days.toLocalisedString(),
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color done = theme.brightness == Brightness.dark
+        ? AppColors.sabrDark
+        : AppColors.sabrLight;
+    return AppCard(
+      padding: EdgeInsetsDirectional.all(14.r),
+      child: Row(
+        children: <Widget>[
+          Icon(Icons.check_circle_outline, color: done),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Text(
+              LocaleKeys.backupMerged.tr(
+                args: <String>[
+                  merge.ayahs.toLocalisedString(),
+                  merge.reviews.toLocalisedString(),
+                  merge.days.toLocalisedString(),
+                ],
+              ),
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
         ],
       ),
-      style: Theme.of(context).textTheme.bodyMedium,
-    ),
-  );
+    );
+  }
 }

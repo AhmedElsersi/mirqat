@@ -155,6 +155,18 @@ class PlaybackQueue extends Equatable {
     };
   }
 
+  /// The first entry at or after [queueIndex] that is not a recall clip —
+  /// the play that answers the reader. The queue's length where the gap runs
+  /// to the end, which cannot happen in a built plan but is not worth a
+  /// crash.
+  int indexAfterRecallGap(int queueIndex) {
+    int i = queueIndex < 0 ? 0 : queueIndex;
+    while (i < entries.length && entries[i] is RecallGapEntry) {
+      i += 1;
+    }
+    return i;
+  }
+
   /// [unitStreamFrom], but with the recall gaps kept in: the gap of a recall
   /// round emits once as it begins — the page veils the ayah on it — and the
   /// answering play emits as any play does. Runs of silence clips collapse

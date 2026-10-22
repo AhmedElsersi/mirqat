@@ -284,6 +284,19 @@ class MemorizationPlayerService {
 
   Future<void> restartCurrentStep() => _seekToStep(_currentStepIndex);
 
+  /// Ends a recall gap early: skips the silence that is left and plays the
+  /// ayah that answers it. Outside a gap it does nothing — the silence is
+  /// the only thing anyone asks to cut short.
+  Future<void> skipRecallGap() async {
+    final PlaybackQueue? queue = _queue;
+    final int? index = _player.currentIndex;
+    if (queue == null || index == null) return;
+    final int next = queue.indexAfterRecallGap(index);
+    if (next == index || next >= queue.length) return;
+    _lastUnit = queue.unitAt(next) ?? _lastUnit;
+    await _player.seek(Duration.zero, index: next);
+  }
+
   /// Changing speed does not move the play position.
   Future<void> setSpeed(double speed) => _player.setSpeed(speed);
 

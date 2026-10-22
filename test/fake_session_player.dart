@@ -87,6 +87,12 @@ class FakeSessionPlayer implements MemorizationPlayerService {
   @override
   Future<void> stop() async {}
 
+  /// How many times a recall gap was cut short.
+  int revealed = 0;
+
+  @override
+  Future<void> skipRecallGap() async => revealed++;
+
   @override
   Future<void> skipToNextStep() async => skips.add(1);
 

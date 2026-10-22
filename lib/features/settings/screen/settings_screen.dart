@@ -150,25 +150,16 @@ class SettingsScreen extends StatelessWidget {
                       title: LocaleKeys.aboutHowToUse.tr(),
                       onTap: () => context.pushNamed(AppRoutes.howToUseName),
                     ),
+                    // Our goal, who we are, whose idea it was and who made
+                    // it are one page now: they are four paragraphs out of
+                    // the same file, and four rows made them four screens.
                     SettingsLinkRow(
-                      icon: Icons.flag_outlined,
-                      title: LocaleKeys.aboutGoal.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.goalName),
-                    ),
-                    SettingsLinkRow(
-                      icon: Icons.groups_outlined,
-                      title: LocaleKeys.aboutUs.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.aboutUsName),
-                    ),
-                    SettingsLinkRow(
-                      icon: Icons.lightbulb_outline,
-                      title: LocaleKeys.aboutIdea.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.ideaName),
-                    ),
-                    SettingsLinkRow(
-                      icon: Icons.person_outline,
-                      title: LocaleKeys.aboutDeveloper.tr(),
-                      onTap: () => context.pushNamed(AppRoutes.developerName),
+                      icon: Icons.info_outline,
+                      title: LocaleKeys.aboutAboutApp.tr(
+                        args: <String>[LocaleKeys.appName.tr()],
+                      ),
+                      subtitle: LocaleKeys.aboutRowHint.tr(),
+                      onTap: () => context.pushNamed(AppRoutes.aboutName),
                     ),
                   ],
                 ),

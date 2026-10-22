@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/about/screen/developer_screen.dart';
-import '../../features/about/screen/idea_screen.dart';
+import '../../features/about/screen/about_screen.dart';
 import '../../features/about/screen/how_to_use_screen.dart';
-import '../../features/about/screen/info_page_screen.dart';
 import '../../features/hifz_plan/screen/hifz_plan_screen.dart';
 import '../../features/backup/screen/backup_screen.dart';
 import '../../features/history/screen/history_screen.dart';
@@ -194,28 +192,10 @@ class AppRouter {
                 const HowToUseScreen(),
           ),
           GoRoute(
-            path: AppRoutes.goalPath,
-            name: AppRoutes.goalName,
+            path: AppRoutes.aboutPath,
+            name: AppRoutes.aboutName,
             builder: (BuildContext context, GoRouterState state) =>
-                const InfoPageScreen(page: InfoPage.goal),
-          ),
-          GoRoute(
-            path: AppRoutes.aboutUsPath,
-            name: AppRoutes.aboutUsName,
-            builder: (BuildContext context, GoRouterState state) =>
-                const InfoPageScreen(page: InfoPage.about),
-          ),
-          GoRoute(
-            path: AppRoutes.ideaPath,
-            name: AppRoutes.ideaName,
-            builder: (BuildContext context, GoRouterState state) =>
-                const IdeaScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.developerPath,
-            name: AppRoutes.developerName,
-            builder: (BuildContext context, GoRouterState state) =>
-                const DeveloperScreen(),
+                const AboutScreen(),
           ),
           GoRoute(
             path: AppRoutes.downloadsPath,

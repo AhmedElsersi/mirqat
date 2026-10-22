@@ -9,6 +9,7 @@ import '../../core/localization/locale_keys.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/ladder_mark.dart';
+import '../../core/widgets/panel.dart';
 import '../../core/widgets/range_label.dart';
 import '../../data/models/app_settings.dart';
 import '../../data/models/surah.dart';
@@ -157,7 +158,7 @@ class TodayView extends StatelessWidget {
         ),
         if (bookend != null && bookendItem != null) ...<Widget>[
           SizedBox(height: 12.h),
-          _Tile(
+          AppCard(
             filled: true,
             child: BookendRow(
               bookend: bookend,
@@ -167,14 +168,14 @@ class TodayView extends StatelessWidget {
           ),
         ],
         if (due.isNotEmpty) ...<Widget>[
-          _SectionTitle(
+          SectionTitle(
             title: LocaleKeys.todayDue.tr(),
             action: LocaleKeys.todayAll.tr(
               args: <String>[review.dueToday.length.toLocalisedString()],
             ),
             onAction: () => context.pushNamed(AppRoutes.reviewsName),
           ),
-          _Tile(
+          AppCard(
             child: Column(
               children: <Widget>[
                 for (
@@ -190,8 +191,8 @@ class TodayView extends StatelessWidget {
           ),
         ],
         if (place != null) ...<Widget>[
-          _SectionTitle(title: LocaleKeys.todayContinue.tr()),
-          _Tile(
+          SectionTitle(title: LocaleKeys.todayContinue.tr()),
+          AppCard(
             child: ListTile(
               onTap: onOpenPlace,
               leading: Icon(
@@ -225,7 +226,7 @@ class TodayView extends StatelessWidget {
         ],
         if (plan != null && portion != null) ...<Widget>[
           SizedBox(height: 12.h),
-          _Tile(
+          AppCard(
             padding: EdgeInsetsDirectional.all(16.r),
             onTap: () => context.pushNamed(AppRoutes.hifzPlanName),
             child: Column(
@@ -377,7 +378,7 @@ class _NewPortion extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                _Tag(
+                AppTag(
                   label: start == null
                       ? LocaleKeys.todayTitle.tr()
                       : wirdPartLabel(WirdPart.fresh),
@@ -467,13 +468,13 @@ class _ReviewPart extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool set = label != null;
-    return _Tile(
+    return AppCard(
       onTap: onOpen,
       padding: EdgeInsetsDirectional.all(14.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _Tag(label: wirdPartLabel(part)),
+          AppTag(label: wirdPartLabel(part)),
           SizedBox(height: 10.h),
           Text(
             label ?? LocaleKeys.todayAdd.tr(),
@@ -527,101 +528,6 @@ class _DueRow extends StatelessWidget {
         tooltip: LocaleKeys.reviewStart.tr(),
         onPressed: () => openReview(context, item),
         icon: const Icon(Icons.play_arrow),
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.action, this.onAction});
-
-  final String title;
-  final String? action;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(4.w, 24.h, 4.w, 8.h),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          if (action != null)
-            TextButton(onPressed: onAction, child: Text(action!)),
-        ],
-      ),
-    );
-  }
-}
-
-/// A rounded card on the page's surface.
-class _Tile extends StatelessWidget {
-  const _Tile({
-    required this.child,
-    this.onTap,
-    this.padding,
-    this.filled = false,
-  });
-
-  final Widget child;
-  final VoidCallback? onTap;
-  final EdgeInsetsGeometry? padding;
-
-  /// Tinted rather than outlined: a suggestion, not a task.
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    return Material(
-      color: filled ? colors.surfaceContainerHighest : colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18.r),
-        side: filled ? BorderSide.none : BorderSide(color: colors.outline),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: padding == null
-            ? child
-            : Padding(padding: padding!, child: child),
-      ),
-    );
-  }
-}
-
-/// A small label in a pill.
-class _Tag extends StatelessWidget {
-  const _Tag({required this.label, this.onHero = false});
-
-  final String label;
-  final bool onHero;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsetsDirectional.symmetric(horizontal: 10.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: onHero
-            ? AppColors.cream.withValues(alpha: 0.14)
-            : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: onHero ? AppColors.cream : theme.colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }

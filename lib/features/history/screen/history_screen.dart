@@ -4,16 +4,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/desktop.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/panel.dart';
 import '../../home/cubit/home_index_cubit.dart';
 import '../../home/cubit/home_index_state.dart';
 import '../../mushaf/mushaf_args.dart';
+import '../../surah_list/widgets/surah_row.dart' show NumberDiamond;
 
 /// Where the reader has been, newest first: the last twenty visits, each one
 /// a way back to its page. Kept on the device and nowhere else.
+///
+/// The visits are gathered under the day they belong to, so the date is said
+/// once over a group instead of on every row, and what a row then carries is
+/// the place and the hour.
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
@@ -44,30 +51,21 @@ class _HistoryView extends StatelessWidget {
                 ),
             ],
           ),
-          body: !state.loaded
-              ? const Center(child: CircularProgressIndicator())
-              : state.history.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsetsDirectional.all(32.r),
-                    child: Text(
-                      LocaleKeys.historyEmpty.tr(),
-                      textAlign: TextAlign.center,
+          body: DesktopWidth(
+            child: !state.loaded
+                ? const Center(child: CircularProgressIndicator())
+                : state.history.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.all(32.r),
+                      child: Text(
+                        LocaleKeys.historyEmpty.tr(),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: EdgeInsetsDirectional.only(bottom: 24.h),
-                  itemCount: state.history.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (BuildContext context, int index) => PlaceTile(
-                    place: state.history[index],
-                    onTap: () async {
-                      await openPlace(context, state.history[index]);
-                      await cubit.refreshHistory();
-                    },
-                  ),
-                ),
+                  )
+                : _Days(places: state.history, onOpened: cubit.refreshHistory),
+          ),
         );
       },
     );
@@ -97,6 +95,83 @@ class _HistoryView extends StatelessWidget {
   }
 }
 
+/// The places, in the order they were visited, under a heading per day.
+class _Days extends StatelessWidget {
+  const _Days({required this.places, required this.onOpened});
+
+  final List<PlaceItem> places;
+  final Future<void> Function() onOpened;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> children = <Widget>[];
+    String? day;
+    List<PlaceItem> group = <PlaceItem>[];
+
+    void flush() {
+      if (group.isEmpty) return;
+      final List<PlaceItem> rows = group;
+      children.add(
+        AppCard(
+          padding: EdgeInsetsDirectional.zero,
+          child: Column(
+            children: <Widget>[
+              for (final PlaceItem place in rows) ...<Widget>[
+                if (place != rows.first) const Divider(height: 1),
+                PlaceTile(
+                  place: place,
+                  onTap: () async {
+                    await openPlace(context, place);
+                    await onOpened();
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+      group = <PlaceItem>[];
+    }
+
+    for (final PlaceItem place in places) {
+      final String label = PlaceTile.dayLabel(context, place.position.at);
+      if (label != day) {
+        flush();
+        day = label;
+        children.add(_DayHeading(label: label));
+      }
+      group.add(place);
+    }
+    flush();
+
+    return ListView(
+      padding: EdgeInsetsDirectional.fromSTEB(16.w, 4.h, 16.w, 24.h),
+      children: children,
+    );
+  }
+}
+
+class _DayHeading extends StatelessWidget {
+  const _DayHeading({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(6.w, 18.h, 6.w, 8.h),
+      child: Text(
+        label,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
 /// Opens the mushaf on the page a place is on.
 Future<void> openPlace(BuildContext context, PlaceItem place) =>
     context.pushNamed<void>(
@@ -104,7 +179,7 @@ Future<void> openPlace(BuildContext context, PlaceItem place) =>
       extra: MushafArgs(initialPage: place.position.page),
     );
 
-/// One visited place: the surah, the ayah and page, and when.
+/// One visited place: the page it is on, the ayah, and the hour.
 class PlaceTile extends StatelessWidget {
   const PlaceTile({required this.place, required this.onTap, super.key});
 
@@ -117,34 +192,43 @@ class PlaceTile extends StatelessWidget {
     final bool arabic = context.locale.languageCode == 'ar';
     return ListTile(
       onTap: onTap,
-      leading: Icon(Icons.bookmark_outline, color: theme.colorScheme.primary),
+      leading: NumberDiamond(number: place.position.page),
       title: Text(
-        LocaleKeys.homePlace.tr(
+        LocaleKeys.mushafAyahReference.tr(
           args: <String>[
             arabic ? place.surah.nameAr : place.surah.nameEn,
             place.position.ayahNumber.toLocalisedString(),
-            place.position.page.toLocalisedString(),
           ],
         ),
+        style: theme.textTheme.titleSmall,
       ),
-      subtitle: Text(whenLabel(context, place.position.at)),
-      trailing: const Icon(Icons.chevron_right),
+      subtitle: Text(
+        joinDetails(<String>[
+          LocaleKeys.mushafPage.tr(
+            args: <String>[place.position.page.toLocalisedString()],
+          ),
+          whenLabel(context, place.position.at),
+        ]),
+      ),
+      trailing: const Icon(Icons.chevron_left),
     );
   }
 
-  /// "Today 3:15 PM", "Yesterday 9:02 AM", or the date — in the app's own
-  /// language and numerals.
-  static String whenLabel(BuildContext context, DateTime at) {
-    final String locale = context.locale.toString();
+  /// The hour a place was visited, in the app's own numerals.
+  static String whenLabel(BuildContext context, DateTime at) =>
+      DateFormat.jm(context.locale.toString()).format(at).withLocalisedDigits();
+
+  /// The day a place belongs to: today, yesterday, or its date.
+  static String dayLabel(BuildContext context, DateTime at) {
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
     final DateTime day = DateTime(at.year, at.month, at.day);
-    final String time = DateFormat.jm(locale).format(at).withLocalisedDigits();
-    if (day == today) return '${LocaleKeys.historyToday.tr()} · $time';
+    if (day == today) return LocaleKeys.historyToday.tr();
     if (day == today.subtract(const Duration(days: 1))) {
-      return '${LocaleKeys.historyYesterday.tr()} · $time';
+      return LocaleKeys.historyYesterday.tr();
     }
-    final String date = DateFormat.yMMMd(locale).format(at);
-    return '${date.withLocalisedDigits()} · $time';
+    return DateFormat.yMMMd(
+      context.locale.toString(),
+    ).format(at).withLocalisedDigits();
   }
 }

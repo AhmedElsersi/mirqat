@@ -10,6 +10,7 @@ import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
 import '../../surah_list/widgets/error_view.dart';
@@ -18,6 +19,9 @@ import '../widgets/compared_ayah_card.dart';
 
 /// Every phrase the Quran repeats across its ayahs, one card each, in the
 /// order the mushaf first reaches it; narrowed to one surah on request.
+///
+/// The phrase itself leads each card — it is what the reader is looking for —
+/// and the drill that uses it is on the card, not two screens away.
 class MutashabihatScreen extends StatelessWidget {
   const MutashabihatScreen({super.key});
 
@@ -51,14 +55,14 @@ class MutashabihatScreen extends StatelessWidget {
             }
             final List<PhraseEntry> shown = state.shown;
             return ListView.builder(
-              padding: EdgeInsetsDirectional.all(12.r),
+              padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 24.h),
               // The heading, then a card per phrase, then the source.
               itemCount: shown.length + 2,
               itemBuilder: (BuildContext context, int i) {
                 if (i == 0) return _Heading(state: state);
                 if (i == shown.length + 1) {
                   return Padding(
-                    padding: EdgeInsetsDirectional.only(top: 8.h),
+                    padding: EdgeInsetsDirectional.only(top: 12.h),
                     child: Text(
                       shown.isEmpty
                           ? LocaleKeys.mutashabihatNoneInSurah.tr()
@@ -90,57 +94,88 @@ class _Heading extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final bool arabic = context.locale.languageCode == 'ar';
     final MutashabihatCubit cubit = context.read<MutashabihatCubit>();
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(4.w, 0, 4.w, 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            LocaleKeys.mutashabihatIntro.tr(),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    final Surah? chosen = state.surahFilter == null
+        ? null
+        : state.surahs
+              .where((Surah s) => s.number == state.surahFilter)
+              .firstOrNull;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          LocaleKeys.mutashabihatIntro.tr(),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        SizedBox(height: 12.h),
+        Wrap(
+          spacing: 8.w,
+          runSpacing: 8.h,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: <Widget>[
+            ChoiceChip(
+              selected: state.surahFilter == null,
+              onSelected: (_) => cubit.filterBySurah(null),
+              label: Text(LocaleKeys.mutashabihatAllSurahs.tr()),
             ),
-          ),
-          SizedBox(height: 8.h),
-          Row(
-            children: <Widget>[
-              Text(
-                LocaleKeys.mutashabihatSurah.tr(),
-                style: theme.textTheme.labelLarge,
+            ActionChip(
+              key: const ValueKey<String>('mutashabihat-surah'),
+              avatar: const Icon(Icons.filter_list),
+              label: Text(
+                chosen == null
+                    ? LocaleKeys.mutashabihatSurah.tr()
+                    : (arabic ? chosen.nameAr : chosen.nameEn),
               ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: DropdownButton<int?>(
-                  key: const ValueKey<String>('mutashabihat-surah'),
-                  isExpanded: true,
-                  value: state.surahFilter,
-                  onChanged: cubit.filterBySurah,
-                  items: <DropdownMenuItem<int?>>[
-                    DropdownMenuItem<int?>(
-                      child: Text(LocaleKeys.mutashabihatAllSurahs.tr()),
-                    ),
-                    for (final Surah s in state.surahs)
-                      DropdownMenuItem<int?>(
-                        value: s.number,
-                        child: Text(
-                          '${s.number.toLocalisedString()}. '
-                          '${arabic ? s.nameAr : s.nameEn}',
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Text(
-            LocaleKeys.mutashabihatShown.tr(
-              args: <String>[state.shown.length.toLocalisedString()],
+              onPressed: () => _pickSurah(context, state, cubit),
             ),
-            style: theme.textTheme.titleSmall,
-          ),
-        ],
+            Text(
+              LocaleKeys.mutashabihatShown.tr(
+                args: <String>[state.shown.length.toLocalisedString()],
+              ),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+      ],
+    );
+  }
+
+  /// The 114 surahs as a sheet rather than a dropdown: a dropdown over a
+  /// hundred rows opens as a wall over the list it filters.
+  Future<void> _pickSurah(
+    BuildContext context,
+    MutashabihatState state,
+    MutashabihatCubit cubit,
+  ) async {
+    final bool arabic = context.locale.languageCode == 'ar';
+    final int? picked = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (BuildContext sheet) => SafeArea(
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: state.surahs.length,
+          itemBuilder: (BuildContext context, int i) {
+            final Surah s = state.surahs[i];
+            return ListTile(
+              selected: s.number == state.surahFilter,
+              title: Text(
+                '${s.number.toLocalisedString()}. '
+                '${arabic ? s.nameAr : s.nameEn}',
+              ),
+              onTap: () => Navigator.of(sheet).pop(s.number),
+            );
+          },
+        ),
       ),
     );
+    if (picked != null) cubit.filterBySurah(picked);
   }
 }
 
@@ -168,74 +203,82 @@ class _PhraseCardState extends State<_PhraseCard> {
     final bool arabic = context.locale.languageCode == 'ar';
     final PhraseEntry entry = widget.entry;
     String name(Surah s) => arabic ? s.nameAr : s.nameEn;
-    return Card(
-      margin: EdgeInsetsDirectional.only(bottom: 10.h),
-      child: InkWell(
+
+    return Padding(
+      padding: EdgeInsetsDirectional.only(bottom: 10.h),
+      child: AppCard(
+        padding: EdgeInsetsDirectional.fromSTEB(14.w, 12.h, 14.w, 10.h),
         onTap: () => context.pushNamed(
           AppRoutes.mutashabihatPhraseName,
           extra: entry.id,
         ),
-        child: Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(12.w, 10.h, 8.w, 12.h),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    FutureBuilder<List<Word>>(
-                      future: _words,
-                      builder:
-                          (
-                            BuildContext context,
-                            AsyncSnapshot<List<Word>> snap,
-                          ) {
-                            final List<Word> words =
-                                snap.data ?? const <Word>[];
-                            // Room held while the words load, so the list
-                            // does not jump under the reader's thumb.
-                            if (words.isEmpty) return SizedBox(height: 36.h);
-                            return QuranWords(words: words);
-                          },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            FutureBuilder<List<Word>>(
+              future: _words,
+              builder: (BuildContext context, AsyncSnapshot<List<Word>> snap) {
+                final List<Word> words = snap.data ?? const <Word>[];
+                // Room held while the words load, so the list does not
+                // jump under the reader's thumb.
+                if (words.isEmpty) return SizedBox(height: 36.h);
+                return QuranWords(words: words);
+              },
+            ),
+            SizedBox(height: 12.h),
+            Row(
+              children: <Widget>[
+                Flexible(
+                  child: AppTag(
+                    label: LocaleKeys.mutashabihatAyahsTag.tr(
+                      args: <String>[entry.ayahCount.toLocalisedString()],
                     ),
-                    SizedBox(height: 6.h),
-                    Text(
-                      LocaleKeys.mutashabihatFirstAt.tr(
-                        args: <String>[
-                          LocaleKeys.mushafAyahReference.tr(
-                            args: <String>[
-                              name(entry.surahs.first),
-                              entry.first.ref.ayah.toLocalisedString(),
-                            ],
-                          ),
-                        ],
-                      ),
-                      style: theme.textTheme.labelMedium,
-                    ),
-                    Text(
-                      LocaleKeys.mutashabihatCounts.tr(
-                        args: <String>[
-                          entry.ayahCount.toLocalisedString(),
-                          entry.surahs.length.toLocalisedString(),
-                        ],
-                      ),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      entry.surahs.map(name).join(arabic ? '، ' : ', '),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
+                SizedBox(width: 8.w),
+                Flexible(
+                  child: AppTag(
+                    label: LocaleKeys.mutashabihatSurahsTag.tr(
+                      args: <String>[entry.surahs.length.toLocalisedString()],
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: LocaleKeys.drillTitle.tr(),
+                  onPressed: () => context.pushNamed(
+                    AppRoutes.mutashabihatDrillName,
+                    extra: entry.id,
+                  ),
+                  icon: const Icon(Icons.fitness_center),
+                ),
+                const Icon(Icons.chevron_left),
+              ],
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              entry.surahs.map(name).join(arabic ? '، ' : ', '),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              const Icon(Icons.chevron_right),
-            ],
-          ),
+            ),
+            Text(
+              LocaleKeys.mutashabihatFirstAt.tr(
+                args: <String>[
+                  LocaleKeys.mushafAyahReference.tr(
+                    args: <String>[
+                      name(entry.surahs.first),
+                      entry.first.ref.ayah.toLocalisedString(),
+                    ],
+                  ),
+                ],
+              ),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ),
     );

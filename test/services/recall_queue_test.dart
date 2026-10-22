@@ -64,6 +64,25 @@ void main() {
       expect(builder.recallSpacerCount(Duration.zero), greaterThan(0));
     });
 
+    test('"reveal it" lands on the play that answers the gap', () {
+      final PlaybackQueue queue = builder.build(
+        plan: plan,
+        recallClips: <AyahRef, Duration>{
+          const AyahRef(1, 1): const Duration(seconds: 2),
+        },
+      );
+      // Two plays, then eight gap clips, then the recall play that answers
+      // them: from anywhere inside the run of gaps, the answer is index 10.
+      for (int i = 2; i < 10; i++) {
+        expect(queue.indexAfterRecallGap(i), 10, reason: 'from $i');
+      }
+      expect(queue.entries[10], isA<AyahQueueEntry>());
+      // Outside a gap it is where it already is: there is nothing to cut
+      // short but silence.
+      expect(queue.indexAfterRecallGap(0), 0);
+      expect(queue.indexAfterRecallGap(10), 10);
+    });
+
     test('a recall gap is not a play: unitAt answers null on it', () {
       final PlaybackQueue queue = builder.build(plan: plan);
       final int firstGap = queue.entries.indexWhere(

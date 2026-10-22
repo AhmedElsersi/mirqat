@@ -10,6 +10,7 @@ import 'package:mirqat/core/error/exceptions.dart';
 import 'package:mirqat/core/localization/app_localization.dart';
 import 'package:mirqat/core/state/load_status.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
+import 'package:mirqat/core/widgets/panel.dart';
 import 'package:mirqat/data/datasources/asset_reader.dart';
 import 'package:mirqat/data/datasources/quran_database.dart';
 import 'package:mirqat/data/datasources/quran_local_data_source.dart';
@@ -349,13 +350,12 @@ void main() {
       ) async {
         await pump(tester, const MutashabihatScreen(), locale);
         expect(tester.takeException(), isNull);
-        expect(find.byType(Card), findsNWidgets(2));
+        expect(find.byType(AppCard), findsNWidgets(2));
         // Each card's phrase is drawn through AyahText.
         expect(find.byType(AyahText), findsWidgets);
-        expect(
-          find.text(ar ? 'الآيات: ٣ · السور: ٢' : 'Ayahs: 3 · Surahs: 2'),
-          findsOneWidget,
-        );
+        // The counts are two tags now, not one line joined by a dot.
+        expect(find.text(ar ? 'الآيات: ٣' : 'Ayahs: 3'), findsOneWidget);
+        expect(find.text(ar ? 'السور: ٢' : 'Surahs: 2'), findsOneWidget);
         expect(
           find.text(ar ? 'البقرة، المائدة' : 'Al-Baqarah, Al-Ma\'idah'),
           findsOneWidget,

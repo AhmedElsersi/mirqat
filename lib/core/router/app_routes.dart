@@ -74,14 +74,8 @@ class AppRoutes {
   static const String sessionSettingsName = 'session_settings';
   static const String howToUsePath = 'how-to-use';
   static const String howToUseName = 'how_to_use';
-  static const String goalPath = 'goal';
-  static const String goalName = 'goal';
-  static const String aboutUsPath = 'about';
-  static const String aboutUsName = 'about_us';
-  static const String ideaPath = 'idea';
-  static const String ideaName = 'app_idea';
-  static const String developerPath = 'developer';
-  static const String developerName = 'developer';
+  static const String aboutPath = 'about';
+  static const String aboutName = 'about';
 
   /// The saved-recitations list. A child of settings, so the back button
   /// returns there rather than to the home screen.

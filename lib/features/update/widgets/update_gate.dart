@@ -6,6 +6,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/bootstrap.dart';
 import '../../../core/di/injection.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/ladder_mark.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../data/models/app_info.dart';
 import '../../../services/link_opener.dart';
 import '../../../services/update_policy.dart';
@@ -104,18 +107,26 @@ class _Notes extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return Padding(
       padding: EdgeInsetsDirectional.only(top: 16.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            LocaleKeys.updateWhatsNew.tr(),
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.primary,
+      child: AppCard(
+        filled: true,
+        padding: EdgeInsetsDirectional.all(14.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              LocaleKeys.updateWhatsNew.tr(),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          SizedBox(height: 4.h),
-          Text(notes, style: theme.textTheme.bodyMedium?.copyWith(height: 1.7)),
-        ],
+            SizedBox(height: 4.h),
+            Text(
+              notes,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.7),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -142,21 +153,21 @@ class _OptionalCard extends StatelessWidget {
             padding: EdgeInsetsDirectional.all(24.r),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Icon(
-                  Icons.system_update_outlined,
-                  size: 36.r,
-                  color: theme.colorScheme.primary,
-                ),
-                SizedBox(height: 12.h),
+                const Align(child: LadderMark(current: 2)),
+                SizedBox(height: 14.h),
                 Text(
                   LocaleKeys.updateOptionalTitle.tr(),
-                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   LocaleKeys.updateOptionalBody.tr(),
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(height: 1.7),
                 ),
                 _Notes(state: state),
@@ -215,11 +226,7 @@ class _RequiredPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(
-                  Icons.system_update_outlined,
-                  size: 64.r,
-                  color: theme.colorScheme.primary,
-                ),
+                const _Seal(Icons.system_update_outlined),
                 SizedBox(height: 24.h),
                 Text(
                   LocaleKeys.updateRequiredTitle.tr(),
@@ -286,11 +293,7 @@ class _MaintenancePage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(
-                  Icons.construction_outlined,
-                  size: 64.r,
-                  color: theme.colorScheme.primary,
-                ),
+                const _Seal(Icons.construction_outlined),
                 SizedBox(height: 24.h),
                 Text(
                   title.isEmpty
@@ -308,14 +311,12 @@ class _MaintenancePage extends StatelessWidget {
                   style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
                 ),
                 if (sign.until case final DateTime until) ...<Widget>[
-                  SizedBox(height: 12.h),
-                  Text(
-                    LocaleKeys.updateMaintenanceUntil.tr(
+                  SizedBox(height: 16.h),
+                  // When to expect the app back: a sign nobody remembered
+                  // cannot keep people out for good, and this says so.
+                  AppTag(
+                    label: LocaleKeys.updateMaintenanceUntil.tr(
                       args: <String>[_clock(until.toLocal())],
-                    ),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -343,4 +344,27 @@ class _MaintenancePage extends StatelessWidget {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
   }
+}
+
+/// The mark on a page that is the only thing on screen: the icon set in a
+/// gold wash, which is the one place gold is a surface — a seal, not a fill.
+class _Seal extends StatelessWidget {
+  const _Seal(this.icon);
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 78.r,
+    height: 78.r,
+    decoration: BoxDecoration(
+      color: AppColors.gold.withValues(alpha: 0.2),
+      shape: BoxShape.circle,
+    ),
+    child: Icon(
+      icon,
+      size: 34.r,
+      color: Theme.of(context).colorScheme.onSurface,
+    ),
+  );
 }
