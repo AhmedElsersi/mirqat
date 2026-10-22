@@ -8,6 +8,7 @@ import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../domain/entities/ayah_ref.dart';
 import '../../surah_list/widgets/error_view.dart';
 import '../cubit/similar_cubit.dart';
@@ -40,25 +41,33 @@ class SimilarScreen extends StatelessWidget {
               );
             }
             return ListView(
-              padding: EdgeInsetsDirectional.all(12.r),
+              padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 24.h),
               children: <Widget>[
                 ComparedAyahCard(item: target, emphasised: true),
-                Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(4.w, 16.h, 4.w, 8.h),
-                  child: Text(
-                    state.similar.isEmpty
-                        ? LocaleKeys.similarNone.tr()
-                        : LocaleKeys.similarCount.tr(
-                            args: <String>[
-                              state.similar.length.toLocalisedString(),
-                            ],
-                          ),
-                    style: Theme.of(context).textTheme.titleSmall,
+                if (state.similar.isEmpty)
+                  Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      4.w,
+                      16.h,
+                      4.w,
+                      8.h,
+                    ),
+                    child: Text(
+                      LocaleKeys.similarNone.tr(),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  SectionTitle(
+                    title: LocaleKeys.similarCount.tr(
+                      args: <String>[state.similar.length.toLocalisedString()],
+                    ),
                   ),
-                ),
                 for (final ComparedAyah item in state.similar)
                   ComparedAyahCard(item: item),
-                SizedBox(height: 8.h),
+                SizedBox(height: 12.h),
                 Text(
                   LocaleKeys.similarSource.tr(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(

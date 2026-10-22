@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mirqat/core/router/app_routes.dart';
+import 'package:mirqat/domain/entities/ayah_ref.dart';
 import 'package:mirqat/features/about/screen/about_screen.dart';
 import 'package:mirqat/features/backup/screen/backup_screen.dart';
 import 'package:mirqat/features/hifz_plan/screen/hifz_plan_screen.dart';
@@ -17,6 +18,7 @@ import 'package:mirqat/features/settings/screen/mushaf_download_screen.dart';
 import 'package:mirqat/features/settings/screen/mushaf_font_screen.dart';
 import 'package:mirqat/features/settings/screen/session_settings_screen.dart';
 import 'package:mirqat/features/similar/screen/mutashabihat_screen.dart';
+import 'package:mirqat/features/similar/screen/similar_screen.dart';
 import 'package:mirqat/features/stats/screen/stats_screen.dart';
 import 'package:mirqat/features/weak_spots/screen/weak_spots_screen.dart';
 
@@ -59,12 +61,18 @@ void main() {
     AppRoutes.weakSpotsName: WeakSpotsScreen,
     AppRoutes.statsName: StatsScreen,
     AppRoutes.mutashabihatName: MutashabihatScreen,
+    AppRoutes.similarName: SimilarScreen,
     AppRoutes.downloadsName: DownloadsScreen,
     AppRoutes.mushafDownloadName: MushafDownloadScreen,
     AppRoutes.mushafFontName: MushafFontScreen,
     AppRoutes.sessionSettingsName: SessionSettingsScreen,
     AppRoutes.backupName: BackupScreen,
     AppRoutes.aboutName: AboutScreen,
+  };
+
+  /// The one pushed screen that is about something: the ayah it compares.
+  const Map<String, Object> extras = <String, Object>{
+    AppRoutes.similarName: AyahRef(2, 2),
   };
 
   for (final MapEntry<String, Type> screen in screens.entries) {
@@ -77,7 +85,7 @@ void main() {
 
       await harness.pumpApp(tester);
       final BuildContext context = tester.element(find.byType(HomeShell));
-      GoRouter.of(context).pushNamed(screen.key);
+      GoRouter.of(context).pushNamed(screen.key, extra: extras[screen.key]);
       // Real time, not `settle`: the reads a screen makes on the way in are
       // file and database I/O, and a screen still on its spinner never
       // settles — the spinner animates for as long as it is there.

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/panel.dart';
 
 /// One step of the guide: what it is about, and what to do.
 class HowToStep {
@@ -143,53 +144,46 @@ class _StepCard extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsetsDirectional.only(bottom: 12.h),
-      child: Material(
-        color: colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18.r),
-          side: BorderSide(color: colors.outline),
-        ),
-        child: Padding(
-          padding: EdgeInsetsDirectional.all(16.r),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              CircleAvatar(
-                radius: 16.r,
-                backgroundColor: colors.primary,
-                child: Text(
-                  number.toLocalisedString(),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: colors.onPrimary,
-                  ),
+      child: AppCard(
+        padding: EdgeInsetsDirectional.all(16.r),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            CircleAvatar(
+              radius: 16.r,
+              backgroundColor: colors.primary,
+              child: Text(
+                number.toLocalisedString(),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: colors.onPrimary,
                 ),
               ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            step.titleKey.tr(),
-                            style: theme.textTheme.titleMedium,
-                          ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          step.titleKey.tr(),
+                          style: theme.textTheme.titleMedium,
                         ),
-                        Icon(step.icon, color: colors.primary, size: 22.r),
-                      ],
-                    ),
-                    SizedBox(height: 6.h),
-                    Text(
-                      step.bodyKey.tr(),
-                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.7),
-                    ),
-                  ],
-                ),
+                      ),
+                      Icon(step.icon, color: colors.primary, size: 22.r),
+                    ],
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    step.bodyKey.tr(),
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.7),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
