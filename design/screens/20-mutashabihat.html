@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>المتشابهات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">المتشابهات</h1>
+  </header>
+
+  <p class="muted small" style="margin:0 4px 12px">كل بطاقة عبارةٌ ترد في أكثر من آية. افتحها لترى كل آية ترد فيها، والألفاظ المشتركة مظلَّلة.</p>
+
+  <!-- The surah filter was a dropdown in a labelled row; it is a chip now,
+       and the count sits beside it rather than under it. -->
+  <div class="row">
+    <div class="chips grow">
+      <span class="chip on">كل السور</span>
+      <span class="chip"><i data-lucide="list-filter"></i> سورة…</span>
+    </div>
+    <span class="muted tiny">العبارات: ٨٠٧</span>
+  </div>
+
+  <div class="stack" style="margin-top:12px">
+    <article class="card">
+      <p class="quran" style="font-size:21px">وَلَقَدۡ أَنزَلۡنَآ إِلَيۡكَ ءَايَٰتِۭ بَيِّنَٰتٖۖ</p>
+      <div class="row" style="margin-top:12px">
+        <span class="tag gold">٤ آيات</span><span class="tag">٣ سور</span>
+        <span class="grow"></span>
+        <button class="icon-btn" style="width:36px;height:36px" aria-label="تمرين التفريق"><i data-lucide="dumbbell"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+      <p class="muted tiny" style="margin-top:8px">البقرة، النور، المجادلة — أول ورودها: البقرة، الآية ٩٩</p>
+    </article>
+
+    <article class="card">
+      <p class="quran" style="font-size:21px">قَالَ ٱلۡمَلَأُ ٱلَّذِينَ كَفَرُواْ مِن قَوۡمِهِۦٓ</p>
+      <div class="row" style="margin-top:12px">
+        <span class="tag gold">٦ آيات</span><span class="tag">٣ سور</span>
+        <span class="grow"></span>
+        <button class="icon-btn" style="width:36px;height:36px" aria-label="تمرين التفريق"><i data-lucide="dumbbell"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+      <p class="muted tiny" style="margin-top:8px">الأعراف، هود، المؤمنون — أول ورودها: الأعراف، الآية ٦٦</p>
+    </article>
+
+    <article class="card">
+      <p class="quran" style="font-size:21px">أَنَّ ٱللَّهَ بِكُلِّ شَيۡءٍ عَلِيمٞ</p>
+      <div class="row" style="margin-top:12px">
+        <span class="tag gold">٦ آيات</span><span class="tag">٦ سور</span>
+        <span class="grow"></span>
+        <button class="icon-btn" style="width:36px;height:36px" aria-label="تمرين التفريق"><i data-lucide="dumbbell"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+      <p class="muted tiny" style="margin-top:8px">البقرة، المائدة، الأنفال وغيرها — أول ورودها: البقرة، الآية ٢٣١</p>
+    </article>
+  </div>
+
+  <p class="note" style="margin-top:16px"><i data-lucide="book-marked"></i>
+    المتشابهات من «متشابهات القرآن» في مكتبة QUL.</p>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

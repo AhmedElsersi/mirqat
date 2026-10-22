@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سجل القراءة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">سجل القراءة</h1>
+    <button class="icon-btn" aria-label="مسح السجل"><i data-lucide="trash-2"></i></button>
+  </header>
+
+  <!-- The twenty last places, gathered under the day they belong to: the date
+       stops being repeated on every row, and the page number leads it. -->
+  <div class="field-label" style="margin-top:4px">اليوم</div>
+  <div class="list">
+    <div class="li">
+      <span class="num"><span>٤٢</span></span>
+      <div class="grow"><p class="h3">البقرة، الآية ٢٥٥</p><p class="muted tiny">٩:٤١ م</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+    <div class="li">
+      <span class="num"><span>٥٨٢</span></span>
+      <div class="grow"><p class="h3">النبإ، الآية ١</p><p class="muted tiny">٦:١٢ ص</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </div>
+
+  <div class="field-label">أمس</div>
+  <div class="list">
+    <div class="li">
+      <span class="num"><span>٥٩٠</span></span>
+      <div class="grow"><p class="h3">البروج، الآية ٨</p><p class="muted tiny">١٠:٠٥ م</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+    <div class="li">
+      <span class="num"><span>٥٦٢</span></span>
+      <div class="grow"><p class="h3">الملك، الآية ٣</p><p class="muted tiny">٥:٥٠ ص</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </div>
+
+  <div class="field-label">١٩ أكتوبر ٢٠٢٦</div>
+  <div class="list">
+    <div class="li">
+      <span class="num"><span>٣٥٠</span></span>
+      <div class="grow"><p class="h3">النور، الآية ٣٥</p><p class="muted tiny">٨:٣٠ م</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:18px"><i data-lucide="smartphone"></i> السجل على هذا الجهاز وحده، ولا يُرسل إلى أي مكان.</p>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

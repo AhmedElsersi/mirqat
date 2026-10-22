@@ -1,0 +1,60 @@
+<!-- title: المراجعة -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">المراجعة</h1>
+  </header>
+
+  <!-- The three rungs are the filter: a tap narrows the list to one of them.
+       The ladder says how far a passage has climbed, not how good you are. -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+    <div class="card" style="margin:0;text-align:center;border-color:var(--primary);border-width:2px">
+      <p class="h1">٢</p><p class="muted tiny">جديد</p></div>
+    <div class="card" style="margin:0;text-align:center"><p class="h1">٥</p><p class="muted tiny">قريب</p></div>
+    <div class="card" style="margin:0;text-align:center"><p class="h1">١٤</p><p class="muted tiny">قديم</p></div>
+  </div>
+
+  <div class="section-title"><h2 class="h2">الآن</h2><span class="muted small">٣</span></div>
+  <div class="list">
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="now"></i><i></i><i></i><i></i></span>
+      <div class="grow"><p class="h3">{{surah 80}}، الآيات ١ - {{ayahs 80}}</p>
+        <p class="muted tiny">جديد، آخر تقييم: متذبذب</p></div>
+      <button class="play" aria-label="ابدأ المراجعة"><i data-lucide="play"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+    </div>
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="now"></i><i></i><i></i></span>
+      <div class="grow"><p class="h3">{{surah 85}}، الآيات ١ - {{ayahs 85}}</p>
+        <p class="muted tiny">قريب، آخر تقييم: متقَن</p></div>
+      <button class="play" aria-label="ابدأ المراجعة"><i data-lucide="play"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+    </div>
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i></span>
+      <div class="grow"><p class="h3">{{surah 67}}، الآيات ١ - {{n 10}}</p>
+        <p class="muted tiny">قديم، آخر تقييم: متقَن</p></div>
+      <button class="play" aria-label="ابدأ المراجعة"><i data-lucide="play"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+    </div>
+  </div>
+
+  <div class="section-title"><h2 class="h2">لاحقًا</h2></div>
+  <div class="list">
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="now"></i><i></i><i></i></span>
+      <div class="grow"><p class="h3">{{surah 86}}، الآيات ١ - {{ayahs 86}}</p><p class="muted tiny">غدًا</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="now"></i><i></i></span>
+      <div class="grow"><p class="h3">{{surah 87}}، الآيات ١ - {{ayahs 87}}</p><p class="muted tiny">في ٢٥ أكتوبر</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i></span>
+      <div class="grow"><p class="h3">{{surah 78}}، الآيات ١ - {{ayahs 78}}</p><p class="muted tiny">في ٢ نوفمبر</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </div>
+</div>

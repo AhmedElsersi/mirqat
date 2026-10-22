@@ -292,3 +292,85 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   .chip, .btn, .tab .pill, .li { transition: background-color .2s ease, color .2s ease; }
 }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- the second rank of screens (12–29) ---------- */
+
+/* a search box in the body, not an icon in the bar */
+.search {
+  display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 16px;
+  background: var(--surface); border: 1px solid var(--outline); border-radius: 999px;
+}
+.search .q { flex: 1; min-width: 0; font-weight: 500; }
+.search .caret { width: 1.5px; height: 20px; background: var(--gold); }
+
+/* every ayah of a surah, by where its memorisation stands */
+.cells { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.cells b {
+  height: 42px; border-radius: 12px; display: grid; place-items: center; position: relative;
+  font-size: 13px; font-weight: 600; color: var(--text-2);
+  background: var(--surface); border: 1px solid var(--outline);
+}
+.cells b.half { background: color-mix(in srgb, var(--gold) 20%, var(--surface)); border-color: transparent; color: var(--text); }
+.cells b.full { background: color-mix(in srgb, var(--sabr) 20%, var(--surface)); border-color: color-mix(in srgb, var(--sabr) 45%, transparent); color: var(--text); }
+.cells b.rep::after {
+  content: ""; position: absolute; bottom: 5px; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--text-2);
+}
+.legend { display: flex; flex-wrap: wrap; gap: 14px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+.legend i { width: 12px; height: 12px; border-radius: 4px; display: block; border: 1px solid var(--outline); }
+.legend i.half { background: color-mix(in srgb, var(--gold) 20%, var(--surface)); border-color: transparent; }
+.legend i.full { background: color-mix(in srgb, var(--sabr) 20%, var(--surface)); border-color: color-mix(in srgb, var(--sabr) 45%, transparent); }
+
+/* two ayahs compared: the words they share, and where they part */
+.compare { font-size: 19px; line-height: 2.2; }
+.compare .sh {
+  background: var(--tint-hl); border-radius: 2px;
+  box-shadow: 3px 0 0 var(--tint-hl), -3px 0 0 var(--tint-hl);
+}
+
+/* a stat said plainly: a number and what it counts */
+.stat { text-align: center; }
+.stat .n { font-size: 30px; font-weight: 700; line-height: 1.2; }
+
+/* a slider with its default marked */
+.slider { position: relative; height: 34px; display: flex; align-items: center; }
+.slider .track { height: 6px; border-radius: 3px; background: var(--surface-2); flex: 1; position: relative; }
+.slider .track > i { position: absolute; inset-inline-start: 0; top: 0; height: 100%; border-radius: 3px; background: var(--gold); }
+.slider .knob {
+  position: absolute; width: 22px; height: 22px; border-radius: 50%; background: var(--surface);
+  border: 2px solid var(--gold); box-shadow: var(--shadow); transform: translateX(50%);
+}
+.slider .tick { position: absolute; width: 2px; height: 12px; background: var(--outline); border-radius: 1px; }
+
+/* a person: the developer, the one whose idea this was */
+.person { display: flex; align-items: center; gap: 14px; }
+.person .face {
+  width: 58px; height: 58px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: var(--surface-2); font-size: 22px; font-weight: 700;
+}
+
+/* a path or a file name: latin, and read from the left whatever the locale */
+.mono {
+  direction: ltr; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; color: var(--text-2); background: var(--surface-2); border-radius: 10px;
+  padding: 8px 10px; word-break: break-all; line-height: 1.5;
+}
+
+/* a quiet line that explains rather than warns */
+.note { display: flex; gap: 8px; color: var(--text-2); font-size: 12.5px; line-height: 1.6; }
+.note svg { width: 16px; height: 16px; margin-top: 3px; }
+
+/* the update prompt: over the app, not instead of it */
+.dialog {
+  position: absolute; inset-inline: 16px; top: 50%; transform: translateY(-50%);
+  background: var(--surface); border-radius: 26px; padding: 24px 20px; box-shadow: var(--shadow);
+  text-align: center;
+}
+/* a page that is the only thing on screen: a required update, the closed sign */
+.centre { flex: 1; display: grid; place-items: center; padding: 28px; text-align: center; }
+.seal {
+  width: 78px; height: 78px; border-radius: 50%; margin: 0 auto 18px; display: grid; place-items: center;
+  background: var(--gold-soft); color: var(--text);
+}
+.seal svg { width: 34px; height: 34px; }

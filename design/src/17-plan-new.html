@@ -1,0 +1,38 @@
+<!-- title: خطة جديدة -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">خطة جديدة</h1>
+  </header>
+
+  <p class="muted small" style="margin:0 4px 14px">اختر ما تحفظه وفي كم يومًا، فيُقسَّم إلى مقاطع متقاربة الطول دون أن تُجزَّأ آية.</p>
+
+  <!-- The range as two rows, as the session sheet asks for it. -->
+  <div class="field-label">ما تحفظه</div>
+  <div class="list">
+    <div class="li"><span class="ico"><i data-lucide="arrow-down-to-line"></i></span>
+      <div class="grow"><p class="muted tiny">من</p><p class="h3">سورة {{surah 78}}، الآية {{n 1}}</p></div>
+      <i data-lucide="chevron-left" class="chev"></i></div>
+    <div class="li"><span class="ico"><i data-lucide="arrow-up-to-line"></i></span>
+      <div class="grow"><p class="muted tiny">إلى</p><p class="h3">سورة {{surah 114}}، الآية {{ayahs 114}}</p></div>
+      <i data-lucide="chevron-left" class="chev"></i></div>
+  </div>
+
+  <div class="field-label">عدد الأيام</div>
+  <div class="stepper">
+    <button aria-label="زِد"><i data-lucide="plus"></i></button><b>{{n 60}}</b>
+    <button aria-label="أنقِص"><i data-lucide="minus"></i></button>
+  </div>
+  <div class="chips" style="margin-top:10px">
+    <span class="chip">{{n 7}} أيام</span><span class="chip">{{n 30}} يومًا</span>
+    <span class="chip on">{{n 60}} يومًا</span><span class="chip">{{n 90}} يومًا</span>
+  </div>
+
+  <!-- What the choice amounts to, in one line, before the button. -->
+  <section class="card" style="margin-top:18px;text-align:center">
+    <p class="h1" style="font-size:22px">{{n 564}} آية، نحو {{n 10}} في اليوم</p>
+    <p class="muted tiny" style="margin-top:4px">يظهر مقطع اليوم في صفحة «اليوم».</p>
+  </section>
+
+  <button class="btn btn-primary btn-block" style="margin-top:16px"><i data-lucide="flag-triangle-right"></i> ابدأ الخطة</button>
+</div>

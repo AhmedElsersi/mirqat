@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>المراجعة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">المراجعة</h1>
+  </header>
+
+  <!-- The three rungs are the filter: a tap narrows the list to one of them.
+       The ladder says how far a passage has climbed, not how good you are. -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+    <div class="card" style="margin:0;text-align:center;border-color:var(--primary);border-width:2px">
+      <p class="h1">٢</p><p class="muted tiny">جديد</p></div>
+    <div class="card" style="margin:0;text-align:center"><p class="h1">٥</p><p class="muted tiny">قريب</p></div>
+    <div class="card" style="margin:0;text-align:center"><p class="h1">١٤</p><p class="muted tiny">قديم</p></div>
+  </div>
+
+  <div class="section-title"><h2 class="h2">الآن</h2><span class="muted small">٣</span></div>
+  <div class="list">
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="now"></i><i></i><i></i><i></i></span>
+      <div class="grow"><p class="h3">عبس، الآيات ١ - ٤٢</p>
+        <p class="muted tiny">جديد، آخر تقييم: متذبذب</p></div>
+      <button class="play" aria-label="ابدأ المراجعة"><i data-lucide="play"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+    </div>
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="now"></i><i></i><i></i></span>
+      <div class="grow"><p class="h3">البروج، الآيات ١ - ٢٢</p>
+        <p class="muted tiny">قريب، آخر تقييم: متقَن</p></div>
+      <button class="play" aria-label="ابدأ المراجعة"><i data-lucide="play"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+    </div>
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i></span>
+      <div class="grow"><p class="h3">الملك، الآيات ١ - ١٠</p>
+        <p class="muted tiny">قديم، آخر تقييم: متقَن</p></div>
+      <button class="play" aria-label="ابدأ المراجعة"><i data-lucide="play"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+    </div>
+  </div>
+
+  <div class="section-title"><h2 class="h2">لاحقًا</h2></div>
+  <div class="list">
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="now"></i><i></i><i></i></span>
+      <div class="grow"><p class="h3">الطارق، الآيات ١ - ١٧</p><p class="muted tiny">غدًا</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="now"></i><i></i></span>
+      <div class="grow"><p class="h3">الأعلى، الآيات ١ - ١٩</p><p class="muted tiny">في ٢٥ أكتوبر</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+    <div class="li">
+      <span class="ladder" style="width:30px" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i></span>
+      <div class="grow"><p class="h3">النبإ، الآيات ١ - ٤٠</p><p class="muted tiny">في ٢ نوفمبر</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </div>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

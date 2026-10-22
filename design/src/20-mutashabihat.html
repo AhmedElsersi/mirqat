@@ -1,0 +1,57 @@
+<!-- title: المتشابهات -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">المتشابهات</h1>
+  </header>
+
+  <p class="muted small" style="margin:0 4px 12px">كل بطاقة عبارةٌ ترد في أكثر من آية. افتحها لترى كل آية ترد فيها، والألفاظ المشتركة مظلَّلة.</p>
+
+  <!-- The surah filter was a dropdown in a labelled row; it is a chip now,
+       and the count sits beside it rather than under it. -->
+  <div class="row">
+    <div class="chips grow">
+      <span class="chip on">كل السور</span>
+      <span class="chip"><i data-lucide="list-filter"></i> سورة…</span>
+    </div>
+    <span class="muted tiny">العبارات: {{n 807}}</span>
+  </div>
+
+  <div class="stack" style="margin-top:12px">
+    <article class="card">
+      <p class="quran" style="font-size:21px">{{words 2:99:1-5}}</p>
+      <div class="row" style="margin-top:12px">
+        <span class="tag gold">{{n 4}} آيات</span><span class="tag">{{n 3}} سور</span>
+        <span class="grow"></span>
+        <button class="icon-btn" style="width:36px;height:36px" aria-label="تمرين التفريق"><i data-lucide="dumbbell"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+      <p class="muted tiny" style="margin-top:8px">{{surah 2}}، {{surah 24}}، {{surah 58}} — أول ورودها: {{surah 2}}، الآية {{n 99}}</p>
+    </article>
+
+    <article class="card">
+      <p class="quran" style="font-size:21px">{{words 7:66:1-6}}</p>
+      <div class="row" style="margin-top:12px">
+        <span class="tag gold">{{n 6}} آيات</span><span class="tag">{{n 3}} سور</span>
+        <span class="grow"></span>
+        <button class="icon-btn" style="width:36px;height:36px" aria-label="تمرين التفريق"><i data-lucide="dumbbell"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+      <p class="muted tiny" style="margin-top:8px">{{surah 7}}، {{surah 11}}، {{surah 23}} — أول ورودها: {{surah 7}}، الآية {{n 66}}</p>
+    </article>
+
+    <article class="card">
+      <p class="quran" style="font-size:21px">{{words 2:231:41-45}}</p>
+      <div class="row" style="margin-top:12px">
+        <span class="tag gold">{{n 6}} آيات</span><span class="tag">{{n 6}} سور</span>
+        <span class="grow"></span>
+        <button class="icon-btn" style="width:36px;height:36px" aria-label="تمرين التفريق"><i data-lucide="dumbbell"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+      <p class="muted tiny" style="margin-top:8px">{{surah 2}}، {{surah 5}}، {{surah 8}} وغيرها — أول ورودها: {{surah 2}}، الآية {{n 231}}</p>
+    </article>
+  </div>
+
+  <p class="note" style="margin-top:16px"><i data-lucide="book-marked"></i>
+    المتشابهات من «متشابهات القرآن» في مكتبة QUL.</p>
+</div>

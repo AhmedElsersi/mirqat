@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>التسجيلات المحفوظة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">التسجيلات المحفوظة</h1>
+  </header>
+
+  <!-- What it all costs, at the top: the total used to be the last line. -->
+  <section class="card">
+    <div class="row">
+      <span class="ico"><i data-lucide="hard-drive"></i></span>
+      <div class="grow"><p class="h1" style="font-size:24px">٣٤٢ م.ب</p>
+        <p class="muted tiny">٢١ سورة لقارئين على هذا الجهاز</p></div>
+    </div>
+  </section>
+
+  <!-- A reciter's two bulk actions were two text buttons under their surahs;
+       they are one «⋯» on the reciter's own row now. -->
+  <div class="field-label">أحمد خليل شاهين</div>
+  <div class="list">
+    <div class="li">
+      <span class="avatar" style="width:40px;height:40px">أ</span>
+      <div class="grow"><p class="h3">١٢ سورة</p><p class="muted tiny">٦٤ ك.ب/ث، ١٨٦ م.ب</p></div>
+      <button class="icon-btn" style="width:36px" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+    </div>
+    <div class="li">
+      <span class="num"><span>٢</span></span>
+      <div class="grow"><p class="h3">البقرة</p><p class="muted tiny">٩٤ م.ب</p></div>
+      <button class="icon-btn" style="width:34px" aria-label="حذف من الجهاز"><i data-lucide="trash-2"></i></button>
+    </div>
+    <div class="li">
+      <span class="num"><span>٦٧</span></span>
+      <div class="grow"><p class="h3">الملك</p>
+        <p class="muted tiny">٦٫٤ م.ب</p></div>
+      <button class="icon-btn" style="width:34px" aria-label="حذف من الجهاز"><i data-lucide="trash-2"></i></button>
+    </div>
+    <div class="li">
+      <span class="num"><span>٧٨</span></span>
+      <div class="grow"><p class="h3">النبإ</p>
+        <p class="muted tiny"><span class="tag gold">نسخة قديمة</span> صدر تسجيل أحدث</p></div>
+      <button class="icon-btn" style="width:34px" aria-label="إعادة التنزيل"><i data-lucide="refresh-cw"></i></button>
+      <button class="icon-btn" style="width:34px" aria-label="حذف من الجهاز"><i data-lucide="trash-2"></i></button>
+    </div>
+  </div>
+
+  <div class="field-label">محمود خليل الحصري</div>
+  <div class="list">
+    <div class="li">
+      <span class="avatar" style="width:40px;height:40px">م</span>
+      <div class="grow"><p class="h3">٩ سور</p><p class="muted tiny">١٢٨ ك.ب/ث، ١٥٦ م.ب</p></div>
+      <button class="icon-btn" style="width:36px" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+    </div>
+    <div class="li">
+      <span class="num"><span>١٨</span></span>
+      <div class="grow"><p class="h3">الكهف</p><p class="muted tiny">٤٨ م.ب</p></div>
+      <button class="icon-btn" style="width:34px" aria-label="حذف من الجهاز"><i data-lucide="trash-2"></i></button>
+    </div>
+    <div class="li">
+      <span class="num"><span>٣٦</span></span>
+      <div class="grow"><p class="h3">يس</p><p class="muted tiny">٢٣ م.ب</p></div>
+      <button class="icon-btn" style="width:34px" aria-label="حذف من الجهاز"><i data-lucide="trash-2"></i></button>
+    </div>
+  </div>
+
+  <div class="field-label">تعثّر التنزيل</div>
+  <div class="list">
+    <div class="li">
+      <span class="ico" style="color:var(--error)"><i data-lucide="cloud-off"></i></span>
+      <div class="grow"><p class="h3">مريم</p><p class="muted tiny">أحمد خليل شاهين — الصوت لا يزال يُبَثّ</p></div>
+    </div>
+  </div>
+  <button class="btn btn-ghost btn-block" style="margin-top:12px"><i data-lucide="refresh-cw"></i> إعادة محاولة التنزيلات المتعثّرة (١)</button>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

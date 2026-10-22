@@ -66,6 +66,33 @@ at a time, each to the nearest existing screen.
 9. **Every card has the same weight.** Nothing on the home screen is clearly
    the primary action, so starting today's session is never one obvious tap.
 
+### The screens behind the tabs
+
+The first pass looked at the four destinations and the reading view. These
+findings are about everything they open — the twenty-odd screens that are
+reached from them.
+
+10. **The hifz tools are flat lists with hidden actions.** Reviews, weak spots
+    and the mutashabihat are `ListTile`s with two icon buttons at the end, so
+    "start this review" and "remove it from the schedule" carry the same
+    weight. Nothing on a review row says which of the three rungs it is on.
+11. **A surah's progress says its status in words, 286 times.** Every ayah tile
+    holds the ayah number, the status word *and* the repeat count in a 120 px
+    box; the colour already says the status, and three ayahs fit across a
+    phone.
+12. **The plan is sixty rows with today's portion among them.** Everything
+    already finished stays on screen for good, and the day's portion — the one
+    reason to open the screen — is a card halfway down.
+13. **History repeats the date on every row**, and search results repeat their
+    own rule; both lists say the same thing twenty times over.
+14. **Four screens are a title and a paragraph.** Our goal, About us, the
+    developer and whose idea this was are four routes under Settings, each one
+    an icon over some prose that comes from the same `app.json`.
+15. **Settings' own screens explain before they show.** The font screen leads
+    with three radio rows and a four-line note, with the preview below the
+    fold; backup leads with a five-line paragraph; saved recitations put the
+    total size *after* the list.
+
 ### Keep
 
 The mushaf frame and cartouche; the colour tokens and their contrast tests; the
@@ -102,6 +129,24 @@ onto the last page" option becomes "the first screen: Today or the Mushaf".
 | 09 | Wird editor | Each part can be switched on or off, with its range as two fields, plus a "next portion" shortcut that moves the new range on by its own length. |
 | 10 | Settings | Settings only, with segmented controls and one-line hints. |
 | 11 | Introduction | The method drawn as the logo draws it: rungs climbing to the upper left, the top one gold. |
+| 12 | Search | The box is the screen's own, not an icon in the bar. A surah is one row; each ayah hit is a card, whole, with its place under it. The matched word is **not** marked: the match is made against a derived column, and the ayah's bytes are left alone (A.2 rule 1). |
+| 13 | History | The places are gathered under the day they belong to, so the date is said once; the page number leads the row. |
+| 14 | Surah progress | The surah's state once, at the top, with a ring. Then one cell per ayah — number and tint, a dot where it has been drilled — so forty ayahs fit on one screen. |
+| 15 | Review schedule | The three rungs are the filter; «الآن» comes before «لاحقًا»; each row has one start button and a quiet «⋯» for the rest. The ladder says how far a passage has climbed. |
+| 16 | Plan — followed | Today's portion is the one prominent card with one button. What is finished folds behind a row; the delete moves into «⋯». |
+| 17 | Plan — new | The range as two rows, days as a stepper with ready numbers, and what the choice amounts to in one line above the button. |
+| 18 | Weak spots | Most-stumbled first; «تكرار هذه الآية» is a button, not an icon; the mark is taken off by a quiet ×. |
+| 19 | Practice record | Four numbers said once. No streak, no badge, and nothing about a day that passed (BRAND_GUIDE §6). |
+| 20 | Mutashabihat | The phrase first and largest, the surah filter a chip rather than a dropdown row, and the drill reachable from the card itself. |
+| 21 | One phrase | Each ayah whole with the shared words tinted, grouped by surah; the drill — the reason the screen is open — becomes a button. |
+| 22 | Saved recitations | The total at the top. A reciter's bulk actions sit on the reciter's own row; a stale surah carries its tag and a re-download beside it. |
+| 23 | The whole mushaf | What is downloading now is the subject of the screen, with the run's progress and the surah's; the other reciters are rows under it. |
+| 24 | Mushaf font | The preview first, the four-line note reduced to one, the size slider marked at the default, and the page fonts in their own card. |
+| 25 | Session defaults | The session sheet's own order, so the two are learned once. The default range becomes a segmented control. |
+| 26 | Backup | What a copy holds as four tags instead of a paragraph; the path as a latin line read from the left; the merge's result as one calm row. |
+| 27 | About | The four prose routes become one page: the app and its version, the goal, who we are, whose idea it was, the developer and the ways to reach them. The words still come from `app.json`. |
+| 28 | Update available | An optional update speaks once, over the app, and takes «لاحقًا» for an answer. |
+| 29 | Maintenance | One thing on the screen, one button, and when to expect the app back. A required update is this page with a store button. |
 
 ### Components
 
@@ -130,6 +175,14 @@ onto the last page" option becomes "the first screen: Today or the Mushaf".
   backup) behind one overview. Nothing about the data changes.
 - **The session sheet** keeps `SessionCubit` as is. Only the order changes,
   and the advanced fields move behind one row.
+- **The screens behind the tabs are the same cubits and the same data.** Nothing
+  new is fetched, stored or computed: 12–29 reorder what their screens already
+  build. The ones that cost more than a rewrite of `build()` are 14 (a cell
+  grid in place of the tile grid), 15 (sections and a tier filter over
+  `ReviewCubit`'s list), 21 (the comparison card gains a tinted span) and 27
+  (four routes answered by one screen; the old routes stay for deep links).
+  25 keeps `SessionTuningControls` exactly as it is — the session sheet and the
+  defaults screen must never drift apart.
 - **The separator fix** (finding 7) is a change to the translations alone, and
   worth making whether or not the rest is adopted.
 - **CLAUDE.md is respected throughout:** ayah text is never truncated (the ayah
@@ -143,6 +196,8 @@ onto the last page" option becomes "the first screen: Today or the Mushaf".
       index.html        the gallery (light/dark)
       README.md         this review
       build.py          fills templates from quran.db
+                        ({{ayah}} {{words}} {{marked}} {{page}} {{cells}}
+                         {{surah}} {{ayahs}} {{n}})
       src/*.html        the screen templates
       screens/*.html    built screens (do not edit; rebuild)
       styles/app.css    tokens and components

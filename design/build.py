@@ -10,8 +10,11 @@ Template tokens:
     {{words S:A:FROM-TO}}      words FROM..TO of the ayah (1-based, markers out)
     {{surah N}}                the surah's Arabic name
     {{ayahs N}}                its ayah count, in Arabic-Indic digits
-    {{page N [hl=S:A] [veil=S:A] [range=S:A-S:A]}}
-                               a whole mushaf page, line by line
+    {{marked S:A FROM-TO}}     the whole ayah, words FROM..TO marked as shared
+    {{page N [hl=S:A] [veil=S:A] [range=S:A-S:A] [lines=A-B]}}
+                               a mushaf page, line by line (or only some lines)
+    {{cells N [full=A-B,C] [half=A-B] [rep=A,B]}}
+                               one cell per ayah of surah N, by memorisation state
     {{n 123}}                  a number in Arabic-Indic digits
 
 Each template starts with `<!-- title: ... -->` and may say
@@ -57,6 +60,47 @@ def words(s, a, lo, hi):
     return " ".join(r[0] for r in rows[lo - 1:hi])
 
 
+def marked(s, a, lo, hi):
+    """The ayah whole, with words lo..hi marked — a comparison, never a cut."""
+    out = []
+    position = 0
+    for text, is_marker in db.execute(
+            "SELECT text, is_marker FROM words WHERE surah=? AND ayah=? ORDER BY id",
+            (s, a)).fetchall():
+        if is_marker:
+            out.append(f'<span class="m">{html.escape(text)}</span>')
+            continue
+        position += 1
+        shared = " sh" if lo <= position <= hi else ""
+        out.append(f'<span class="w{shared}">{html.escape(text)}</span>')
+    return " ".join(out)
+
+
+def spans(spec):
+    picked = set()
+    for part in (spec or "").split(","):
+        if not part:
+            continue
+        if "-" in part:
+            lo, hi = part.split("-")
+            picked.update(range(int(lo), int(hi) + 1))
+        else:
+            picked.add(int(part))
+    return picked
+
+
+def cells(num, full=None, half=None, rep=None):
+    """One cell per ayah of a surah: memorised, being memorised, not started."""
+    done, started, drilled = spans(full), spans(half), spans(rep)
+    out = []
+    for a in range(1, ayah_count(num) + 1):
+        cls = "full" if a in done else "half" if a in started else ""
+        if a in drilled:
+            cls = (cls + " rep").strip()
+        out.append(f'<b class="{cls}">{n(a)}</b>')
+    return "".join(out)
+
+
 def surah_name(num):
     return db.execute("SELECT name_ar FROM surahs WHERE id=?", (num,)).fetchone()[0]
 
@@ -65,7 +109,7 @@ def ayah_count(num):
     return db.execute("SELECT ayah_count FROM surahs WHERE id=?", (num,)).fetchone()[0]
 
 
-def page(num, hl=None, veil=None, rng=None):
+def page(num, hl=None, veil=None, rng=None, only=None):
     basmala = db.execute(
         "SELECT text FROM words WHERE ayah=1 AND is_marker=0 AND surah=("
         "SELECT id FROM surahs WHERE basmala_mode='first_ayah') ORDER BY id"
@@ -73,7 +117,8 @@ def page(num, hl=None, veil=None, rng=None):
     out = []
     for line_type, centred, surah, first, last in db.execute(
             "SELECT line_type, is_centered, surah_number, first_word_id, last_word_id "
-            "FROM lines WHERE page=? ORDER BY line", (num,)).fetchall():
+            "FROM lines WHERE page=? AND line BETWEEN ? AND ? ORDER BY line",
+            (num, *(only or (1, 99)))).fetchall():
         if line_type == "surah_name":
             out.append(
                 f'<div class="m-line m-head"><span class="cartouche">'
@@ -114,16 +159,28 @@ def token(match):
         return n(ayah_count(int(args[0])))
     if kind == "n":
         return n(args[0])
+    if kind == "marked":
+        s, a = ref(args[0])
+        lo, hi = map(int, args[1].split("-"))
+        return marked(s, a, lo, hi)
+    if kind == "cells":
+        opts = dict(x.split("=") for x in args[1:])
+        return cells(int(args[0]), full=opts.get("full"), half=opts.get("half"),
+                     rep=opts.get("rep"))
     if kind == "page":
         opts = dict(a.split("=") for a in args[1:])
         rng = None
         if "range" in opts:
             lo, hi = opts["range"].split("-")
             rng = (ref(lo), ref(hi))
+        only = None
+        if "lines" in opts:
+            lo, hi = opts["lines"].split("-")
+            only = (int(lo), int(hi))
         return page(int(args[0]),
                     hl=ref(opts["hl"]) if "hl" in opts else None,
                     veil=ref(opts["veil"]) if "veil" in opts else None,
-                    rng=rng)
+                    rng=rng, only=only)
     raise SystemExit(f"unknown token {kind}")
 
 

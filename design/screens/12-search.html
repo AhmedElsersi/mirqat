@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>البحث</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">البحث</h1>
+  </header>
+
+  <!-- The box is the screen's own, not a field borrowed from the app bar. -->
+  <div class="search">
+    <i data-lucide="search" class="muted"></i>
+    <span class="q">النور</span><span class="caret" aria-hidden="true"></span>
+    <button class="icon-btn" style="width:28px;height:28px" aria-label="مسح"><i data-lucide="x"></i></button>
+  </div>
+  <p class="muted tiny" style="margin:8px 6px 0">اسم سورة، أو كلمة، أو رقم صفحة — ورقمٌ وحده يفتح صفحته.</p>
+
+  <!-- A name answers with the surah; a number would answer here with its page. -->
+  <div class="field-label">السور</div>
+  <div class="list">
+    <div class="li">
+      <span class="num"><span>٢٤</span></span>
+      <div class="grow"><p class="h3">النور</p><p class="muted tiny">مدنية، ٦٤ آية، صفحة ٣٥٠</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </div>
+
+  <div class="section-title"><h2 class="h2">الآيات</h2><span class="muted small">١٣</span></div>
+  <div class="stack">
+    <!-- Each hit whole, in the mushaf's own hand: never shortened, and never
+         marked word by word — the match is made against a derived column, and
+         the ayah's own bytes are left alone (CLAUDE.md A.2 rule 1). -->
+    <article class="card">
+      <p class="quran" style="font-size:19px">ٱللَّهُ وَلِيُّ ٱلَّذِينَ ءَامَنُواْ يُخۡرِجُهُم مِّنَ ٱلظُّلُمَٰتِ إِلَى ٱلنُّورِۖ وَٱلَّذِينَ كَفَرُوٓاْ أَوۡلِيَآؤُهُمُ ٱلطَّٰغُوتُ يُخۡرِجُونَهُم مِّنَ ٱلنُّورِ إِلَى ٱلظُّلُمَٰتِۗ أُوْلَٰٓئِكَ أَصۡحَٰبُ ٱلنَّارِۖ هُمۡ فِيهَا خَٰلِدُونَ</p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">البقرة، الآية ٢٥٧، صفحة ٤٣</p>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+    <article class="card">
+      <p class="quran" style="font-size:19px">الٓرۚ كِتَٰبٌ أَنزَلۡنَٰهُ إِلَيۡكَ لِتُخۡرِجَ ٱلنَّاسَ مِنَ ٱلظُّلُمَٰتِ إِلَى ٱلنُّورِ بِإِذۡنِ رَبِّهِمۡ إِلَىٰ صِرَٰطِ ٱلۡعَزِيزِ ٱلۡحَمِيدِ</p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">ابراهيم، الآية ١، صفحة ٢٥٥</p>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+    <article class="card">
+      <p class="quran" style="font-size:19px">ٱلۡحَمۡدُ لِلَّهِ ٱلَّذِي خَلَقَ ٱلسَّمَٰوَٰتِ وَٱلۡأَرۡضَ وَجَعَلَ ٱلظُّلُمَٰتِ وَٱلنُّورَۖ ثُمَّ ٱلَّذِينَ كَفَرُواْ بِرَبِّهِمۡ يَعۡدِلُونَ</p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">الأنعام، الآية ١، صفحة ١٢٨</p>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+  </div>
+  <p class="note" style="margin-top:16px"><i data-lucide="info"></i> هناك نتائج أخرى — أضِف كلمة لتضييق البحث.</p>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

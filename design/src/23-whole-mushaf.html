@@ -1,0 +1,47 @@
+<!-- title: تنزيل المصحف كاملًا -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">المصحف كاملًا</h1>
+  </header>
+
+  <p class="muted small" style="margin:0 4px 14px">كل سور قارئ واحدة بعد الأخرى، لتُسمع دون إنترنت. يمكن إيقافه في أي وقت، وما نُزّل يبقى.</p>
+
+  <!-- A download under way is the screen's subject while it runs: which surah,
+       how far the whole run has got, and one way to stop it. -->
+  <section class="card" style="border-color:var(--primary)">
+    <div class="row">
+      <span class="avatar" style="width:44px;height:44px">م</span>
+      <div class="grow"><p class="h3">محمود خليل الحصري</p>
+        <p class="muted tiny">سورة {{surah 4}} — {{n 4}} من {{n 114}}</p></div>
+      <button class="icon-btn filled" aria-label="إيقاف"><i data-lucide="square"></i></button>
+    </div>
+    <div class="bar" style="margin-top:14px"><i style="width:4%"></i></div>
+    <div class="bar" style="margin-top:6px;height:4px"><i style="width:62%;background:var(--sabr)"></i></div>
+    <p class="note" style="margin-top:10px"><i data-lucide="info"></i> اترك التطبيق مفتوحًا حتى يكتمل.</p>
+  </section>
+
+  <div class="field-label">قرّاء آخرون</div>
+  <div class="list">
+    <div class="li">
+      <span class="avatar" style="width:40px;height:40px">أ</span>
+      <div class="grow"><p class="h3">أحمد خليل شاهين</p>
+        <p class="muted tiny">{{n 12}} من {{n 114}} سورة على الجهاز، المتبقي نحو {{n 1240}} م.ب</p>
+        <div class="bar" style="margin-top:8px"><i style="width:11%"></i></div></div>
+      <button class="icon-btn filled" aria-label="تنزيل كل السور"><i data-lucide="download"></i></button>
+    </div>
+    <div class="li">
+      <span class="avatar" style="width:40px;height:40px">ي</span>
+      <div class="grow"><p class="h3">ياسر الدوسري</p>
+        <p class="muted tiny">{{n 128}} ك.ب/ث، نحو {{n 2100}} م.ب</p>
+        <p class="muted tiny">التلاوة مقدَّمة عبر مكتبة القرآن العالمية (QUL) من ترتيل</p></div>
+      <button class="icon-btn filled" aria-label="تنزيل كل السور"><i data-lucide="download"></i></button>
+    </div>
+    <div class="li">
+      <span class="avatar" style="width:40px;height:40px">ع</span>
+      <div class="grow"><p class="h3">أحمد العجمي</p>
+        <p class="muted tiny" style="color:var(--sabr)">كل سور هذا القارئ على الجهاز</p></div>
+      <span class="ico" style="color:var(--sabr);background:none"><i data-lucide="check-circle-2"></i></span>
+    </div>
+  </div>
+</div>
