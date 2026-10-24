@@ -192,24 +192,40 @@ and Play falls back to the default language's.
 
 Upload in file-name order; the first three are what shows in search results.
 
+Each frame is the running app — real pages, a real session streaming from the CDN,
+never a mock-up — set in the brand's green with a headline above it by
+`tool/store_frames.py`. The raw captures go to `store/raw/` (not committed);
+the headlines, their order and which scenes each set takes are that script's.
+Phones take the list above (Play: the first eight). Tablets take only the
+scenes on the mushaf page — 02 to 07 — because a list on a tablet is mostly
+empty cream.
+
 | # | File | What it shows |
 |---|---|---|
-| 1 | `01-reading.png` | A surah opening in the mushaf's own page layout, framed. |
-| 2 | `02-session.png` | A session playing over the text: the ayah marked, the controls, the repeat counter. |
-| 3 | `03-home.png` | The home page: the surahs, their progress, and "continue reading". |
-| 4 | `04-session-settings.png` | The session's settings: reciter, range across surahs, streaming or offline. |
-| 5 | `05-ajzaa.png` | The thirty ajzaa, as a grid. |
-| 6 | `06-method.png` | The introduction's leaf on the method. |
-| 7 | `07-settings.png` | Settings, in cards. |
+| 1 | `01-today.png` | Today: the day's wird — the new portion, the near review, the old review — each one tap away. *New in 1.3.* |
+| 2 | `02-recall.png` | A recall round: the app falls silent and covers the ayah so it is recited from memory, then plays it. *New.* |
+| 3 | `03-reading.png` | The whole mushaf in the Madinah print's own hand (QPC V2), page by page, offline. |
+| 4 | `04-session.png` | Talqeen playing over the page: the ayah marked, repeated, then joined to the next. |
+| 5 | `05-memorization.png` | Memorization view: only each ayah's first words show; a tap reveals the rest. *New.* |
+| 6 | `06-stumble.png` | The ayah menu: marking a stumble, so later sessions repeat it more. *New.* |
+| 7 | `07-presets.png` | Session presets: new portion, review, consolidation, listening, or your own. *New.* |
+| 8 | `08-my-hifz.png` | My hifz: what is memorized, juz by juz, and the stumbles in one place. *New.* |
+| 9 | `09-index.png` | The index: surah by surah and juz by juz, with stumbles shown. (App Store only.) |
+| 10 | `10-font.png` | Choosing the mushaf's face, with a live preview and text size. *New.* (App Store only.) |
 
 Regenerate — start the emulator first; the phone AVD is a 1080 × 1920 copy of
 the stock Medium Phone, the tablet is the stock Medium Tablet turned to portrait
 (`adb shell settings put system user_rotation 1`):
 
 ```
-tool/store_screenshots_android.sh emulator-5554 store/google/phone
-tool/store_screenshots_android.sh emulator-5556 store/google/tablet
+tool/store_screenshots_android.sh emulator-5554 store/raw/android-phone
+tool/store_screenshots_android.sh emulator-5556 store/raw/android-tablet
+tool/store_frames.py store/raw/android-phone  store/google/phone  phone  --size 1080x1920
+tool/store_frames.py store/raw/android-tablet store/google/tablet tablet --size 1600x2560
 ```
+
+Run one emulator at a time: two at once starve each other and System UI's
+"isn't responding" dialog ends up in the shots.
 
 If the session scene times out, check the emulator is online; starting it with
 `-dns-server 8.8.8.8` fixes the usual case.

@@ -98,4 +98,7 @@ These are deliberate. None of them is visible.
 - [x] Update the store listing (`docs/PLAY_LISTING.md`) so it names only the 1.3 features.
   *Done 2026-10-24, in `store/apple/LISTING.md` too: a "Tools for memorizing" section,
   and new release notes in both languages.*
-- [ ] Retake the store screenshots: `03-home.png` shows the old home.
+- [x] Retake the store screenshots: `03-home.png` shows the old home.
+
+
+retake the store screenshots for android and ios and make them as the professional apps even om google or apple and uplaod them,   

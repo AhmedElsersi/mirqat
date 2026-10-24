@@ -211,21 +211,34 @@ script with `en` as its third argument and add that set then.)
 
 Upload in file-name order. The first three are what shows in search results.
 
+Each frame is the running app — real pages, a real session streaming from the CDN,
+never a mock-up — set in the brand's green with a headline above it by
+`tool/store_frames.py`. The raw captures go to `store/raw/` (not committed);
+the headlines, their order and which scenes each set takes are that script's.
+Phones take the list above (Play: the first eight). Tablets take only the
+scenes on the mushaf page — 02 to 07 — because a list on a tablet is mostly
+empty cream.
+
 | # | File | What it shows |
 |---|---|---|
-| 1 | `01-reading.png` | A surah opening in the mushaf's own page layout, framed. |
-| 2 | `02-session.png` | A session playing over the text: the ayah marked, the controls, the repeat counter. |
-| 3 | `03-home.png` | The home page: the surahs, their progress, and "continue reading". |
-| 4 | `04-session-settings.png` | The session's settings: reciter, range across surahs, repeats, joining. |
-| 5 | `05-ajzaa.png` | The thirty ajzaa, as a grid. |
-| 6 | `06-method.png` | The introduction's leaf on the method. |
-| 7 | `07-settings.png` | Settings, in cards. |
+| 1 | `01-today.png` | Today: the day's wird — the new portion, the near review, the old review — each one tap away. *New in 1.3.* |
+| 2 | `02-recall.png` | A recall round: the app falls silent and covers the ayah so it is recited from memory, then plays it. *New.* |
+| 3 | `03-reading.png` | The whole mushaf in the Madinah print's own hand (QPC V2), page by page, offline. |
+| 4 | `04-session.png` | Talqeen playing over the page: the ayah marked, repeated, then joined to the next. |
+| 5 | `05-memorization.png` | Memorization view: only each ayah's first words show; a tap reveals the rest. *New.* |
+| 6 | `06-stumble.png` | The ayah menu: marking a stumble, so later sessions repeat it more. *New.* |
+| 7 | `07-presets.png` | Session presets: new portion, review, consolidation, listening, or your own. *New.* |
+| 8 | `08-my-hifz.png` | My hifz: what is memorized, juz by juz, and the stumbles in one place. *New.* |
+| 9 | `09-index.png` | The index: surah by surah and juz by juz, with stumbles shown. (App Store only.) |
+| 10 | `10-font.png` | Choosing the mushaf's face, with a live preview and text size. *New.* (App Store only.) |
 
 Regenerate:
 
 ```
-tool/store_screenshots.sh "iPhone 17 Pro Max"     store/apple/iphone
-tool/store_screenshots.sh "iPad Pro 13-inch (M5)" store/apple/ipad
+tool/store_screenshots.sh "iPhone 17 Pro Max"     store/raw/iphone
+tool/store_screenshots.sh "iPad Pro 13-inch (M5)" store/raw/ipad
+tool/store_frames.py store/raw/iphone store/apple/iphone phone  --size 1320x2868
+tool/store_frames.py store/raw/ipad   store/apple/ipad   tablet --size 2064x2752
 ```
 
 ## App Privacy ("nutrition label")

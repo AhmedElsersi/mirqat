@@ -28,7 +28,8 @@ gradient or mark also needs updating).
 ## Screenshots
 
 `google/phone/` (1080 × 1920) and `google/tablet/` (1600 × 2560) are taken from
-the running app on Android emulators by `tool/store_screenshots_android.sh`;
+the running app on Android emulators by `tool/store_screenshots_android.sh`
+and framed by `tool/store_frames.py`;
 `docs/PLAY_LISTING.md` has what each one shows, the order to upload them in, and
 how to regenerate them.
 
@@ -39,5 +40,15 @@ name, subtitle, keywords, descriptions in Arabic and English, App Privacy, age
 rating, content rights, the reviewer's notes and a checklist.
 `apple/PRIVACY_POLICY.md` is the corrected privacy policy the listing depends
 on. `apple/iphone/` (1320 × 2868) and `apple/ipad/` (2064 × 2752) are the
-screenshots, taken from the running app by `tool/store_screenshots.sh`; the
+screenshots, taken from the running app by `tool/store_screenshots.sh` and
+framed by `tool/store_frames.py`; the
 Play set is taken the same way on Android, by `tool/store_screenshots_android.sh`.
+
+## Promo videos
+
+`tool/promo_video.sh` films the running app on an iOS simulator, a clip per
+scene, and `tool/promo_compose.py` cuts them into one-minute videos — framed,
+captioned, over whole ayahs of recitation — in `promo/out/`, landscape and
+portrait. Both `promo/` and `store/raw/` stay out of git. A minute is too long
+for an App Store preview (15–30 s); these are for YouTube, Play's promo video
+and social posts.
