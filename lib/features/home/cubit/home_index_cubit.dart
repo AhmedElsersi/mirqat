@@ -43,18 +43,26 @@ class HomeIndexCubit extends Cubit<HomeIndexState> {
     );
     if (isClosed) return;
 
+    // The sixty ahzab beside the thirty ajzaa: the same table, a few
+    // milliseconds, and nothing left to fetch when a tab is reached.
+    final List<JuzInfo> ahzab = (await _pages.hizbList()).getOrElse(
+      () => const <JuzInfo>[],
+    );
+    if (isClosed) return;
     emit(
       state.copyWith(
-        ajzaa: <JuzItem>[
-          for (final JuzInfo j in ajzaa)
-            if (_surahs[j.surahNumber] case final Surah s)
-              JuzItem(info: j, surah: s),
-        ],
+        ajzaa: _items(ajzaa),
+        ahzab: _items(ahzab),
         history: await _readHistory(),
         loaded: true,
       ),
     );
   }
+
+  List<JuzItem> _items(List<JuzInfo> parts) => <JuzItem>[
+    for (final JuzInfo j in parts)
+      if (_surahs[j.surahNumber] case final Surah s) JuzItem(info: j, surah: s),
+  ];
 
   /// Re-reads the history — after coming back from a reading screen, which is
   /// what writes it.

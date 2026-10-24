@@ -41,6 +41,10 @@ abstract class QuranPagesLocalDataSource {
   /// Every juz and where it begins, in order.
   Future<List<JuzInfo>> juzList();
 
+  /// The sixty ahzab, each by where it begins. Same shape as a juz: a
+  /// number, the ayah it opens on, and that ayah's page.
+  Future<List<JuzInfo>> hizbList();
+
   Future<int> pageCount();
 
   /// The most lines any page holds — the height a full page is laid out for.
@@ -187,25 +191,37 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   final Map<MushafLayout, Future<List<JuzInfo>>> _juzList =
       <MushafLayout, Future<List<JuzInfo>>>{};
 
+  final Map<MushafLayout, Future<List<JuzInfo>>> _hizbList =
+      <MushafLayout, Future<List<JuzInfo>>>{};
+
   @override
   Future<List<JuzInfo>> juzList() =>
-      _juzList[activeLayout] ??= _readJuzList(activeLayout);
+      _juzList[activeLayout] ??= _readJuzList('juz', activeLayout);
 
-  Future<List<JuzInfo>> _readJuzList(MushafLayout layout) async {
+  @override
+  Future<List<JuzInfo>> hizbList() =>
+      _hizbList[activeLayout] ??= _readJuzList('hizb', activeLayout);
+
+  /// The starts of every [division] — `juz` or `hizb`, both columns of
+  /// `ayahs` — as the index rows need them.
+  Future<List<JuzInfo>> _readJuzList(
+    String division,
+    MushafLayout layout,
+  ) async {
     final Database db = await _database.open();
-    // The first ayah of each juz is the one with the lowest id in it; its
+    // The first ayah of each part is the one with the lowest id in it; its
     // page is where its first word is printed in [layout].
     final List<Map<String, Object?>> rows = await db.rawQuery(
-      'SELECT a.juz AS juz, a.surah AS surah, a.ayah AS ayah, '
+      'SELECT a.$division AS n, a.surah AS surah, a.ayah AS ayah, '
       '(SELECT MIN(w.${layout.pageColumn}) FROM words w '
       'WHERE w.surah = a.surah AND w.ayah = a.ayah) AS page '
-      'FROM ayahs a JOIN (SELECT juz, MIN(id) AS first FROM ayahs GROUP BY juz) '
-      'f ON f.first = a.id ORDER BY a.juz',
+      'FROM ayahs a JOIN (SELECT $division, MIN(id) AS first FROM ayahs '
+      'GROUP BY $division) f ON f.first = a.id ORDER BY a.$division',
     );
     return <JuzInfo>[
       for (final Map<String, Object?> row in rows)
         JuzInfo(
-          number: row['juz']! as int,
+          number: row['n']! as int,
           surahNumber: row['surah']! as int,
           ayahNumber: row['ayah']! as int,
           page: row['page']! as int,

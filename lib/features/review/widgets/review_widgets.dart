@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/range_label.dart';
 import '../../../domain/engine/bookends.dart';
 import '../../../domain/engine/review_scheduler.dart';
@@ -123,25 +124,30 @@ class BookendRow extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final bool night = bookend.time == BookendTime.night;
     return ListTile(
-      dense: true,
-      contentPadding: EdgeInsetsDirectional.zero,
-      leading: Icon(
+      onTap: () => _open(context),
+      contentPadding: EdgeInsetsDirectional.fromSTEB(16.w, 6.h, 12.w, 6.h),
+      leading: TileIcon(
         night ? Icons.bedtime_outlined : Icons.wb_twilight,
-        color: theme.colorScheme.primary,
+        background: theme.colorScheme.surface,
       ),
-      title: Text(reviewRangeLabel(context, item)),
+      title: Text(
+        night
+            ? LocaleKeys.reviewBookendNightTitle.tr()
+            : LocaleKeys.reviewBookendMorningTitle.tr(),
+        style: theme.textTheme.titleSmall,
+      ),
       subtitle: Text(
         night
-            ? LocaleKeys.reviewBookendNight.tr()
-            : LocaleKeys.reviewBookendMorning.tr(),
-        style: theme.textTheme.labelSmall,
+            ? LocaleKeys.reviewBookendNightBody.tr()
+            : LocaleKeys.reviewBookendMorningBody.tr(),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
-      trailing: IconButton(
-        tooltip: LocaleKeys.reviewStart.tr(),
-        onPressed: () => _open(context),
-        icon: const Icon(Icons.play_circle_outline),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: theme.colorScheme.onSurfaceVariant,
       ),
-      onTap: () => _open(context),
     );
   }
 }

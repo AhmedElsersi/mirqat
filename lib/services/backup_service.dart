@@ -69,15 +69,22 @@ class BackupMerge extends Equatable {
 
 /// A backup file on the device.
 class BackupFile extends Equatable {
-  const BackupFile({required this.path, required this.modified});
+  const BackupFile({
+    required this.path,
+    required this.modified,
+    this.bytes = 0,
+  });
 
   final String path;
   final DateTime modified;
 
+  /// The file's size; 0 where it was not read.
+  final int bytes;
+
   String get name => p.basename(path);
 
   @override
-  List<Object?> get props => <Object?>[path, modified];
+  List<Object?> get props => <Object?>[path, modified, bytes];
 }
 
 /// The reader's progress as one file, out and back in.
@@ -200,7 +207,11 @@ class BackupService {
         if (f is File &&
             p.basename(f.path).startsWith(filePrefix) &&
             f.path.endsWith('.json'))
-          BackupFile(path: f.path, modified: f.lastModifiedSync()),
+          BackupFile(
+            path: f.path,
+            modified: f.lastModifiedSync(),
+            bytes: f.lengthSync(),
+          ),
     ]..sort((BackupFile a, BackupFile b) => b.name.compareTo(a.name));
     return files;
   }

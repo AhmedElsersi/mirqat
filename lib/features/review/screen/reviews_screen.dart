@@ -118,7 +118,7 @@ class _ReviewsViewState extends State<_ReviewsView> {
                 ],
                 if (later.isNotEmpty) ...<Widget>[
                   SectionTitle(title: LocaleKeys.reviewLater.tr()),
-                  _Group(items: later, now: now),
+                  _Group(items: later, now: now, due: false),
                 ],
               ],
             );
@@ -148,7 +148,7 @@ class _TierCard extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return AppCard(
       onTap: onTap,
-      padding: EdgeInsetsDirectional.symmetric(vertical: 12.h),
+      padding: EdgeInsetsDirectional.all(16.r),
       border: chosen ? theme.colorScheme.primary : null,
       child: Column(
         children: <Widget>[
@@ -160,7 +160,8 @@ class _TierCard extends StatelessWidget {
           ),
           Text(
             tierLabel(tier),
-            style: theme.textTheme.labelMedium?.copyWith(
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -171,10 +172,13 @@ class _TierCard extends StatelessWidget {
 }
 
 class _Group extends StatelessWidget {
-  const _Group({required this.items, required this.now});
+  const _Group({required this.items, required this.now, this.due = true});
 
   final List<ReviewItem> items;
   final DateTime now;
+
+  /// Due now, with a start button a row; else later, with only its date.
+  final bool due;
 
   @override
   Widget build(BuildContext context) => AppCard(
@@ -183,7 +187,7 @@ class _Group extends StatelessWidget {
       children: <Widget>[
         for (final ReviewItem item in items) ...<Widget>[
           if (item != items.first) const Divider(height: 1),
-          _CardTile(item: item, now: now),
+          _CardTile(item: item, now: now, due: due),
         ],
       ],
     ),
@@ -191,44 +195,58 @@ class _Group extends StatelessWidget {
 }
 
 class _CardTile extends StatelessWidget {
-  const _CardTile({required this.item, required this.now});
+  const _CardTile({required this.item, required this.now, required this.due});
 
   final ReviewItem item;
   final DateTime now;
+  final bool due;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final Grade? last = item.card.lastGrade;
+    final TextStyle? muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    // Later: the one thing to know is when, and the row only opens.
+    if (!due) {
+      return ListTile(
+        leading: _ladder(),
+        title: Text(
+          reviewRangeLabel(context, item),
+          style: theme.textTheme.titleSmall,
+        ),
+        subtitle: Text(dueLabel(context, item, now), style: muted),
+        onTap: () => openReview(context, item),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
     return ListTile(
-      // The ladder says how far the passage has climbed: new, recent, kept.
-      leading: LadderMark(
-        current: switch (item.tier) {
-          ReviewTier.sabaq => 1,
-          ReviewTier.sabqi => 2,
-          ReviewTier.manzil => 3,
-        },
-      ),
+      leading: _ladder(),
       title: Text(
         reviewRangeLabel(context, item),
         style: theme.textTheme.titleSmall,
       ),
+      // Under a due row its rung and the last word on it; that it is due
+      // now is what the section says.
       subtitle: Text(
         joinDetails(<String>[
           tierLabel(item.tier),
-          dueLabel(context, item, now),
           if (last != null)
             LocaleKeys.reviewLastGrade.tr(args: <String>[_gradeLabel(last)]),
         ]),
+        style: muted,
       ),
       onTap: () => openReview(context, item),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          IconButton.filledTonal(
+          PlayButton(
             tooltip: LocaleKeys.reviewStart.tr(),
             onPressed: () => openReview(context, item),
-            icon: const Icon(Icons.play_arrow),
           ),
           PopupMenuButton<void>(
             tooltip: LocaleKeys.commonMore.tr(),
@@ -249,6 +267,16 @@ class _CardTile extends StatelessWidget {
       ),
     );
   }
+
+  /// The ladder says how far the passage has climbed: new on the first
+  /// rung, recent on the second, kept at the top — as Today draws it.
+  Widget _ladder() => LadderMark(
+    current: switch (item.tier) {
+      ReviewTier.sabaq => 0,
+      ReviewTier.sabqi => 1,
+      ReviewTier.manzil => 3,
+    },
+  );
 
   static String _gradeLabel(Grade g) => switch (g) {
     Grade.solid => LocaleKeys.reviewGradeSolid.tr(),

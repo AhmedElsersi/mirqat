@@ -131,10 +131,15 @@ class AppTag extends StatelessWidget {
     required this.label,
     this.onHero = false,
     this.tone,
+    this.gold = false,
     super.key,
   });
 
   final String label;
+
+  /// A wash of gold under the ordinary text: the first tag on a card, the
+  /// new portion, what is current.
+  final bool gold;
 
   /// On the forest-green hero card, where the surface and the text invert.
   final bool onHero;
@@ -152,6 +157,8 @@ class AppTag extends StatelessWidget {
       decoration: BoxDecoration(
         color: onHero
             ? AppColors.cream.withValues(alpha: 0.14)
+            : gold
+            ? AppColors.gold.withValues(alpha: 0.2)
             : tone == null
             ? theme.colorScheme.surfaceContainerHighest
             : tint.withValues(alpha: 0.16),
@@ -171,17 +178,21 @@ class AppTag extends StatelessWidget {
 /// A list row's icon, in a rounded square: the shape that tells a row's
 /// subject from its actions.
 class TileIcon extends StatelessWidget {
-  const TileIcon(this.icon, {this.color, super.key});
+  const TileIcon(this.icon, {this.color, this.background, super.key});
 
   final IconData icon;
   final Color? color;
+
+  /// The square's own colour — the surface, on a card that is already tinted.
+  final Color? background;
 
   @override
   Widget build(BuildContext context) => Container(
     width: 40.r,
     height: 40.r,
     decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      color:
+          background ?? Theme.of(context).colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12.r),
     ),
     child: Icon(icon, color: color),
@@ -207,4 +218,119 @@ class ProgressBar extends StatelessWidget {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
     ),
   );
+}
+
+/// A quiet line that explains rather than warns: an icon and a sentence in
+/// the muted colour.
+class AppNote extends StatelessWidget {
+  const AppNote(this.text, {this.icon = Icons.info_outline, super.key});
+
+  final String text;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color muted = theme.colorScheme.onSurfaceVariant;
+    return Padding(
+      padding: EdgeInsetsDirectional.symmetric(horizontal: 4.w),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsetsDirectional.only(top: 2.h),
+            child: Icon(icon, size: 16.r, color: muted),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: muted,
+                height: 1.6,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The one button on a row that starts something: a solid circle in the
+/// primary colour. A row has one of these at most.
+class PlayButton extends StatelessWidget {
+  const PlayButton({
+    required this.onPressed,
+    this.icon = Icons.play_arrow,
+    this.tooltip,
+    this.soft = false,
+    super.key,
+  });
+
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String? tooltip;
+
+  /// Tinted rather than solid — a secondary start beside the main one.
+  final bool soft;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      icon: Icon(icon),
+      style: IconButton.styleFrom(
+        backgroundColor: soft ? colors.surfaceContainerHighest : colors.primary,
+        foregroundColor: soft ? colors.onSurface : colors.onPrimary,
+        disabledBackgroundColor: colors.surfaceContainerHighest,
+        disabledForegroundColor: colors.onSurfaceVariant,
+        minimumSize: Size(44.r, 44.r),
+        fixedSize: Size(44.r, 44.r),
+      ),
+    );
+  }
+}
+
+/// A scrolling list drawn as one card: the rows share a bordered, rounded
+/// surface with a divider between them, as a short list in an [AppCard]
+/// does — but lazily, for an index of hundreds.
+class ListCardView extends StatelessWidget {
+  const ListCardView({
+    required this.itemCount,
+    required this.itemBuilder,
+    this.controller,
+    super.key,
+  });
+
+  final int itemCount;
+  final NullableIndexedWidgetBuilder itemBuilder;
+  final ScrollController? controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return CustomScrollView(
+      controller: controller,
+      slivers: <Widget>[
+        SliverPadding(
+          padding: EdgeInsetsDirectional.fromSTEB(16.w, 4.h, 16.w, 24.h),
+          sliver: DecoratedSliver(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border.all(color: colors.outline),
+              borderRadius: BorderRadius.circular(18.r),
+            ),
+            sliver: SliverList.separated(
+              itemCount: itemCount,
+              itemBuilder: itemBuilder,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

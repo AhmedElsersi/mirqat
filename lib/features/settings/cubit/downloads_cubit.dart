@@ -90,6 +90,10 @@ class DownloadsCubit extends Cubit<DownloadsState> {
         .toList(),
   );
 
+  /// Re-fetches one surah — the re-download beside a stale surah's own row.
+  Future<void> redownload(SavedRecitation saved) =>
+      _downloadEach(<SavedRecitation>[saved]);
+
   /// Re-attempts every failed download.
   ///
   /// Through the service rather than this cubit's own loop: "which downloads

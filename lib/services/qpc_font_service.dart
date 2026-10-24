@@ -18,11 +18,9 @@ import 'audio/manifest_service.dart';
 /// Hands a font's bytes to the engine under [family].
 typedef FontRegistrar = Future<void> Function(String family, Uint8List bytes);
 
-Future<void> _registerWithEngine(String family, Uint8List bytes) =>
-    (FontLoader(family)..addFont(Future<ByteData>.value(
-          ByteData.sublistView(bytes),
-        )))
-        .load();
+Future<void> _registerWithEngine(String family, Uint8List bytes) => (FontLoader(
+  family,
+)..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
 
 /// One packed page font, as `assets/data/qpc_v2_fonts.json` lists it.
 class QpcPageFont {
@@ -75,9 +73,7 @@ class QpcFontService {
 
   /// The pages whose fonts are registered and can be drawn with now. A new
   /// set each time one arrives, so a listener can tell.
-  final ValueNotifier<Set<int>> loaded = ValueNotifier<Set<int>>(
-    const <int>{},
-  );
+  final ValueNotifier<Set<int>> loaded = ValueNotifier<Set<int>>(const <int>{});
 
   final Map<int, Future<bool>> _ensuring = <int, Future<bool>>{};
 
@@ -123,25 +119,30 @@ class QpcFontService {
     if (failed != null && DateTime.now().difference(failed) < retryAfter) {
       return Future<bool>.value(false);
     }
-    return _ensuring[page] ??= _ensure(page).then((bool ok) {
-      if (ok) {
-        _failedAt.remove(page);
-      } else {
-        _failedAt[page] = DateTime.now();
-      }
-      return ok;
-    }).whenComplete(() {
-      // A block, not an arrow: `remove` returns this very future, and
-      // whenComplete would wait on it — forever.
-      _ensuring.remove(page);
-    });
+    return _ensuring[page] ??= _ensure(page)
+        .then((bool ok) {
+          if (ok) {
+            _failedAt.remove(page);
+          } else {
+            _failedAt[page] = DateTime.now();
+          }
+          return ok;
+        })
+        .whenComplete(() {
+          // A block, not an arrow: `remove` returns this very future, and
+          // whenComplete would wait on it — forever.
+          _ensuring.remove(page);
+        });
   }
 
   Future<bool> _ensure(int page) async {
     final File? file = await _fetched(page);
     if (file == null) return false;
     try {
-      await _register(AppTextStyles.qpcPageFamily(page), file.readAsBytesSync());
+      await _register(
+        AppTextStyles.qpcPageFamily(page),
+        file.readAsBytesSync(),
+      );
     } on Object {
       // A file the engine will not take is no font: gone, to be fetched
       // afresh next time.
@@ -198,7 +199,11 @@ class QpcFontService {
     final Directory? root = _storage.root;
     if (root == null) return null;
     return File(
-      p.join(root.path, directoryName, 'p${page.toString().padLeft(3, '0')}.ttf'),
+      p.join(
+        root.path,
+        directoryName,
+        'p${page.toString().padLeft(3, '0')}.ttf',
+      ),
     );
   }
 

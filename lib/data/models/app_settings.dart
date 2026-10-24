@@ -176,6 +176,7 @@ class AppSettings extends Equatable {
     this.defaultPlaybackSpeed = SessionConfig.defaultPlaybackSpeed,
     this.defaultRecallRounds = SessionConfig.defaultRecallRounds,
     this.defaultChainRecall = false,
+    this.defaultPlayIstiadhah = false,
     this.defaultRangeBehaviour = RangeBehaviour.wholeSurah,
     this.lastRanges = const <int, AyahRange>{},
     this.themeMode = AppThemeMode.system,
@@ -235,6 +236,10 @@ class AppSettings extends Equatable {
   /// Whether a new session closes by testing each link of its range — "what
   /// comes next?" ([SessionConfig.chainRecall]). Off by default.
   final bool defaultChainRecall;
+
+  /// Whether a new session opens with the isti'adhah, where the reciter has
+  /// one ([SessionConfig.playIstiadhah]). Off by default.
+  final bool defaultPlayIstiadhah;
 
   final RangeBehaviour defaultRangeBehaviour;
 
@@ -337,6 +342,7 @@ class AppSettings extends Equatable {
     double? defaultPlaybackSpeed,
     int? defaultRecallRounds,
     bool? defaultChainRecall,
+    bool? defaultPlayIstiadhah,
     RangeBehaviour? defaultRangeBehaviour,
     Map<int, AyahRange>? lastRanges,
     AppThemeMode? themeMode,
@@ -379,6 +385,7 @@ class AppSettings extends Equatable {
     defaultPlaybackSpeed: defaultPlaybackSpeed ?? this.defaultPlaybackSpeed,
     defaultRecallRounds: defaultRecallRounds ?? this.defaultRecallRounds,
     defaultChainRecall: defaultChainRecall ?? this.defaultChainRecall,
+    defaultPlayIstiadhah: defaultPlayIstiadhah ?? this.defaultPlayIstiadhah,
     defaultRangeBehaviour: defaultRangeBehaviour ?? this.defaultRangeBehaviour,
     lastRanges: lastRanges ?? this.lastRanges,
     themeMode: themeMode ?? this.themeMode,
@@ -419,6 +426,7 @@ class AppSettings extends Equatable {
     'defaultPlaybackSpeed': defaultPlaybackSpeed,
     'defaultRecallRounds': defaultRecallRounds,
     'defaultChainRecall': defaultChainRecall,
+    'defaultPlayIstiadhah': defaultPlayIstiadhah,
     'defaultRangeBehaviour': defaultRangeBehaviour.storageValue,
     // Hive stores plain maps, so the surah number becomes a string key and the
     // range a two-element list.
@@ -487,6 +495,7 @@ class AppSettings extends Equatable {
       _ => SessionConfig.defaultRecallRounds,
     },
     defaultChainRecall: map['defaultChainRecall'] == true,
+    defaultPlayIstiadhah: map['defaultPlayIstiadhah'] == true,
     defaultRangeBehaviour: RangeBehaviour.fromStorage(
       map['defaultRangeBehaviour'] as String?,
     ),
@@ -558,6 +567,7 @@ class AppSettings extends Equatable {
     defaultPlaybackSpeed,
     defaultRecallRounds,
     defaultChainRecall,
+    defaultPlayIstiadhah,
     defaultRangeBehaviour,
     lastRanges,
     themeMode,

@@ -333,6 +333,7 @@ Future<void> configureDependencies() async {
     () => StatsCubit(
       practiceRepository: sl<PracticeRepository>(),
       progressRepository: sl<ProgressRepository>(),
+      reviewRepository: sl<ReviewRepository>(),
     ),
   );
   sl.registerFactory<HifzPlanCubit>(
@@ -352,6 +353,7 @@ Future<void> configureDependencies() async {
     () => WeakSpotsCubit(
       quranRepository: sl<QuranRepository>(),
       progressRepository: sl<ProgressRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
     ),
   );
   sl.registerFactory<DownloadsCubit>(
@@ -365,6 +367,7 @@ Future<void> configureDependencies() async {
     () => MushafDownloadCubit(
       packService: sl<AudioPackService>(),
       reciterCatalog: sl<ReciterCatalog>(),
+      quranRepository: sl<QuranRepository>(),
     ),
   );
   sl.registerFactory<SettingsCubit>(

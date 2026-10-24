@@ -123,11 +123,5 @@ class SessionRequest extends Equatable {
   final bool autostart;
 
   @override
-  List<Object?> get props => <Object?>[
-    from,
-    to,
-    preset,
-    presetKey,
-    autostart,
-  ];
+  List<Object?> get props => <Object?>[from, to, preset, presetKey, autostart];
 }

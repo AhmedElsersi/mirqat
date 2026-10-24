@@ -138,36 +138,24 @@ class _Days extends StatelessWidget {
       if (label != day) {
         flush();
         day = label;
-        children.add(_DayHeading(label: label));
+        children.add(FieldLabel(label));
       }
       group.add(place);
     }
     flush();
+    children.add(
+      Padding(
+        padding: EdgeInsetsDirectional.only(top: 18.h),
+        child: AppNote(
+          LocaleKeys.historyOnDevice.tr(),
+          icon: Icons.smartphone_outlined,
+        ),
+      ),
+    );
 
     return ListView(
       padding: EdgeInsetsDirectional.fromSTEB(16.w, 4.h, 16.w, 24.h),
       children: children,
-    );
-  }
-}
-
-class _DayHeading extends StatelessWidget {
-  const _DayHeading({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(6.w, 18.h, 6.w, 8.h),
-      child: Text(
-        label,
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     );
   }
 }
@@ -190,27 +178,49 @@ class PlaceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool arabic = context.locale.languageCode == 'ar';
-    return ListTile(
+    return InkWell(
       onTap: onTap,
-      leading: NumberDiamond(number: place.position.page),
-      title: Text(
-        LocaleKeys.mushafAyahReference.tr(
-          args: <String>[
-            arabic ? place.surah.nameAr : place.surah.nameEn,
-            place.position.ayahNumber.toLocalisedString(),
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(14.w, 10.h, 10.w, 10.h),
+        child: Row(
+          children: <Widget>[
+            // The page leads the row: it is what the mushaf opens on.
+            NumberDiamond(number: place.position.page),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    LocaleKeys.historyPlace.tr(
+                      args: <String>[
+                        arabic ? place.surah.nameAr : place.surah.nameEn,
+                        place.position.ayahNumber.toLocalisedString(),
+                      ],
+                    ),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  // The day is the group's heading; under the ayah, only
+                  // the hour.
+                  Text(
+                    whenLabel(context, place.position.at),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
-        style: theme.textTheme.titleSmall,
       ),
-      subtitle: Text(
-        joinDetails(<String>[
-          LocaleKeys.mushafPage.tr(
-            args: <String>[place.position.page.toLocalisedString()],
-          ),
-          whenLabel(context, place.position.at),
-        ]),
-      ),
-      trailing: const Icon(Icons.chevron_left),
     );
   }
 

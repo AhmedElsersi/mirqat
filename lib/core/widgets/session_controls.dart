@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../domain/entities/session_config.dart';
 import '../extensions/number_extensions.dart';
 import '../localization/locale_keys.dart';
+import 'panel.dart';
 
 /// Section heading for a block of session or settings controls.
 ///
@@ -191,16 +192,22 @@ class _StepperFieldState extends State<StepperField> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final TextStyle? valueStyle = theme.textTheme.titleMedium;
+    final TextStyle? valueStyle = theme.textTheme.titleMedium?.copyWith(
+      fontSize: 17.sp,
+      fontWeight: FontWeight.w700,
+    );
 
+    // Plus where a line starts, minus where it ends — in Arabic, plus on the
+    // right — as the design's stepper has them.
     return Container(
+      padding: EdgeInsetsDirectional.all(4.r),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(14.r),
       ),
       child: Row(
         children: <Widget>[
-          _stepButton(icon: Icons.remove, direction: -1),
+          _stepButton(icon: Icons.add, direction: 1),
           Expanded(
             child: widget.editable
                 ? TextField(
@@ -236,7 +243,7 @@ class _StepperFieldState extends State<StepperField> {
                     style: valueStyle,
                   ),
           ),
-          _stepButton(icon: Icons.add, direction: 1),
+          _stepButton(icon: Icons.remove, direction: -1),
         ],
       ),
     );
@@ -251,7 +258,14 @@ class _StepperFieldState extends State<StepperField> {
       onLongPressEnd: (_) => _stopHold(),
       onLongPressCancel: _stopHold,
       child: IconButton(
-        iconSize: 26.r,
+        iconSize: 22.r,
+        style: IconButton.styleFrom(
+          minimumSize: Size(42.r, 42.r),
+          fixedSize: Size(42.r, 42.r),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(11.r),
+          ),
+        ),
         onPressed: enabled ? () => widget.onChanged(next) : null,
         icon: Icon(icon),
       ),
@@ -371,77 +385,8 @@ class LabelledSlider extends StatelessWidget {
   }
 }
 
-/// The connect-mode picker. Each option carries its own one-line explanation,
-/// because the difference between them is the whole method.
-class ConnectModeOption extends StatelessWidget {
-  const ConnectModeOption({
-    required this.label,
-    required this.hint,
-    required this.selected,
-    required this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final String hint;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        margin: EdgeInsetsDirectional.only(bottom: 8.h),
-        padding: EdgeInsetsDirectional.all(12.r),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: selected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline,
-            width: selected ? 2 : 1,
-          ),
-          color: selected
-              ? theme.colorScheme.primary.withValues(alpha: 0.06)
-              : null,
-        ),
-        child: Row(
-          children: <Widget>[
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: selected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-              size: 22.r,
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(label, style: theme.textTheme.bodyLarge),
-                  SizedBox(height: 2.h),
-                  Text(
-                    hint,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// "5 steps · 24 recitations · 4 min 12 s", recomputed on every change.
+/// "9 rungs, 27 recitations, about 14 min", recomputed on every change: one
+/// quiet line over the button that starts it.
 class SessionSummary extends StatelessWidget {
   const SessionSummary({
     required this.stepCount,
@@ -458,25 +403,17 @@ class SessionSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsetsDirectional.all(14.r),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12.r),
+    return Text(
+      LocaleKeys.sessionSetupSummary.tr(
+        args: <String>[
+          stepCount.toLocalisedString(),
+          unitCount.toLocalisedString(),
+          duration,
+        ],
       ),
-      child: Text(
-        LocaleKeys.sessionSetupSummary.tr(
-          args: <String>[
-            stepCount.toLocalisedString(),
-            unitCount.toLocalisedString(),
-            duration,
-          ],
-        ),
-        textAlign: TextAlign.center,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-        ),
+      textAlign: TextAlign.center,
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
       ),
     );
   }
@@ -502,46 +439,144 @@ extension ConnectModeCopy on ConnectMode {
   };
 }
 
+/// Rows in one bordered card with a hairline between them — the design's
+/// `.list`.
+class SessionListCard extends StatelessWidget {
+  const SessionListCard({required this.children, super.key});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (int i = 0; i < children.length; i++) ...<Widget>[
+          if (i > 0) const Divider(height: 1),
+          children[i],
+        ],
+      ],
+    ),
+  );
+}
+
+/// One row of a [SessionListCard]: its icon, a title, an optional quiet line
+/// under it, and whatever closes the row — a switch, a value, a chevron.
+class SessionListRow extends StatelessWidget {
+  const SessionListRow({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    super.key,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: 60.r),
+        child: Padding(
+          padding: EdgeInsetsDirectional.symmetric(
+            horizontal: 14.w,
+            vertical: 10.h,
+          ),
+          child: Row(
+            children: <Widget>[
+              TileIcon(icon),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(title, style: theme.textTheme.titleSmall),
+                    if (subtitle != null && subtitle!.isNotEmpty)
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (trailing != null) ...<Widget>[
+                SizedBox(width: 8.w),
+                trailing!,
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A [SessionListRow] that is a switch: the whole row toggles it.
+class SessionSwitchRow extends StatelessWidget {
+  const SessionSwitchRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+    super.key,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SessionListRow(
+    icon: icon,
+    title: title,
+    subtitle: subtitle,
+    onTap: () => onChanged(!value),
+    trailing: Switch.adaptive(value: value, onChanged: onChanged),
+  );
+}
+
 /// The controls that mean the same thing whether they are being set as a
-/// default or overridden for one session: how many repeats, how the ayahs join,
-/// how long the gaps are, how fast the recitation runs.
+/// default or overridden for one session, in the one order both screens
+/// share: the two numbers, how the ayahs join, then the switches.
 ///
 /// The ayah range is deliberately *not* here. In settings it is a policy
 /// ("whole surah" / "last used"); in the reader it is two concrete ayah
 /// numbers tied to a live selection. Forcing both through one widget would
 /// mean a range control that is sometimes a policy and sometimes a number.
+/// What follows the switches — the session sheet's fold of reciter and audio,
+/// the settings page's closing pass and isti'adhah — is handed in as [rows],
+/// and joins the same card.
 class SessionTuningControls extends StatelessWidget {
   const SessionTuningControls({
     required this.repeatCount,
     required this.connectMode,
-    required this.intraBlockPauseMs,
-    required this.betweenRepeatPauseMs,
-    required this.betweenStepsPauseMs,
-    required this.playbackSpeed,
-    required this.finalFullPass,
     required this.recallRounds,
     required this.chainRecall,
     required this.onRepeatCount,
     required this.onConnectMode,
-    required this.onIntraBlockPause,
-    required this.onBetweenRepeatPause,
-    required this.onBetweenStepsPause,
-    required this.onPlaybackSpeed,
-    required this.onFinalFullPass,
     required this.onRecallRounds,
     required this.onChainRecall,
+    this.rows = const <Widget>[],
     super.key,
   });
 
   final int repeatCount;
   final ConnectMode connectMode;
-  final int intraBlockPauseMs;
-  final int betweenRepeatPauseMs;
-  final int betweenStepsPauseMs;
-  final double playbackSpeed;
-
-  /// Whether the session closes with one more pass over the whole range.
-  final bool finalFullPass;
 
   /// How many times each ayah is asked back after its learn step
   /// ([SessionConfig.recallRounds]). 0 is off.
@@ -553,137 +588,260 @@ class SessionTuningControls extends StatelessWidget {
 
   final ValueChanged<int> onRepeatCount;
   final ValueChanged<ConnectMode> onConnectMode;
-  final ValueChanged<int> onIntraBlockPause;
-  final ValueChanged<int> onBetweenRepeatPause;
-  final ValueChanged<int> onBetweenStepsPause;
-  final ValueChanged<double> onPlaybackSpeed;
-  final ValueChanged<bool> onFinalFullPass;
   final ValueChanged<int> onRecallRounds;
   final ValueChanged<bool> onChainRecall;
 
+  /// More rows for the card the chain-recall switch opens.
+  final List<Widget> rows;
+
   @override
   Widget build(BuildContext context) {
-    String ms(int value) => LocaleKeys.sessionSetupMilliseconds.tr(
-      args: <String>[value.toLocalisedString()],
-    );
+    final ThemeData theme = Theme.of(context);
+    // Recall belongs to the drill modes: continuous has no per-ayah step for
+    // a recall to follow, so the control is not offered under it rather than
+    // offered and ignored.
+    final bool offersRecall = connectMode != ConnectMode.continuous;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SetupSection(
-          label: LocaleKeys.sessionSetupRepeatCount.tr(),
-          child: StepperField(
-            value: repeatCount,
-            min: SessionConfig.minRepeatCount,
-            max: SessionConfig.maxRepeatCount,
-            formatValue: (int v) => v.toLocalisedString(),
-            editable: true,
-            onChanged: onRepeatCount,
-          ),
-        ),
-        SetupSection(
-          label: LocaleKeys.sessionSetupConnectMode.tr(),
-          child: Column(
-            children: <Widget>[
-              for (final ConnectMode mode in ConnectMode.values)
-                ConnectModeOption(
-                  label: mode.labelKey.tr(),
-                  hint: mode.hintKey.tr(),
-                  selected: connectMode == mode,
-                  onTap: () => onConnectMode(mode),
-                ),
-            ],
-          ),
-        ),
-        // Recall belongs to the drill modes: continuous has no per-ayah step
-        // for a recall to follow, so the control is not offered under it
-        // rather than offered and ignored.
-        if (connectMode != ConnectMode.continuous)
-          SetupSection(
-            label: LocaleKeys.sessionSetupRecallRounds.tr(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                StepperField(
-                  value: recallRounds,
-                  min: SessionConfig.minRecallRounds,
-                  max: SessionConfig.maxRecallRounds,
-                  formatValue: (int v) => v.toLocalisedString(),
-                  onChanged: onRecallRounds,
-                ),
-                Padding(
-                  padding: EdgeInsetsDirectional.only(top: 6.h),
-                  child: Text(
-                    LocaleKeys.sessionSetupRecallRoundsHint.tr(),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+        // The two numbers a session is usually opened to change, side by side.
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  FieldLabel(LocaleKeys.sessionSetupRepeatCount.tr()),
+                  StepperField(
+                    value: repeatCount,
+                    min: SessionConfig.minRepeatCount,
+                    max: SessionConfig.maxRepeatCount,
+                    formatValue: (int v) => v.toLocalisedString(),
+                    editable: true,
+                    onChanged: onRepeatCount,
                   ),
+                ],
+              ),
+            ),
+            if (offersRecall) ...<Widget>[
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    FieldLabel(LocaleKeys.sessionSetupRecallRounds.tr()),
+                    StepperField(
+                      value: recallRounds,
+                      min: SessionConfig.minRecallRounds,
+                      max: SessionConfig.maxRecallRounds,
+                      formatValue: (int v) => v.toLocalisedString(),
+                      onChanged: onRecallRounds,
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ],
+        ),
+
+        // The way of joining, with what it means in one line.
+        FieldLabel(LocaleKeys.sessionSetupConnectMode.tr()),
+        SegmentedButton<ConnectMode>(
+          showSelectedIcon: false,
+          segments: <ButtonSegment<ConnectMode>>[
+            for (final ConnectMode mode in ConnectMode.values)
+              ButtonSegment<ConnectMode>(
+                value: mode,
+                label: Text(
+                  mode.labelKey.tr(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+          selected: <ConnectMode>{connectMode},
+          onSelectionChanged: (Set<ConnectMode> picked) =>
+              onConnectMode(picked.first),
+        ),
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(4.w, 8.h, 4.w, 0),
+          child: Text(
+            connectMode.hintKey.tr(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-        SetupSection(
-          label: LocaleKeys.settingsDefaultPauses.tr(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              LabelledSlider(
-                label: LocaleKeys.sessionSetupIntraBlockPause.tr(),
-                value: intraBlockPauseMs.toDouble(),
-                min: 0,
-                max: 2000,
-                divisions: 20,
-                valueLabel: ms(intraBlockPauseMs),
-                onChanged: (double v) => onIntraBlockPause(v.round()),
-              ),
-              LabelledSlider(
-                label: LocaleKeys.sessionSetupBetweenRepeatPause.tr(),
-                value: betweenRepeatPauseMs.toDouble(),
-                min: 0,
-                max: 3000,
-                divisions: 30,
-                valueLabel: ms(betweenRepeatPauseMs),
-                onChanged: (double v) => onBetweenRepeatPause(v.round()),
-              ),
-              LabelledSlider(
-                label: LocaleKeys.sessionSetupBetweenStepsPause.tr(),
-                value: betweenStepsPauseMs.toDouble(),
-                min: 0,
-                max: 5000,
-                divisions: 25,
-                valueLabel: ms(betweenStepsPauseMs),
-                onChanged: (double v) => onBetweenStepsPause(v.round()),
-              ),
+        ),
+
+        SizedBox(height: 16.h),
+        SessionListCard(
+          children: <Widget>[
+            SessionSwitchRow(
+              icon: Icons.link,
+              title: LocaleKeys.sessionSetupChainRecall.tr(),
+              subtitle: LocaleKeys.sessionSetupChainRecallHint.tr(),
+              value: chainRecall,
+              onChanged: onChainRecall,
+            ),
+            ...rows,
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// A speed as the design writes it: «١٫٠×», two places only where a quarter
+/// step needs them.
+String speedLabel(double speed) {
+  final bool whole = ((speed * 10).round() - speed * 10).abs() < 1e-6;
+  return '${speed.toLocalisedFixed(whole ? 1 : 2)}×';
+}
+
+/// What a session sounds like once it is tuned: how fast, and how long it
+/// waits. Two rows that say where they stand; a tap on either opens its
+/// sliders beneath it.
+class SpeedAndPausesList extends StatefulWidget {
+  const SpeedAndPausesList({
+    required this.intraBlockPauseMs,
+    required this.betweenRepeatPauseMs,
+    required this.betweenStepsPauseMs,
+    required this.playbackSpeed,
+    required this.onIntraBlockPause,
+    required this.onBetweenRepeatPause,
+    required this.onBetweenStepsPause,
+    required this.onPlaybackSpeed,
+    super.key,
+  });
+
+  final int intraBlockPauseMs;
+  final int betweenRepeatPauseMs;
+  final int betweenStepsPauseMs;
+  final double playbackSpeed;
+  final ValueChanged<int> onIntraBlockPause;
+  final ValueChanged<int> onBetweenRepeatPause;
+  final ValueChanged<int> onBetweenStepsPause;
+  final ValueChanged<double> onPlaybackSpeed;
+
+  @override
+  State<SpeedAndPausesList> createState() => _SpeedAndPausesListState();
+}
+
+class _SpeedAndPausesListState extends State<SpeedAndPausesList> {
+  bool _speedOpen = false;
+  bool _pausesOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final TextStyle? value = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    String ms(int value) => LocaleKeys.sessionSetupMilliseconds.tr(
+      args: <String>[value.toLocalisedString()],
+    );
+    final bool silent =
+        widget.intraBlockPauseMs == 0 &&
+        widget.betweenRepeatPauseMs == 0 &&
+        widget.betweenStepsPauseMs == 0;
+    final String pauses = silent
+        ? LocaleKeys.sessionSetupPausesNone.tr()
+        : LocaleKeys.sessionSetupPausesShort.tr(
+            args: <String>[
+              <int>[
+                widget.intraBlockPauseMs,
+                widget.betweenRepeatPauseMs,
+                widget.betweenStepsPauseMs,
+              ].map((int v) => v.toLocalisedString()).join(' / '),
             ],
-          ),
+          );
+    Widget sliders(List<Widget> children) => Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(14.w, 0, 14.w, 8.h),
+      child: Column(children: children),
+    );
+
+    return SessionListCard(
+      children: <Widget>[
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            SessionListRow(
+              icon: Icons.speed,
+              title: LocaleKeys.sessionSetupPlaybackSpeed.tr(),
+              trailing: Text(speedLabel(widget.playbackSpeed), style: value),
+              onTap: () => setState(() => _speedOpen = !_speedOpen),
+            ),
+            if (_speedOpen)
+              sliders(<Widget>[
+                LabelledSlider(
+                  label: LocaleKeys.sessionSetupPlaybackSpeed.tr(),
+                  value: widget.playbackSpeed,
+                  min: SessionConfig.minPlaybackSpeed,
+                  max: SessionConfig.maxPlaybackSpeed,
+                  divisions: 10,
+                  valueLabel: speedLabel(widget.playbackSpeed),
+                  // Snapped to the nearest 0.05 so the label never shows a
+                  // value the player cannot actually be set to.
+                  onChanged: (double v) =>
+                      widget.onPlaybackSpeed((v * 20).round() / 20),
+                ),
+              ]),
+          ],
         ),
-        SetupSection(
-          label: LocaleKeys.sessionSetupPlaybackSpeed.tr(),
-          child: LabelledSlider(
-            label: LocaleKeys.sessionSetupPlaybackSpeed.tr(),
-            value: playbackSpeed,
-            min: SessionConfig.minPlaybackSpeed,
-            max: SessionConfig.maxPlaybackSpeed,
-            divisions: 10,
-            valueLabel: '${playbackSpeed.toLocalisedFixed(2)}\u00D7',
-            // Snapped to the nearest 0.05 so the label never shows a value the
-            // player cannot actually be set to.
-            onChanged: (double v) => onPlaybackSpeed((v * 20).round() / 20),
-          ),
-        ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsetsDirectional.zero,
-          title: Text(LocaleKeys.sessionSetupFinalFullPass.tr()),
-          value: finalFullPass,
-          onChanged: onFinalFullPass,
-        ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsetsDirectional.zero,
-          title: Text(LocaleKeys.sessionSetupChainRecall.tr()),
-          subtitle: Text(LocaleKeys.sessionSetupChainRecallHint.tr()),
-          value: chainRecall,
-          onChanged: onChainRecall,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            SessionListRow(
+              icon: Icons.pause,
+              title: LocaleKeys.sessionSetupPauses.tr(),
+              subtitle: LocaleKeys.sessionSetupPausesHint.tr(),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(pauses, style: value),
+                  Icon(
+                    _pausesOpen ? Icons.expand_less : Icons.chevron_right,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              onTap: () => setState(() => _pausesOpen = !_pausesOpen),
+            ),
+            if (_pausesOpen)
+              sliders(<Widget>[
+                LabelledSlider(
+                  label: LocaleKeys.sessionSetupIntraBlockPause.tr(),
+                  value: widget.intraBlockPauseMs.toDouble(),
+                  min: 0,
+                  max: 2000,
+                  divisions: 20,
+                  valueLabel: ms(widget.intraBlockPauseMs),
+                  onChanged: (double v) => widget.onIntraBlockPause(v.round()),
+                ),
+                LabelledSlider(
+                  label: LocaleKeys.sessionSetupBetweenRepeatPause.tr(),
+                  value: widget.betweenRepeatPauseMs.toDouble(),
+                  min: 0,
+                  max: 3000,
+                  divisions: 30,
+                  valueLabel: ms(widget.betweenRepeatPauseMs),
+                  onChanged: (double v) =>
+                      widget.onBetweenRepeatPause(v.round()),
+                ),
+                LabelledSlider(
+                  label: LocaleKeys.sessionSetupBetweenStepsPause.tr(),
+                  value: widget.betweenStepsPauseMs.toDouble(),
+                  min: 0,
+                  max: 5000,
+                  divisions: 25,
+                  valueLabel: ms(widget.betweenStepsPauseMs),
+                  onChanged: (double v) =>
+                      widget.onBetweenStepsPause(v.round()),
+                ),
+              ]),
+          ],
         ),
       ],
     );

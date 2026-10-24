@@ -44,14 +44,11 @@ void main() {
             PreambleQueueEntry() => 'preamble',
           },
       ];
-      expect(
-        shape,
-        <String>[
-          'learn', 'learn', // the drill
-          ...List<String>.filled(8, 'gap'), 'recall', // round one
-          ...List<String>.filled(8, 'gap'), 'recall', // round two
-        ],
-      );
+      expect(shape, <String>[
+        'learn', 'learn', // the drill
+        ...List<String>.filled(8, 'gap'), 'recall', // round one
+        ...List<String>.filled(8, 'gap'), 'recall', // round two
+      ]);
     });
 
     test('an unmeasured clip still gets the fallback gap', () {
@@ -128,12 +125,7 @@ void main() {
           .unitStreamFrom(indices)
           .map((u) => '${u.stepType.name} r${u.repeatIndex}')
           .toList();
-      expect(units, <String>[
-        'learn r1',
-        'learn r2',
-        'recall r1',
-        'recall r2',
-      ]);
+      expect(units, <String>['learn r1', 'learn r2', 'recall r1', 'recall r2']);
     });
 
     test('a plan without recall builds the same queue as before', () {

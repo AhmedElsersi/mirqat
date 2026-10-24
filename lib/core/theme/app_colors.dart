@@ -186,4 +186,8 @@ abstract final class AppColors {
   /// Wash behind the whole block of a connect step. Gold at 8%.
   /// Forest 8.5:1 over it on cream; cream 12.94:1 over it on forest-deep.
   static const Color blockHighlight = Color(0x14E1B45C);
+
+  /// A ladder rung already climbed, on the forest-green hero card, where
+  /// [sabrLight] does not show. Non-text; 3.6:1 against [forest].
+  static const Color rungDoneOnHero = Color(0xFF9FD4BE);
 }

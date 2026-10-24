@@ -63,13 +63,13 @@ class MutashabihatScreen extends StatelessWidget {
                 if (i == shown.length + 1) {
                   return Padding(
                     padding: EdgeInsetsDirectional.only(top: 12.h),
-                    child: Text(
+                    child: AppNote(
                       shown.isEmpty
                           ? LocaleKeys.mutashabihatNoneInSurah.tr()
                           : LocaleKeys.similarSource.tr(),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                      icon: shown.isEmpty
+                          ? Icons.info_outline
+                          : Icons.bookmarks_outlined,
                     ),
                   );
                 }
@@ -110,31 +110,38 @@ class _Heading extends StatelessWidget {
           ),
         ),
         SizedBox(height: 12.h),
-        Wrap(
-          spacing: 8.w,
-          runSpacing: 8.h,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        // The chips fill the row; the count keeps to its end.
+        Row(
           children: <Widget>[
-            ChoiceChip(
-              selected: state.surahFilter == null,
-              onSelected: (_) => cubit.filterBySurah(null),
-              label: Text(LocaleKeys.mutashabihatAllSurahs.tr()),
-            ),
-            ActionChip(
-              key: const ValueKey<String>('mutashabihat-surah'),
-              avatar: const Icon(Icons.filter_list),
-              label: Text(
-                chosen == null
-                    ? LocaleKeys.mutashabihatSurah.tr()
-                    : (arabic ? chosen.nameAr : chosen.nameEn),
+            Expanded(
+              child: Wrap(
+                spacing: 8.w,
+                runSpacing: 8.h,
+                children: <Widget>[
+                  ChoiceChip(
+                    selected: state.surahFilter == null,
+                    onSelected: (_) => cubit.filterBySurah(null),
+                    label: Text(LocaleKeys.mutashabihatAllSurahs.tr()),
+                  ),
+                  ActionChip(
+                    key: const ValueKey<String>('mutashabihat-surah'),
+                    avatar: const Icon(Icons.filter_list),
+                    label: Text(
+                      chosen == null
+                          ? LocaleKeys.mutashabihatSurah.tr()
+                          : (arabic ? chosen.nameAr : chosen.nameEn),
+                    ),
+                    onPressed: () => _pickSurah(context, state, cubit),
+                  ),
+                ],
               ),
-              onPressed: () => _pickSurah(context, state, cubit),
             ),
+            SizedBox(width: 8.w),
             Text(
               LocaleKeys.mutashabihatShown.tr(
                 args: <String>[state.shown.length.toLocalisedString()],
               ),
-              style: theme.textTheme.labelMedium?.copyWith(
+              style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
@@ -197,6 +204,18 @@ class _PhraseCardState extends State<_PhraseCard> {
     _words = context.read<MutashabihatCubit>().wordsOf(widget.entry);
   }
 
+  static String _surahLine(
+    PhraseEntry entry,
+    String Function(Surah) name, {
+    required bool arabic,
+  }) {
+    final List<String> names = entry.surahs.take(3).map(name).toList();
+    if (entry.surahs.length > 3) {
+      names.add(LocaleKeys.mutashabihatAndOthers.tr());
+    }
+    return names.join(arabic ? '، ' : ', ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -207,7 +226,7 @@ class _PhraseCardState extends State<_PhraseCard> {
     return Padding(
       padding: EdgeInsetsDirectional.only(bottom: 10.h),
       child: AppCard(
-        padding: EdgeInsetsDirectional.fromSTEB(14.w, 12.h, 14.w, 10.h),
+        padding: EdgeInsetsDirectional.all(16.r),
         onTap: () => context.pushNamed(
           AppRoutes.mutashabihatPhraseName,
           extra: entry.id,
@@ -222,7 +241,7 @@ class _PhraseCardState extends State<_PhraseCard> {
                 // Room held while the words load, so the list does not
                 // jump under the reader's thumb.
                 if (words.isEmpty) return SizedBox(height: 36.h);
-                return QuranWords(words: words);
+                return QuranWords(words: words, fontSize: 21.sp);
               },
             ),
             SizedBox(height: 12.h),
@@ -230,6 +249,7 @@ class _PhraseCardState extends State<_PhraseCard> {
               children: <Widget>[
                 Flexible(
                   child: AppTag(
+                    gold: true,
                     label: LocaleKeys.mutashabihatAyahsTag.tr(
                       args: <String>[entry.ayahCount.toLocalisedString()],
                     ),
@@ -246,34 +266,32 @@ class _PhraseCardState extends State<_PhraseCard> {
                 const Spacer(),
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: LocaleKeys.drillTitle.tr(),
+                  constraints: BoxConstraints.tightFor(
+                    width: 36.r,
+                    height: 36.r,
+                  ),
+                  padding: EdgeInsetsDirectional.zero,
+                  tooltip: LocaleKeys.mutashabihatDrill.tr(),
                   onPressed: () => context.pushNamed(
                     AppRoutes.mutashabihatDrillName,
                     extra: entry.id,
                   ),
                   icon: const Icon(Icons.fitness_center),
                 ),
-                const Icon(Icons.chevron_left),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ],
             ),
-            SizedBox(height: 4.h),
+            SizedBox(height: 8.h),
+            // One line: up to three of its surahs, then where it first
+            // comes — the card opens on the whole of it.
             Text(
-              entry.surahs.map(name).join(arabic ? '، ' : ', '),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            Text(
-              LocaleKeys.mutashabihatFirstAt.tr(
-                args: <String>[
-                  LocaleKeys.mushafAyahReference.tr(
-                    args: <String>[
-                      name(entry.surahs.first),
-                      entry.first.ref.ayah.toLocalisedString(),
-                    ],
-                  ),
-                ],
-              ),
+              '${_surahLine(entry, name, arabic: arabic)} — '
+              '${LocaleKeys.mutashabihatFirstAt.tr(args: <String>[
+                LocaleKeys.mushafAyahReference.tr(args: <String>[name(entry.surahs.first), entry.first.ref.ayah.toLocalisedString()]),
+              ])}',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

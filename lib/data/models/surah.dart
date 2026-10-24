@@ -62,6 +62,7 @@ class Surah extends Equatable {
     required this.ayahCount,
     required this.revelationPlace,
     required this.bismillahMode,
+    this.startPage = 1,
   });
 
   final int number;
@@ -74,6 +75,11 @@ class Surah extends Equatable {
   final int ayahCount;
   final RevelationPlace revelationPlace;
   final BismillahMode bismillahMode;
+
+  /// The mushaf page the surah begins on, from `surahs.start_page`. Defaults
+  /// to 1 for a surah built by hand in a test; every row of `quran.db` has
+  /// one.
+  final int startPage;
 
   /// True when the surah needs a standalone Bismillah clip before ayah 1.
   bool get needsBismillahPreamble =>
@@ -103,11 +109,13 @@ class Surah extends Equatable {
       ayahCount: ayahCount,
       revelationPlace: RevelationPlace.fromDb(revelation),
       bismillahMode: BismillahMode.fromDb(row['basmala_mode']! as String),
+      startPage: (row['start_page'] as int?) ?? 1,
     );
   }
 
   @override
   List<Object?> get props => <Object?>[
+    startPage,
     number,
     nameAr,
     nameEn,

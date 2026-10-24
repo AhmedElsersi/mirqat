@@ -18,7 +18,8 @@ import '../../../domain/entities/ayah_ref.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../../mushaf/reading_section.dart';
 import '../../settings/cubit/settings_cubit.dart';
-import '../../surah_list/widgets/surah_row.dart' show NumberDiamond;
+import '../../surah_list/widgets/surah_row.dart'
+    show NumberDiamond, ayahCountLabel;
 import '../cubit/search_cubit.dart';
 import '../cubit/search_state.dart';
 
@@ -67,6 +68,16 @@ class _SearchViewState extends State<_SearchView> {
                 padding: EdgeInsetsDirectional.fromSTEB(16.w, 8.h, 16.w, 0),
                 child: _Field(controller: _controller),
               ),
+              // What the box takes, said once under it, whatever is typed.
+              Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(22.w, 8.h, 22.w, 4.h),
+                child: Text(
+                  LocaleKeys.searchPrompt.tr(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
               // A hair of progress under the field, never a spinner over the
               // results: a longer query narrows what is already shown.
               SizedBox(
@@ -76,8 +87,10 @@ class _SearchViewState extends State<_SearchView> {
                     : null,
               ),
               Expanded(
+                // Before anything is typed, the line under the box has said
+                // all there is to say: nothing is repeated below it.
                 child: !state.hasQuery
-                    ? _Message(LocaleKeys.searchPrompt.tr())
+                    ? const SizedBox.shrink()
                     : !state.hasResults && !state.searching
                     ? _Message(LocaleKeys.searchNoResults.tr())
                     : _Results(state: state),
@@ -101,7 +114,7 @@ class _Field extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Container(
-      height: 52.h,
+      height: 50.r,
       padding: EdgeInsetsDirectional.symmetric(horizontal: 16.w),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -182,7 +195,7 @@ class _Results extends StatelessWidget {
         if (page != null) ...<Widget>[
           AppCard(
             onTap: () => _openMushaf(context, MushafArgs(initialPage: page)),
-            padding: EdgeInsetsDirectional.all(14.r),
+            padding: EdgeInsetsDirectional.all(16.r),
             child: Row(
               children: <Widget>[
                 const TileIcon(Icons.auto_stories_outlined),
@@ -195,14 +208,14 @@ class _Results extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
-                const Icon(Icons.chevron_left),
+                const Icon(Icons.chevron_right),
               ],
             ),
           ),
           SizedBox(height: 4.h),
         ],
         if (state.surahs.isNotEmpty) ...<Widget>[
-          SectionTitle(title: LocaleKeys.searchSurahs.tr()),
+          FieldLabel(LocaleKeys.searchSurahs.tr()),
           AppCard(
             padding: EdgeInsetsDirectional.zero,
             child: Column(
@@ -222,27 +235,23 @@ class _Results extends StatelessWidget {
           ),
           for (final AyahSearchHit hit in state.ayahs) ...<Widget>[
             _AyahResult(hit: hit),
-            SizedBox(height: 10.h),
+            SizedBox(height: 12.h),
           ],
         ],
         if (state.ayahs.length >= SearchCubit.ayahLimit)
           // The list is capped, never any ayah's text (A.2 rule 7): say so,
           // and a longer query narrows it.
           Padding(
-            padding: EdgeInsetsDirectional.all(12.r),
-            child: Text(
-              LocaleKeys.searchMoreResults.tr(),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
+            padding: EdgeInsetsDirectional.only(top: 4.h),
+            child: AppNote(LocaleKeys.searchMoreResults.tr()),
           ),
       ],
     );
   }
 }
 
+/// A surah that matched, as a row of the index: its number, its name, and
+/// one line of where it is.
 class _SurahResult extends StatelessWidget {
   const _SurahResult({required this.surah});
 
@@ -252,27 +261,50 @@ class _SurahResult extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool arabic = context.locale.languageCode == 'ar';
-    return ListTile(
-      leading: NumberDiamond(number: surah.number),
-      title: Text(
-        arabic ? surah.nameAr : surah.nameEn,
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
+    return InkWell(
+      onTap: () => _openSurah(context, surah),
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(14.w, 10.h, 10.w, 10.h),
+        child: Row(
+          children: <Widget>[
+            NumberDiamond(number: surah.number),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    arabic ? surah.nameAr : surah.nameEn,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    joinDetails(<String>[
+                      (surah.revelationPlace == RevelationPlace.makkah
+                              ? LocaleKeys.mushafMakki
+                              : LocaleKeys.mushafMadani)
+                          .tr(),
+                      ayahCountLabel(surah.ayahCount),
+                      LocaleKeys.mushafPage.tr(
+                        args: <String>[surah.startPage.toLocalisedString()],
+                      ),
+                    ]),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
         ),
       ),
-      subtitle: Text(
-        joinDetails(<String>[
-          (surah.revelationPlace == RevelationPlace.makkah
-                  ? LocaleKeys.mushafMakki
-                  : LocaleKeys.mushafMadani)
-              .tr(),
-          LocaleKeys.surahListAyahCount.tr(
-            args: <String>[surah.ayahCount.toLocalisedString()],
-          ),
-        ]),
-      ),
-      trailing: const Icon(Icons.chevron_left),
-      onTap: () => _openSurah(context, surah),
     );
   }
 }
@@ -297,7 +329,7 @@ class _AyahResult extends StatelessWidget {
     );
 
     return AppCard(
-      padding: EdgeInsetsDirectional.all(14.r),
+      padding: EdgeInsetsDirectional.all(16.r),
       onTap: () => _openMushaf(
         context,
         MushafArgs(initialAyah: AyahRef(hit.surahNumber, hit.number)),
@@ -320,7 +352,7 @@ class _AyahResult extends StatelessWidget {
               Expanded(
                 child: Text(
                   joinDetails(<String>[
-                    LocaleKeys.mushafAyahReference.tr(
+                    LocaleKeys.searchPlace.tr(
                       args: <String>[
                         surah == null
                             ? hit.surahNumber.toLocalisedString()
@@ -338,7 +370,7 @@ class _AyahResult extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.chevron_left,
+                Icons.chevron_right,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
@@ -364,9 +396,7 @@ Future<void> _openSurah(BuildContext context, Surah surah) async {
       MushafArgs(section: SectionRequest.surah(surah.number)),
     );
   }
-  final int? page = await context.read<SearchCubit>().pageOfSurah(
-    surah.number,
-  );
+  final int? page = await context.read<SearchCubit>().pageOfSurah(surah.number);
   if (context.mounted) {
     await _openMushaf(context, MushafArgs(initialPage: page));
   }

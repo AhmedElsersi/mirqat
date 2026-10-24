@@ -139,40 +139,13 @@ void main() {
       await open(tester);
       expect(cubit.state.previewAyah, isNotNull);
       expect(tester.takeException(), isNull);
-      // The preview, and one sample per bundled face; the page-font face is
-      // described instead.
-      expect(
-        find.byType(AyahText),
-        findsNWidgets(
-          1 + QuranFont.values.where((QuranFont f) => !f.pageFonts).length,
-        ),
-      );
+      // The preview alone is scripture; each face is a named row.
+      expect(find.byType(AyahText), findsOneWidget);
       expect(
         find.byType(RadioListTile<QuranFont>),
         findsNWidgets(QuranFont.values.length),
       );
       expect(find.byType(Slider), findsOneWidget);
-    });
-
-    testWidgets('each sample is drawn in its own face', (
-      WidgetTester tester,
-    ) async {
-      await open(tester);
-      for (final QuranFont font in <QuranFont>[
-        for (final QuranFont f in QuranFont.values)
-          if (!f.pageFonts) f,
-      ]) {
-        final Finder option = find.byWidgetPredicate(
-          (Widget w) => w is RadioListTile<QuranFont> && w.value == font,
-        );
-        expect(
-          familyOf(
-            tester,
-            find.descendant(of: option, matching: find.byType(AyahText)),
-          ),
-          AppTextStyles.quranFamilyOf(font),
-        );
-      }
     });
 
     testWidgets('choosing a face saves it, and the preview follows at once', (

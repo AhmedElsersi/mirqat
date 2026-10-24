@@ -83,14 +83,15 @@ class AppTheme {
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: surface,
           surfaceTintColor: AppColors.transparent,
-          indicatorColor: AppColors.gold.withValues(alpha: 0.3),
+          // The design's `--gold-soft`: a wash of gold behind the chosen
+          // tab's icon, a pill — never a gold surface.
+          indicatorColor: AppColors.gold.withValues(alpha: 0.2),
+          indicatorShape: const StadiumBorder(),
           height: 68,
           labelTextStyle: WidgetStateProperty.resolveWith(
             (Set<WidgetState> states) => TextStyle(
-              fontSize: 12,
-              fontWeight: states.contains(WidgetState.selected)
-                  ? FontWeight.w700
-                  : FontWeight.w500,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
               color: states.contains(WidgetState.selected)
                   ? textPrimary
                   : textSecondary,

@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/localization/locale_keys.dart';
@@ -11,8 +12,8 @@ import '../../../services/link_opener.dart';
 /// shown disabled rather than hidden, so a typo in the file is visible to
 /// whoever can fix it; one left blank is not rendered at all (the caller
 /// walks `links.keys`).
-class ContactLinkTile extends StatelessWidget {
-  const ContactLinkTile({required this.person, required this.link, super.key});
+class ContactLinkChip extends StatelessWidget {
+  const ContactLinkChip({required this.person, required this.link, super.key});
 
   final DeveloperInfo person;
   final DeveloperLink link;
@@ -44,22 +45,11 @@ class ContactLinkTile extends StatelessWidget {
       ),
     };
 
-    return ListTile(
-      contentPadding: EdgeInsetsDirectional.zero,
-      leading: Icon(icon),
-      title: Text(label),
-      // An address reads left to right whatever the language around it, but
-      // it still sits under its label, on the side the page reads from.
-      subtitle: Text(
-        person.links[link] ?? '',
-        textDirection: TextDirection.ltr,
-        textAlign: Directionality.of(context) == TextDirection.rtl
-            ? TextAlign.right
-            : TextAlign.left,
-      ),
-      trailing: const Icon(Icons.open_in_new, size: 18),
-      enabled: uri != null,
-      onTap: uri == null ? null : () => _open(context, uri),
+    return ActionChip(
+      avatar: Icon(icon, size: 16.r),
+      label: Text(label),
+      tooltip: person.links[link],
+      onPressed: uri == null ? null : () => _open(context, uri),
     );
   }
 

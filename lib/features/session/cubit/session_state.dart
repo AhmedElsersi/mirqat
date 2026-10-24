@@ -74,6 +74,7 @@ class SessionState extends Equatable {
     this.activeReciter,
     this.currentUnit,
     this.recalling = false,
+    this.recallGap,
     this.playing = false,
     this.finished = false,
     this.failure,
@@ -140,6 +141,10 @@ class SessionState extends Equatable {
   /// being asked back from memory, and the page veils its words until the
   /// answering play begins.
   final bool recalling;
+
+  /// How long the current recall gap's silence lasts, at the session's speed
+  /// — what the bar's quiet progress line runs over. Null outside a gap.
+  final Duration? recallGap;
 
   final bool playing;
   final bool finished;
@@ -309,6 +314,7 @@ class SessionState extends Equatable {
     Reciter? activeReciter,
     PlaybackUnit? currentUnit,
     bool? recalling,
+    Duration? recallGap,
     bool clearSession = false,
     bool? playing,
     bool? finished,
@@ -347,6 +353,9 @@ class SessionState extends Equatable {
     activeReciter: clearSession ? null : (activeReciter ?? this.activeReciter),
     currentUnit: clearSession ? null : (currentUnit ?? this.currentUnit),
     recalling: clearSession ? false : (recalling ?? this.recalling),
+    recallGap: clearSession || recalling == false
+        ? null
+        : (recallGap ?? this.recallGap),
     playing: clearSession ? false : (playing ?? this.playing),
     finished: clearSession ? false : (finished ?? this.finished),
     failure: clearFailure || clearSession ? null : (failure ?? this.failure),
@@ -385,6 +394,7 @@ class SessionState extends Equatable {
     activeReciter,
     currentUnit,
     recalling,
+    recallGap,
     playing,
     finished,
     failure,

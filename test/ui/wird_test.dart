@@ -23,10 +23,8 @@ void main() {
   tearDown(() async => harness.stop());
   tearDownAll(AppHarness.disposeAll);
 
-  Future<AppSettings> stored() async =>
-      (await sl<SettingsRepository>().read()).getOrElse(
-        () => const AppSettings(),
-      );
+  Future<AppSettings> stored() async => (await sl<SettingsRepository>().read())
+      .getOrElse(() => const AppSettings());
 
   group('the stored ranges', () {
     test('round-trip, and anything unreadable is simply not set', () {

@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/widgets/ayah_end_field.dart';
 import '../../../core/widgets/panel.dart';
@@ -128,6 +129,24 @@ class _WirdEditorState extends State<WirdEditor> {
     );
   }
 
+  /// [next] said as briefly as it can be after [current]: just its ayahs
+  /// while it stays in the surah [current] ends in, «٦–١٠»; its surah's name
+  /// as well once it moves on.
+  String? _shortLabel(WirdRange current, WirdRange next) {
+    final Surah? from = _surah(next.from.surah);
+    final Surah? to = _surah(next.to.surah);
+    if (from == null || to == null) return null;
+    final bool arabic = context.locale.languageCode == 'ar';
+    String name(Surah s) => arabic ? s.nameAr : s.nameEn;
+    final String a = next.from.ayah.toLocalisedString();
+    final String b = next.to.ayah.toLocalisedString();
+    if (from.number != to.number) {
+      return '${name(from)} $a – ${name(to)} $b';
+    }
+    final String span = a == b ? a : '$a–$b';
+    return from.number == current.to.surah ? span : '${name(from)} $span';
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -180,7 +199,9 @@ class _WirdEditorState extends State<WirdEditor> {
                             part == WirdPart.fresh && _draft[part] != null
                             ? () {
                                 final WirdRange? n = _next(_draft[part]!);
-                                return n == null ? null : _rangeLabel(n);
+                                return n == null
+                                    ? null
+                                    : _shortLabel(_draft[part]!, n);
                               }()
                             : null,
                         onToggled: (bool on) => setState(() {
@@ -257,17 +278,19 @@ class _PartCard extends StatelessWidget {
     final WirdRange? r = range;
 
     return AppCard(
-      padding: EdgeInsetsDirectional.all(14.r),
+      padding: EdgeInsetsDirectional.all(16.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
             children: <Widget>[
-              AppTag(label: wirdPartLabel(part)),
+              AppTag(label: wirdPartLabel(part), gold: part == WirdPart.fresh),
               SizedBox(width: 10.w),
+              // The range in words only while the part is off: on, the
+              // fields under it say it.
               Expanded(
                 child: Text(
-                  label ?? LocaleKeys.wirdNotSet.tr(),
+                  r == null ? LocaleKeys.wirdNotSet.tr() : '',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -280,26 +303,38 @@ class _PartCard extends StatelessWidget {
           ),
           if (r != null) ...<Widget>[
             SizedBox(height: 12.h),
-            AyahEndField(
-              label: LocaleKeys.sessionSetupFrom.tr(),
-              surahs: surahs,
-              value: r.from,
-              onChanged: onFrom,
-              isEnd: false,
-            ),
-            SizedBox(height: 12.h),
-            AyahEndField(
-              label: LocaleKeys.sessionSetupTo.tr(),
-              surahs: <Surah>[
-                for (final Surah s in surahs)
-                  if (s.number >= r.from.surah) s,
-              ],
-              value: r.to,
-              onChanged: onTo,
-              isEnd: true,
+            // The two ends side by side, each a tap from its picker.
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Expanded(
+                    child: _EndTile(
+                      label: LocaleKeys.sessionSetupFrom.tr(),
+                      surahs: surahs,
+                      value: r.from,
+                      onChanged: onFrom,
+                      isEnd: false,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: _EndTile(
+                      label: LocaleKeys.sessionSetupTo.tr(),
+                      surahs: <Surah>[
+                        for (final Surah s in surahs)
+                          if (s.number >= r.from.surah) s,
+                      ],
+                      value: r.to,
+                      onChanged: onTo,
+                      isEnd: true,
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (next != null && nextLabel != null) ...<Widget>[
-              SizedBox(height: 12.h),
+              SizedBox(height: 10.h),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: ActionChip(
@@ -316,4 +351,140 @@ class _PartCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One end of a part's range, said in a word and a number — «الملك ٥» — on a
+/// tile that opens the surah and ayah pickers.
+class _EndTile extends StatelessWidget {
+  const _EndTile({
+    required this.label,
+    required this.surahs,
+    required this.value,
+    required this.onChanged,
+    required this.isEnd,
+  });
+
+  final String label;
+  final List<Surah> surahs;
+  final AyahRef value;
+  final ValueChanged<AyahRef> onChanged;
+  final bool isEnd;
+
+  Future<void> _pick(BuildContext context) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => _EndPicker(
+      label: label,
+      surahs: surahs,
+      initial: value,
+      onChanged: onChanged,
+      isEnd: isEnd,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Surah? surah = surahs
+        .where((Surah s) => s.number == value.surah)
+        .firstOrNull;
+    final String name = surah == null
+        ? ''
+        : context.locale.languageCode == 'ar'
+        ? surah.nameAr
+        : surah.nameEn;
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(14.r),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _pick(context),
+        child: Padding(
+          padding: EdgeInsetsDirectional.symmetric(
+            horizontal: 12.w,
+            vertical: 10.h,
+          ),
+          child: Row(
+            children: <Widget>[
+              Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  '$name ${value.ayah.toLocalisedString()}',
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The surah and the ayah of one end, applied as they are picked.
+class _EndPicker extends StatefulWidget {
+  const _EndPicker({
+    required this.label,
+    required this.surahs,
+    required this.initial,
+    required this.onChanged,
+    required this.isEnd,
+  });
+
+  final String label;
+  final List<Surah> surahs;
+  final AyahRef initial;
+  final ValueChanged<AyahRef> onChanged;
+  final bool isEnd;
+
+  @override
+  State<_EndPicker> createState() => _EndPickerState();
+}
+
+class _EndPickerState extends State<_EndPicker> {
+  late AyahRef _value = widget.initial;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(
+        16.w,
+        0,
+        16.w,
+        12.h + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          AyahEndField(
+            label: widget.label,
+            surahs: widget.surahs,
+            value: _value,
+            isEnd: widget.isEnd,
+            onChanged: (AyahRef ref) {
+              setState(() => _value = ref);
+              widget.onChanged(ref);
+            },
+          ),
+          SizedBox(height: 16.h),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: Size(0, 48.r)),
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(LocaleKeys.commonDone.tr()),
+          ),
+        ],
+      ),
+    ),
+  );
 }

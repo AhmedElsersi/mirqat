@@ -26,20 +26,16 @@ void main() {
 
   tearDown(() => cubit.close());
 
-  test('a surah by name, however the hamza and taa marbuta are typed',
-      () async {
-    await cubit.search('الفاتحه');
-    expect(
-      cubit.state.surahs.map((Surah s) => s.number),
-      contains(1),
-    );
+  test(
+    'a surah by name, however the hamza and taa marbuta are typed',
+    () async {
+      await cubit.search('الفاتحه');
+      expect(cubit.state.surahs.map((Surah s) => s.number), contains(1));
 
-    await cubit.search('Ikhlas');
-    expect(
-      cubit.state.surahs.map((Surah s) => s.number),
-      contains(112),
-    );
-  });
+      await cubit.search('Ikhlas');
+      expect(cubit.state.surahs.map((Surah s) => s.number), contains(112));
+    },
+  );
 
   test('an ayah by its words, typed without the rasm\'s letters', () async {
     await cubit.search('قل هو الله أحد');

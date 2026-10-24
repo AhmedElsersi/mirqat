@@ -927,7 +927,8 @@ void main() {
         await settleLocalization(tester);
         expect(tester.takeException(), isNull);
         expect(find.byIcon(Icons.bedtime_outlined), findsOneWidget);
-        expect(find.byIcon(Icons.replay), findsOneWidget);
+        // "Three more times over this ayah": a chip that says what it does.
+        expect(find.byIcon(Icons.repeat_one), findsOneWidget);
         expect(find.byType(OutlinedButton), findsNWidgets(3));
         await tester.runAsync(cubit.close);
       });

@@ -117,10 +117,10 @@ void main() {
         .widgetList<MushafPageView>(find.byType(MushafPageView))
         .toList();
     expect(open.length, 2, reason: 'two pages lie open');
-    expect(
-      open.map((MushafPageView p) => p.page.number),
-      <int>[cubit.state.currentPage, cubit.state.currentPage + 1],
-    );
+    expect(open.map((MushafPageView p) => p.page.number), <int>[
+      cubit.state.currentPage,
+      cubit.state.currentPage + 1,
+    ]);
 
     final Rect right = tester.getRect(find.byType(MushafPageView).first);
     final Rect left = tester.getRect(find.byType(MushafPageView).last);

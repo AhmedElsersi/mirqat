@@ -18,10 +18,12 @@ import '../../../core/widgets/range_label.dart';
 import '../../../core/widgets/session_controls.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/engine/hifz_planner.dart';
+import '../../../domain/entities/ayah_ref.dart';
 import '../../../domain/entities/hifz_plan.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../../session/session_request.dart';
 import '../../surah_list/widgets/error_view.dart';
+import '../../surah_list/widgets/surah_row.dart' show NumberDiamond;
 import '../cubit/hifz_plan_cubit.dart';
 
 /// "Memorize from here to there in so many days": made here, and followed
@@ -160,19 +162,22 @@ class _MakePlan extends StatelessWidget {
           ),
         ),
         FieldLabel(LocaleKeys.planRange.tr()),
+        // The range as two rows, each a tap from its surah and ayah.
         AppCard(
-          padding: EdgeInsetsDirectional.all(14.r),
+          padding: EdgeInsetsDirectional.zero,
           child: Column(
             children: <Widget>[
-              AyahEndField(
+              _RangeEndRow(
+                icon: Icons.vertical_align_bottom,
                 label: LocaleKeys.sessionSetupFrom.tr(),
                 surahs: state.surahs,
                 value: state.from,
                 onChanged: cubit.setFrom,
                 isEnd: false,
               ),
-              SizedBox(height: 12.h),
-              AyahEndField(
+              const Divider(height: 1),
+              _RangeEndRow(
+                icon: Icons.vertical_align_top,
                 label: LocaleKeys.sessionSetupTo.tr(),
                 surahs: <Surah>[
                   for (final Surah s in state.surahs)
@@ -226,7 +231,7 @@ class _MakePlan extends StatelessWidget {
                   ],
                 ),
                 textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -254,7 +259,7 @@ class _MakePlan extends StatelessWidget {
         FilledButton.icon(
           style: FilledButton.styleFrom(minimumSize: Size(0, 50.r)),
           onPressed: state.saving || ayahs == 0 ? null : cubit.create,
-          icon: const Icon(Icons.flag_circle_outlined),
+          icon: const Icon(Icons.flag_outlined),
           label: Text(LocaleKeys.planCreate.tr()),
         ),
       ],
@@ -306,11 +311,33 @@ class _FollowPlan extends StatelessWidget {
               Row(
                 children: <Widget>[
                   Expanded(
-                    child: Text(
-                      portionLabel(context, state, Portion(plan.from, plan.to)),
-                      style: theme.textTheme.titleSmall,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          portionLabel(
+                            context,
+                            state,
+                            Portion(plan.from, plan.to),
+                          ),
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        Text(
+                          LocaleKeys.planAyahCount.tr(
+                            args: <String>[
+                              state
+                                  .ayahsIn(plan.from, plan.to)
+                                  .toLocalisedString(),
+                            ],
+                          ),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  SizedBox(width: 12.w),
                   Text(
                     LocaleKeys.todayPlanProgress.tr(
                       args: <String>[
@@ -367,8 +394,18 @@ class _FollowPlan extends StatelessWidget {
                     style: theme.textTheme.titleSmall,
                   ),
                   subtitle: Text(
-                    LocaleKeys.planPastCount.tr(
-                      args: <String>[done.length.toLocalisedString()],
+                    joinDetails(<String>[
+                      LocaleKeys.planPastCount.tr(
+                        args: <String>[done.length.toLocalisedString()],
+                      ),
+                      portionLabel(
+                        context,
+                        state,
+                        Portion(done.first.from, done.last.to),
+                      ),
+                    ]),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   children: <Widget>[
@@ -402,12 +439,7 @@ class _FollowPlan extends StatelessWidget {
           ),
         ),
         SizedBox(height: 14.h),
-        Text(
-          LocaleKeys.planHowItMoves.tr(),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
+        AppNote(LocaleKeys.planHowItMoves.tr()),
       ],
     );
   }
@@ -438,14 +470,13 @@ class _TodayPortion extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                AppTag(label: LocaleKeys.planToday.tr(), onHero: true),
-                const Spacer(),
-                LadderMark(current: 2, color: onHero.withValues(alpha: 0.18)),
-              ],
+            Text(
+              LocaleKeys.planToday.tr(),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: onHero.withValues(alpha: 0.78),
+              ),
             ),
-            SizedBox(height: 14.h),
+            SizedBox(height: 4.h),
             Text(
               portionLabel(context, state, portion),
               style: theme.textTheme.titleLarge?.copyWith(
@@ -455,8 +486,9 @@ class _TodayPortion extends StatelessWidget {
             ),
             SizedBox(height: 4.h),
             Text(
-              LocaleKeys.planTodayShort.tr(
+              LocaleKeys.planTodayLine.tr(
                 args: <String>[
+                  state.ayahsIn(portion.from, portion.to).toLocalisedString(),
                   (plan.completed + 1).toLocalisedString(),
                   plan.portions.length.toLocalisedString(),
                 ],
@@ -465,16 +497,26 @@ class _TodayPortion extends StatelessWidget {
                 color: onHero.withValues(alpha: 0.78),
               ),
             ),
-            SizedBox(height: 18.h),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: onHero,
-                foregroundColor: AppColors.forest,
-                minimumSize: Size(0, 48.r),
-              ),
-              onPressed: () => openPortion(context, portion),
-              icon: const Icon(Icons.play_arrow),
-              label: Text(LocaleKeys.planStart.tr()),
+            SizedBox(height: 16.h),
+            Row(
+              children: <Widget>[
+                LadderMark(
+                  current: 2,
+                  color: onHero.withValues(alpha: 0.18),
+                  doneColor: AppColors.rungDoneOnHero,
+                ),
+                const Spacer(),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: onHero,
+                    foregroundColor: AppColors.forest,
+                    minimumSize: Size(0, 48.r),
+                  ),
+                  onPressed: () => openPortion(context, portion),
+                  icon: const Icon(Icons.play_arrow),
+                  label: Text(LocaleKeys.planStart.tr()),
+                ),
+              ],
             ),
           ],
         ),
@@ -503,7 +545,7 @@ class _PortionRow extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final bool today = status == _PortionState.today;
     return Container(
-      color: today ? AppColors.gold.withValues(alpha: 0.14) : null,
+      color: today ? AppColors.gold.withValues(alpha: 0.2) : null,
       child: ListTile(
         leading: status == _PortionState.done
             ? TileIcon(
@@ -512,26 +554,157 @@ class _PortionRow extends StatelessWidget {
                     ? AppColors.sabrDark
                     : AppColors.sabrLight,
               )
-            : TileIcon(
-                today ? Icons.today : Icons.radio_button_unchecked,
-                color: today ? theme.colorScheme.primary : null,
-              ),
+            : NumberDiamond(number: day),
         title: Text(
           today
-              ? LocaleKeys.planToday.tr()
+              ? LocaleKeys.tabsToday.tr()
               : LocaleKeys.planDay.tr(args: <String>[day.toLocalisedString()]),
           style: theme.textTheme.titleSmall,
         ),
-        subtitle: Text(portionLabel(context, state, portion)),
+        subtitle: Text(
+          portionLabel(context, state, portion),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         trailing: today
-            ? IconButton.filledTonal(
+            ? PlayButton(
                 tooltip: LocaleKeys.planStart.tr(),
                 onPressed: () => openPortion(context, portion),
-                icon: const Icon(Icons.play_arrow),
               )
-            : const Icon(Icons.chevron_left),
+            : Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
         onTap: () => openPortion(context, portion),
       ),
     );
   }
+}
+
+/// One end of the new plan's range as a row of a list — «من» over «سورة
+/// النبأ، الآية ١» — that opens the surah and ayah pickers.
+class _RangeEndRow extends StatelessWidget {
+  const _RangeEndRow({
+    required this.icon,
+    required this.label,
+    required this.surahs,
+    required this.value,
+    required this.onChanged,
+    required this.isEnd,
+  });
+
+  final IconData icon;
+  final String label;
+  final List<Surah> surahs;
+  final AyahRef value;
+  final ValueChanged<AyahRef> onChanged;
+  final bool isEnd;
+
+  Future<void> _pick(BuildContext context) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => _EndPicker(
+      label: label,
+      surahs: surahs,
+      initial: value,
+      onChanged: onChanged,
+      isEnd: isEnd,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Surah? surah = surahs
+        .where((Surah s) => s.number == value.surah)
+        .firstOrNull;
+    final String name = surah == null
+        ? ''
+        : context.locale.languageCode == 'ar'
+        ? surah.nameAr
+        : surah.nameEn;
+    return ListTile(
+      onTap: () => _pick(context),
+      leading: TileIcon(icon),
+      title: Text(
+        label,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      subtitle: Text(
+        joinDetails(<String>[
+          LocaleKeys.mushafSurahLabel.tr(args: <String>[name]),
+          LocaleKeys.commonAyahNumber.tr(
+            args: <String>[value.ayah.toLocalisedString()],
+          ),
+        ]),
+        style: theme.textTheme.titleSmall,
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+}
+
+/// The surah and the ayah of one end, applied as they are picked.
+class _EndPicker extends StatefulWidget {
+  const _EndPicker({
+    required this.label,
+    required this.surahs,
+    required this.initial,
+    required this.onChanged,
+    required this.isEnd,
+  });
+
+  final String label;
+  final List<Surah> surahs;
+  final AyahRef initial;
+  final ValueChanged<AyahRef> onChanged;
+  final bool isEnd;
+
+  @override
+  State<_EndPicker> createState() => _EndPickerState();
+}
+
+class _EndPickerState extends State<_EndPicker> {
+  late AyahRef _value = widget.initial;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(
+        16.w,
+        0,
+        16.w,
+        12.h + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          AyahEndField(
+            label: widget.label,
+            surahs: widget.surahs,
+            value: _value,
+            isEnd: widget.isEnd,
+            onChanged: (AyahRef ref) {
+              setState(() => _value = ref);
+              widget.onChanged(ref);
+            },
+          ),
+          SizedBox(height: 16.h),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: Size(0, 48.r)),
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(LocaleKeys.commonDone.tr()),
+          ),
+        ],
+      ),
+    ),
+  );
 }

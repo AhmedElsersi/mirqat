@@ -95,8 +95,9 @@ lib/
     extensions/
     widgets/         AyahText — the only widget allowed to render Quranic text;
                      SettingsCard, the session form, the Islamic frame; and
-                     panel.dart — the card, tag, label, row icon and progress
-                     bar every screen outside the mushaf is built from
+                     panel.dart — the card, tag, label, row icon, progress
+                     bar, note, play button and list card every screen outside
+                     the mushaf is built from
   data/
     models/          Surah, Ayah, Word, MushafLine, Reciter, MemorizationProgress, ...
     datasources/     QuranDatabase, QuranLocalDataSource, QuranPagesLocalDataSource,

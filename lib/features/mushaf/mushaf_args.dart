@@ -11,6 +11,7 @@ class MushafArgs extends Equatable {
     this.initialPage,
     this.section,
     this.session,
+    this.tasmee = false,
   });
 
   /// Open on this ayah's page, highlighted. Wins over [initialPage].
@@ -28,11 +29,16 @@ class MushafArgs extends Equatable {
   /// is due — and, if it says so, to start.
   final SessionRequest? session;
 
+  /// Open reciting to a listener: nothing plays, the listener holds the
+  /// phone and touches where the reader slips. Set from My hifz.
+  final bool tasmee;
+
   @override
   List<Object?> get props => <Object?>[
     initialAyah,
     initialPage,
     section,
     session,
+    tasmee,
   ];
 }

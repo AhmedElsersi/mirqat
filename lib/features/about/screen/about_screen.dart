@@ -15,7 +15,7 @@ import '../../../data/models/app_info.dart';
 import '../../../services/app_version_service.dart';
 import '../../settings/cubit/settings_cubit.dart';
 import '../cubit/app_info_cubit.dart';
-import '../widgets/contact_link_tile.dart';
+import '../widgets/contact_link_chip.dart';
 import '../widgets/person_avatar.dart';
 
 /// Everything the app says about itself, on one page: what it is for, who
@@ -43,11 +43,7 @@ class _AboutView extends StatelessWidget {
     final String language = context.locale.languageCode;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          LocaleKeys.aboutAboutApp.tr(args: <String>[LocaleKeys.appName.tr()]),
-        ),
-      ),
+      appBar: AppBar(title: Text(LocaleKeys.aboutTitle.tr())),
       body: DesktopWidth(
         child: BlocBuilder<AppInfoCubit, AppInfo?>(
           builder: (BuildContext context, AppInfo? info) {
@@ -70,7 +66,16 @@ class _AboutView extends StatelessWidget {
                 ],
                 if (about.isNotEmpty) ...<Widget>[
                   FieldLabel(LocaleKeys.aboutUs.tr()),
-                  _Prose(text: about),
+                  _Prose(
+                    text: about,
+                    // What the app does not do, as three tags: these are
+                    // the app's own promises (CLAUDE.md A.2), not app.json's.
+                    tags: <String>[
+                      LocaleKeys.aboutTagNoAds.tr(),
+                      LocaleKeys.aboutTagNoAccounts.tr(),
+                      LocaleKeys.aboutTagNoTracking.tr(),
+                    ],
+                  ),
                 ],
                 if (ideaText.isNotEmpty ||
                     idea.owner.name.of(language).isNotEmpty) ...<Widget>[
@@ -81,23 +86,44 @@ class _AboutView extends StatelessWidget {
                     text: ideaText,
                   ),
                 ],
-                FieldLabel(LocaleKeys.aboutDeveloper.tr()),
+                FieldLabel(LocaleKeys.aboutDeveloperLabel.tr()),
                 _Person(
                   person: info.developer,
                   role: LocaleKeys.aboutDeveloperRole.tr(),
                 ),
 
-                SizedBox(height: 20.h),
+                SizedBox(height: 16.h),
                 AppCard(
                   padding: EdgeInsetsDirectional.zero,
-                  child: ListTile(
-                    leading: const TileIcon(Icons.menu_book_outlined),
-                    title: Text(
-                      LocaleKeys.aboutHowToUse.tr(),
-                      style: theme.textTheme.titleSmall,
-                    ),
-                    trailing: const Icon(Icons.chevron_left),
-                    onTap: () => context.pushNamed(AppRoutes.howToUseName),
+                  child: Column(
+                    children: <Widget>[
+                      ListTile(
+                        leading: const TileIcon(Icons.help_outline),
+                        title: Text(
+                          LocaleKeys.aboutHowToUse.tr(),
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        onTap: () => context.pushNamed(AppRoutes.howToUseName),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const TileIcon(Icons.play_circle_outline),
+                        title: Text(
+                          LocaleKeys.aboutShowIntro.tr(),
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        onTap: () =>
+                            context.pushNamed(AppRoutes.onboardingName),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -131,7 +157,11 @@ class _Masthead extends StatelessWidget {
         padding: EdgeInsetsDirectional.all(22.r),
         child: Column(
           children: <Widget>[
-            LadderMark(current: 3, color: onHero.withValues(alpha: 0.18)),
+            LadderMark(
+              current: 3,
+              color: onHero.withValues(alpha: 0.18),
+              doneColor: AppColors.rungDoneOnHero,
+            ),
             SizedBox(height: 14.h),
             Text(
               LocaleKeys.appName.tr(),
@@ -166,16 +196,34 @@ class _Masthead extends StatelessWidget {
 
 /// A passage of `app.json`'s own words.
 class _Prose extends StatelessWidget {
-  const _Prose({required this.text});
+  const _Prose({required this.text, this.tags = const <String>[]});
 
   final String text;
+
+  /// Said under the passage in a word or three each.
+  final List<String> tags;
 
   @override
   Widget build(BuildContext context) => AppCard(
     padding: EdgeInsetsDirectional.all(16.r),
-    child: Text(
-      text,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.9),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          text,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.9),
+        ),
+        if (tags.isNotEmpty) ...<Widget>[
+          SizedBox(height: 12.h),
+          Wrap(
+            spacing: 6.w,
+            runSpacing: 6.h,
+            children: <Widget>[
+              for (final String tag in tags) AppTag(label: tag),
+            ],
+          ),
+        ],
+      ],
     ),
   );
 }
@@ -211,8 +259,8 @@ class _Person extends StatelessWidget {
                     if (name.isNotEmpty)
                       Text(
                         name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     Text(
@@ -234,10 +282,16 @@ class _Person extends StatelessWidget {
             ),
           ],
           if (person.links.isNotEmpty) ...<Widget>[
-            SizedBox(height: 6.h),
-            const Divider(height: 1),
-            for (final DeveloperLink link in person.links.keys)
-              ContactLinkTile(person: person, link: link),
+            SizedBox(height: 14.h),
+            // Every way of reaching them, as chips: a tap opens it.
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 6.h,
+              children: <Widget>[
+                for (final DeveloperLink link in person.links.keys)
+                  ContactLinkChip(person: person, link: link),
+              ],
+            ),
           ],
         ],
       ),

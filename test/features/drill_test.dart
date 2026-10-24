@@ -277,12 +277,23 @@ void main() {
         // Three choices; on a small phone the last may be a scroll away.
         await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
         await tester.pump();
-        expect(find.byType(OutlinedButton), findsNWidgets(3));
+        expect(find.byIcon(Icons.radio_button_unchecked), findsNWidgets(3));
         await tester.drag(find.byType(Scrollable).first, const Offset(0, 2000));
         await tester.pump();
 
-        await tester.tap(find.byType(OutlinedButton).first);
+        // The first choice may sit under the fold on a small phone.
+        await tester.ensureVisible(
+          find.byIcon(Icons.radio_button_unchecked).first,
+        );
         await tester.pump();
+        await tester.tap(find.byIcon(Icons.radio_button_unchecked).first);
+        await tester.pump();
+        // The choices stay on screen, picked; the reveal is under them.
+        await tester.scrollUntilVisible(
+          find.text(ar ? 'اكشف الباقي' : 'Show the rest'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
         await tester.tap(find.text(ar ? 'اكشف الباقي' : 'Show the rest'));
         await tester.pump();
         expect(find.text(ar ? 'أتممتها' : 'I had it'), findsOneWidget);

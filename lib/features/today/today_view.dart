@@ -19,6 +19,7 @@ import '../../domain/entities/daily_wird.dart';
 import '../../domain/entities/hifz_plan.dart';
 import '../../domain/entities/review_card.dart';
 import '../../domain/entities/session_config.dart';
+import '../session/session_request.dart';
 import '../home/cubit/home_index_state.dart';
 import '../hifz_plan/screen/hifz_plan_screen.dart' show openPortion;
 import '../review/cubit/review_cubit.dart';
@@ -130,36 +131,36 @@ class TodayView extends StatelessWidget {
           onEdit: () => _edit(context),
         ),
         SizedBox(height: 12.h),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            for (final WirdPart part in <WirdPart>[
-              WirdPart.recent,
-              WirdPart.old,
-            ]) ...<Widget>[
-              if (part == WirdPart.old) SizedBox(width: 12.w),
-              Expanded(
-                child: _ReviewPart(
-                  part: part,
-                  label: settings.wird[part] == null
-                      ? null
-                      : _range(
-                          context,
-                          settings.wird[part]!.from,
-                          settings.wird[part]!.to,
-                        ),
-                  onOpen: settings.wird[part] == null
-                      ? () => _edit(context)
-                      : () => openWirdPart(context, part, settings.wird[part]!),
+        // Side by side and the same height, the button at the foot of each.
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (final WirdPart part in <WirdPart>[
+                WirdPart.recent,
+                WirdPart.old,
+              ]) ...<Widget>[
+                if (part == WirdPart.old) SizedBox(width: 12.w),
+                Expanded(
+                  child: _ReviewPart(
+                    part: part,
+                    range: settings.wird[part],
+                    surahOf: _surah,
+                    onOpen: settings.wird[part] == null
+                        ? () => _edit(context)
+                        : () =>
+                              openWirdPart(context, part, settings.wird[part]!),
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
         if (bookend != null && bookendItem != null) ...<Widget>[
           SizedBox(height: 12.h),
           AppCard(
             filled: true,
+            padding: EdgeInsetsDirectional.zero,
             child: BookendRow(
               bookend: bookend,
               item: bookendItem,
@@ -176,6 +177,7 @@ class TodayView extends StatelessWidget {
             onAction: () => context.pushNamed(AppRoutes.reviewsName),
           ),
           AppCard(
+            padding: EdgeInsetsDirectional.zero,
             child: Column(
               children: <Widget>[
                 for (
@@ -193,9 +195,16 @@ class TodayView extends StatelessWidget {
         if (place != null) ...<Widget>[
           SectionTitle(title: LocaleKeys.todayContinue.tr()),
           AppCard(
+            padding: EdgeInsetsDirectional.zero,
             child: ListTile(
               onTap: onOpenPlace,
-              leading: Icon(
+              contentPadding: EdgeInsetsDirectional.fromSTEB(
+                16.w,
+                6.h,
+                12.w,
+                6.h,
+              ),
+              leading: TileIcon(
                 settings.readingMark == null
                     ? Icons.bookmark_outline
                     : Icons.bookmark_added,
@@ -219,8 +228,14 @@ class TodayView extends StatelessWidget {
                   ),
                   if (settings.readingMark != null) LocaleKeys.todayMark.tr(),
                 ]),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-              trailing: const Icon(Icons.chevron_left),
+              trailing: Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -236,7 +251,12 @@ class TodayView extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        LocaleKeys.todayPlan.tr(),
+                        LocaleKeys.todayPlanDays.tr(
+                          args: <String>[
+                            _range(context, plan.from, plan.to) ?? '',
+                            plan.days.toLocalisedString(),
+                          ],
+                        ),
                         style: theme.textTheme.titleSmall,
                       ),
                     ),
@@ -254,16 +274,10 @@ class TodayView extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 10.h),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3.r),
-                  child: LinearProgressIndicator(
-                    value: plan.portions.isEmpty
-                        ? 0
-                        : plan.completed / plan.portions.length,
-                    minHeight: 6.r,
-                    color: AppColors.gold,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  ),
+                ProgressBar(
+                  value: plan.portions.isEmpty
+                      ? 0
+                      : plan.completed / plan.portions.length,
                 ),
               ],
             ),
@@ -307,6 +321,9 @@ class _Header extends StatelessWidget {
           ),
         ),
         IconButton.outlined(
+          style: IconButton.styleFrom(
+            backgroundColor: theme.colorScheme.surface,
+          ),
           onPressed: onSearch,
           tooltip: LocaleKeys.searchTitle.tr(),
           icon: const Icon(Icons.search),
@@ -351,6 +368,7 @@ class _NewPortion extends StatelessWidget {
         LocaleKeys.progressRepeats.tr(
           args: <String>[s.defaultRepeatCount.toLocalisedString()],
         ),
+        if (s.defaultRecallRounds > 0) LocaleKeys.todayRecallRound.tr(),
       ]);
       start = () => openWirdPart(context, WirdPart.fresh, fresh);
     } else if (portion != null && plan != null) {
@@ -388,6 +406,7 @@ class _NewPortion extends StatelessWidget {
                 LadderMark(
                   current: start == null ? 0 : 2,
                   color: onHero.withValues(alpha: 0.18),
+                  doneColor: AppColors.rungDoneOnHero,
                 ),
               ],
             ),
@@ -407,12 +426,14 @@ class _NewPortion extends StatelessWidget {
               ),
             ),
             SizedBox(height: 18.h),
-            // A wrap, not a row: on a narrow phone with a large font the
-            // second action goes under the first instead of off the card.
+            // The button at the start, the second action at the far end; where
+            // the two do not fit side by side, the second goes under the first
+            // rather than squeeze the button.
             Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               spacing: 8.w,
               runSpacing: 4.h,
-              crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
                 FilledButton.icon(
                   style: FilledButton.styleFrom(
@@ -452,46 +473,114 @@ class _NewPortion extends StatelessWidget {
   }
 }
 
-/// One of the two reviews the reader set, or the way to add it.
+/// One of the two reviews the reader set, or the way to add it: the tag,
+/// the surah, the ayahs, and at the foot how it is worked and the button.
 class _ReviewPart extends StatelessWidget {
   const _ReviewPart({
     required this.part,
-    required this.label,
+    required this.range,
+    required this.surahOf,
     required this.onOpen,
   });
 
   final WirdPart part;
-  final String? label;
+  final WirdRange? range;
+  final Surah? Function(int) surahOf;
   final VoidCallback onOpen;
+
+  /// How this part is worked, in two or three words: the preset's repeats
+  /// and recall, or its joining and link test.
+  String _mode() {
+    final SessionPreset preset = wirdPartPreset(part);
+    return joinDetails(<String>[
+      if (preset.repeatCount case final int n)
+        LocaleKeys.progressRepeats.tr(args: <String>[n.toLocalisedString()]),
+      if (preset.connectMode == ConnectMode.continuous)
+        LocaleKeys.sessionSetupConnectContinuous.tr(),
+      if ((preset.recallRounds ?? 0) > 0) LocaleKeys.todayRecall.tr(),
+      if (preset.chainRecall ?? false) LocaleKeys.todayChain.tr(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final bool set = label != null;
+    final WirdRange? range = this.range;
+    final Surah? first = range == null ? null : surahOf(range.from.surah);
+    final Surah? last = range == null ? null : surahOf(range.to.surah);
+    final bool set = range != null && first != null && last != null;
+    final bool arabic = context.locale.languageCode == 'ar';
+    String name(Surah s) => arabic ? s.nameAr : s.nameEn;
+
+    final String title;
+    final String? ayahs;
+    if (!set) {
+      title = LocaleKeys.todayAdd.tr();
+      ayahs = null;
+    } else if (first.number != last.number) {
+      title = '${name(first)} – ${name(last)}';
+      ayahs = range.from.ayah == 1 && range.to.ayah == last.ayahCount
+          ? LocaleKeys.todayWholeSurahs.tr()
+          : LocaleKeys.todayAyahsCross.tr(
+              args: <String>[
+                range.from.ayah.toLocalisedString(),
+                range.to.ayah.toLocalisedString(),
+              ],
+            );
+    } else {
+      title = LocaleKeys.mushafSurahLabel.tr(args: <String>[name(first)]);
+      ayahs = range.from.ayah == 1 && range.to.ayah == first.ayahCount
+          ? LocaleKeys.todayWholeSurah.tr()
+          : LocaleKeys.todayAyahsSpan.tr(
+              args: <String>[
+                range.from.ayah.toLocalisedString(),
+                range.to.ayah.toLocalisedString(),
+              ],
+            );
+    }
+    final TextStyle? muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+
     return AppCard(
       onTap: onOpen,
-      padding: EdgeInsetsDirectional.all(14.r),
+      padding: EdgeInsetsDirectional.all(16.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          AppTag(label: wirdPartLabel(part)),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AppTag(label: wirdPartLabel(part)),
+          ),
           SizedBox(height: 10.h),
           Text(
-            label ?? LocaleKeys.todayAdd.tr(),
+            title,
             style: theme.textTheme.titleSmall?.copyWith(
               color: set ? null : theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          SizedBox(height: 10.h),
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: IconButton.filledTonal(
-              onPressed: onOpen,
-              tooltip: set
-                  ? LocaleKeys.reviewStart.tr()
-                  : LocaleKeys.wirdAdd.tr(),
-              icon: Icon(set ? Icons.play_arrow : Icons.add),
-            ),
+          if (ayahs != null) Text(ayahs, style: muted),
+          const Spacer(),
+          SizedBox(height: 12.h),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  set ? _mode() : '',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              PlayButton(
+                soft: true,
+                onPressed: onOpen,
+                tooltip: set
+                    ? LocaleKeys.reviewStart.tr()
+                    : LocaleKeys.wirdAdd.tr(),
+                icon: set ? Icons.play_arrow : Icons.add,
+              ),
+            ],
           ),
         ],
       ),
@@ -508,26 +597,48 @@ class _DueRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     return ListTile(
       onTap: () => openReview(context, item),
+      // The rung the passage stands on: new on the first, recent on the
+      // second, old at the top.
       leading: LadderMark(
         current: switch (item.tier) {
-          ReviewTier.sabaq => 1,
-          ReviewTier.sabqi => 2,
+          ReviewTier.sabaq => 0,
+          ReviewTier.sabqi => 1,
           ReviewTier.manzil => 3,
         },
       ),
-      title: Text(reviewRangeLabel(context, item)),
+      title: Text(
+        reviewRangeLabel(context, item),
+        style: theme.textTheme.titleSmall,
+      ),
+      // Its rung and the last word on it; that it is due is what the
+      // section says.
       subtitle: Text(
         joinDetails(<String>[
           tierLabel(item.tier),
-          dueLabel(context, item, now),
+          if (item.card.lastGrade case final Grade g)
+            LocaleKeys.reviewLastGrade.tr(
+              args: <String>[
+                switch (g) {
+                  Grade.solid => LocaleKeys.reviewGradeSolid,
+                  Grade.shaky => LocaleKeys.reviewGradeShaky,
+                  Grade.forgot => LocaleKeys.reviewGradeForgot,
+                }.tr(),
+              ],
+            )
+          else
+            dueLabel(context, item, now),
         ]),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
-      trailing: IconButton.filledTonal(
+      trailing: PlayButton(
+        soft: true,
         tooltip: LocaleKeys.reviewStart.tr(),
         onPressed: () => openReview(context, item),
-        icon: const Icon(Icons.play_arrow),
       ),
     );
   }

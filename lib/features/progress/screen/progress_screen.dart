@@ -43,81 +43,113 @@ class _ProgressView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(LocaleKeys.progressTitle.tr())),
-      body: BlocBuilder<ProgressCubit, ProgressScreenState>(
-        builder: (BuildContext context, ProgressScreenState state) {
-          if (state.status.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final Surah? surah = state.surah;
-          if (state.status.isFailure || surah == null) {
-            return ErrorView(message: state.errorMessage ?? '');
-          }
-
-          final int started = state.records
-              .where(
-                (MemorizationProgress r) =>
-                    r.status == MemorizationStatus.inProgress,
-              )
-              .length;
-
-          return DesktopWidth(
-            child: CustomScrollView(
-              slivers: <Widget>[
-                SliverPadding(
-                  padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 0),
-                  sliver: SliverToBoxAdapter(
-                    child: _Summary(
-                      surah: surah,
-                      memorized: state.memorizedCount,
-                      started: started,
+    final ThemeData theme = Theme.of(context);
+    final bool arabic = context.locale.languageCode == 'ar';
+    return BlocBuilder<ProgressCubit, ProgressScreenState>(
+      builder: (BuildContext context, ProgressScreenState state) => Scaffold(
+        // Which surah, under what the screen is: said once, in the bar.
+        appBar: AppBar(
+          title: state.surah == null
+              ? Text(LocaleKeys.progressTitle.tr())
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      LocaleKeys.progressTitle.tr(),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsetsDirectional.fromSTEB(
-                    16.w,
-                    16.h,
-                    16.w,
-                    8.h,
-                  ),
-                  sliver: const SliverToBoxAdapter(child: _Legend()),
-                ),
-                SliverPadding(
-                  padding: EdgeInsetsDirectional.symmetric(horizontal: 16.w),
-                  sliver: SliverGrid.builder(
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 64.r,
-                      mainAxisSpacing: 6.r,
-                      crossAxisSpacing: 6.r,
-                      mainAxisExtent: 44.r,
+                    Text(
+                      LocaleKeys.mushafSurahLabel.tr(
+                        args: <String>[
+                          arabic ? state.surah!.nameAr : state.surah!.nameEn,
+                        ],
+                      ),
+                      style: theme.textTheme.titleSmall,
                     ),
-                    itemCount: state.records.length,
-                    itemBuilder: (BuildContext context, int index) =>
-                        AyahCell(record: state.records[index]),
-                  ),
+                  ],
                 ),
-                SliverPadding(
-                  padding: EdgeInsetsDirectional.fromSTEB(
-                    16.w,
-                    16.h,
-                    16.w,
-                    32.h,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: Text(
-                      LocaleKeys.progressTapHint.tr(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        body: Builder(
+          builder: (BuildContext context) {
+            if (state.status.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final Surah? surah = state.surah;
+            if (state.status.isFailure || surah == null) {
+              return ErrorView(message: state.errorMessage ?? '');
+            }
+
+            final int started = state.records
+                .where(
+                  (MemorizationProgress r) =>
+                      r.status == MemorizationStatus.inProgress,
+                )
+                .length;
+
+            return DesktopWidth(
+              child: CustomScrollView(
+                slivers: <Widget>[
+                  SliverPadding(
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      16.w,
+                      12.h,
+                      16.w,
+                      0,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: _Summary(
+                        surah: surah,
+                        memorized: state.memorizedCount,
+                        started: started,
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                  SliverPadding(
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      16.w,
+                      16.h,
+                      16.w,
+                      8.h,
+                    ),
+                    sliver: const SliverToBoxAdapter(child: _Legend()),
+                  ),
+                  SliverPadding(
+                    padding: EdgeInsetsDirectional.symmetric(horizontal: 16.w),
+                    // Six to a row, as the design has it: forty ayahs on
+                    // one screen of a phone.
+                    sliver: SliverGrid.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 6,
+                        mainAxisSpacing: 6.r,
+                        crossAxisSpacing: 6.r,
+                        mainAxisExtent: 42.r,
+                      ),
+                      itemCount: state.records.length,
+                      itemBuilder: (BuildContext context, int index) =>
+                          AyahCell(record: state.records[index]),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      16.w,
+                      16.h,
+                      16.w,
+                      32.h,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: AppNote(
+                        LocaleKeys.progressTapHint.tr(),
+                        icon: Icons.back_hand_outlined,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -138,7 +170,6 @@ class _Summary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final bool arabic = context.locale.languageCode == 'ar';
     final String caption = LocaleKeys.surahListProgress.tr(
       args: <String>[
         memorized.toLocalisedString(),
@@ -152,34 +183,36 @@ class _Summary extends StatelessWidget {
           SurahProgressRing(
             fraction: memorized / surah.ayahCount,
             caption: caption,
-            diameter: 48.r,
+            diameter: 52.r,
           ),
-          SizedBox(width: 14.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                // How many of how many, large; what they are, under it.
                 Text(
-                  arabic ? surah.nameAr : surah.nameEn,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  LocaleKeys.progressOfAyahs.tr(
+                    args: <String>[
+                      memorized.toLocalisedString(),
+                      surah.ayahCount.toLocalisedString(),
+                    ],
                   ),
-                ),
-                Text(
-                  caption,
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontSize: 22.sp,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (started > 0)
-                  Text(
-                    LocaleKeys.progressInProgressCount.tr(
-                      args: <String>[started.toLocalisedString()],
-                    ),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                Text(
+                  started > 0
+                      ? LocaleKeys.progressMemorizedAndStarted.tr(
+                          args: <String>[started.toLocalisedString()],
+                        )
+                      : LocaleKeys.progressStatusMemorized.tr(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
+                ),
               ],
             ),
           ),
@@ -203,18 +236,19 @@ class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    Widget item(Color? fill, String label) => Row(
+    Widget item(MemorizationStatus status, String label) => Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
           width: 12.r,
           height: 12.r,
           decoration: BoxDecoration(
-            color: fill ?? theme.colorScheme.surface,
+            color: _tint(context, status) ?? theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(4.r),
-            border: fill == null
-                ? Border.all(color: theme.colorScheme.outline)
-                : null,
+            border: switch (_edge(context, status)) {
+              final Color c => Border.all(color: c),
+              null => null,
+            },
           ),
         ),
         SizedBox(width: 6.w),
@@ -232,14 +266,17 @@ class _Legend extends StatelessWidget {
       runSpacing: 6.h,
       children: <Widget>[
         item(
-          _tint(context, MemorizationStatus.memorized),
+          MemorizationStatus.memorized,
           LocaleKeys.progressStatusMemorized.tr(),
         ),
         item(
-          _tint(context, MemorizationStatus.inProgress),
+          MemorizationStatus.inProgress,
           LocaleKeys.progressStatusInProgress.tr(),
         ),
-        item(null, LocaleKeys.progressStatusNotStarted.tr()),
+        item(
+          MemorizationStatus.notStarted,
+          LocaleKeys.progressStatusNotStarted.tr(),
+        ),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -282,6 +319,17 @@ Color? _tint(BuildContext context, MemorizationStatus status) {
   };
 }
 
+/// The edge a state is drawn with: the outline on an untouched ayah, a
+/// firmer line of the status colour on a memorized one, none on one begun.
+Color? _edge(BuildContext context, MemorizationStatus status) =>
+    switch (status) {
+      MemorizationStatus.notStarted => Theme.of(context).colorScheme.outline,
+      MemorizationStatus.inProgress => null,
+      MemorizationStatus.memorized => AppColors.statusMemorized.withValues(
+        alpha: 0.45,
+      ),
+    };
+
 /// One ayah: its number, its state as a tint, and a tap that marks it.
 class AyahCell extends StatelessWidget {
   const AyahCell({required this.record, super.key});
@@ -310,9 +358,10 @@ class AyahCell extends StatelessWidget {
         color: fill ?? theme.colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.r),
-          side: fill == null
-              ? BorderSide(color: theme.colorScheme.outline)
-              : BorderSide.none,
+          side: switch (_edge(context, record.status)) {
+            final Color c => BorderSide(color: c),
+            null => BorderSide.none,
+          },
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -324,6 +373,7 @@ class AyahCell extends StatelessWidget {
               Text(
                 record.ayahNumber.toLocalisedString(),
                 style: theme.textTheme.labelLarge?.copyWith(
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
                   color: fill == null
                       ? theme.colorScheme.onSurfaceVariant

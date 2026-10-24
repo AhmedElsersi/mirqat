@@ -30,11 +30,15 @@ class PlaceItem extends Equatable {
 class HomeIndexState extends Equatable {
   const HomeIndexState({
     this.ajzaa = const <JuzItem>[],
+    this.ahzab = const <JuzItem>[],
     this.history = const <PlaceItem>[],
     this.loaded = false,
   });
 
   final List<JuzItem> ajzaa;
+
+  /// The sixty ahzab, by where each begins.
+  final List<JuzItem> ahzab;
 
   /// Newest first. The first entry is "where I left off".
   final List<PlaceItem> history;
@@ -47,16 +51,18 @@ class HomeIndexState extends Equatable {
 
   HomeIndexState copyWith({
     List<JuzItem>? ajzaa,
+    List<JuzItem>? ahzab,
     List<PlaceItem>? history,
     bool? loaded,
   }) => HomeIndexState(
     ajzaa: ajzaa ?? this.ajzaa,
+    ahzab: ahzab ?? this.ahzab,
     history: history ?? this.history,
     loaded: loaded ?? this.loaded,
   );
 
   @override
-  List<Object?> get props => <Object?>[ajzaa, history, loaded];
+  List<Object?> get props => <Object?>[ajzaa, ahzab, history, loaded];
 }
 
 /// Where a launch lands: the mushaf page to open straight onto, or null to

@@ -357,7 +357,9 @@ void main() {
         expect(find.text(ar ? 'الآيات: ٣' : 'Ayahs: 3'), findsOneWidget);
         expect(find.text(ar ? 'السور: ٢' : 'Surahs: 2'), findsOneWidget);
         expect(
-          find.text(ar ? 'البقرة، المائدة' : 'Al-Baqarah, Al-Ma\'idah'),
+          find.textContaining(
+            ar ? 'البقرة، المائدة' : 'Al-Baqarah, Al-Ma\'idah',
+          ),
           findsOneWidget,
         );
       });
@@ -369,13 +371,13 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(
           find.text(
-            ar ? 'سورة البقرة · الآيات: ٢' : 'Surah Al-Baqarah · Ayahs: 2',
+            ar ? 'سورة البقرة — الآيات: ٢' : 'Surah Al-Baqarah — Ayahs: 2',
           ),
           findsOneWidget,
         );
         await tester.scrollUntilVisible(
           find.text(
-            ar ? 'سورة المائدة · الآيات: ١' : 'Surah Al-Ma\'idah · Ayahs: 1',
+            ar ? 'سورة المائدة — الآيات: ١' : 'Surah Al-Ma\'idah — Ayahs: 1',
           ),
           200,
           scrollable: find.byType(Scrollable).first,

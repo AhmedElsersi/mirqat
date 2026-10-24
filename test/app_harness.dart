@@ -423,10 +423,12 @@ class AppHarness {
   /// Switches the home to [tab], by its button in the bar.
   static Future<void> openTab(WidgetTester tester, HomeTab tab) async {
     await tester.tap(
-      find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.byType(NavigationDestination),
-      ).at(tab.index),
+      find
+          .descendant(
+            of: find.byType(NavigationBar),
+            matching: find.byType(NavigationDestination),
+          )
+          .at(tab.index),
     );
     await settle(tester);
   }

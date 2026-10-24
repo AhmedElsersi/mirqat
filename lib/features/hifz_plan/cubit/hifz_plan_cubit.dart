@@ -43,12 +43,15 @@ class HifzPlanState extends Equatable {
       surahs.where((Surah s) => s.number == number).firstOrNull;
 
   /// How many ayahs the draft covers, counted from the catalog.
-  int get draftAyahs {
+  int get draftAyahs => ayahsIn(from, to);
+
+  /// How many ayahs lie from [a] to [b], counted from the catalog.
+  int ayahsIn(AyahRef a, AyahRef b) {
     int n = 0;
     for (final Surah s in surahs) {
-      if (s.number < from.surah || s.number > to.surah) continue;
-      final int first = s.number == from.surah ? from.ayah : 1;
-      final int last = s.number == to.surah ? to.ayah : s.ayahCount;
+      if (s.number < a.surah || s.number > b.surah) continue;
+      final int first = s.number == a.surah ? a.ayah : 1;
+      final int last = s.number == b.surah ? b.ayah : s.ayahCount;
       if (last >= first) n += last - first + 1;
     }
     return n;

@@ -213,6 +213,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setDefaultChainRecall(bool value) =>
       _save(state.settings.copyWith(defaultChainRecall: value));
 
+  Future<void> setDefaultPlayIstiadhah(bool value) =>
+      _save(state.settings.copyWith(defaultPlayIstiadhah: value));
+
   Future<void> setDefaultRecallRounds(int value) => _save(
     state.settings.copyWith(
       defaultRecallRounds: value.clamp(

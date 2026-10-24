@@ -108,10 +108,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
+            // At the start of the line, where the eye lands first.
             Align(
-              alignment: AlignmentDirectional.centerEnd,
+              alignment: AlignmentDirectional.centerStart,
               child: Padding(
-                padding: EdgeInsetsDirectional.only(end: 8.w, top: 4.h),
+                padding: EdgeInsetsDirectional.only(start: 8.w, top: 4.h),
                 // Kept in the layout on the last leaf so that the leaves do
                 // not jump when it goes — invisible, and deaf too: a button
                 // nobody can see must not be one somebody can press.
@@ -132,8 +133,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _controller,
                 itemCount: OnboardingScreen.pages.length,
                 onPageChanged: (int i) => setState(() => _index = i),
-                itemBuilder: (BuildContext context, int i) =>
-                    _Leaf(page: OnboardingScreen.pages[i]),
+                itemBuilder: (BuildContext context, int i) => _Leaf(
+                  page: OnboardingScreen.pages[i],
+                  step: i + 1,
+                  of: OnboardingScreen.pages.length,
+                ),
               ),
             ),
             Row(
@@ -142,18 +146,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 for (int i = 0; i < OnboardingScreen.pages.length; i++)
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    margin: EdgeInsetsDirectional.symmetric(horizontal: 4.w),
+                    margin: EdgeInsetsDirectional.symmetric(horizontal: 3.w),
                     width: i == _index ? 22.w : 8.w,
                     height: 8.h,
                     decoration: BoxDecoration(
-                      color: i == _index ? colors.primary : colors.outline,
+                      color: i == _index ? AppColors.gold : colors.outline,
                       borderRadius: BorderRadius.circular(4.r),
                     ),
                   ),
               ],
             ),
             Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(24.w, 20.h, 24.w, 20.h),
+              padding: EdgeInsetsDirectional.fromSTEB(16.w, 26.h, 16.w, 20.h),
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -174,9 +178,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _Leaf extends StatelessWidget {
-  const _Leaf({required this.page});
+  const _Leaf({required this.page, required this.step, required this.of});
 
   final OnboardingPage page;
+  final int step;
+  final int of;
 
   @override
   Widget build(BuildContext context) {
@@ -205,12 +211,24 @@ class _Leaf extends StatelessWidget {
                 ),
                 child: Icon(page.icon, size: 60.r, color: colors.primary),
               ),
-            SizedBox(height: 32.h),
+            SizedBox(height: 28.h),
+            Text(
+              LocaleKeys.onboardingStep.tr(
+                args: <String>[
+                  step.toLocalisedString(),
+                  of.toLocalisedString(),
+                ],
+              ),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            SizedBox(height: 6.h),
             Text(
               page.titleKey.tr(),
               textAlign: TextAlign.center,
               style: theme.textTheme.headlineSmall?.copyWith(
-                color: colors.primary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -218,7 +236,10 @@ class _Leaf extends StatelessWidget {
             Text(
               page.bodyKey.tr(),
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                height: 1.8,
+                color: colors.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -271,6 +292,9 @@ class _Ladder extends StatelessWidget {
               color: AppColors.gold,
               ink: AppColors.forestDeep,
               indent: 0,
+              // The rung reached for is a little shorter, as the logo draws
+              // it.
+              width: 120.r,
             ),
             for (int i = 0; i < rungs.length; i++)
               _Rung(
@@ -292,19 +316,21 @@ class _Rung extends StatelessWidget {
     required this.color,
     required this.ink,
     required this.indent,
+    this.width,
   });
 
   final String label;
   final Color color;
   final Color ink;
   final double indent;
+  final double? width;
 
   @override
   Widget build(BuildContext context) => Padding(
     // Inside a left-to-right box: start is left, which is where it climbs.
     padding: EdgeInsetsDirectional.only(start: indent, top: 8.r),
     child: Container(
-      width: 140.r,
+      width: width ?? 140.r,
       height: 30.r,
       alignment: Alignment.center,
       decoration: BoxDecoration(

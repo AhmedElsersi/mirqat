@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +14,8 @@ import '../../../core/theme/quran_font.dart';
 import '../../../core/widgets/ayah_text.dart';
 import '../../../core/widgets/islamic_frame.dart';
 import '../../../core/widgets/panel.dart';
-import '../../../core/widgets/session_controls.dart';
-import '../../../core/widgets/settings_card.dart';
+import '../../surah_list/widgets/surah_row.dart' show SurahProgressRing;
+
 import '../../../data/models/app_settings.dart';
 import '../../../data/models/ayah.dart';
 import '../../../services/qpc_font_service.dart';
@@ -40,6 +41,7 @@ class MushafFontScreen extends StatelessWidget {
           final SettingsCubit cubit = context.read<SettingsCubit>();
           final AppSettings settings = state.settings;
           final Ayah? sample = state.previewAyah;
+          final ThemeData theme = Theme.of(context);
 
           return DesktopWidth(
             child: ListView(
@@ -50,86 +52,95 @@ class MushafFontScreen extends StatelessWidget {
                   font: settings.quranFont,
                   fontSize: settings.arabicFontSize,
                 ),
-                SizedBox(height: 16.h),
-                SettingsCard(
-                  title: LocaleKeys.mushafFontFace.tr(),
-                  icon: Icons.font_download_outlined,
-                  children: <Widget>[
-                    RadioGroup<QuranFont>(
-                      groupValue: settings.quranFont,
-                      onChanged: (QuranFont? f) {
-                        if (f != null) cubit.setQuranFont(f);
-                      },
-                      child: Column(
-                        children: <Widget>[
-                          for (final QuranFont font in QuranFont.values)
-                            _FontOption(font: font, sample: sample),
+                FieldLabel(LocaleKeys.mushafFontFace.tr()),
+                AppCard(
+                  padding: EdgeInsetsDirectional.zero,
+                  child: RadioGroup<QuranFont>(
+                    groupValue: settings.quranFont,
+                    onChanged: (QuranFont? f) {
+                      if (f != null) cubit.setQuranFont(f);
+                    },
+                    child: Column(
+                      children: <Widget>[
+                        for (final QuranFont font
+                            in QuranFont.values) ...<Widget>[
+                          if (font != QuranFont.values.first)
+                            const Divider(height: 1),
+                          _FontOption(
+                            font: font,
+                            chosen: font == settings.quranFont,
+                          ),
                         ],
-                      ),
+                      ],
                     ),
-                    Padding(
-                      padding: EdgeInsetsDirectional.only(top: 4.h),
-                      child: Text(
-                        LocaleKeys.mushafFontOnlyMatching.tr(),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SettingsCard(
-                  title: LocaleKeys.settingsArabicFontSize.tr(),
-                  icon: Icons.format_size,
-                  children: <Widget>[
-                    LabelledSlider(
-                      label: LocaleKeys.settingsArabicFontSize.tr(),
-                      value: settings.arabicFontSize,
-                      min: AppSettings.minArabicFontSize,
-                      max: AppSettings.maxArabicFontSize,
-                      divisions: 11,
-                      valueLabel: settings.arabicFontSize.toLocalisedFixed(0),
-                      onChanged: (double v) =>
-                          cubit.setArabicFontSize(v.roundToDouble()),
-                    ),
-                    // Where the printed page is reproduced line for line.
-                    // Said as a way back to it, not as a mark on the track:
-                    // a reader who has gone past it wants it back in a tap.
-                    if (settings.arabicFontSize !=
-                        AppSettings.defaultArabicFontSize)
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TextButton(
-                          onPressed: () => cubit.setArabicFontSize(
-                            AppSettings.defaultArabicFontSize,
-                          ),
-                          child: Text(
-                            LocaleKeys.mushafFontDefaultSize.tr(
-                              args: <String>[
-                                AppSettings.defaultArabicFontSize
-                                    .toLocalisedFixed(0),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    // What the slider does to a page is not obvious from a
-                    // sample, so it is said: past the middle, the page is no
-                    // longer the printed page line for line.
-                    Text(
-                      LocaleKeys.settingsArabicFontSizeHint.tr(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                if (settings.quranFont.pageFonts)
-                  SettingsCard(
-                    title: LocaleKeys.mushafFontQpcFontsTitle.tr(),
-                    icon: Icons.download_outlined,
-                    children: const <Widget>[_QpcFonts()],
                   ),
+                ),
+                SizedBox(height: 10.h),
+                AppNote(
+                  LocaleKeys.mushafFontOnlyMatching.tr(),
+                  icon: Icons.verified_user_outlined,
+                ),
+                // The size: its label and its value on one line, the slider
+                // under them, and in one line what a bigger size does.
+                Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(4.w, 20.h, 4.w, 4.h),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          LocaleKeys.mushafFontSize.tr(),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      AppTag(
+                        label: settings.arabicFontSize.toLocalisedFixed(0),
+                      ),
+                    ],
+                  ),
+                ),
+                // The default — where the printed page is reproduced line for
+                // line — is the one tick on the track, so the way back to it
+                // is seen rather than read.
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    tickMarkShape: _DefaultTick(
+                      value: settings.arabicFontSize,
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                  child: Slider(
+                    value: settings.arabicFontSize,
+                    min: AppSettings.minArabicFontSize,
+                    max: AppSettings.maxArabicFontSize,
+                    divisions: 11,
+                    label: settings.arabicFontSize.toLocalisedFixed(0),
+                    onChanged: (double v) =>
+                        cubit.setArabicFontSize(v.roundToDouble()),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsetsDirectional.symmetric(horizontal: 4.w),
+                  child: Text(
+                    LocaleKeys.mushafFontSizeHint.tr(
+                      args: <String>[
+                        AppSettings.defaultArabicFontSize.toLocalisedFixed(0),
+                      ],
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                if (settings.quranFont.pageFonts) ...<Widget>[
+                  FieldLabel(LocaleKeys.mushafFontQpcFontsTitle.tr()),
+                  AppCard(
+                    padding: EdgeInsetsDirectional.all(16.r),
+                    child: const _QpcFonts(),
+                  ),
+                ],
               ],
             ),
           );
@@ -182,43 +193,39 @@ class _Preview extends StatelessWidget {
   }
 }
 
-/// One face, named, with the sample drawn small in that face so the choices
-/// can be told apart before one is picked.
+/// One face, named, as a row: a radio at its start, and under the name a
+/// word on where its pages come from.
 class _FontOption extends StatelessWidget {
-  const _FontOption({required this.font, required this.sample});
+  const _FontOption({required this.font, required this.chosen});
 
   final QuranFont font;
-  final Ayah? sample;
+  final bool chosen;
 
   @override
   Widget build(BuildContext context) {
-    final Ayah? ayah = sample;
+    final ThemeData theme = Theme.of(context);
+    final String? hint = font.pageFonts
+        ? LocaleKeys.mushafFontQpcV2Hint.tr()
+        : font == QuranFont.values.first
+        ? LocaleKeys.mushafFontDefaultHint.tr()
+        : null;
     return RadioListTile<QuranFont>(
-      contentPadding: EdgeInsetsDirectional.zero,
+      contentPadding: EdgeInsetsDirectional.fromSTEB(8.w, 4.h, 16.w, 4.h),
       value: font,
-      title: Text(_nameKey(font).tr()),
-      // Its pages are drawn in fonts fetched page by page: said in words, not
-      // shown in a face the sample would only borrow.
-      subtitle: font.pageFonts
-          ? Text(
-              LocaleKeys.mushafFontQpcV2Hint.tr(),
-              style: Theme.of(context).textTheme.bodySmall,
-            )
-          : ayah == null
+      title: Text(_nameKey(font).tr(), style: theme.textTheme.titleSmall),
+      subtitle: hint == null
           ? null
-          : QuranFontScope(
-              font: font,
-              child: AyahText(
-                text: ayah.text,
-                fontSize: 16,
-                textAlign: TextAlign.start,
+          : Text(
+              hint,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
     );
   }
 
   static String _nameKey(QuranFont font) => switch (font) {
-    QuranFont.hafsV22 => LocaleKeys.mushafFontHafsV22,
+    QuranFont.hafsV22 => LocaleKeys.mushafFontHafsV22Name,
     QuranFont.hafsV18 => LocaleKeys.mushafFontHafsV18,
     QuranFont.qpcV2 => LocaleKeys.mushafFontQpcV2,
   };
@@ -289,84 +296,182 @@ class _QpcFontsState extends State<_QpcFonts> {
     final int? onDevice = _onDevice;
     final (int, int)? progress = _progress;
     if (totals == null || onDevice == null) return const SizedBox.shrink();
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(8.w, 4.h, 8.w, 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            LocaleKeys.mushafFontQpcFontsCount.tr(
-              args: <String>[
-                onDevice.toLocalisedString(),
-                totals.pages.toLocalisedString(),
-              ],
-            ),
-            style: theme.textTheme.titleSmall,
-          ),
-          SizedBox(height: 8.h),
-          // How much of the mushaf is already here, before any fetch.
-          ProgressBar(
-            value: totals.pages == 0 ? 0 : onDevice / totals.pages,
-            height: 5.r,
-          ),
-          SizedBox(height: 10.h),
-          if (progress != null) ...<Widget>[
-            LinearProgressIndicator(
-              value: progress.$2 == 0 ? null : progress.$1 / progress.$2,
-            ),
-            SizedBox(height: 4.h),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    LocaleKeys.mushafFontQpcFontsDownloading.tr(
+    final double share = totals.pages == 0 ? 0 : onDevice / totals.pages;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    LocaleKeys.mushafFontQpcFontsCount.tr(
                       args: <String>[
-                        progress.$1.toLocalisedString(),
-                        progress.$2.toLocalisedString(),
+                        onDevice.toLocalisedString(),
+                        totals.pages.toLocalisedString(),
                       ],
                     ),
-                    style: theme.textTheme.bodySmall,
+                    style: theme.textTheme.titleSmall,
                   ),
-                ),
-                TextButton(
-                  onPressed: () => setState(() => _stop = true),
-                  child: Text(LocaleKeys.mushafFontQpcFontsStop.tr()),
-                ),
-              ],
+                  Text(
+                    LocaleKeys.mushafFontQpcFontsSizeHint.tr(
+                      args: <String>[
+                        LocaleKeys.downloadsSizeMb.tr(
+                          args: <String>[megabytes(totals.bytes)],
+                        ),
+                      ],
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ] else ...<Widget>[
-            if (onDevice < totals.pages)
-              OutlinedButton.icon(
-                onPressed: _downloadAll,
-                icon: const Icon(Icons.download_outlined),
-                label: Text(
-                  LocaleKeys.mushafFontQpcFontsDownloadAll.tr(
+            SizedBox(width: 12.w),
+            SurahProgressRing(
+              fraction: share,
+              caption: LocaleKeys.mushafFontQpcFontsCount.tr(
+                args: <String>[
+                  onDevice.toLocalisedString(),
+                  totals.pages.toLocalisedString(),
+                ],
+              ),
+              diameter: 34.r,
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        // How much of the mushaf is already here, before any fetch.
+        ProgressBar(value: share),
+        SizedBox(height: 12.h),
+        if (progress != null) ...<Widget>[
+          LinearProgressIndicator(
+            value: progress.$2 == 0 ? null : progress.$1 / progress.$2,
+          ),
+          SizedBox(height: 4.h),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  LocaleKeys.mushafFontQpcFontsDownloading.tr(
                     args: <String>[
-                      LocaleKeys.downloadsSizeMb.tr(
-                        args: <String>[megabytes(totals.bytes)],
-                      ),
+                      progress.$1.toLocalisedString(),
+                      progress.$2.toLocalisedString(),
                     ],
                   ),
+                  style: theme.textTheme.bodySmall,
                 ),
               ),
-            if (onDevice > 0)
-              TextButton.icon(
-                onPressed: _delete,
-                icon: const Icon(Icons.delete_outline),
-                label: Text(LocaleKeys.mushafFontQpcFontsDelete.tr()),
+              TextButton(
+                onPressed: () => setState(() => _stop = true),
+                child: Text(LocaleKeys.mushafFontQpcFontsStop.tr()),
               ),
-            if (_failed > 0)
-              Text(
-                LocaleKeys.mushafFontQpcFontsFailed.tr(
-                  args: <String>[_failed.toLocalisedString()],
-                ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.error,
+            ],
+          ),
+        ] else ...<Widget>[
+          if (onDevice < totals.pages)
+            OutlinedButton.icon(
+              onPressed: _downloadAll,
+              icon: const Icon(Icons.download_outlined),
+              label: Text(
+                LocaleKeys.mushafFontQpcFontsDownloadAll.tr(
+                  args: <String>[
+                    LocaleKeys.downloadsSizeMb.tr(
+                      args: <String>[megabytes(totals.bytes)],
+                    ),
+                  ],
                 ),
               ),
-          ],
+            ),
+          if (onDevice > 0)
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.onSurfaceVariant,
+              ),
+              onPressed: _delete,
+              child: Text(LocaleKeys.mushafFontQpcFontsDelete.tr()),
+            ),
+          if (_failed > 0)
+            Text(
+              LocaleKeys.mushafFontQpcFontsFailed.tr(
+                args: <String>[_failed.toLocalisedString()],
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
         ],
+      ],
+    );
+  }
+}
+
+/// The slider's one tick: at the default size, where the page is drawn as
+/// printed. Every other division is left unmarked.
+///
+/// A tick shape is not told which division it is drawing, so it works that
+/// out from where it stands against the thumb, whose value is known.
+class _DefaultTick extends SliderTickMarkShape {
+  const _DefaultTick({required this.value, required this.color});
+
+  /// The slider's current value — where the thumb is.
+  final double value;
+  final Color color;
+
+  static double _fraction(double v) =>
+      (v - AppSettings.minArabicFontSize) /
+      (AppSettings.maxArabicFontSize - AppSettings.minArabicFontSize);
+
+  @override
+  Size getPreferredSize({
+    required SliderThemeData sliderTheme,
+    required bool isEnabled,
+  }) => Size(2.r, 12.r);
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required Animation<double> enableAnimation,
+    required ui.TextDirection textDirection,
+    required Offset thumbCenter,
+    required bool isEnabled,
+  }) {
+    final Rect track =
+        (sliderTheme.trackShape ?? const RoundedRectSliderTrackShape())
+            .getPreferredRect(
+              parentBox: parentBox,
+              sliderTheme: sliderTheme,
+              isEnabled: isEnabled,
+              isDiscrete: true,
+            );
+    if (track.width <= 0) return;
+    final double shift = (center.dx - thumbCenter.dx) / track.width;
+    final double here =
+        _fraction(value) +
+        (textDirection == ui.TextDirection.rtl ? -shift : shift);
+    if ((here - _fraction(AppSettings.defaultArabicFontSize)).abs() > 0.01) {
+      return;
+    }
+    final Size size = getPreferredSize(
+      sliderTheme: sliderTheme,
+      isEnabled: isEnabled,
+    );
+    context.canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: center,
+          width: size.width,
+          height: size.height,
+        ),
+        Radius.circular(1.r),
       ),
+      Paint()..color = color,
     );
   }
 }

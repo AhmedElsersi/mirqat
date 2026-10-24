@@ -6,9 +6,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/ladder_mark.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/reciter_avatar.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../core/widgets/range_label.dart';
@@ -49,9 +52,12 @@ class SessionBar extends StatelessWidget {
           child: Padding(
             padding: EdgeInsetsDirectional.fromSTEB(12.w, 0, 12.w, 10.h),
             child: Material(
-              elevation: 6,
+              elevation: 3,
               color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(18.r),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24.r),
+                side: BorderSide(color: theme.colorScheme.outline),
+              ),
               clipBehavior: Clip.antiAlias,
               child: BlocBuilder<SessionCubit, SessionState>(
                 builder: (BuildContext context, SessionState state) =>
@@ -59,9 +65,11 @@ class SessionBar extends StatelessWidget {
                       duration: const Duration(milliseconds: 180),
                       alignment: Alignment.bottomCenter,
                       child: Padding(
-                        padding: EdgeInsetsDirectional.symmetric(
-                          horizontal: 6.w,
-                          vertical: 4.h,
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                          2.w,
+                          4.h,
+                          2.w,
+                          4.h,
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -478,20 +486,57 @@ class _Active extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(12.w, 6.h, 12.w, 0),
+          padding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 12.w, 0),
           child: Row(
             children: <Widget>[
+              // Whose voice this is, as the lock screen shows it.
+              if (state.reciter case final Reciter reciter) ...<Widget>[
+                ReciterAvatar(reciter: reciter, diameter: 34),
+                SizedBox(width: 10.w),
+              ],
               Expanded(
-                child: Text(
-                  state.finished
-                      ? LocaleKeys.playerFinished.tr()
-                      : _nowReciting(context, state, unit),
-                  style: theme.textTheme.titleSmall,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      state.finished
+                          ? LocaleKeys.playerFinished.tr()
+                          : _nowReciting(context, state, unit),
+                      style: theme.textTheme.titleSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    // Which time through, and which rung — under the ayah,
+                    // not beside it, so neither has to be shortened.
+                    if (unit != null && !state.finished)
+                      Text(
+                        joinDetails(<String>[
+                          LocaleKeys.playerRepeatHeader.tr(
+                            args: <String>[
+                              unit.repeatIndex.toLocalisedString(),
+                              unit.totalRepeats.toLocalisedString(),
+                            ],
+                          ),
+                          LocaleKeys.playerStepHeader.tr(
+                            args: <String>[
+                              (unit.stepIndex + 1).toLocalisedString(),
+                              steps.toLocalisedString(),
+                            ],
+                          ),
+                        ]),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
               if (state.sleepTimerSet)
                 Padding(
-                  padding: EdgeInsetsDirectional.only(end: 6.w),
+                  padding: EdgeInsetsDirectional.only(start: 6.w),
                   child: Tooltip(
                     message: state.sleepAt == null
                         ? LocaleKeys.sleepEndOfStep.tr()
@@ -507,36 +552,16 @@ class _Active extends StatelessWidget {
                     ),
                   ),
                 ),
+              // Three more times over this ayah: the one thing a reader asks
+              // for mid-session, so it says what it does.
               if (unit != null && !state.finished && !state.recalling)
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  tooltip: LocaleKeys.playerRepeatAyah.tr(),
-                  onPressed: () => cubit.repeatCurrentAyah(),
-                  icon: Icon(Icons.replay, size: 20.r),
-                ),
-              if (unit != null && !state.finished)
-                // The repeat counter: which time through, of how many. Free to
-                // wrap: on a narrow phone it shares the row with the buttons.
-                Flexible(
-                  child: Text(
-                    joinDetails(<String>[
-                      LocaleKeys.playerRepeatHeader.tr(
-                        args: <String>[
-                          unit.repeatIndex.toLocalisedString(),
-                          unit.totalRepeats.toLocalisedString(),
-                        ],
-                      ),
-                      LocaleKeys.playerStepHeader.tr(
-                        args: <String>[
-                          (unit.stepIndex + 1).toLocalisedString(),
-                          steps.toLocalisedString(),
-                        ],
-                      ),
-                    ]),
-                    textAlign: TextAlign.end,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                Padding(
+                  padding: EdgeInsetsDirectional.only(start: 6.w),
+                  child: _BarChip(
+                    icon: Icons.repeat_one,
+                    label: LocaleKeys.playerThreeMore.tr(),
+                    tooltip: LocaleKeys.playerRepeatAyah.tr(),
+                    onPressed: () => cubit.repeatCurrentAyah(),
                   ),
                 ),
             ],
@@ -545,29 +570,32 @@ class _Active extends StatelessWidget {
         // Where in the ladder: the steps stood on, the one being climbed.
         if (unit != null && steps > 1)
           Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 12.w, 0),
+            padding: EdgeInsetsDirectional.fromSTEB(12.w, 12.h, 12.w, 0),
             child: StepsBar(
               total: steps,
               current: state.finished ? steps : unit.stepIndex,
             ),
           ),
-        Row(
+        // Spread across the bar: the settings, then back a step, the big
+        // pause, forward a step, and stop. The way out of the page is the
+        // stop, which hands the bar back to the one that leaves.
+        _ControlsRow(
           children: <Widget>[
-            const _BackButton(),
-            const Spacer(),
+            Badge(
+              isLabelVisible: state.hasPendingChange,
+              smallSize: 8.r,
+              child: IconButton(
+                onPressed: onOpenSettings,
+                tooltip: LocaleKeys.readerSessionSettings.tr(),
+                icon: const Icon(Icons.tune),
+              ),
+            ),
             IconButton(
               onPressed: cubit.previousStep,
               tooltip: LocaleKeys.playerPreviousStep.tr(),
               icon: Icon(_towardsStart(context)),
             ),
-            IconButton.filled(
-              onPressed: cubit.togglePlayPause,
-              iconSize: 30.r,
-              tooltip: state.playing
-                  ? LocaleKeys.playerPause.tr()
-                  : LocaleKeys.playerPlay.tr(),
-              icon: Icon(state.playing ? Icons.pause : Icons.play_arrow),
-            ),
+            _BigPlayPause(state: state),
             IconButton(
               onPressed: cubit.nextStep,
               tooltip: LocaleKeys.playerNextStep.tr(),
@@ -577,16 +605,6 @@ class _Active extends StatelessWidget {
               onPressed: cubit.stop,
               tooltip: LocaleKeys.playerStop.tr(),
               icon: const Icon(Icons.stop),
-            ),
-            const Spacer(),
-            Badge(
-              isLabelVisible: state.hasPendingChange,
-              smallSize: 8.r,
-              child: IconButton(
-                onPressed: onOpenSettings,
-                tooltip: LocaleKeys.readerSessionSettings.tr(),
-                icon: const Icon(Icons.tune),
-              ),
             ),
           ],
         ),
@@ -646,11 +664,9 @@ class _Recall extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final SessionCubit cubit = context.read<SessionCubit>();
-    final String reference = LocaleKeys.mushafAyahReference.tr(
-      args: <String>[
-        _surahName(context, state.surah(unit.surahNumber)),
-        unit.ayahNumber.toLocalisedString(),
-      ],
+    // The surah is on the page's own border; the bar names the ayah.
+    final String reference = LocaleKeys.commonAyahNumber.tr(
+      args: <String>[unit.ayahNumber.toLocalisedString()],
     );
 
     return Column(
@@ -660,16 +676,11 @@ class _Recall extends StatelessWidget {
           padding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 12.w, 0),
           child: Row(
             children: <Widget>[
-              Container(
-                width: 38.r,
-                height: 38.r,
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.mic_none, size: 20.r),
+              TileIcon(
+                Icons.mic_none,
+                background: AppColors.gold.withValues(alpha: 0.2),
               ),
-              SizedBox(width: 10.w),
+              SizedBox(width: 12.w),
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -691,47 +702,46 @@ class _Recall extends StatelessWidget {
             ],
           ),
         ),
+        // The silence itself, as a calm line that fills while it lasts — no
+        // count, no clock.
         Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(12.w, 10.h, 12.w, 0),
-          child: Wrap(
-            spacing: 8.w,
-            runSpacing: 4.h,
-            children: <Widget>[
-              ActionChip(
-                avatar: const Icon(Icons.visibility_outlined),
-                onPressed: cubit.revealRecall,
-                label: Text(LocaleKeys.playerRecallReveal.tr()),
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.flag_outlined),
-                onPressed: () => _markStumble(context, cubit),
-                label: Text(LocaleKeys.mushafStumbleHere.tr()),
-              ),
-            ],
+          padding: EdgeInsetsDirectional.fromSTEB(12.w, 14.h, 12.w, 0),
+          child: _RecallProgress(
+            key: ValueKey<Object>(unit),
+            gap: state.recallGap,
+            running: state.playing,
           ),
         ),
-        Row(
+        // "Reveal" and "I stumble here" sit in the row, within reach, either
+        // side of the pause.
+        _ControlsRow(
           children: <Widget>[
-            const _BackButton(),
-            const Spacer(),
-            IconButton.filled(
-              onPressed: cubit.togglePlayPause,
-              iconSize: 30.r,
-              tooltip: state.playing
-                  ? LocaleKeys.playerPause.tr()
-                  : LocaleKeys.playerPlay.tr(),
-              icon: Icon(state.playing ? Icons.pause : Icons.play_arrow),
+            IconButton(
+              onPressed: onOpenSettings,
+              tooltip: LocaleKeys.readerSessionSettings.tr(),
+              icon: const Icon(Icons.tune),
+            ),
+            Flexible(
+              child: _BarChip(
+                icon: Icons.visibility_outlined,
+                label: LocaleKeys.playerRecallReveal.tr(),
+                tooltip: LocaleKeys.playerRecallReveal.tr(),
+                onPressed: cubit.revealRecall,
+              ),
+            ),
+            _BigPlayPause(state: state),
+            Flexible(
+              child: _BarChip(
+                icon: Icons.flag_outlined,
+                label: LocaleKeys.mushafStumbleHere.tr(),
+                tooltip: LocaleKeys.mushafStumbleHere.tr(),
+                onPressed: () => _markStumble(context, cubit),
+              ),
             ),
             IconButton(
               onPressed: cubit.stop,
               tooltip: LocaleKeys.playerStop.tr(),
               icon: const Icon(Icons.stop),
-            ),
-            const Spacer(),
-            IconButton(
-              onPressed: onOpenSettings,
-              tooltip: LocaleKeys.readerSessionSettings.tr(),
-              icon: const Icon(Icons.tune),
             ),
           ],
         ),
@@ -745,6 +755,134 @@ class _Recall extends StatelessWidget {
     await cubit.markStumble(unit.ref);
     messenger.showSnackBar(SnackBar(content: Text(said)));
   }
+}
+
+/// The bar's row of controls, spread from edge to edge with the big button
+/// in the middle.
+class _ControlsRow extends StatelessWidget {
+  const _ControlsRow({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsetsDirectional.only(top: 10.h),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: children,
+    ),
+  );
+}
+
+/// The one big button of the bar: a solid 56 circle that plays and pauses.
+class _BigPlayPause extends StatelessWidget {
+  const _BigPlayPause({required this.state});
+
+  final SessionState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return IconButton(
+      onPressed: context.read<SessionCubit>().togglePlayPause,
+      tooltip: state.playing
+          ? LocaleKeys.playerPause.tr()
+          : LocaleKeys.playerPlay.tr(),
+      iconSize: 28.r,
+      style: IconButton.styleFrom(
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
+        minimumSize: Size(56.r, 56.r),
+        fixedSize: Size(56.r, 56.r),
+      ),
+      icon: Icon(state.playing ? Icons.pause : Icons.play_arrow),
+    );
+  }
+}
+
+/// A small outlined chip on the bar — "three more times", "reveal it",
+/// "I stumble here": an action that says what it does.
+class _BarChip extends StatelessWidget {
+  const _BarChip({
+    required this.icon,
+    required this.label,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: ActionChip(
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: EdgeInsetsDirectional.symmetric(horizontal: 4.w),
+      avatar: Icon(icon, size: 16.r),
+      tooltip: tooltip,
+      onPressed: onPressed,
+      label: Text(label),
+    ),
+  );
+}
+
+/// The silence of a recall gap as a gold line filling over its length; it
+/// holds while the session is paused.
+class _RecallProgress extends StatefulWidget {
+  const _RecallProgress({required this.gap, required this.running, super.key});
+
+  final Duration? gap;
+  final bool running;
+
+  @override
+  State<_RecallProgress> createState() => _RecallProgressState();
+}
+
+class _RecallProgressState extends State<_RecallProgress>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fill = AnimationController(
+    vsync: this,
+    duration: widget.gap ?? const Duration(seconds: 1),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(_RecallProgress old) {
+    super.didUpdateWidget(old);
+    if (widget.gap != null && widget.gap != old.gap) {
+      _fill.duration = widget.gap;
+    }
+    _sync();
+  }
+
+  void _sync() {
+    if (widget.running && widget.gap != null) {
+      if (!_fill.isAnimating) _fill.forward();
+    } else {
+      _fill.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _fill.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _fill,
+    builder: (BuildContext context, _) => ProgressBar(value: _fill.value),
+  );
 }
 
 class _Failed extends StatelessWidget {

@@ -194,31 +194,40 @@ class _HomeShellViewState extends State<_HomeShellView> {
           const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab.index,
-        onDestinationSelected: _select,
-        destinations: <NavigationDestination>[
-          NavigationDestination(
-            icon: const Icon(Icons.wb_twilight_outlined),
-            selectedIcon: const Icon(Icons.wb_twilight),
-            label: LocaleKeys.tabsToday.tr(),
+      // A hairline above the bar, as the design draws it: the bar is the
+      // page's own surface, and only the line tells it from the list above.
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          border: BorderDirectional(
+            top: BorderSide(color: Theme.of(context).colorScheme.outline),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.menu_book_outlined),
-            selectedIcon: const Icon(Icons.menu_book),
-            label: LocaleKeys.tabsMushaf.tr(),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.stairs_outlined),
-            selectedIcon: const Icon(Icons.stairs),
-            label: LocaleKeys.tabsHifz.tr(),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
-            label: LocaleKeys.tabsSettings.tr(),
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _tab.index,
+          onDestinationSelected: _select,
+          destinations: <NavigationDestination>[
+            NavigationDestination(
+              icon: const Icon(Icons.wb_twilight_outlined),
+              selectedIcon: const Icon(Icons.wb_twilight),
+              label: LocaleKeys.tabsToday.tr(),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.menu_book_outlined),
+              selectedIcon: const Icon(Icons.menu_book),
+              label: LocaleKeys.tabsMushaf.tr(),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.layers_outlined),
+              selectedIcon: const Icon(Icons.layers),
+              label: LocaleKeys.tabsHifz.tr(),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings),
+              label: LocaleKeys.tabsSettings.tr(),
+            ),
+          ],
+        ),
       ),
     );
   }

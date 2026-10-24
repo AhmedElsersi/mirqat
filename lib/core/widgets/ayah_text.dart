@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/quran_font.dart';
 
@@ -55,6 +56,11 @@ enum WordTint {
   /// its words lie while their ink is withheld (see `AyahText.word`'s
   /// `veiled`).
   veiled,
+
+  /// The words an ayah shares with its look-alike, on the comparison card and
+  /// in the drill: the gold wash of a highlighter, so where it stops shows
+  /// where the two ayahs part.
+  shared,
 }
 
 /// One ayah inside a flowing block, for [AyahText.flowing].
@@ -223,6 +229,9 @@ class AyahText extends StatefulWidget {
     // Quieter than the recitation highlight: it marks where the hidden words
     // lie, not which of them is sounding — none of them is.
     WordTint.veiled => colors.primary.withValues(alpha: 0.1),
+    WordTint.shared => AppColors.gold.withValues(
+      alpha: colors.brightness == Brightness.dark ? 0.26 : 0.3,
+    ),
   };
 
   /// Width of [text] as [AyahText.word] draws it at [fontSize] in [font] —

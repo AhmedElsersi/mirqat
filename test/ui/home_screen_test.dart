@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/features/surah_list/screen/surah_list_screen.dart';
 import 'package:mirqat/features/settings/cubit/settings_cubit.dart';
-import 'package:mirqat/core/localization/locale_keys.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:mirqat/core/di/injection.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/data/models/reading_position.dart';
@@ -44,7 +42,10 @@ void main() {
     ) async {
       await remember(tester, 2);
       await harness.pumpApp(tester);
-      expect(find.text(LocaleKeys.homeContinueReading.tr()), findsOneWidget);
+      expect(
+        find.textContaining('تابع: '),
+        findsOneWidget,
+      );
       expect(find.byIcon(Icons.bookmark), findsOneWidget);
       expect(find.byIcon(Icons.bookmark_added), findsNothing);
 
@@ -64,14 +65,20 @@ void main() {
       await AppHarness.settle(tester);
       // Still one card, now the mark's: the icon says so, and the place
       // is the marked ayah rather than the remembered page.
-      expect(find.text(LocaleKeys.homeContinueReading.tr()), findsOneWidget);
+      expect(
+        find.textContaining('تابع: '),
+        findsOneWidget,
+      );
       expect(find.byIcon(Icons.bookmark_added), findsOneWidget);
       expect(find.byIcon(Icons.bookmark), findsNothing);
       expect(find.textContaining('٣'), findsWidgets);
 
       await tester.runAsync(settings.clearReadingMark);
       await AppHarness.settle(tester);
-      expect(find.text(LocaleKeys.homeContinueReading.tr()), findsOneWidget);
+      expect(
+        find.textContaining('تابع: '),
+        findsOneWidget,
+      );
       expect(find.byIcon(Icons.bookmark_added), findsNothing);
       expect(find.byIcon(Icons.bookmark), findsOneWidget);
     });
@@ -90,29 +97,40 @@ void main() {
       expect(find.byIcon(Icons.auto_stories_outlined), findsNothing);
     });
 
-    testWidgets('has two tabs, and a swipe moves between them', (
+    testWidgets('has three tabs, and a swipe moves between them', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
-      expect(find.byType(Tab), findsNWidgets(2));
+      // The surahs, the ajzaa and the ahzab: the three ways the mushaf is
+      // divided, as the index offers them.
+      expect(find.byType(Tab), findsNWidgets(3));
       expect(find.byType(SurahRow), findsWidgets);
       expect(find.byType(JuzRow), findsNothing);
 
       await AppHarness.swipeToAjzaa(tester);
       expect(find.byType(JuzRow), findsWidgets);
+      expect(find.text('الجزء ١'), findsOneWidget);
+
+      // The third segment, tapped: the ahzab were read with the ajzaa, so
+      // the tab only has to settle.
+      await tester.tap(find.byType(Tab).at(2));
+      await AppHarness.frames(tester, 400);
+      expect(find.text('الحزب ١'), findsOneWidget);
     });
 
     testWidgets('lists all thirty ajzaa', (WidgetTester tester) async {
       await harness.pumpApp(tester);
       await AppHarness.swipeToAjzaa(tester);
 
-      final ListView list = tester.widget<ListView>(
+      // The rows share one card, lazily: a sliver list with a divider
+      // between every two rows.
+      final SliverList list = tester.widget<SliverList>(
         find.ancestor(
           of: find.byType(JuzRow).first,
-          matching: find.byType(ListView),
+          matching: find.byType(SliverList),
         ),
       );
-      expect(list.childrenDelegate.estimatedChildCount, 30 * 2 - 1);
+      expect(list.delegate.estimatedChildCount, 30 * 2 - 1);
     });
 
     testWidgets('the ajzaa follow the grid setting too', (
@@ -236,8 +254,15 @@ void main() {
       await stumble(tester, 1, 5);
       await harness.pumpApp(tester);
 
+      // The marker is a tag: the flag and the count, the words its tooltip.
       expect(
-        find.descendant(of: fatihaRow(), matching: find.text('مواضع ضعف: ٢')),
+        find.descendant(
+          of: find.descendant(
+            of: fatihaRow(),
+            matching: find.byType(WeakSpotsMarker),
+          ),
+          matching: find.text('٢'),
+        ),
         findsOneWidget,
       );
       expect(find.byType(WeakSpotsMarker), findsOneWidget);
@@ -252,7 +277,13 @@ void main() {
         () => Future<void>.delayed(const Duration(milliseconds: 100)),
       );
       await AppHarness.settle(tester);
-      expect(find.text('مواضع ضعف: ١'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(WeakSpotsMarker),
+          matching: find.text('١'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the grid shows it too, and a tile holds it at 320 dp', (

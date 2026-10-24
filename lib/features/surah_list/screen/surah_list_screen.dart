@@ -13,6 +13,7 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../data/models/app_settings.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../home/cubit/home_index_cubit.dart';
@@ -47,11 +48,13 @@ class SurahListScreen extends StatefulWidget {
 class _SurahListScreenState extends State<SurahListScreen> {
   final ScrollController _surahScroll = ScrollController();
   final ScrollController _juzScroll = ScrollController();
+  final ScrollController _hizbScroll = ScrollController();
 
   @override
   void dispose() {
     _surahScroll.dispose();
     _juzScroll.dispose();
+    _hizbScroll.dispose();
     super.dispose();
   }
 
@@ -71,7 +74,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
     final bool grid = viewMode == HomeViewMode.grid;
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         body: SafeArea(
           bottom: false,
@@ -111,7 +114,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 if (last != null)
                   _ContinueCard(
                     place: last,
-                    label: LocaleKeys.homeContinueReading.tr(),
                     // The icon says which it is: a mark the reader set, or
                     // the page the app remembered.
                     icon: marked ? Icons.bookmark_added : Icons.bookmark,
@@ -123,6 +125,13 @@ class _SurahListScreenState extends State<SurahListScreen> {
                     children: <Widget>[
                       _surahs(context, grid: grid, mode: viewMode),
                       _ajzaa(context, index, grid: grid, mode: viewMode),
+                      _ajzaa(
+                        context,
+                        index,
+                        grid: grid,
+                        mode: viewMode,
+                        ahzab: true,
+                      ),
                     ],
                   ),
                 ),
@@ -182,30 +191,39 @@ class _SurahListScreenState extends State<SurahListScreen> {
     HomeIndexState index, {
     required bool grid,
     required HomeViewMode mode,
+    bool ahzab = false,
   }) {
     if (!index.loaded) return const Center(child: CircularProgressIndicator());
 
-    // The same choice a surah makes: the mushaf at the juz's first page, or
-    // that juz on its own.
-    void open(JuzItem juz) => mode == HomeViewMode.mushaf
-        ? openMushaf(context, page: juz.info.page)
-        : openMushaf(context, section: SectionRequest.juz(juz.info.number));
+    final List<JuzItem> parts = ahzab ? index.ahzab : index.ajzaa;
+    final ScrollController scroll = ahzab ? _hizbScroll : _juzScroll;
+    final String nameKey = ahzab
+        ? LocaleKeys.homeHizbName
+        : LocaleKeys.homeJuzName;
+
+    // The same choice a surah makes: the mushaf at the part's first page, or
+    // that juz on its own. A hizb is not a reading section the app knows, so
+    // it always opens the mushaf where it begins.
+    void open(JuzItem part) => ahzab || mode == HomeViewMode.mushaf
+        ? openMushaf(context, page: part.info.page)
+        : openMushaf(context, section: SectionRequest.juz(part.info.number));
 
     if (!grid) {
-      return ListView.separated(
-        controller: _juzScroll,
-        padding: EdgeInsetsDirectional.only(bottom: 24.h),
-        itemCount: index.ajzaa.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
-        itemBuilder: (BuildContext context, int i) =>
-            JuzRow(item: index.ajzaa[i], onTap: () => open(index.ajzaa[i])),
+      return ListCardView(
+        controller: scroll,
+        itemCount: parts.length,
+        itemBuilder: (BuildContext context, int i) => JuzRow(
+          item: parts[i],
+          nameKey: nameKey,
+          onTap: () => open(parts[i]),
+        ),
       );
     }
 
     final bool wide =
         MediaQuery.sizeOf(context).width >= AppConstants.tabletBreakpoint;
     return GridView.builder(
-      controller: _juzScroll,
+      controller: scroll,
       padding: EdgeInsetsDirectional.all(12.r),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: wide ? 3 : 2,
@@ -221,9 +239,12 @@ class _SurahListScreenState extends State<SurahListScreen> {
             math.max(1, ScreenUtil().scaleWidth) *
             MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6),
       ),
-      itemCount: index.ajzaa.length,
-      itemBuilder: (BuildContext context, int i) =>
-          JuzTile(item: index.ajzaa[i], onTap: () => open(index.ajzaa[i])),
+      itemCount: parts.length,
+      itemBuilder: (BuildContext context, int i) => JuzTile(
+        item: parts[i],
+        nameKey: nameKey,
+        onTap: () => open(parts[i]),
+      ),
     );
   }
 }
@@ -232,13 +253,11 @@ class _SurahListScreenState extends State<SurahListScreen> {
 class _ContinueCard extends StatelessWidget {
   const _ContinueCard({
     required this.place,
-    required this.label,
     required this.icon,
     required this.onTap,
   });
 
   final PlaceItem place;
-  final String label;
   final IconData icon;
   final VoidCallback onTap;
 
@@ -255,10 +274,7 @@ class _ContinueCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: EdgeInsetsDirectional.symmetric(
-              horizontal: 16.w,
-              vertical: 12.h,
-            ),
+            padding: EdgeInsetsDirectional.all(16.r),
             child: Row(
               children: <Widget>[
                 Icon(icon, color: AppColors.gold),
@@ -268,28 +284,32 @@ class _ContinueCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        label,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: AppColors.cream.withValues(alpha: 0.8),
-                        ),
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        LocaleKeys.homePlace.tr(
+                        LocaleKeys.homeContinueAt.tr(
                           args: <String>[
                             arabic ? place.surah.nameAr : place.surah.nameEn,
                             place.position.ayahNumber.toLocalisedString(),
-                            place.position.page.toLocalisedString(),
                           ],
                         ),
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: AppColors.cream,
                         ),
                       ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        LocaleKeys.homePage.tr(
+                          args: <String>[
+                            place.position.page.toLocalisedString(),
+                          ],
+                        ),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.cream.withValues(alpha: 0.8),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_left, color: AppColors.cream),
+                // An arrow, not a chevron: this one goes somewhere else.
+                const Icon(Icons.arrow_forward, color: AppColors.cream),
               ],
             ),
           ),
@@ -313,11 +333,9 @@ class _SurahList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    return ListCardView(
       controller: controller,
-      padding: EdgeInsetsDirectional.only(bottom: 24.h),
       itemCount: items.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (BuildContext context, int index) {
         final SurahListItem item = items[index];
         return SurahRow(
@@ -400,11 +418,12 @@ Future<void> openMushaf(
   BuildContext context, {
   int? page,
   SectionRequest? section,
+  bool tasmee = false,
 }) async {
   final HomeIndexCubit index = context.read<HomeIndexCubit>();
   await context.pushNamed<void>(
     AppRoutes.mushafName,
-    extra: MushafArgs(initialPage: page, section: section),
+    extra: MushafArgs(initialPage: page, section: section, tasmee: tasmee),
   );
   await index.refreshHistory();
 }
@@ -491,6 +510,7 @@ class _SegmentedTabs extends StatelessWidget {
           tabs: <Widget>[
             Tab(height: 40.r, text: LocaleKeys.homeTabSurahs.tr()),
             Tab(height: 40.r, text: LocaleKeys.homeTabAjzaa.tr()),
+            Tab(height: 40.r, text: LocaleKeys.homeTabAhzab.tr()),
           ],
         ),
       ),

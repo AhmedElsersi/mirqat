@@ -76,14 +76,16 @@ class BackupScreen extends StatelessWidget {
                           minimumSize: Size(0, 48.r),
                         ),
                         onPressed: state.busy ? null : cubit.export,
-                        icon: const Icon(Icons.save_alt),
+                        icon: const Icon(Icons.save_outlined),
                         label: Text(LocaleKeys.backupExportNow.tr()),
                       ),
                       if (state.exportedTo != null) ...<Widget>[
                         SizedBox(height: 12.h),
                         Text(
                           LocaleKeys.backupSavedAt.tr(),
-                          style: theme.textTheme.bodySmall,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         SizedBox(height: 6.h),
                         _Path(path: state.exportedTo!),
@@ -92,7 +94,7 @@ class BackupScreen extends StatelessWidget {
                           Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: ActionChip(
-                              avatar: const Icon(Icons.ios_share),
+                              avatar: const Icon(Icons.share_outlined),
                               onPressed: cubit.shareExported,
                               label: Text(LocaleKeys.backupShare.tr()),
                             ),
@@ -126,7 +128,7 @@ class BackupScreen extends StatelessWidget {
                           onPressed: state.busy
                               ? null
                               : () => _confirmPick(context, cubit),
-                          icon: const Icon(Icons.file_open_outlined),
+                          icon: const Icon(Icons.folder_open_outlined),
                           label: Text(LocaleKeys.backupPick.tr()),
                         ),
                         SizedBox(height: 8.h),
@@ -146,41 +148,81 @@ class BackupScreen extends StatelessWidget {
                           ),
                         )
                       else
-                        for (final BackupFile f in state.files)
-                          ListTile(
-                            contentPadding: EdgeInsetsDirectional.zero,
-                            leading: const TileIcon(Icons.description_outlined),
-                            title: Text(
-                              f.name,
-                              textDirection: TextDirection.ltr,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            trailing: TextButton(
-                              onPressed: state.busy
-                                  ? null
-                                  : () => _confirmImport(context, cubit, f),
-                              child: Text(LocaleKeys.backupImportThis.tr()),
-                            ),
+                        // The copies found, as rows of a list in the card:
+                        // the file, when it was made, and the one action.
+                        AppCard(
+                          padding: EdgeInsetsDirectional.zero,
+                          child: Column(
+                            children: <Widget>[
+                              for (final BackupFile f
+                                  in state.files) ...<Widget>[
+                                if (f != state.files.first)
+                                  const Divider(height: 1),
+                                ListTile(
+                                  contentPadding:
+                                      EdgeInsetsDirectional.fromSTEB(
+                                        12.w,
+                                        4.h,
+                                        12.w,
+                                        4.h,
+                                      ),
+                                  leading: const TileIcon(Icons.data_object),
+                                  title: Text(
+                                    f.name,
+                                    textDirection: TextDirection.ltr,
+                                    textAlign: TextAlign.start,
+                                    style: theme.textTheme.titleSmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    joinDetails(<String>[
+                                      DateFormat.yMMMMd(
+                                            context.locale.toString(),
+                                          )
+                                          .format(f.modified)
+                                          .withLocalisedDigits(),
+                                      if (f.bytes > 0)
+                                        LocaleKeys.backupSizeKb.tr(
+                                          args: <String>[
+                                            (f.bytes / 1024)
+                                                .ceil()
+                                                .toLocalisedString(),
+                                          ],
+                                        ),
+                                    ]),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  trailing: ActionChip(
+                                    label: Text(
+                                      LocaleKeys.backupImportThis.tr(),
+                                    ),
+                                    onPressed: state.busy
+                                        ? null
+                                        : () =>
+                                              _confirmImport(context, cubit, f),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TextButton.icon(
-                          onPressed: state.busy ? null : cubit.load,
-                          icon: const Icon(Icons.refresh),
-                          label: Text(LocaleKeys.backupRefresh.tr()),
                         ),
+                      SizedBox(height: 12.h),
+                      // What an import does, before one is chosen: it merges,
+                      // and nothing is lost.
+                      AppNote(
+                        LocaleKeys.backupMergeNote.tr(),
+                        icon: Icons.merge_outlined,
                       ),
-                      SizedBox(height: 4.h),
-                      Text(
+                      SizedBox(height: 8.h),
+                      // Said because it loses data: Android removes the app's
+                      // folder, and every copy in it, with the app.
+                      AppNote(
                         LocaleKeys.backupWhere.tr(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        icon: Icons.warning_amber_outlined,
                       ),
-                      if (state.folder != null) ...<Widget>[
-                        SizedBox(height: 6.h),
-                        _Path(path: state.folder!),
-                      ],
                       if (state.refusal != null) ...<Widget>[
                         SizedBox(height: 10.h),
                         Text(
@@ -205,14 +247,6 @@ class BackupScreen extends StatelessWidget {
                   SizedBox(height: 12.h),
                   _Merged(merge: state.merged!),
                 ],
-
-                SizedBox(height: 16.h),
-                Text(
-                  LocaleKeys.backupIntro.tr(),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
               ],
             );
           },
@@ -301,7 +335,7 @@ class _Merged extends StatelessWidget {
         ? AppColors.sabrDark
         : AppColors.sabrLight;
     return AppCard(
-      padding: EdgeInsetsDirectional.all(14.r),
+      padding: EdgeInsetsDirectional.all(16.r),
       child: Row(
         children: <Widget>[
           Icon(Icons.check_circle_outline, color: done),
@@ -315,7 +349,7 @@ class _Merged extends StatelessWidget {
                   merge.days.toLocalisedString(),
                 ],
               ),
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(color: done),
             ),
           ),
         ],

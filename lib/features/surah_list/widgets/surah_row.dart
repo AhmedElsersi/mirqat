@@ -60,8 +60,9 @@ class SurahRow extends StatelessWidget {
                                   ? LocaleKeys.mushafMakki
                                   : LocaleKeys.mushafMadani)
                               .tr(),
-                          LocaleKeys.surahListAyahCount.tr(
-                            args: <String>[surah.ayahCount.toLocalisedString()],
+                          ayahCountLabel(surah.ayahCount),
+                          LocaleKeys.surahListPageShort.tr(
+                            args: <String>[surah.startPage.toLocalisedString()],
                           ),
                         ]),
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -69,13 +70,16 @@ class SurahRow extends StatelessWidget {
                         ),
                       ),
                       if (item.readingOnly) const ReadingOnlyMarker(),
-                      if (item.weakCount > 0)
-                        WeakSpotsMarker(count: item.weakCount),
                     ],
                   ),
                 ],
               ),
             ),
+            if (item.weakCount > 0) ...<Widget>[
+              SizedBox(width: 8.w),
+              WeakSpotsMarker(count: item.weakCount),
+              SizedBox(width: 4.w),
+            ],
             SurahProgressRing(
               fraction: item.memorizedFraction,
               caption: item.isUntouched
@@ -94,6 +98,14 @@ class SurahRow extends StatelessWidget {
     );
   }
 }
+
+/// «٧ آيات», «٢٨٦ آية»: Arabic counts three to ten with the plural and
+/// eleven up with the singular. Grammar, not a rule about any surah.
+String ayahCountLabel(int count) =>
+    (count >= 3 && count <= 10
+            ? LocaleKeys.surahListAyahCountFew
+            : LocaleKeys.surahListAyahCount)
+        .tr(args: <String>[count.toLocalisedString()]);
 
 /// How much of a surah is memorized, as a ring: empty, filling, closed. Its
 /// caption — «٢ من ٧ محفوظة» — is its tooltip and its spoken label, and a tap
@@ -142,12 +154,32 @@ class SurahProgressRing extends StatelessWidget {
                   track: theme.colorScheme.surfaceContainerHighest,
                   width: 3.5.r,
                 ),
+                // Inside: a check once it is closed, else how much of the
+                // way round it is. Nothing at all in an empty ring.
                 child: fraction >= 1
                     ? Center(
                         child: Icon(
                           Icons.check,
                           size: (diameter ?? 30.r) * 0.53,
                           color: done,
+                        ),
+                      )
+                    : fraction > 0
+                    ? Center(
+                        child: Text(
+                          LocaleKeys.commonPercent.tr(
+                            args: <String>[
+                              (fraction * 100)
+                                  .round()
+                                  .clamp(1, 99)
+                                  .toLocalisedString(),
+                            ],
+                          ),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: (diameter ?? 30.r) * 0.3,
+                            fontWeight: FontWeight.w600,
+                            height: 1,
+                          ),
                         ),
                       )
                     : null,

@@ -8,7 +8,6 @@ import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/reciter_avatar.dart';
 import '../../../data/models/audio_pack.dart';
@@ -264,10 +263,11 @@ class _FailedGroup extends StatelessWidget {
                     style: theme.textTheme.titleSmall,
                   ),
                   subtitle: Text(
-                    joinDetails(<String>[
-                      saved.reciter?.nameAr ?? saved.pack.reciterId,
-                      LocaleKeys.downloadsFailed.tr(),
-                    ]),
+                    LocaleKeys.downloadsFailedStreams.tr(
+                      args: <String>[
+                        saved.reciter?.nameAr ?? saved.pack.reciterId,
+                      ],
+                    ),
                   ),
                   trailing: IconButton(
                     onPressed: busy ? null : () => cubit.delete(saved),
@@ -337,32 +337,31 @@ class _SavedRow extends StatelessWidget {
     return ListTile(
       leading: NumberDiamond(number: pack.surahNumber),
       title: Text(surahName, style: theme.textTheme.titleSmall),
-      subtitle: Wrap(
-        spacing: 8.w,
-        runSpacing: 4.h,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: <Widget>[
-          Text(
-            LocaleKeys.downloadsSizeMb.tr(
-              args: <String>[megabytes(pack.bytes)],
+      // Stale audio still plays — a superseded take beats silence — so it
+      // is a tag, not a warning, and the re-download beside it asks rather
+      // than insists.
+      subtitle: pack.isStale
+          ? Wrap(
+              spacing: 6.w,
+              runSpacing: 4.h,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                AppTag(label: LocaleKeys.downloadsStale.tr(), gold: true),
+                Text(LocaleKeys.downloadsStaleNewer.tr()),
+              ],
+            )
+          : Text(
+              LocaleKeys.downloadsSizeMb.tr(
+                args: <String>[megabytes(pack.bytes)],
+              ),
             ),
-          ),
-          // Stale audio still plays — a superseded take beats silence — so
-          // this is a tag, not a warning, and the re-download beside it asks
-          // rather than insists.
-          if (pack.isStale)
-            AppTag(label: LocaleKeys.downloadsStale.tr(), tone: AppColors.gold),
-        ],
-      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (pack.isStale)
             IconButton(
-              onPressed: busy
-                  ? null
-                  : () => cubit.redownloadStale(pack.reciterId),
-              tooltip: LocaleKeys.downloadsRedownloadReciter.tr(),
+              onPressed: busy ? null : () => cubit.redownload(saved),
+              tooltip: LocaleKeys.downloadsRedownload.tr(),
               icon: const Icon(Icons.refresh),
             ),
           IconButton(

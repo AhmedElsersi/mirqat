@@ -2,12 +2,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/extensions/duration_extensions.dart';
-import '../../../core/router/app_routes.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/memorization_view_control.dart';
 import '../../../core/widgets/reciter_dropdown.dart';
 import '../../../core/widgets/session_controls.dart';
@@ -57,7 +56,7 @@ class SessionSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.85,
+      initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       builder: (BuildContext context, ScrollController scroll) =>
@@ -67,46 +66,33 @@ class SessionSheet extends StatelessWidget {
               if (config == null) return const SizedBox.shrink();
               return Column(
                 children: <Widget>[
-                  _Header(),
-                  const Divider(height: 1),
+                  _Header(state: state),
                   Expanded(
                     // A column in a scroll view, not a lazy list: the form
                     // is short, and a slider scrolled out of a lazy list
                     // loses the drag that was moving it.
                     child: SingleChildScrollView(
                       controller: scroll,
-                      padding: EdgeInsetsDirectional.all(16.r),
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        18.w,
+                        0,
+                        18.w,
+                        12.h,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           if (state.block != null) _BlockNotice(state: state),
                           // The way of working first: most sessions are one
-                          // tap here. Then what is recited and how; then the
-                          // rest, which a session is rarely started to change.
+                          // tap here. Then the range, the two numbers and
+                          // the joining; everything else folds into one row.
                           const _Presets(),
                           _Range(state: state, config: config),
-                          _Tuning(config: config),
-                          if (state.isActive) _SleepTimer(state: state),
-                          _Reciters(state: state),
-                          _Downloads(state: state),
-                          const _MemorizationView(),
-                          if (!state.isActive && !state.tasmee)
-                            Padding(
-                              padding: EdgeInsetsDirectional.only(top: 8.h),
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  context.read<SessionCubit>().startTasmee();
-                                  Navigator.of(context).pop();
-                                },
-                                icon: const Icon(Icons.record_voice_over),
-                                label: Text(LocaleKeys.tasmeeStart.tr()),
-                              ),
-                            ),
+                          _Tuning(state: state, config: config),
                         ],
                       ),
                     ),
                   ),
-                  const Divider(height: 1),
                   _Footer(state: state),
                 ],
               );
@@ -117,23 +103,24 @@ class SessionSheet extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
+  const _Header({required this.state});
+
+  final SessionState state;
+
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsetsDirectional.fromSTEB(16.w, 0, 8.w, 8.h),
+    padding: EdgeInsetsDirectional.fromSTEB(18.w, 0, 8.w, 0),
     child: Row(
       children: <Widget>[
         Expanded(
           child: Text(
-            LocaleKeys.readerSessionSettings.tr(),
-            style: Theme.of(context).textTheme.titleMedium,
+            // Before a session it is a new one being set up; during one,
+            // the settings of the one that is running.
+            state.isActive
+                ? LocaleKeys.readerSessionSettings.tr()
+                : LocaleKeys.readerNewSession.tr(),
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-        ),
-        // The app's own settings, a push over the sheet: the sheet — and the
-        // session under it — is exactly as it was on the way back.
-        IconButton(
-          onPressed: () => context.pushNamed(AppRoutes.settingsName),
-          tooltip: LocaleKeys.settingsTitle.tr(),
-          icon: const Icon(Icons.settings_outlined),
         ),
         IconButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -212,8 +199,9 @@ class _Reciters extends StatelessWidget {
   }
 }
 
-/// From a surah and an ayah to a surah and an ayah. The end may be in a later
-/// surah than the start, never an earlier one.
+/// From a surah and an ayah to a surah and an ayah: two rows, each opening
+/// its pickers. The end may be in a later surah than the start, never an
+/// earlier one.
 class _Range extends StatelessWidget {
   const _Range({required this.state, required this.config});
 
@@ -225,54 +213,170 @@ class _Range extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final SessionCubit cubit = context.read<SessionCubit>();
 
-    return SetupSection(
-      label: LocaleKeys.sessionSetupRange.tr(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          _RangeEnd(
-            label: LocaleKeys.sessionSetupFrom.tr(),
-            surahs: state.surahs,
-            value: config.start,
-            onChanged: cubit.setStart,
-            isEnd: false,
-          ),
-          SizedBox(height: 12.h),
-          _RangeEnd(
-            label: LocaleKeys.sessionSetupTo.tr(),
-            // A range only runs forward, so the end is offered from the
-            // start's surah on.
-            surahs: <Surah>[
-              for (final Surah s in state.surahs)
-                if (s.number >= config.surahNumber) s,
-            ],
-            value: config.end,
-            onChanged: cubit.setEnd,
-            isEnd: true,
-          ),
-          if (!state.rangeChosen && !state.isActive)
-            Padding(
-              padding: EdgeInsetsDirectional.only(top: 8.h),
-              child: Text(
-                LocaleKeys.sessionRangeFromPage.tr(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            )
-          else if (!state.isActive)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton.icon(
-                onPressed: cubit.clearRange,
-                icon: const Icon(Icons.auto_stories_outlined),
-                label: Text(LocaleKeys.sessionUsePageRange.tr()),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        FieldLabel(LocaleKeys.sessionSetupRange.tr()),
+        SessionListCard(
+          children: <Widget>[
+            _RangeRow(state: state, isEnd: false),
+            _RangeRow(state: state, isEnd: true),
+          ],
+        ),
+        if (!state.rangeChosen && !state.isActive)
+          Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(4.w, 8.h, 4.w, 0),
+            child: Text(
+              LocaleKeys.sessionRangeFromPage.tr(),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-        ],
+          )
+        else if (!state.isActive)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: cubit.clearRange,
+              icon: const Icon(Icons.auto_stories_outlined),
+              label: Text(LocaleKeys.sessionUsePageRange.tr()),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// One end of the range, named — «سورة الملك · الآية ١» — on a row that
+/// opens its surah and ayah pickers.
+class _RangeRow extends StatelessWidget {
+  const _RangeRow({required this.state, required this.isEnd});
+
+  final SessionState state;
+  final bool isEnd;
+
+  Future<void> _pick(BuildContext context) {
+    final SessionCubit cubit = context.read<SessionCubit>();
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => BlocProvider<SessionCubit>.value(
+        value: cubit,
+        child: _RangePicker(isEnd: isEnd),
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final SessionConfig config = state.config!;
+    final AyahRef value = isEnd ? config.end : config.start;
+    final Surah? surah = state.surah(value.surah);
+    return InkWell(
+      key: ValueKey<String>(isEnd ? 'session-to' : 'session-from'),
+      onTap: () => _pick(context),
+      child: Padding(
+        padding: EdgeInsetsDirectional.symmetric(
+          horizontal: 14.w,
+          vertical: 11.h,
+        ),
+        child: Row(
+          children: <Widget>[
+            TileIcon(
+              isEnd ? Icons.vertical_align_top : Icons.vertical_align_bottom,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    isEnd
+                        ? LocaleKeys.sessionSetupTo.tr()
+                        : LocaleKeys.sessionSetupFrom.tr(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    LocaleKeys.mushafAyahReference.tr(
+                      args: <String>[
+                        surah == null ? '' : _surahName(context, surah),
+                        value.ayah.toLocalisedString(),
+                      ],
+                    ),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The surah and the ayah of one end of the range, applied as they are
+/// picked — the summary behind the sheet follows them.
+class _RangePicker extends StatelessWidget {
+  const _RangePicker({required this.isEnd});
+
+  final bool isEnd;
+
+  @override
+  Widget build(BuildContext context) => BlocBuilder<SessionCubit, SessionState>(
+    builder: (BuildContext context, SessionState state) {
+      final SessionConfig? config = state.config;
+      if (config == null) return const SizedBox.shrink();
+      final SessionCubit cubit = context.read<SessionCubit>();
+      return SafeArea(
+        child: Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(
+            16.w,
+            0,
+            16.w,
+            12.h + MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _RangeEnd(
+                label: isEnd
+                    ? LocaleKeys.sessionSetupTo.tr()
+                    : LocaleKeys.sessionSetupFrom.tr(),
+                // A range only runs forward, so the end is offered from the
+                // start's surah on.
+                surahs: isEnd
+                    ? <Surah>[
+                        for (final Surah s in state.surahs)
+                          if (s.number >= config.surahNumber) s,
+                      ]
+                    : state.surahs,
+                value: isEnd ? config.end : config.start,
+                onChanged: isEnd ? cubit.setEnd : cubit.setStart,
+                isEnd: isEnd,
+              ),
+              SizedBox(height: 16.h),
+              FilledButton(
+                style: FilledButton.styleFrom(minimumSize: Size(0, 48.r)),
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(LocaleKeys.commonDone.tr()),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 class _RangeEnd extends StatelessWidget {
@@ -301,7 +405,6 @@ class _RangeEnd extends StatelessWidget {
         .firstOrNull;
 
     return Column(
-      key: ValueKey<String>(isEnd ? 'session-to' : 'session-from'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(label, style: theme.textTheme.bodySmall),
@@ -505,63 +608,86 @@ class _Presets extends StatelessWidget {
     );
     // Choice chips: the one in use is marked, the way a choice is anywhere
     // else in the sheet.
-    Widget chip(String key, String label, VoidCallback onTap) => ChoiceChip(
-      label: Text(label),
-      selected: chosen == key,
-      onSelected: (_) => onTap(),
-    );
-    return SetupSection(
-      label: LocaleKeys.presetsTitle.tr(),
-      child: Wrap(
-        spacing: 8.w,
-        runSpacing: 4.h,
-        children: <Widget>[
-          chip(
-            'new',
-            LocaleKeys.presetsNew.tr(),
-            () => cubit.resetToDefaults(key: 'new'),
+    Widget chip(String key, String label, IconData icon, VoidCallback onTap) =>
+        ChoiceChip(
+          avatar: Icon(icon, size: 16.r),
+          label: Text(label),
+          selected: chosen == key,
+          onSelected: (_) => onTap(),
+        );
+    // One line that scrolls sideways, as the design's chips do: a way of
+    // working is picked, not read through.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        FieldLabel(LocaleKeys.presetsTitle.tr()),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsetsDirectional.symmetric(vertical: 2.h),
+          child: Row(
+            children:
+                <Widget>[
+                      chip(
+                        'new',
+                        LocaleKeys.presetsNew.tr(),
+                        Icons.eco_outlined,
+                        () => cubit.resetToDefaults(key: 'new'),
+                      ),
+                      chip(
+                        'recent',
+                        LocaleKeys.presetsRecent.tr(),
+                        Icons.replay,
+                        () => cubit.applyPreset(
+                          SessionPreset.recent,
+                          key: 'recent',
+                        ),
+                      ),
+                      chip(
+                        'old',
+                        LocaleKeys.presetsOld.tr(),
+                        Icons.local_library_outlined,
+                        () => cubit.applyPreset(SessionPreset.old, key: 'old'),
+                      ),
+                      chip(
+                        'deep',
+                        LocaleKeys.presetsDeep.tr(),
+                        Icons.anchor,
+                        () =>
+                            cubit.applyPreset(SessionPreset.deep, key: 'deep'),
+                      ),
+                      chip(
+                        'listen',
+                        LocaleKeys.presetsListen.tr(),
+                        Icons.headphones_outlined,
+                        () => cubit.applyPreset(
+                          SessionPreset.listenLoop,
+                          key: 'listen',
+                        ),
+                      ),
+                      for (final SavedPreset p in saved)
+                        InputChip(
+                          avatar: Icon(Icons.bookmark_outline, size: 16.r),
+                          label: Text(p.name),
+                          selected:
+                              chosen == SessionCubit.savedPresetKey(p.name),
+                          onPressed: () => cubit.applySaved(p),
+                          deleteButtonTooltipMessage: LocaleKeys.presetsDelete
+                              .tr(),
+                          onDeleted: () =>
+                              _confirmDelete(context, cubit, p.name),
+                        ),
+                    ]
+                    .expand(
+                      (Widget chip) => <Widget>[chip, SizedBox(width: 8.w)],
+                    )
+                    .toList(),
           ),
-          chip(
-            'recent',
-            LocaleKeys.presetsRecent.tr(),
-            () => cubit.applyPreset(SessionPreset.recent, key: 'recent'),
-          ),
-          chip(
-            'old',
-            LocaleKeys.presetsOld.tr(),
-            () => cubit.applyPreset(SessionPreset.old, key: 'old'),
-          ),
-          chip(
-            'deep',
-            LocaleKeys.presetsDeep.tr(),
-            () => cubit.applyPreset(SessionPreset.deep, key: 'deep'),
-          ),
-          chip(
-            'listen',
-            LocaleKeys.presetsListen.tr(),
-            () => cubit.applyPreset(SessionPreset.listenLoop, key: 'listen'),
-          ),
-          for (final SavedPreset p in saved)
-            InputChip(
-              label: Text(p.name),
-              selected: chosen == SessionCubit.savedPresetKey(p.name),
-              onPressed: () => cubit.applySaved(p),
-              deleteButtonTooltipMessage: LocaleKeys.presetsDelete.tr(),
-              onDeleted: () => _confirmDelete(context, cubit, p.name),
-            ),
-          ActionChip(
-            // Not "add": the steppers below are + buttons, and a save is not
-            // one more of something.
-            avatar: const Icon(Icons.bookmark_add_outlined),
-            label: Text(LocaleKeys.presetsSave.tr()),
-            onPressed: () => _askName(context, cubit),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  static Future<void> _askName(BuildContext context, SessionCubit cubit) async {
+  static Future<void> askName(BuildContext context, SessionCubit cubit) async {
     final String? chosen = await showDialog<String>(
       context: context,
       builder: (_) => const _PresetNameDialog(),
@@ -597,61 +723,151 @@ class _Presets extends StatelessWidget {
 }
 
 class _Tuning extends StatelessWidget {
-  const _Tuning({required this.config});
+  const _Tuning({required this.state, required this.config});
 
+  final SessionState state;
   final SessionConfig config;
 
   @override
   Widget build(BuildContext context) {
     final SessionCubit cubit = context.read<SessionCubit>();
-    final SessionState state = context.watch<SessionCubit>().state;
+
+    return SessionTuningControls(
+      repeatCount: config.repeatCount,
+      connectMode: config.connectMode,
+      recallRounds: config.recallRounds,
+      chainRecall: config.chainRecall,
+      onRepeatCount: cubit.setRepeatCount,
+      onConnectMode: cubit.setConnectMode,
+      onRecallRounds: cubit.setRecallRounds,
+      onChainRecall: cubit.setChainRecall,
+      rows: <Widget>[_ReciterAndAudio(state: state, config: config)],
+    );
+  }
+}
+
+/// Everything a session is set up with once and then left — who recites, the
+/// isti'adhah and the closing pass, the speed and the pauses, the sleep
+/// timer, what is saved on the device, how the page is veiled, whether the
+/// screen stays awake, and the defaults — folded behind one row that says
+/// where they stand.
+class _ReciterAndAudio extends StatefulWidget {
+  const _ReciterAndAudio({required this.state, required this.config});
+
+  final SessionState state;
+  final SessionConfig config;
+
+  @override
+  State<_ReciterAndAudio> createState() => _ReciterAndAudioState();
+}
+
+class _ReciterAndAudioState extends State<_ReciterAndAudio> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final SessionState state = widget.state;
+    final SessionConfig config = widget.config;
+    final SessionCubit cubit = context.read<SessionCubit>();
+    final Reciter? reciter = state.reciter ?? state.chosenReciter;
+    final DateTime? sleepAt = state.sleepAt;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SessionTuningControls(
-          repeatCount: config.repeatCount,
-          connectMode: config.connectMode,
-          intraBlockPauseMs: config.intraBlockPauseMs,
-          betweenRepeatPauseMs: config.betweenRepeatPauseMs,
-          betweenStepsPauseMs: config.betweenStepsPauseMs,
-          playbackSpeed: config.playbackSpeed,
-          finalFullPass: config.finalFullPass,
-          recallRounds: config.recallRounds,
-          chainRecall: config.chainRecall,
-          onRepeatCount: cubit.setRepeatCount,
-          onConnectMode: cubit.setConnectMode,
-          onIntraBlockPause: cubit.setIntraBlockPause,
-          onBetweenRepeatPause: cubit.setBetweenRepeatPause,
-          onBetweenStepsPause: cubit.setBetweenStepsPause,
-          onPlaybackSpeed: cubit.setPlaybackSpeed,
-          onFinalFullPass: cubit.setFinalFullPass,
-          onRecallRounds: cubit.setRecallRounds,
-          onChainRecall: cubit.setChainRecall,
-        ),
-        // Only before a session: the isti'adhah opens one, and a session that
-        // is already under way has nothing left to open.
-        if ((state.reciter?.hasIstiadhah ?? false) && !state.isActive)
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsetsDirectional.zero,
-            title: Text(LocaleKeys.sessionSetupPlayIstiadhah.tr()),
-            value: config.playIstiadhah,
-            onChanged: cubit.setPlayIstiadhah,
+        SessionListRow(
+          icon: Icons.settings_outlined,
+          title: LocaleKeys.readerReciterAudioPauses.tr(),
+          subtitle: joinDetails(<String>[
+            if (reciter != null) _reciterName(context, reciter),
+            LocaleKeys.readerSpeedValue.tr(
+              args: <String>[speedLabel(config.playbackSpeed)],
+            ),
+            if (state.sleepTimerSet)
+              sleepAt == null
+                  ? LocaleKeys.sleepEndOfStep.tr()
+                  : sleepTimeLabel(context, sleepAt),
+          ]),
+          trailing: Icon(
+            _open ? Icons.expand_less : Icons.chevron_right,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsetsDirectional.zero,
-          title: Text(LocaleKeys.playerKeepAwake.tr()),
-          value: state.keepAwake,
-          onChanged: cubit.setKeepAwake,
+          onTap: () => setState(() => _open = !_open),
         ),
+        if (_open)
+          Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(14.w, 4.h, 14.w, 12.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                _Reciters(state: state),
+                // Only before a session: the isti'adhah opens one, and a
+                // session already under way has nothing left to open.
+                if ((state.reciter?.hasIstiadhah ?? false) && !state.isActive)
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsetsDirectional.zero,
+                    title: Text(LocaleKeys.sessionSetupPlayIstiadhah.tr()),
+                    value: config.playIstiadhah,
+                    onChanged: cubit.setPlayIstiadhah,
+                  ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsetsDirectional.zero,
+                  title: Text(LocaleKeys.sessionSetupFinalFullPass.tr()),
+                  value: config.finalFullPass,
+                  onChanged: cubit.setFinalFullPass,
+                ),
+                SizedBox(height: 8.h),
+                SpeedAndPausesList(
+                  intraBlockPauseMs: config.intraBlockPauseMs,
+                  betweenRepeatPauseMs: config.betweenRepeatPauseMs,
+                  betweenStepsPauseMs: config.betweenStepsPauseMs,
+                  playbackSpeed: config.playbackSpeed,
+                  onIntraBlockPause: cubit.setIntraBlockPause,
+                  onBetweenRepeatPause: cubit.setBetweenRepeatPause,
+                  onBetweenStepsPause: cubit.setBetweenStepsPause,
+                  onPlaybackSpeed: cubit.setPlaybackSpeed,
+                ),
+                SizedBox(height: 16.h),
+                if (state.isActive) _SleepTimer(state: state),
+                _Downloads(state: state),
+                const _MemorizationView(),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsetsDirectional.zero,
+                  title: Text(LocaleKeys.playerKeepAwake.tr()),
+                  value: state.keepAwake,
+                  onChanged: cubit.setKeepAwake,
+                ),
+                // The defaults are kept on their own page; from here, these
+                // values can be taken there, or the page's taken back.
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: cubit.resetToDefaults,
+                        child: Text(LocaleKeys.readerResetDefaults.tr()),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: cubit.saveAsDefaults,
+                        child: Text(LocaleKeys.readerSaveAsDefault.tr()),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
 }
 
-/// The measured summary, then what can be done with these settings: keep them
-/// as defaults — or, when they have changed under a running session, take
-/// them up.
+/// The measured summary as one quiet line, then the one button — or, when the
+/// settings have changed under a running session, the two ways to take them
+/// up — and under "start", the two quieter ways.
 class _Footer extends StatelessWidget {
   const _Footer({required this.state});
 
@@ -663,7 +879,7 @@ class _Footer extends StatelessWidget {
     final SessionCubit cubit = context.read<SessionCubit>();
 
     return Padding(
-      padding: EdgeInsetsDirectional.all(16.r),
+      padding: EdgeInsetsDirectional.fromSTEB(18.w, 4.h, 18.w, 12.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -685,7 +901,7 @@ class _Footer extends StatelessWidget {
               unitCount: state.plan!.unitCount,
               duration: state.estimatedDuration!.localized,
             ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 10.h),
           if (state.hasPendingChange)
             PendingChangeActions(
               onRestart: () {
@@ -697,24 +913,22 @@ class _Footer extends StatelessWidget {
                 Navigator.of(context).pop();
               },
             )
-          else
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: cubit.resetToDefaults,
-                    child: Text(LocaleKeys.readerResetDefaults.tr()),
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: FilledButton.tonal(
-                    onPressed: cubit.saveAsDefaults,
-                    child: Text(LocaleKeys.readerSaveAsDefault.tr()),
-                  ),
-                ),
-              ],
+          else if (!state.isActive) ...<Widget>[
+            // Before a session: the one button.
+            FilledButton.icon(
+              style: FilledButton.styleFrom(minimumSize: Size(0, 50.r)),
+              onPressed: state.canStart
+                  ? () {
+                      cubit.start();
+                      Navigator.of(context).pop();
+                    }
+                  : null,
+              icon: const Icon(Icons.play_arrow),
+              label: Text(LocaleKeys.sessionStart.tr()),
             ),
+            SizedBox(height: 6.h),
+            _QuietWays(state: state),
+          ],
         ],
       ),
     );
@@ -805,4 +1019,38 @@ class _PresetNameDialogState extends State<_PresetNameDialog> {
       ),
     ],
   );
+}
+
+/// Under "start", before a session: keep these settings as a way of
+/// working, or recite to a listener instead of starting a recitation. A
+/// wrap, not a row: on a narrow phone the second goes under the first.
+class _QuietWays extends StatelessWidget {
+  const _QuietWays({required this.state});
+
+  final SessionState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final SessionCubit cubit = context.read<SessionCubit>();
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        TextButton.icon(
+          onPressed: () => _Presets.askName(context, cubit),
+          icon: const Icon(Icons.bookmark_add_outlined),
+          label: Text(LocaleKeys.presetsSave.tr()),
+        ),
+        if (!state.tasmee)
+          TextButton.icon(
+            onPressed: () {
+              cubit.startTasmee();
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.hearing),
+            label: Text(LocaleKeys.tasmeeStart.tr()),
+          ),
+      ],
+    );
+  }
 }

@@ -46,6 +46,7 @@ class PracticeStats extends Equatable {
     required this.minutesListened,
     required this.plays,
     required this.memorizedAyahs,
+    this.reviewCards = 0,
   });
 
   final int daysPractised;
@@ -53,9 +54,13 @@ class PracticeStats extends Equatable {
   final int plays;
   final int memorizedAyahs;
 
+  /// Passages on the review schedule, whatever rung they stand on.
+  final int reviewCards;
+
   factory PracticeStats.from({
     required Map<DateTime, PracticeDay> days,
     required int memorizedAyahs,
+    int reviewCards = 0,
   }) {
     final Set<DateTime> practised = <DateTime>{
       for (final MapEntry<DateTime, PracticeDay> e in days.entries)
@@ -71,6 +76,7 @@ class PracticeStats extends Equatable {
       minutesListened: seconds ~/ 60,
       plays: days.values.fold(0, (int a, PracticeDay d) => a + d.plays),
       memorizedAyahs: memorizedAyahs,
+      reviewCards: reviewCards,
     );
   }
 
@@ -80,5 +86,6 @@ class PracticeStats extends Equatable {
     minutesListened,
     plays,
     memorizedAyahs,
+    reviewCards,
   ];
 }

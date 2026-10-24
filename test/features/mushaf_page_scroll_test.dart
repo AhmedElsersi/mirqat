@@ -124,8 +124,7 @@ void main() {
         .getBottomLeft(
           find
               .byWidgetPredicate(
-                (Widget w) =>
-                    w is AyahText && !w.isMarker && w.text == 'كلمة',
+                (Widget w) => w is AyahText && !w.isMarker && w.text == 'كلمة',
               )
               .at((ayah - 1) * 6),
         )

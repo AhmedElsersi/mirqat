@@ -69,13 +69,13 @@ void main() {
     WidgetTester tester,
   ) async {
     await pump(tester);
-    expect(find.text('سورة مكية · عدد آياتها ٣٠'), findsOneWidget);
+    expect(find.text('سورة مكية، عدد آياتها ٣٠'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('in English too', (WidgetTester tester) async {
     await pump(tester, locale: AppLocalization.english);
-    expect(find.text('Makki surah · 30 ayahs'), findsOneWidget);
+    expect(find.text('Makki surah, 30 ayahs'), findsOneWidget);
   });
 
   testWidgets('offers a stumble always; to clear one only where there is one', (
@@ -183,10 +183,10 @@ void main() {
     WidgetTester tester,
   ) async {
     await pump(tester, juzFirst: 29, juzLast: 29);
-    expect(find.text('سورة مكية · عدد آياتها ٣٠، الجزء ٢٩'), findsOneWidget);
+    expect(find.text('سورة مكية، عدد آياتها ٣٠، الجزء ٢٩'), findsOneWidget);
     await pump(tester, juzFirst: 1, juzLast: 3);
     expect(find.textContaining('الأجزاء ١–٣'), findsOneWidget);
     await pump(tester);
-    expect(find.text('سورة مكية · عدد آياتها ٣٠'), findsOneWidget);
+    expect(find.text('سورة مكية، عدد آياتها ٣٠'), findsOneWidget);
   });
 }

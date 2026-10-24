@@ -43,7 +43,6 @@ class PhraseScreen extends StatelessWidget {
                 onRetry: () => context.read<PhraseCubit>().load(phraseId),
               );
             }
-            final ThemeData theme = Theme.of(context);
             final bool arabic = context.locale.languageCode == 'ar';
             return ListView(
               padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 24.h),
@@ -55,36 +54,56 @@ class PhraseScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       if (state.words.isNotEmpty)
-                        QuranWords(words: state.words, fontSize: 26.sp),
+                        QuranWords(
+                          words: state.words,
+                          fontSize: 23.sp,
+                          centered: true,
+                        ),
                       SizedBox(height: 14.h),
-                      // A wrap, not a row: at 320 dp with a long label the
-                      // button goes under the tags instead of off the card.
+                      // The tags, and the drill — the reason the screen is
+                      // open — at the end; on a narrow phone it goes under.
                       Wrap(
                         spacing: 8.w,
                         runSpacing: 8.h,
+                        alignment: WrapAlignment.spaceBetween,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: <Widget>[
-                          AppTag(
-                            label: LocaleKeys.mutashabihatAyahsTag.tr(
-                              args: <String>[
-                                state.ayahCount.toLocalisedString(),
-                              ],
-                            ),
-                          ),
-                          AppTag(
-                            label: LocaleKeys.mutashabihatSurahsTag.tr(
-                              args: <String>[
-                                state.groups.length.toLocalisedString(),
-                              ],
-                            ),
+                          Wrap(
+                            spacing: 8.w,
+                            runSpacing: 8.h,
+                            children: <Widget>[
+                              AppTag(
+                                gold: true,
+                                label: LocaleKeys.mutashabihatAyahsTag.tr(
+                                  args: <String>[
+                                    state.ayahCount.toLocalisedString(),
+                                  ],
+                                ),
+                              ),
+                              AppTag(
+                                label: LocaleKeys.mutashabihatSurahsTag.tr(
+                                  args: <String>[
+                                    state.groups.length.toLocalisedString(),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                           FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              minimumSize: Size(0, 40.r),
+                              textStyle: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(
+                                    fontSize: 13.5.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
                             onPressed: () => context.pushNamed(
                               AppRoutes.mutashabihatDrillName,
                               extra: phraseId,
                             ),
-                            icon: const Icon(Icons.fitness_center),
-                            label: Text(LocaleKeys.drillTitle.tr()),
+                            icon: Icon(Icons.fitness_center, size: 18.r),
+                            label: Text(LocaleKeys.mutashabihatDrill.tr()),
                           ),
                         ],
                       ),
@@ -92,32 +111,21 @@ class PhraseScreen extends StatelessWidget {
                   ),
                 ),
                 for (final PhraseGroup group in state.groups) ...<Widget>[
-                  Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(
-                      4.w,
-                      16.h,
-                      4.w,
-                      6.h,
-                    ),
-                    child: Text(
-                      LocaleKeys.mutashabihatInSurah.tr(
-                        args: <String>[
-                          arabic ? group.surah.nameAr : group.surah.nameEn,
-                          group.ayahs.length.toLocalisedString(),
-                        ],
-                      ),
-                      style: theme.textTheme.titleSmall,
+                  FieldLabel(
+                    LocaleKeys.mutashabihatInSurah.tr(
+                      args: <String>[
+                        arabic ? group.surah.nameAr : group.surah.nameEn,
+                        group.ayahs.length.toLocalisedString(),
+                      ],
                     ),
                   ),
                   for (final ComparedAyah ayah in group.ayahs)
                     ComparedAyahCard(item: ayah),
                 ],
                 SizedBox(height: 8.h),
-                Text(
+                AppNote(
                   LocaleKeys.similarSource.tr(),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  icon: Icons.bookmarks_outlined,
                 ),
               ],
             );

@@ -7,6 +7,7 @@ import '../../../core/localization/locale_keys.dart';
 import '../../../core/theme/app_colors.dart';
 import '../cubit/surah_list_state.dart';
 import 'reading_only_marker.dart';
+import 'surah_row.dart' show ayahCountLabel;
 import 'weak_spots_marker.dart';
 
 /// The grid form of a surah: the same data as [SurahRow], laid out as a card.
@@ -57,9 +58,7 @@ class SurahTile extends StatelessWidget {
               ),
               SizedBox(height: 4.h),
               Text(
-                LocaleKeys.surahListAyahCount.tr(
-                  args: <String>[item.surah.ayahCount.toLocalisedString()],
-                ),
+                ayahCountLabel(item.surah.ayahCount),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

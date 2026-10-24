@@ -13,25 +13,28 @@
     "done": "Done",
     "ayah_number": "Ayah {}",
     "ayah_range": "Ayahs {} - {}",
-    "more": "More"
+    "more": "More",
+    "percent": "{}%"
   },
   "surah_list": {
     "title": "Surahs",
     "empty": "No surahs in the catalog",
     "ayah_count": "{} ayahs",
+    "ayah_count_few": "{} ayahs",
     "progress": "{} of {} memorized",
     "not_started": "Not started",
     "reading_only": "Reading only",
-    "weak_spots": "Weak spots: {}"
+    "weak_spots": "Weak spots: {}",
+    "page_short": "p. {}"
   },
   "session_setup": {
-    "range": "Ayah range",
+    "range": "Range",
     "from": "From",
     "to": "To",
-    "repeat_count": "Repetitions",
+    "repeat_count": "Repeats",
     "connect_mode": "Connect mode",
     "connect_cumulative": "Cumulative",
-    "connect_cumulative_hint": "After each ayah, replay from the start of the range up to it",
+    "connect_cumulative_hint": "One ayah, then two, then three — standing on each rung before the one above it.",
     "connect_none": "No connecting",
     "connect_none_hint": "Drill each ayah on its own",
     "final_full_pass": "Full pass at the end",
@@ -41,16 +44,21 @@
     "between_steps_pause": "Gap between steps",
     "playback_speed": "Playback speed",
     "milliseconds": "{} ms",
-    "summary": "{} steps · {} recitations · {}",
+    "summary": "{} rungs, {} recitations, about {}",
     "connect_continuous": "Continuous",
     "connect_continuous_hint": "The range is recited straight through, then the whole pass repeats",
-    "recall_rounds": "Recall rounds",
+    "recall_rounds": "Recall",
     "recall_rounds_hint": "After an ayah is repeated, the app stays silent for its length so you recite it from memory, then plays it once to confirm. Zero means no recall.",
-    "chain_recall": "Test the links: what comes next?",
-    "chain_recall_hint": "At the end, each ayah is played, the app falls silent while you recite the one after it from memory, then plays it as the answer."
+    "chain_recall": "Test the links",
+    "chain_recall_hint": "What comes next? At the end of the session",
+    "speed_and_pauses": "Speed and pauses",
+    "pauses": "Pauses",
+    "pauses_hint": "Between ayahs, between repeats, and between steps",
+    "pauses_none": "no pauses",
+    "pauses_short": "pauses {} ms"
   },
   "player": {
-    "step_header": "Step {} of {}",
+    "step_header": "Rung {} of {}",
     "play": "Play",
     "pause": "Pause",
     "previous_step": "Previous step",
@@ -65,7 +73,8 @@
     "recall_now": "Recite from memory: {}",
     "repeat_ayah": "Repeat this ayah three more times",
     "recall_hint": "The app is silent for as long as it takes, then plays it once to settle it",
-    "recall_reveal": "Reveal it"
+    "recall_reveal": "Reveal it",
+    "three_more": "Three more"
   },
   "progress": {
     "title": "Progress",
@@ -76,7 +85,8 @@
     "unmark_memorized": "Unmark",
     "repeats": "{} repetitions",
     "tap_hint": "Tap an ayah to mark it memorized, and tap it again to unmark it.",
-    "in_progress_count": "{} in progress",
+    "of_ayahs": "{} of {} ayahs",
+    "memorized_and_started": "Memorized, and {} in progress",
     "drilled": "drilled in a session"
   },
   "settings": {
@@ -129,7 +139,12 @@
     "reading_ribbon_hint": "A translucent ribbon hung on the page you stopped at",
     "show_stumbles": "Show stumbles",
     "show_stumbles_hint": "Light dots under the ayahs you stumble at",
-    "default_range_hint": "Used when a session opens on a surah you have not chosen a range in."
+    "default_range_hint": "Used when a session opens on a surah you have not chosen a range in.",
+    "first_screen": "First screen",
+    "opens_today": "Opens on Today; the Mushaf is in the navigation bar",
+    "opens_last_page": "Opens on the last page you read",
+    "downloads": "Downloads",
+    "downloads_hint": "Saved surahs, the whole mushaf, page fonts"
   },
   "duration": {
     "minutes": "{} min",
@@ -140,12 +155,17 @@
     "session_settings": "Session settings",
     "reset_defaults": "Reset",
     "save_as_default": "Save as default",
-    "saved_as_default": "Saved as your defaults"
+    "saved_as_default": "Saved as your defaults",
+    "reciter_and_audio": "Reciter and audio",
+    "new_session": "New session",
+    "reciter_audio_pauses": "Reciter, audio and pauses",
+    "speed_value": "Speed {}"
   },
   "search": {
     "title": "Search",
     "hint": "A surah name, a word, or a page number",
-    "prompt": "Search by surah name, a word of the mushaf, or a page number",
+    "prompt": "A surah name, a word, or a page number — a number on its own opens its page.",
+    "place": "{}, ayah {}",
     "no_results": "No results",
     "surahs": "Surahs",
     "ayahs": "Ayahs",
@@ -156,7 +176,7 @@
     "title": "Mushaf",
     "open": "Open the mushaf",
     "page": "Page {}",
-    "ayah_reference": "Surah {} · Ayah {}",
+    "ayah_reference": "Surah {}, Ayah {}",
     "surah_label": "Surah {}",
     "juz_label": "Juz {}",
     "hizb_label": "Hizb {}",
@@ -182,7 +202,7 @@
     "stumble_marked": "Noted. This ayah will be repeated more in your sessions.",
     "listen_from_here": "Listen from here to the end of the surah, once",
     "similar_ayahs": "Similar ayahs",
-    "surah_about": "{} surah · {} ayahs",
+    "surah_about": "{} surah, {} ayahs",
     "makki": "Makki",
     "madani": "Madani",
     "similar_resembles": "Resembles: {}",
@@ -208,17 +228,23 @@
     "saved_total": "Total: {} MB",
     "size_mb": "{} MB",
     "bitrate": "{} kbps",
-    "stale": "Out of date — a newer recording was published",
+    "stale": "Out of date",
+    "stale_newer": "A newer recording was published",
+    "redownload": "Download again",
+    "failed_streams": "{} — audio still streams",
     "redownload_reciter": "Re-download this reciter",
     "delete_reciter": "Remove all of this reciter",
     "retry_failed": "Retry failed downloads ({})",
     "failed_row": "Download failed",
     "deleted_reciter": "Removed {}",
     "whole_title": "Download the whole mushaf",
-    "whole_intro": "Download every surah of one reciter, one after another, to read and listen offline. Leave the app open until it finishes; it can be stopped at any time, and whatever arrived stays on the device.",
+    "whole_intro": "Every surah of one reciter, one after another, to listen offline. It can be stopped at any time, and whatever arrived stays.",
+    "whole_screen_title": "The whole mushaf",
+    "whole_stop": "Stop",
+    "whole_about_size": "about {} MB",
     "whole_none": "No recitations are available to download right now. Check the connection and try again.",
     "whole_on_device": "{} of {} surahs on this device",
-    "whole_remaining": "{} surahs left · about {} MB",
+    "whole_remaining": "about {} MB left",
     "whole_remaining_unsized": "{} surahs left",
     "whole_complete": "Every surah of this reciter is on the device",
     "whole_download": "Download every surah",
@@ -231,17 +257,22 @@
     "whole_confirm_body_unsized": "{} surahs recited by {}. Leave the app open until it finishes.",
     "whole_confirm_cta": "Download",
     "saved_count": "{} surahs on this device",
-    "whole_keep_open": "Leave the app open until it finishes."
+    "whole_keep_open": "Leave the app open until it finishes.",
+    "whole_others": "Other reciters",
+    "whole_reciters": "Reciters"
   },
   "home": {
     "tab_surahs": "Surahs",
     "tab_ajzaa": "Ajzaa",
     "juz_name": "Juz {}",
-    "juz_starts": "Starts at Surah {} · Ayah {}",
+    "juz_starts": "Starts at Surah {}, ayah {}",
     "page": "Page {}",
     "continue_reading": "Continue reading",
-    "place": "Surah {} · Ayah {} · Page {}",
-    "history": "Reading history"
+    "continue_at": "Continue: Surah {}, ayah {}",
+    "place": "Surah {}, Ayah {}, Page {}",
+    "history": "Reading history",
+    "tab_ahzab": "Ahzab",
+    "hizb_name": "Hizb {}"
   },
   "history": {
     "title": "Reading history",
@@ -249,11 +280,13 @@
     "clear": "Clear history",
     "clear_confirm": "Clear the whole reading history?",
     "today": "Today",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "place": "{}, ayah {}",
+    "on_device": "The history stays on this device and is sent nowhere."
   },
   "session": {
-    "range_same": "Surah {} · ayahs {} - {}",
-    "range_single": "Surah {} · ayah {}",
+    "range_same": "Surah {}, ayahs {} - {}",
+    "range_single": "Surah {}, ayah {}",
     "range_whole": "All of surah {}",
     "range_cross": "From {} {} to {} {}",
     "start": "Start",
@@ -290,7 +323,12 @@
     "empty": "Nothing to show here yet",
     "show_intro": "Show the introduction again",
     "row_hint": "Our goal, who we are, whose idea it was, and the developer",
-    "about_app": "About {}"
+    "about_app": "About {}",
+    "tag_no_ads": "No ads",
+    "tag_no_accounts": "No accounts",
+    "tag_no_tracking": "Collects nothing about you",
+    "title": "About the app",
+    "developer_label": "The developer"
   },
   "howto": {
     "read_title": "Read",
@@ -343,7 +381,8 @@
     "similar_title": "Tell similar ayahs apart",
     "similar_body": "See ayahs that share their wording side by side and drill telling them apart; the places you stumble are repeated more in your sessions.",
     "yours_title": "At your own pace",
-    "yours_body": "Choose the reciter, the repeats and the way of joining, and pick up whenever you like from where you stopped. No ads, no accounts."
+    "yours_body": "Choose the reciter, the repeats and the way of joining, and pick up whenever you like from where you stopped. No ads, no accounts.",
+    "step": "{} of {}"
   },
   "update": {
     "optional_title": "A newer version is available",
@@ -372,18 +411,22 @@
     "empty": "No weak spots yet. Long-press an ayah in the mushaf and choose “I stumble here”.",
     "count": "Times marked: {}",
     "drill": "Drill this ayah",
-    "note": "These ayahs are repeated more in your sessions. They are added from an ayah's menu in the mushaf, or while reciting to a listener."
+    "note": "These ayahs are repeated more in your sessions. They are added from an ayah's menu in the mushaf, or while reciting to a listener.",
+    "sorted": "{} ayahs, most stumbled first"
   },
   "mushaf_font": {
     "title": "Mushaf font",
     "hint": "The typeface and its size, previewed on an ayah",
     "face": "Typeface",
     "preview": "Preview",
-    "only_matching": "Only typefaces made for this mushaf's script are offered, so every mark in it is drawn as it is, never changed.",
+    "only_matching": "Only typefaces made for this mushaf's script are offered, so every mark in it is drawn as it is.",
     "hafs_v22": "Uthmanic Hafs — version 2.2 (default)",
+    "hafs_v22_name": "Uthmanic Hafs — version 2.2",
+    "size": "Font size",
+    "size_hint": "At the default size ({}) the page appears as printed, line for line; larger than that the lines are re-filled and the page scrolls.",
     "hafs_v18": "Uthmanic Hafs — version 0.18",
     "qpc_v2": "Madinah Mushaf — QPC V2",
-    "qpc_v2_hint": "Each page in its own font, as the Madinah Mushaf prints it, line for line. A page's font is downloaded the first time you open it; until it arrives, the page is shown in the bundled font.",
+    "qpc_v2_hint": "Each page in its own font, as it was printed, line for line. A page's font is downloaded the first time you open it.",
     "qpc_fonts_title": "Page fonts",
     "qpc_fonts_count": "On this device: {} of {}",
     "qpc_fonts_download_all": "Download every page's font ({})",
@@ -391,7 +434,9 @@
     "qpc_fonts_stop": "Stop",
     "qpc_fonts_delete": "Delete the page fonts",
     "qpc_fonts_failed": "{} could not be downloaded; each will be fetched when its page is opened.",
-    "default_size": "Back to the default size ({})"
+    "default_size": "Back to the default size ({})",
+    "default_hint": "The default, bundled with the app",
+    "qpc_fonts_size_hint": "Each page in its own font, about {} for the whole mushaf"
   },
   "review": {
     "title": "Review",
@@ -420,7 +465,11 @@
     "bookends_hint": "Suggests the day's new portion before sleep, and again the next morning",
     "bookend_night": "Before you sleep: hear it once more",
     "bookend_morning": "This morning: recite it back",
-    "later": "Later"
+    "later": "Later",
+    "bookend_night_title": "Before you sleep",
+    "bookend_morning_title": "This morning",
+    "bookend_night_body": "Hear today's portion once more",
+    "bookend_morning_body": "Recite yesterday's portion from memory"
   },
   "sleep": {
     "title": "Sleep timer",
@@ -441,16 +490,18 @@
     "hint": "The phrases the Quran repeats across ayahs, and where each one occurs",
     "intro": "Each card is a phrase found in more than one ayah. Open it to see every ayah it occurs in, surah by surah, with the shared words shaded.",
     "all_surahs": "All surahs",
-    "surah": "Surah",
-    "counts": "Ayahs: {} · Surahs: {}",
+    "surah": "Surah…",
+    "counts": "Ayahs: {}, surahs: {}",
     "first_at": "First occurs: {}",
     "shown": "Phrases: {}",
     "none_in_surah": "No shared phrases in this surah.",
     "empty": "The mutashabihat data has not been added yet.",
     "phrase_title": "Shared phrase",
-    "in_surah": "Surah {} · Ayahs: {}",
+    "in_surah": "Surah {} — Ayahs: {}",
     "ayahs_tag": "Ayahs: {}",
-    "surahs_tag": "Surahs: {}"
+    "surahs_tag": "Surahs: {}",
+    "and_others": "and others",
+    "drill": "Tell them apart"
   },
   "drill": {
     "title": "Mutashabihat drill",
@@ -458,14 +509,15 @@
     "which": "Which ayah is this?",
     "right": "Yes — {}",
     "it_is": "It is {}",
-    "continue": "Continue it from memory, then show the rest.",
+    "continue": "Then continue it from memory, and show the rest.",
     "show": "Show the rest",
     "had_it": "I had it",
     "slipped": "I slipped",
     "done": "Drill finished",
     "no_slips": "No slips.",
     "slips": "The slips ({}) are noted under Weak spots, and will be repeated more in your sessions.",
-    "again": "Again"
+    "again": "Again",
+    "shared_phrase": "The shared phrase"
   },
   "plan": {
     "title": "Memorization plan",
@@ -489,7 +541,9 @@
     "portions": "Portions",
     "past": "Finished",
     "past_count": "{} portions",
-    "where_it_shows": "The day's portion shows on the Today page."
+    "where_it_shows": "The day's portion shows on the Today page.",
+    "ayah_count": "{} ayahs",
+    "today_line": "{} ayahs, day {} of {}"
   },
   "stats": {
     "title": "Your practice",
@@ -499,7 +553,8 @@
     "plays": "Recitations heard",
     "memorized": "Ayahs marked memorized",
     "note": "Everything is counted on this device alone, and sent nowhere.",
-    "days_hint": "days you read or listened"
+    "days_hint": "days you read or listened",
+    "review_cards": "Passages in the review schedule"
   },
   "tasmee": {
     "title": "Recite to a listener",
@@ -521,7 +576,7 @@
     "saved_at": "Saved to:",
     "export_failed": "The copy could not be saved.",
     "import": "Import a copy",
-    "where": "Copies are saved in the app's folder. On iOS it is in the Files app. On Android the folder is removed with the app, so send the copy or save it somewhere else.",
+    "where": "On Android this folder is removed with the app, so keep a copy somewhere else.",
     "none": "No copies in the folder.",
     "import_this": "Import",
     "import_confirm": "The copy is merged with what is on this device and nothing here is removed: for each ayah the further progress is kept, for each review the more recent.",
@@ -537,7 +592,9 @@
     "holds_progress": "Memorized ayahs",
     "holds_reviews": "Review schedule",
     "holds_weak_spots": "Weak spots",
-    "holds_plan": "Memorization plan"
+    "holds_plan": "Memorization plan",
+    "size_kb": "{} KB",
+    "merge_note": "A copy is merged and nothing is deleted: the furthest for each ayah, the latest for each review."
   },
   "presets": {
     "title": "Way of working",
@@ -546,7 +603,7 @@
     "old": "Old review",
     "deep": "Deep drill",
     "listen": "Listen",
-    "save": "Save as preset",
+    "save": "Save as a way",
     "save_title": "Name this way of working",
     "save_hint": "e.g. Fajr review",
     "save_action": "Save",
@@ -558,7 +615,7 @@
     "set": "Set",
     "edit": "Edit",
     "empty": "Set what you memorize and what you review, and each is a tap away here.",
-    "hint": "Each has a range you choose, and it stays until you change it. Each opens its own way: a new portion with your settings, a review with its own.",
+    "hint": "Each has a range you choose, and it stays until you change it.",
     "add": "Add",
     "remove": "Remove",
     "save": "Save",
@@ -590,7 +647,15 @@
     "continue": "Continue reading",
     "mark": "Your mark",
     "page": "Page {}",
-    "plan_progress": "{} of {}"
+    "plan_progress": "{} of {}",
+    "recall": "recall",
+    "chain": "link test",
+    "ayahs_span": "Ayahs {}–{}",
+    "whole_surah": "Whole surah",
+    "whole_surahs": "Whole surahs",
+    "ayahs_cross": "From ayah {} to ayah {}",
+    "recall_round": "a recall round",
+    "plan_days": "Hifz plan: {} in {} days"
   },
   "my_hifz": {
     "title": "My hifz",
@@ -604,7 +669,10 @@
     "weak_hint": "Repeated more in your sessions",
     "phrases": "{} phrases, and a drill to tell them apart",
     "practice": "{} days, {} minutes listened",
-    "juz_map": "What is memorized, across the thirty ajzaa"
+    "juz_map": "What is memorized, across the thirty ajzaa",
+    "portion": "Portion {}: {}",
+    "plan_span": "{} in {} days",
+    "on_device": "On this device only"
   },
   "ayah_menu": {
     "listen": "Listen to the end",

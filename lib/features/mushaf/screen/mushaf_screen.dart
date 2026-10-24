@@ -78,9 +78,9 @@ class MushafScreen extends StatelessWidget {
             // and the reciters are known — by then the page is on screen to
             // follow it.
             session.load().then((_) {
-              if (request != null && !session.isClosed) {
-                session.applyRequest(request);
-              }
+              if (session.isClosed) return;
+              if (request != null) session.applyRequest(request);
+              if (args.tasmee) session.startTasmee();
             });
             return session;
           },
@@ -962,6 +962,10 @@ class _PageSlot extends StatelessWidget {
         similar: similar,
         juzFirst: juz?.first,
         juzLast: juz?.last,
+        // The page the ayah was pressed on, in the print being read.
+        page: cubit.layout == MushafLayout.qpcV2
+            ? (word.pageV2 ?? word.page)
+            : word.page,
       ),
     );
     if (!cubit.isClosed) cubit.clearSelection();

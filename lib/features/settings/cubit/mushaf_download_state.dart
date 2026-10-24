@@ -53,9 +53,13 @@ class MushafDownloadState extends Equatable {
     this.status = LoadStatus.initial,
     this.reciters = const <ReciterOffline>[],
     this.errorMessage,
+    this.surahNames = const <int, String>{},
   });
 
   final LoadStatus status;
+
+  /// Each surah's name, by number — for the surah a run is on now.
+  final Map<int, String> surahNames;
 
   /// Every reciter whose recitation can be fetched, in catalog order.
   final List<ReciterOffline> reciters;
@@ -73,8 +77,14 @@ class MushafDownloadState extends Equatable {
     status: status ?? this.status,
     reciters: reciters ?? this.reciters,
     errorMessage: errorMessage,
+    surahNames: surahNames,
   );
 
   @override
-  List<Object?> get props => <Object?>[status, reciters, errorMessage];
+  List<Object?> get props => <Object?>[
+    status,
+    reciters,
+    errorMessage,
+    surahNames,
+  ];
 }

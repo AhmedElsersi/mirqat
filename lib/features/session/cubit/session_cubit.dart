@@ -467,6 +467,7 @@ class SessionCubit extends Cubit<SessionState> {
     playbackSpeed: settings.defaultPlaybackSpeed,
     recallRounds: settings.defaultRecallRounds,
     chainRecall: settings.defaultChainRecall,
+    playIstiadhah: settings.defaultPlayIstiadhah,
   );
 
   // --- tuning --------------------------------------------------------------
@@ -705,6 +706,7 @@ class SessionCubit extends Cubit<SessionState> {
       defaultPlaybackSpeed: c.playbackSpeed,
       defaultRecallRounds: c.recallRounds,
       defaultChainRecall: c.chainRecall,
+      defaultPlayIstiadhah: c.playIstiadhah,
     );
     final result = await _settings.save(next);
     if (isClosed) return;
@@ -795,13 +797,15 @@ class SessionCubit extends Cubit<SessionState> {
 
     emit(state.copyWith(phase: SessionPhase.loading, clearFailure: true));
 
+    final Map<AyahRef, Duration> recallClips;
     try {
+      recallClips = await _recallClips(plan, reciter);
       await _player.load(
         plan: plan,
         reciter: reciter,
         surahs: state.surahs,
         startAtUnit: startAtUnit < 0 ? 0 : startAtUnit,
-        recallClips: await _recallClips(plan, reciter),
+        recallClips: recallClips,
       );
     } catch (e) {
       _fail(e);
@@ -818,7 +822,13 @@ class SessionCubit extends Cubit<SessionState> {
         _schedulePlaceSave(moment.unit.ref);
       }
       emit(
-        state.copyWith(currentUnit: moment.unit, recalling: moment.recalling),
+        state.copyWith(
+          currentUnit: moment.unit,
+          recalling: moment.recalling,
+          recallGap: moment.recalling
+              ? _recallGapLength(recallClips[moment.unit.ref])
+              : null,
+        ),
       );
       // Past the step it was set on — not merely another one: going back a
       // step is the reader's own doing, not the step coming to its end.
@@ -875,6 +885,16 @@ class SessionCubit extends Cubit<SessionState> {
     } catch (e) {
       _fail(e);
     }
+  }
+
+  /// How long the silence of a recall gap lasts for an ayah whose clip is
+  /// [clip], as the queue lays it out and the player plays it at the
+  /// session's speed.
+  Duration _recallGapLength(Duration? clip) {
+    final PlaybackQueueBuilder builder = _player.queueBuilder;
+    final double speed = state.config?.playbackSpeed ?? 1.0;
+    final int ms = builder.recallSpacerCount(clip) * builder.spacerMs;
+    return Duration(milliseconds: (ms / (speed <= 0 ? 1.0 : speed)).round());
   }
 
   /// Measured clip lengths for the plan's recall gaps, where they can be

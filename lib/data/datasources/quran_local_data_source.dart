@@ -141,9 +141,7 @@ class QuranLocalDataSourceImpl implements QuranLocalDataSource {
       'WHERE text_search LIKE ? ORDER BY id LIMIT ?',
       <Object>['%$needle%', limit],
     );
-    return List<AyahSearchHit>.unmodifiable(
-      rows.map(AyahSearchHit.fromDbRow),
-    );
+    return List<AyahSearchHit>.unmodifiable(rows.map(AyahSearchHit.fromDbRow));
   }
 
   @override

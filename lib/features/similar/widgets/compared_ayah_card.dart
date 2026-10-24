@@ -7,6 +7,7 @@ import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/ayah_text.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../data/models/word.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../../session/session_request.dart';
@@ -45,48 +46,55 @@ class ComparedAyahCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final bool arabic = context.locale.languageCode == 'ar';
-    return Card(
-      color: emphasised
-          ? theme.colorScheme.primary.withValues(alpha: 0.06)
-          : null,
-      margin: EdgeInsetsDirectional.only(bottom: 10.h),
-      child: InkWell(
+    final int? page = item.words.firstOrNull?.page;
+    return Padding(
+      padding: EdgeInsetsDirectional.only(bottom: 10.h),
+      child: AppCard(
+        filled: emphasised,
+        padding: EdgeInsetsDirectional.all(16.r),
         onTap: () => _open(context, listen: false),
-        child: Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(12.w, 8.h, 4.w, 12.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      LocaleKeys.mushafAyahReference.tr(
-                        args: <String>[
-                          arabic ? item.surah.nameAr : item.surah.nameEn,
-                          item.ref.ayah.toLocalisedString(),
-                        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // The ayah's own words, as the mushaf prints them, wrapping
+            // where the card ends; the words it shares tinted.
+            QuranWords(
+              words: item.words,
+              tint: (Word w) =>
+                  item.isShared(w) ? WordTint.shared : WordTint.none,
+            ),
+            SizedBox(height: 10.h),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    joinDetails(<String>[
+                      LocaleKeys.commonAyahNumber.tr(
+                        args: <String>[item.ref.ayah.toLocalisedString()],
                       ),
-                      style: theme.textTheme.labelLarge,
+                      if (page != null)
+                        LocaleKeys.mushafPage.tr(
+                          args: <String>[page.toLocalisedString()],
+                        ),
+                    ]),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  IconButton(
-                    tooltip: LocaleKeys.similarListen.tr(),
-                    onPressed: () => _open(context, listen: true),
-                    icon: const Icon(Icons.headphones_outlined),
-                  ),
-                ],
-              ),
-              // The ayah's own words, as the mushaf prints them, wrapping
-              // where the card ends; the words it shares tinted.
-              QuranWords(
-                words: item.words,
-                tint: (Word w) =>
-                    item.isShared(w) ? WordTint.highlighted : WordTint.none,
-              ),
-            ],
-          ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: LocaleKeys.similarListen.tr(),
+                  onPressed: () => _open(context, listen: true),
+                  icon: const Icon(Icons.volume_up_outlined),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -102,10 +110,14 @@ class QuranWords extends StatelessWidget {
     this.fontSize,
     this.veiled,
     this.faint = false,
+    this.centered = false,
     super.key,
   });
 
   final List<Word> words;
+
+  /// Set in the middle of its width, as a phrase on its own is.
+  final bool centered;
   final WordTint Function(Word)? tint;
   final double? fontSize;
 
@@ -121,6 +133,7 @@ class QuranWords extends StatelessWidget {
     child: Wrap(
       spacing: 6.w,
       runSpacing: 2.h,
+      alignment: centered ? WrapAlignment.center : WrapAlignment.start,
       children: <Widget>[
         for (final Word w in words)
           AyahText.word(

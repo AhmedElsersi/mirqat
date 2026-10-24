@@ -42,10 +42,11 @@ class SearchCubit extends Cubit<SearchState> {
       (Failure _) => const <Surah>[],
       (List<Surah> s) => s,
     );
-    _surahsByNumber = <int, Surah>{
-      for (final Surah s in _surahs) s.number: s,
-    };
-    _pageCount = (await _pages.pageCount()).fold((Failure _) => 0, (int n) => n);
+    _surahsByNumber = <int, Surah>{for (final Surah s in _surahs) s.number: s};
+    _pageCount = (await _pages.pageCount()).fold(
+      (Failure _) => 0,
+      (int n) => n,
+    );
   }
 
   /// The surah [surahNumber], for naming an ayah hit. Null before [load].
@@ -53,11 +54,10 @@ class SearchCubit extends Cubit<SearchState> {
 
   /// The mushaf page [surahNumber] begins on, or null if the catalog cannot
   /// say — the same lookup the home screen makes to open a surah.
-  Future<int?> pageOfSurah(int surahNumber) async =>
-      (await _pages.pageForAyah(surahNumber, 1)).fold(
-        (Failure _) => null,
-        (int p) => p,
-      );
+  Future<int?> pageOfSurah(int surahNumber) async => (await _pages.pageForAyah(
+    surahNumber,
+    1,
+  )).fold((Failure _) => null, (int p) => p);
 
   Future<void> search(String input) async {
     final int generation = ++_generation;
@@ -116,8 +116,7 @@ class SearchCubit extends Cubit<SearchState> {
     return List<Surah>.unmodifiable(
       _surahs.where(
         (Surah s) =>
-            (needle.isNotEmpty &&
-                searchableQuery(s.nameAr).contains(needle)) ||
+            (needle.isNotEmpty && searchableQuery(s.nameAr).contains(needle)) ||
             (byLatin && s.nameEn.toLowerCase().contains(latin)),
       ),
     );

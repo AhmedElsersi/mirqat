@@ -35,7 +35,7 @@ class StatsScreen extends StatelessWidget {
               padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 32.h),
               children: <Widget>[
                 AppCard(
-                  padding: EdgeInsetsDirectional.all(18.r),
+                  padding: EdgeInsetsDirectional.all(16.r),
                   child: Row(
                     children: <Widget>[
                       Expanded(
@@ -68,34 +68,53 @@ class StatsScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 12.h),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: _Stat(
-                        value: s.minutesListened,
-                        label: LocaleKeys.statsMinutes.tr(),
+                // Each pair the same height, whatever its labels wrap to.
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Expanded(
+                        child: _Stat(
+                          value: s.minutesListened,
+                          label: LocaleKeys.statsMinutes.tr(),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: _Stat(
-                        value: s.plays,
-                        label: LocaleKeys.statsPlays.tr(),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: _Stat(
+                          value: s.plays,
+                          label: LocaleKeys.statsPlays.tr(),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 SizedBox(height: 12.h),
-                _Stat(
-                  value: s.memorizedAyahs,
-                  label: LocaleKeys.statsMemorized.tr(),
+                // Each pair the same height, whatever its labels wrap to.
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Expanded(
+                        child: _Stat(
+                          value: s.memorizedAyahs,
+                          label: LocaleKeys.statsMemorized.tr(),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: _Stat(
+                          value: s.reviewCards,
+                          label: LocaleKeys.statsReviewCards.tr(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(height: 18.h),
-                Text(
+                AppNote(
                   LocaleKeys.statsNote.tr(),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  icon: Icons.smartphone_outlined,
                 ),
               ],
             );
@@ -119,7 +138,7 @@ class _Stat extends StatelessWidget {
     return AppCard(
       padding: EdgeInsetsDirectional.all(16.r),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Text(
             value.toLocalisedString(),

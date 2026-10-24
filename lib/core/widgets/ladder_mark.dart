@@ -15,6 +15,7 @@ class LadderMark extends StatelessWidget {
     required this.current,
     this.rungs = 4,
     this.color,
+    this.doneColor,
     super.key,
   });
 
@@ -26,11 +27,16 @@ class LadderMark extends StatelessWidget {
   /// outline; on a filled surface, something that shows on it.
   final Color? color;
 
+  /// The colour of the rungs stood on — the default is the completion
+  /// colour; on the hero card, [AppColors.rungDoneOnHero].
+  final Color? doneColor;
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool dark = theme.brightness == Brightness.dark;
-    final Color done = dark ? AppColors.sabrDark : AppColors.sabrLight;
+    final Color done =
+        doneColor ?? (dark ? AppColors.sabrDark : AppColors.sabrLight);
     final Color ahead = color ?? theme.colorScheme.outline;
     final double width = 24.r;
     final double step = 4.r;

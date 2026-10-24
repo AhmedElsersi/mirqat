@@ -103,7 +103,7 @@ void main() {
       // And nothing else: a page washed end to end says nothing.
       expect(tinted(tester, WordTint.ranged), isEmpty);
       expect(find.textContaining('التكرار ٢ من ٣'), findsOneWidget);
-      expect(find.text('سورة الفاتحة · الآية ٣'), findsOneWidget);
+      expect(find.text('سورة الفاتحة، الآية ٣'), findsOneWidget);
     });
 
     testWidgets('a recall round asks the ayah back, and the bar offers the '
@@ -127,16 +127,19 @@ void main() {
         findsOneWidget,
         reason: 'the silence reads as the session hanging without this',
       );
-      expect(find.text('اكشفها'), findsOneWidget);
-      expect(find.text('أتعثّر هنا'), findsOneWidget);
+      expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
+      expect(find.byTooltip('أتعثّر هنا'), findsOneWidget);
       // The step skips are out of the way: they move whole steps, and this
       // is the one moment inside one.
       expect(find.byIcon(Icons.skip_next), findsNothing);
 
-      await AppHarness.tapAndRun(tester, find.text('اكشفها'));
+      await AppHarness.tapAndRun(
+        tester,
+        find.byIcon(Icons.visibility_outlined),
+      );
       expect(player().revealed, 1);
 
-      await AppHarness.tapAndRun(tester, find.text('أتعثّر هنا'));
+      await AppHarness.tapAndRun(tester, find.byTooltip('أتعثّر هنا'));
       expect(
         sessionOf(tester).state.stumbled,
         contains(AyahRef(asked.surahNumber, asked.ayahNumber)),
@@ -191,7 +194,7 @@ void main() {
       await openFatiha(tester);
       await AppHarness.openSessionSheet(tester);
 
-      await AppHarness.tapAndRun(tester, find.text('احفظ كإعداد'));
+      await AppHarness.tapAndRun(tester, find.text('احفظ كطريقة'));
       expect(find.text('اسم هذه الطريقة'), findsOneWidget);
       await tester.enterText(find.byType(TextField).last, 'مراجعة الفجر');
       await AppHarness.tapAndRun(tester, find.text('احفظ'));
@@ -224,9 +227,15 @@ void main() {
       await openFatiha(tester);
       await AppHarness.openSessionSheet(tester);
 
+      // Who recites is set once and then left, so it folds behind one row
+      // with the rest of the audio.
+      final Finder fold = find.text('القارئ والصوت والوقفات');
+      await tester.ensureVisible(fold);
+      await AppHarness.frames(tester, 200);
+      await AppHarness.tapAndRun(tester, fold);
+
       final Finder field = find.byType(DropdownButton<String>);
       expect(field, findsOneWidget);
-      // Below the way of working, the range and the tuning now: scrolled to.
       await tester.ensureVisible(field);
       await AppHarness.frames(tester, 400);
       // The field writes the Arabic name over the English one.
@@ -247,9 +256,11 @@ void main() {
 
       await tester.tap(field);
       await AppHarness.frames(tester, 400);
-      // The menu draws the entry the same way: both names, once more.
+      // The menu draws the entry the same way: both names, once more. The
+      // Arabic name also opens the fold's own summary line, beside the speed.
       expect(find.text('Ahmed Khalil Shaheen'), findsNWidgets(2));
       expect(find.text('أحمد خليل شاهين'), findsNWidgets(2));
+      expect(find.textContaining('أحمد خليل شاهين، سرعة'), findsOneWidget);
       await tester.tap(find.text('أحمد خليل شاهين').last);
       await AppHarness.frames(tester, 400);
       expect(find.byType(DropdownButton<String>), findsOneWidget);
@@ -311,14 +322,17 @@ void main() {
         'and tells the bar', (WidgetTester tester) async {
       await openFatiha(tester);
       await longPressFirstWord(tester);
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.last_page));
+      await AppHarness.tapAndRun(
+        tester,
+        find.byTooltip('اجعلها نهاية النطاق'),
+      );
 
       expect(player().loads, isEmpty);
       final SessionState state = sessionOf(tester).state;
       expect(state.rangeChosen, isTrue);
       expect(state.config!.end, const AyahRef(1, 1));
       expect(tinted(tester, WordTint.ranged), isNotEmpty);
-      expect(find.text('سورة الفاتحة · الآية ١'), findsOneWidget);
+      expect(find.text('سورة الفاتحة، الآية ١'), findsOneWidget);
 
       // And a chosen range can be given back to the page.
       await longPressFirstWord(tester);
@@ -340,8 +354,8 @@ void main() {
       );
 
       await AppHarness.openSessionSheet(tester);
-      // Steppers, in order: from ayah, to ayah, repeat count.
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).at(2));
+      // The range is two rows now; the first stepper is the repeat count.
+      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
       expect(player().loads, hasLength(1), reason: 'nothing happens unasked');
       expect(find.text('أكمل من الآية الحالية'), findsOneWidget);
 
@@ -365,7 +379,7 @@ void main() {
       final int repeats = player().loads.single.plan.config.repeatCount;
 
       await AppHarness.openSessionSheet(tester);
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).at(2));
+      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
       await AppHarness.tapAndRun(tester, find.byIcon(Icons.close));
 
       expect(find.byType(AlertDialog), findsOneWidget);

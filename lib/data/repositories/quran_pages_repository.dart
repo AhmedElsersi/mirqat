@@ -21,6 +21,8 @@ abstract class QuranPagesRepository {
 
   Future<Either<Failure, List<JuzInfo>>> juzList();
 
+  Future<Either<Failure, List<JuzInfo>>> hizbList();
+
   Future<Either<Failure, List<MushafLine>>> linesForPage(
     int page, {
     MushafLayout? layout,
@@ -73,6 +75,9 @@ class QuranPagesRepositoryImpl implements QuranPagesRepository {
 
   @override
   Future<Either<Failure, List<JuzInfo>>> juzList() => _guard(_local.juzList);
+
+  @override
+  Future<Either<Failure, List<JuzInfo>>> hizbList() => _guard(_local.hizbList);
 
   @override
   Future<Either<Failure, List<MushafLine>>> linesForPage(

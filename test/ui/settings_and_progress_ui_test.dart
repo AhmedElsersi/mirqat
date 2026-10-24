@@ -19,7 +19,6 @@ import 'package:mirqat/features/settings/screen/mushaf_font_screen.dart';
 import 'package:mirqat/features/similar/screen/mutashabihat_screen.dart';
 import 'package:mirqat/features/similar/screen/phrase_screen.dart';
 import 'package:mirqat/core/localization/locale_keys.dart';
-import 'package:mirqat/core/widgets/settings_card.dart';
 import 'package:mirqat/features/about/screen/about_screen.dart';
 import 'package:mirqat/features/about/screen/how_to_use_screen.dart';
 import 'package:mirqat/features/settings/screen/session_settings_screen.dart';
@@ -38,6 +37,20 @@ void main() {
 
   Future<void> openSettings(WidgetTester tester) async {
     await AppHarness.tapAndSettle(tester, find.byIcon(Icons.settings_outlined));
+  }
+
+  /// Taps [row] in the sheet the downloads row opens. The sheet closes and
+  /// the screen it names opens over a real database read, so the frames
+  /// after the tap are pumped on the real clock too.
+  Future<void> openFromDownloads(WidgetTester tester, String row) async {
+    await tester.runAsync(() async {
+      await tester.tap(find.text(row));
+      for (int i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+    });
+    await AppHarness.settle(tester);
   }
 
   /// Scrolls the settings list until [finder] is on screen.
@@ -106,7 +119,7 @@ void main() {
       await AppHarness.frames(tester, 400);
       expect(find.byType(PhraseScreen), findsOneWidget);
       // Two ayahs at least, each a card with its words drawn.
-      expect(find.byIcon(Icons.headphones_outlined), findsWidgets);
+      expect(find.byIcon(Icons.volume_up_outlined), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 
@@ -117,35 +130,35 @@ void main() {
       await openSettings(tester);
 
       expect(find.byType(SettingsScreen), findsOneWidget);
-      await reveal(tester, find.byType(DropdownButton<String>));
+      await reveal(tester, find.byType(ReciterAvatar));
 
-      // The same dropdown as the session sheet's, fed from the catalogue,
-      // so a second reciter needs no UI change.
-      final Finder field = find.byType(DropdownButton<String>);
-      expect(field, findsOneWidget);
-      expect(
-        find.descendant(of: field, matching: find.text('أحمد خليل شاهين')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: field, matching: find.text('Ahmed Khalil Shaheen')),
-        findsOneWidget,
-      );
-      // With the reciter's photo beside the name.
+      // A row of the list, fed from the catalogue, so a second reciter
+      // needs no UI change: the portrait, and the name in the reader's
+      // language.
       expect(find.byType(ReciterAvatar), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(SettingsScreen),
+          matching: find.text('أحمد خليل شاهين'),
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('the interface language is switched from the appearance card, '
+    testWidgets('the interface language is switched from its own row, '
         'and the app follows at once', (WidgetTester tester) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
+      // A tab of the home: its title is its own heading, not an app bar.
       Finder title(String text) => find.descendant(
-        of: find.byType(AppBar),
+        of: find.byType(SettingsScreen),
         matching: find.text(text),
       );
       expect(title('الإعدادات'), findsOneWidget);
 
-      await reveal(tester, find.text('English'));
+      // A row that says which language it is on, and opens onto the two.
+      await reveal(tester, find.text('اللغة'));
+      await AppHarness.tapAndSettle(tester, find.text('اللغة'));
       await AppHarness.tapAndSettle(tester, find.text('English'));
       expect(title('Settings'), findsOneWidget);
       expect(
@@ -155,7 +168,8 @@ void main() {
         'en',
       );
 
-      await reveal(tester, find.text('العربية'));
+      await reveal(tester, find.text('Language'));
+      await AppHarness.tapAndSettle(tester, find.text('Language'));
       await AppHarness.tapAndSettle(tester, find.text('العربية'));
       expect(title('الإعدادات'), findsOneWidget);
     });
@@ -165,12 +179,11 @@ void main() {
     ) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
-      await reveal(tester, find.text('التسجيلات المحفوظة'));
-
-      await AppHarness.tapAndSettle(
-        tester,
-        find.text('التسجيلات المحفوظة').last,
-      );
+      // One row for everything kept on the device; the saved recitations
+      // are one of the three it opens onto.
+      await reveal(tester, find.text('التنزيلات'));
+      await AppHarness.tapAndSettle(tester, find.text('التنزيلات'));
+      await openFromDownloads(tester, 'التسجيلات المحفوظة');
 
       expect(find.byType(DownloadsScreen), findsOneWidget);
       // A fresh install has downloaded nothing: the screen says so and
@@ -185,23 +198,21 @@ void main() {
     ) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
-      await reveal(tester, find.text('تنزيل المصحف كاملًا'));
-
-      await AppHarness.tapAndSettle(
-        tester,
-        find.text('تنزيل المصحف كاملًا').last,
-      );
+      await reveal(tester, find.text('التنزيلات'));
+      await AppHarness.tapAndSettle(tester, find.text('التنزيلات'));
+      await openFromDownloads(tester, 'تنزيل المصحف كاملًا');
 
       expect(find.byType(MushafDownloadScreen), findsOneWidget);
-      // The reciter the test CDN offers, and what is left of them to fetch.
+      // The reciter the test CDN offers, and what is left of them to fetch:
+      // what remains where some is here, the whole cost where none is yet.
       expect(find.text('أحمد خليل شاهين'), findsOneWidget);
-      expect(find.textContaining('المتبقي'), findsOneWidget);
+      expect(find.textContaining(RegExp('المتبقي|نحو')), findsOneWidget);
 
       // Hundreds of megabytes is not a thing to start on one tap, so the
       // size is in a question first — and a question can be declined.
       await AppHarness.tapAndSettle(
         tester,
-        find.byIcon(Icons.download_for_offline_outlined),
+        find.byIcon(Icons.download_outlined),
       );
       expect(find.text('تنزيل كل السور؟'), findsOneWidget);
 
@@ -215,15 +226,21 @@ void main() {
     ) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
-      await reveal(tester, find.text('جودة الصوت'));
+      // The reciter's row says the quality they are fetched at; the three
+      // qualities are a segmented control in the sheet it opens, under the
+      // reciters, not a column kept open on the page.
+      await reveal(tester, find.byType(ReciterAvatar));
+      expect(find.text('٦٤ ك.ب/ث'), findsOneWidget);
+      await AppHarness.tapAndSettle(tester, find.byType(ReciterAvatar));
 
-      // Three qualities, standard chosen on a fresh install.
-      expect(find.byType(RadioListTile<AudioQuality>), findsNWidgets(3));
-      final RadioGroup<AudioQuality> group = tester
-          .widget<RadioGroup<AudioQuality>>(
-            find.byType(RadioGroup<AudioQuality>),
+      final SegmentedButton<AudioQuality> quality = tester
+          .widget<SegmentedButton<AudioQuality>>(
+            find.byType(SegmentedButton<AudioQuality>),
           );
-      expect(group.groupValue, AudioQuality.standard);
+      expect(quality.segments, hasLength(3));
+      expect(quality.selected, <AudioQuality>{AudioQuality.standard});
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
 
       // And the metered-data guard is on by default.
       await reveal(tester, find.text('التنزيل عبر الواي فاي فقط'));
@@ -239,22 +256,16 @@ void main() {
     testWidgets('choosing a quality persists it', (WidgetTester tester) async {
       await harness.pumpApp(tester);
       await openSettings(tester);
-      await reveal(tester, find.text('عالية — ١٢٨ ك.ب/ث'));
+      await reveal(tester, find.byType(ReciterAvatar));
+      await AppHarness.tapAndSettle(tester, find.byType(ReciterAvatar));
+      await AppHarness.tapAndSettle(tester, find.text('١٢٨ ك.ب/ث'));
 
-      await AppHarness.tapAndSettle(tester, find.text('عالية — ١٢٨ ك.ب/ث'));
-
-      // Read back through a fresh app, which is what a restart does.
+      // Read back through a fresh app, which is what a restart does. The
+      // reciter's row is where the choice is read now.
       await harness.pumpApp(tester);
       await openSettings(tester);
-      await reveal(tester, find.text('جودة الصوت'));
-      expect(
-        tester
-            .widget<RadioGroup<AudioQuality>>(
-              find.byType(RadioGroup<AudioQuality>),
-            )
-            .groupValue,
-        AudioQuality.high,
-      );
+      await reveal(tester, find.byType(ReciterAvatar));
+      expect(find.text('١٢٨ ك.ب/ث'), findsOneWidget);
     });
 
     testWidgets('the session\'s settings are a page of their own, built from '
@@ -306,6 +317,8 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       });
       await AppHarness.settle(tester);
+      // The preview grew with the size and pushed the slider down the page.
+      await reveal(tester, find.byType(Slider));
       expect(tester.widget<Slider>(find.byType(Slider)).value, 36);
 
       // A restart, then a page: it is drawn at one and a half times the size
@@ -319,7 +332,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('every group sits in a container of its own', (
+    testWidgets('every group is a label over rows of its own', (
       WidgetTester tester,
     ) async {
       await harness.pumpApp(tester);
@@ -327,20 +340,20 @@ void main() {
 
       final Set<String> seen = <String>{};
       for (final String title in <String>[
-        'المظهر والعرض',
-        'القارئ',
-        'الصوت والتخزين',
+        'المظهر',
+        'القارئ والصوت',
         'الجلسة',
         'عن التطبيق',
       ]) {
-        // By its heading: a card further down is not built until it is
+        // By its label: a group further down is not built until it is
         // scrolled to, and `.first` of nothing throws instead of scrolling.
         await reveal(tester, find.text(title));
-        expect(find.widgetWithText(SettingsCard, title), findsWidgets);
+        expect(find.text(title), findsOneWidget);
+        expect(find.byType(AppCard), findsWidgets);
         seen.add(title);
         expect(tester.takeException(), isNull, reason: title);
       }
-      expect(seen, hasLength(5));
+      expect(seen, hasLength(4));
     });
 
     testWidgets('the about card leads to how to use and to the about page', (
@@ -386,10 +399,14 @@ void main() {
       await harness.pumpApp(tester);
       await openSettings(tester);
 
-      // Settings is the only place this is chosen now; the home screen just
-      // follows it.
-      await reveal(tester, find.text('شبكة'));
+      // Settings is the only place this is chosen now, under «الصفحة
+      // الأولى»: opening on Today leaves the index's shape to choose.
+      await reveal(tester, find.text('الصفحة الأولى'));
+      await AppHarness.tapAndSettle(tester, find.text('الصفحة الأولى'));
+      await AppHarness.tapAndSettle(tester, find.text('اليوم').last);
       await AppHarness.tapAndSettle(tester, find.text('شبكة'));
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
       await AppHarness.openTab(tester, HomeTab.mushaf);
 
       expect(find.byType(SurahTile), findsWidgets);

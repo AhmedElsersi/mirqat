@@ -60,19 +60,17 @@ class SimilarScreen extends StatelessWidget {
                     ),
                   )
                 else
-                  SectionTitle(
-                    title: LocaleKeys.similarCount.tr(
+                  FieldLabel(
+                    LocaleKeys.similarCount.tr(
                       args: <String>[state.similar.length.toLocalisedString()],
                     ),
                   ),
                 for (final ComparedAyah item in state.similar)
                   ComparedAyahCard(item: item),
-                SizedBox(height: 12.h),
-                Text(
+                SizedBox(height: 8.h),
+                AppNote(
                   LocaleKeys.similarSource.tr(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  icon: Icons.bookmarks_outlined,
                 ),
               ],
             );

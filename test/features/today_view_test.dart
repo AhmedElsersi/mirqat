@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/core/widgets/panel.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:mirqat/data/models/surah.dart';
 import 'package:mirqat/domain/entities/ayah_ref.dart';
@@ -94,8 +95,11 @@ void main() {
     await settleLocalization(tester);
   }
 
-  Finder dueRows() =>
-      find.byWidgetPredicate((Widget w) => w is ListTile && w.leading is! Icon);
+  // A due row leads with the ladder; the bookend's and the continue card's
+  // rows lead with a tile icon.
+  Finder dueRows() => find.byWidgetPredicate(
+    (Widget w) => w is ListTile && w.leading is! Icon && w.leading is! TileIcon,
+  );
 
   testWidgets('nothing set and nothing due: one card that asks what to '
       'memorize, and nothing else', (WidgetTester tester) async {
@@ -142,7 +146,7 @@ void main() {
     await pump(tester, 0, plan: plan);
     expect(find.text('ابدأ الحفظ'), findsOneWidget);
     expect(find.text('حفظ اليوم: ١ من ٢'), findsOneWidget);
-    expect(find.text('خطة الحفظ'), findsOneWidget);
+    expect(find.textContaining('خطة الحفظ'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -182,7 +186,7 @@ void main() {
         'not a second one beside its review', (WidgetTester tester) async {
       await pump(tester, 2, bookends: true);
       expect(find.byIcon(Icons.wb_twilight), findsOneWidget);
-      expect(find.text('هذا الصباح: اقرأه من حفظك'), findsOneWidget);
+      expect(find.text('هذا الصباح'), findsOneWidget);
       // Two cards were due: one is the morning's, one stays a review.
       expect(dueRows(), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -193,7 +197,7 @@ void main() {
       // The cards were memorized on 30 November; it is that night.
       await pump(tester, 1, bookends: true, now: DateTime(2026, 11, 30, 22));
       expect(find.byIcon(Icons.bedtime_outlined), findsOneWidget);
-      expect(find.text('قبل النوم: استمع إليه مرة أخرى'), findsOneWidget);
+      expect(find.text('قبل النوم'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
