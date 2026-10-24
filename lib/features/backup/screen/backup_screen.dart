@@ -56,9 +56,11 @@ class BackupScreen extends StatelessWidget {
                         runSpacing: 8.h,
                         children: <Widget>[
                           AppTag(label: LocaleKeys.backupHoldsProgress.tr()),
-                          AppTag(label: LocaleKeys.backupHoldsReviews.tr()),
+                          // RELEASE-1.4(review-ladder)
+                          // AppTag(label: LocaleKeys.backupHoldsReviews.tr()),
                           AppTag(label: LocaleKeys.backupHoldsWeakSpots.tr()),
-                          AppTag(label: LocaleKeys.backupHoldsPlan.tr()),
+                          // RELEASE-1.4(hifz-plan)
+                          // AppTag(label: LocaleKeys.backupHoldsPlan.tr()),
                         ],
                       ),
                     ],

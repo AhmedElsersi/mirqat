@@ -1041,15 +1041,17 @@ class _QuietWays extends StatelessWidget {
           icon: const Icon(Icons.bookmark_add_outlined),
           label: Text(LocaleKeys.presetsSave.tr()),
         ),
-        if (!state.tasmee)
-          TextButton.icon(
-            onPressed: () {
-              cubit.startTasmee();
-              Navigator.of(context).pop();
-            },
-            icon: const Icon(Icons.hearing),
-            label: Text(LocaleKeys.tasmeeStart.tr()),
-          ),
+        // RELEASE-1.4(tasmee)
+        // if (!state.tasmee)
+        //   TextButton.icon(
+        //     onPressed: () {
+        //       cubit.startTasmee();
+        //       Navigator.of(context).pop();
+        //     },
+        //     icon: const Icon(Icons.hearing),
+        //     label: Text(LocaleKeys.tasmeeStart.tr()),
+        //   ),
+        // END RELEASE-1.4(tasmee)
       ],
     );
   }

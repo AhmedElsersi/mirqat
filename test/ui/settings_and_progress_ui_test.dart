@@ -69,59 +69,62 @@ void main() {
   }
 
   group('settings', () {
-    testWidgets('the mutashabihat are a tap from My hifz, open as a card per '
-        'phrase, and a card opens every ayah that phrase is in', (
-      WidgetTester tester,
-    ) async {
-      await harness.pumpApp(tester, tab: HomeTab.hifz);
+    testWidgets(
+      'the mutashabihat are a tap from My hifz, open as a card per '
+      'phrase, and a card opens every ayah that phrase is in',
+      (WidgetTester tester) async {
+        await harness.pumpApp(tester, tab: HomeTab.hifz);
 
-      // Among the tools for keeping what is memorized — not in Settings.
-      final Finder entry = find.descendant(
-        of: find.byType(MyHifzView),
-        matching: find.text(LocaleKeys.mutashabihatTitle.tr()),
-      );
-      await tester.scrollUntilVisible(
-        entry,
-        120,
-        scrollable: find
-            .descendant(
-              of: find.byType(MyHifzView),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      // Visible is not yet tappable while a row only peeks over the edge.
-      await tester.ensureVisible(entry);
-      await tester.pumpAndSettle();
-      expect(entry, findsOneWidget);
+        // Among the tools for keeping what is memorized — not in Settings.
+        final Finder entry = find.descendant(
+          of: find.byType(MyHifzView),
+          matching: find.text(LocaleKeys.mutashabihatTitle.tr()),
+        );
+        await tester.scrollUntilVisible(
+          entry,
+          120,
+          scrollable: find
+              .descendant(
+                of: find.byType(MyHifzView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        // Visible is not yet tappable while a row only peeks over the edge.
+        await tester.ensureVisible(entry);
+        await tester.pumpAndSettle();
+        expect(entry, findsOneWidget);
 
-      // Every card a phrase of the shipped file; the words load in real time.
-      Future<void> letReadsLand() async {
-        for (int i = 0; i < 30; i++) {
-          await tester.runAsync(
-            () => Future<void>.delayed(const Duration(milliseconds: 20)),
-          );
-          await tester.pump();
+        // Every card a phrase of the shipped file; the words load in real time.
+        Future<void> letReadsLand() async {
+          for (int i = 0; i < 30; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 20)),
+            );
+            await tester.pump();
+          }
         }
-      }
 
-      await AppHarness.tapAndSettle(tester, entry);
-      await letReadsLand();
-      expect(find.byType(MutashabihatScreen), findsOneWidget);
-      expect(find.text('العبارات: ٨٠٧'), findsOneWidget);
-      expect(find.byType(AyahText), findsWidgets);
+        await AppHarness.tapAndSettle(tester, entry);
+        await letReadsLand();
+        expect(find.byType(MutashabihatScreen), findsOneWidget);
+        expect(find.text('العبارات: ٨٠٧'), findsOneWidget);
+        expect(find.byType(AyahText), findsWidgets);
 
-      await tester.runAsync(() async {
-        await tester.tap(find.byType(AppCard).first);
-        await tester.pump();
-      });
-      await letReadsLand();
-      await AppHarness.frames(tester, 400);
-      expect(find.byType(PhraseScreen), findsOneWidget);
-      // Two ayahs at least, each a card with its words drawn.
-      expect(find.byIcon(Icons.volume_up_outlined), findsWidgets);
-      expect(tester.takeException(), isNull);
-    });
+        await tester.runAsync(() async {
+          await tester.tap(find.byType(AppCard).first);
+          await tester.pump();
+        });
+        await letReadsLand();
+        await AppHarness.frames(tester, 400);
+        expect(find.byType(PhraseScreen), findsOneWidget);
+        // Two ayahs at least, each a card with its words drawn.
+        expect(find.byIcon(Icons.volume_up_outlined), findsWidgets);
+        expect(tester.takeException(), isNull);
+      },
+      skip:
+          true /* RELEASE-1.5(mutashabihat): its entry point is commented out */,
+    );
 
     testWidgets('lists the reciter rather than hardcoding a label', (
       WidgetTester tester,
@@ -377,21 +380,23 @@ void main() {
       await visit('عن اقرأ وارتق', AboutScreen);
     });
 
-    testWidgets('bedtime and morning is off until the reader turns it on', (
-      WidgetTester tester,
-    ) async {
-      await harness.pumpApp(tester);
-      await openSettings(tester);
-      final Finder toggle = find.text(LocaleKeys.reviewBookendsTitle.tr());
-      await reveal(tester, toggle);
-      final SettingsCubit cubit = BlocProvider.of<SettingsCubit>(
-        tester.element(find.byType(SettingsScreen)),
-      );
-      expect(cubit.state.settings.bookends, isFalse);
+    testWidgets(
+      'bedtime and morning is off until the reader turns it on',
+      (WidgetTester tester) async {
+        await harness.pumpApp(tester);
+        await openSettings(tester);
+        final Finder toggle = find.text(LocaleKeys.reviewBookendsTitle.tr());
+        await reveal(tester, toggle);
+        final SettingsCubit cubit = BlocProvider.of<SettingsCubit>(
+          tester.element(find.byType(SettingsScreen)),
+        );
+        expect(cubit.state.settings.bookends, isFalse);
 
-      await AppHarness.tapAndSettle(tester, toggle);
-      expect(cubit.state.settings.bookends, isTrue);
-    });
+        await AppHarness.tapAndSettle(tester, toggle);
+        expect(cubit.state.settings.bookends, isTrue);
+      },
+      skip: true /* RELEASE-1.4(bookends): its entry point is commented out */,
+    );
 
     testWidgets('the home view toggle mirrors the app bar', (
       WidgetTester tester,

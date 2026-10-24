@@ -72,26 +72,34 @@ class HowToUseScreen extends StatelessWidget {
       LocaleKeys.howtoStumbleTitle,
       LocaleKeys.howtoStumbleBody,
     ),
-    HowToStep(
-      Icons.hearing_outlined,
-      LocaleKeys.howtoTasmeeTitle,
-      LocaleKeys.howtoTasmeeBody,
-    ),
-    HowToStep(
-      Icons.event_repeat,
-      LocaleKeys.howtoReviewTitle,
-      LocaleKeys.howtoReviewBody,
-    ),
-    HowToStep(
-      Icons.flag_circle_outlined,
-      LocaleKeys.howtoPlanTitle,
-      LocaleKeys.howtoPlanBody,
-    ),
-    HowToStep(
-      Icons.compare_arrows,
-      LocaleKeys.howtoSimilarTitle,
-      LocaleKeys.howtoSimilarBody,
-    ),
+    // RELEASE-1.4(tasmee)
+    // HowToStep(
+    //   Icons.hearing_outlined,
+    //   LocaleKeys.howtoTasmeeTitle,
+    //   LocaleKeys.howtoTasmeeBody,
+    // ),
+    // END RELEASE-1.4(tasmee)
+    // RELEASE-1.4(review-ladder)
+    // HowToStep(
+    //   Icons.event_repeat,
+    //   LocaleKeys.howtoReviewTitle,
+    //   LocaleKeys.howtoReviewBody,
+    // ),
+    // END RELEASE-1.4(review-ladder)
+    // RELEASE-1.4(hifz-plan)
+    // HowToStep(
+    //   Icons.flag_circle_outlined,
+    //   LocaleKeys.howtoPlanTitle,
+    //   LocaleKeys.howtoPlanBody,
+    // ),
+    // END RELEASE-1.4(hifz-plan)
+    // RELEASE-1.5(mutashabihat)
+    // HowToStep(
+    //   Icons.compare_arrows,
+    //   LocaleKeys.howtoSimilarTitle,
+    //   LocaleKeys.howtoSimilarBody,
+    // ),
+    // END RELEASE-1.5(mutashabihat)
     HowToStep(
       Icons.download_outlined,
       LocaleKeys.howtoOfflineTitle,

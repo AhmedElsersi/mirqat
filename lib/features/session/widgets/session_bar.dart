@@ -74,7 +74,8 @@ class SessionBar extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            if (state.gradeOffer != null) const _GradePrompt(),
+                            // RELEASE-1.4(review-ladder): grading after a session.
+                            // if (state.gradeOffer != null) const _GradePrompt(),
                             if (state.resumeOffer != null &&
                                 state.phase == SessionPhase.idle &&
                                 !state.tasmee)
@@ -298,6 +299,8 @@ class _Tasmee extends StatelessWidget {
 
 /// "How did it go?" once a range has been recited through: three answers
 /// that set when it comes back for review, and a way to leave it unanswered.
+// RELEASE-1.4(review-ladder): remove the ignore once the prompt is back.
+// ignore: unused_element
 class _GradePrompt extends StatelessWidget {
   const _GradePrompt();
 

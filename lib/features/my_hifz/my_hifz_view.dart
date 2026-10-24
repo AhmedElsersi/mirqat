@@ -13,14 +13,18 @@ import '../../core/widgets/panel.dart';
 import '../../core/widgets/range_label.dart';
 import '../../data/models/surah.dart';
 import '../../domain/entities/hifz_plan.dart';
-import '../../domain/entities/practice_stats.dart';
-import '../../domain/entities/review_card.dart';
+// RELEASE-1.4(review-ladder, stats, hifz-plan, tasmee)
+// import '../../domain/entities/practice_stats.dart';
+// import '../../domain/entities/review_card.dart';
+// END RELEASE-1.4
 import '../home/cubit/home_index_cubit.dart';
-import '../review/cubit/review_cubit.dart';
-import '../review/widgets/review_widgets.dart' show tierLabel;
-import '../settings/cubit/settings_cubit.dart';
-import '../stats/cubit/stats_cubit.dart';
-import '../surah_list/screen/surah_list_screen.dart' show openMushaf;
+// RELEASE-1.4(review-ladder, stats, hifz-plan, tasmee)
+// import '../review/cubit/review_cubit.dart';
+// import '../review/widgets/review_widgets.dart' show tierLabel;
+// import '../settings/cubit/settings_cubit.dart';
+// import '../stats/cubit/stats_cubit.dart';
+// import '../surah_list/screen/surah_list_screen.dart' show openMushaf;
+// END RELEASE-1.4
 import 'cubit/my_hifz_cubit.dart';
 
 /// "My hifz": what has been memorized, across the mushaf, and every tool for
@@ -34,16 +38,19 @@ class MyHifzView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final MyHifzState hifz = context.watch<MyHifzCubit>().state;
-    final ReviewState review = context.watch<ReviewCubit>().state;
-    final PracticeStats? stats = context.watch<StatsCubit>().state.stats;
-    final HifzPlan? plan = context.select<SettingsCubit, HifzPlan?>(
-      (SettingsCubit c) => c.state.settings.hifzPlan,
-    );
+    // RELEASE-1.4(review-ladder, stats, hifz-plan)
+    // final ReviewState review = context.watch<ReviewCubit>().state;
+    // final PracticeStats? stats = context.watch<StatsCubit>().state.stats;
+    // final HifzPlan? plan = context.select<SettingsCubit, HifzPlan?>(
+    //   (SettingsCubit c) => c.state.settings.hifzPlan,
+    // );
+    // END RELEASE-1.4(review-ladder, stats, hifz-plan)
     final EdgeInsetsDirectional cardPadding = EdgeInsetsDirectional.all(16.r);
 
-    int inTier(ReviewTier tier) =>
-        review.items.where((ReviewItem i) => i.tier == tier).length;
-
+    // RELEASE-1.4(review-ladder)
+    // int inTier(ReviewTier tier) =>
+    //     review.items.where((ReviewItem i) => i.tier == tier).length;
+    // END RELEASE-1.4(review-ladder)
     return ListView(
       padding: EdgeInsetsDirectional.fromSTEB(16.w, 6.h, 16.w, 24.h),
       children: <Widget>[
@@ -123,48 +130,52 @@ class MyHifzView extends StatelessWidget {
             ],
           ),
         ),
-        SectionTitle(
-          title: LocaleKeys.myHifzReview.tr(),
-          action: LocaleKeys.myHifzSchedule.tr(),
-          onAction: () => context.pushNamed(AppRoutes.reviewsName),
-        ),
-        // The three rungs, each with how many passages stand on it — the
-        // same height, whatever their labels wrap to.
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              for (final ReviewTier tier in ReviewTier.values) ...<Widget>[
-                if (tier != ReviewTier.values.first) SizedBox(width: 10.w),
-                Expanded(
-                  child: AppCard(
-                    padding: cardPadding,
-                    onTap: () => context.pushNamed(AppRoutes.reviewsName),
-                    child: Column(
-                      children: <Widget>[
-                        Text(
-                          inTier(tier).toLocalisedString(),
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          tierLabel(tier),
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        SizedBox(height: 12.h),
-        _PlanCard(plan: plan, padding: cardPadding),
+        // RELEASE-1.4(review-ladder)
+        // SectionTitle(
+        //   title: LocaleKeys.myHifzReview.tr(),
+        //   action: LocaleKeys.myHifzSchedule.tr(),
+        //   onAction: () => context.pushNamed(AppRoutes.reviewsName),
+        // ),
+        // // The three rungs, each with how many passages stand on it — the
+        // // same height, whatever their labels wrap to.
+        // IntrinsicHeight(
+        //   child: Row(
+        //     crossAxisAlignment: CrossAxisAlignment.stretch,
+        //     children: <Widget>[
+        //       for (final ReviewTier tier in ReviewTier.values) ...<Widget>[
+        //         if (tier != ReviewTier.values.first) SizedBox(width: 10.w),
+        //         Expanded(
+        //           child: AppCard(
+        //             padding: cardPadding,
+        //             onTap: () => context.pushNamed(AppRoutes.reviewsName),
+        //             child: Column(
+        //               children: <Widget>[
+        //                 Text(
+        //                   inTier(tier).toLocalisedString(),
+        //                   style: theme.textTheme.headlineSmall?.copyWith(
+        //                     fontWeight: FontWeight.w700,
+        //                   ),
+        //                 ),
+        //                 Text(
+        //                   tierLabel(tier),
+        //                   textAlign: TextAlign.center,
+        //                   style: theme.textTheme.labelSmall?.copyWith(
+        //                     color: theme.colorScheme.onSurfaceVariant,
+        //                   ),
+        //                 ),
+        //               ],
+        //             ),
+        //           ),
+        //         ),
+        //       ],
+        //     ],
+        //   ),
+        // ),
+        // SizedBox(height: 12.h),
+        // END RELEASE-1.4(review-ladder)
+        // RELEASE-1.4(hifz-plan)
+        // _PlanCard(plan: plan, padding: cardPadding),
+        // END RELEASE-1.4(hifz-plan)
         SectionTitle(title: LocaleKeys.myHifzTools.tr()),
         AppCard(
           padding: EdgeInsetsDirectional.zero,
@@ -178,49 +189,55 @@ class MyHifzView extends StatelessWidget {
                 count: hifz.weakSpots,
                 onTap: () => context.pushNamed(AppRoutes.weakSpotsName),
               ),
-              const Divider(height: 1),
-              _Row(
-                icon: Icons.compare_arrows,
-                title: LocaleKeys.mutashabihatTitle.tr(),
-                subtitle: LocaleKeys.myHifzPhrases.tr(
-                  args: <String>[hifz.phrases.toLocalisedString()],
-                ),
-                onTap: () => context.pushNamed(AppRoutes.mutashabihatName),
-              ),
-              const Divider(height: 1),
-              // Reciting to a listener happens over the page, so the row
-              // opens the mushaf where the reader last was, in that mode.
-              _Row(
-                icon: Icons.hearing_outlined,
-                title: LocaleKeys.tasmeeStart.tr(),
-                subtitle: LocaleKeys.tasmeeHint.tr(),
-                onTap: () => openMushaf(
-                  context,
-                  page: context
-                      .read<HomeIndexCubit>()
-                      .state
-                      .last
-                      ?.position
-                      .page,
-                  tasmee: true,
-                ),
-              ),
-              const Divider(height: 1),
-              _Row(
-                icon: Icons.calendar_month_outlined,
-                title: LocaleKeys.statsTitle.tr(),
-                subtitle: joinDetails(<String>[
-                  if (stats != null)
-                    LocaleKeys.myHifzPractice.tr(
-                      args: <String>[
-                        stats.daysPractised.toLocalisedString(),
-                        stats.minutesListened.toLocalisedString(),
-                      ],
-                    ),
-                  LocaleKeys.myHifzOnDevice.tr(),
-                ]),
-                onTap: () => context.pushNamed(AppRoutes.statsName),
-              ),
+              // RELEASE-1.5(mutashabihat)
+              // const Divider(height: 1),
+              // _Row(
+              //   icon: Icons.compare_arrows,
+              //   title: LocaleKeys.mutashabihatTitle.tr(),
+              //   subtitle: LocaleKeys.myHifzPhrases.tr(
+              //     args: <String>[hifz.phrases.toLocalisedString()],
+              //   ),
+              //   onTap: () => context.pushNamed(AppRoutes.mutashabihatName),
+              // ),
+              // END RELEASE-1.5(mutashabihat)
+              // RELEASE-1.4(tasmee)
+              // const Divider(height: 1),
+              // // Reciting to a listener happens over the page, so the row
+              // // opens the mushaf where the reader last was, in that mode.
+              // _Row(
+              //   icon: Icons.hearing_outlined,
+              //   title: LocaleKeys.tasmeeStart.tr(),
+              //   subtitle: LocaleKeys.tasmeeHint.tr(),
+              //   onTap: () => openMushaf(
+              //     context,
+              //     page: context
+              //         .read<HomeIndexCubit>()
+              //         .state
+              //         .last
+              //         ?.position
+              //         .page,
+              //     tasmee: true,
+              //   ),
+              // ),
+              // END RELEASE-1.4(tasmee)
+              // RELEASE-1.4(stats)
+              // const Divider(height: 1),
+              // _Row(
+              //   icon: Icons.calendar_month_outlined,
+              //   title: LocaleKeys.statsTitle.tr(),
+              //   subtitle: joinDetails(<String>[
+              //     if (stats != null)
+              //       LocaleKeys.myHifzPractice.tr(
+              //         args: <String>[
+              //           stats.daysPractised.toLocalisedString(),
+              //           stats.minutesListened.toLocalisedString(),
+              //         ],
+              //       ),
+              //     LocaleKeys.myHifzOnDevice.tr(),
+              //   ]),
+              //   onTap: () => context.pushNamed(AppRoutes.statsName),
+              // ),
+              // END RELEASE-1.4(stats)
             ],
           ),
         ),
@@ -231,6 +248,8 @@ class MyHifzView extends StatelessWidget {
 
 /// The plan: how long it is and where it stands, in one row with a bar —
 /// or, without one, the offer to make one.
+// RELEASE-1.4(hifz-plan): remove the ignore once the plan card is back.
+// ignore: unused_element
 class _PlanCard extends StatelessWidget {
   const _PlanCard({required this.plan, required this.padding});
 

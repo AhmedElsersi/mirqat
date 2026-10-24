@@ -22,8 +22,10 @@ import '../../../data/models/ayah.dart';
 import '../../../data/models/reading_position.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/models/word.dart';
-import '../../../data/models/mutashabihat.dart';
-import '../../../data/repositories/mutashabihat_repository.dart';
+// RELEASE-1.5(mutashabihat)
+// import '../../../data/models/mutashabihat.dart';
+// import '../../../data/repositories/mutashabihat_repository.dart';
+// END RELEASE-1.5(mutashabihat)
 import '../../../data/repositories/quran_repository.dart';
 import '../../../services/qpc_font_service.dart';
 import '../../../services/share_service.dart';
@@ -931,12 +933,15 @@ class _PageSlot extends StatelessWidget {
 
     cubit.selectWord(word);
     // Read once and kept; on every later press it is already in hand.
-    final List<SimilarRef> similar = <SimilarRef>[
-      for (final SimilarAyah s
-          in (await sl<MutashabihatRepository>().index()).similarTo(ayah))
-        if (cubit.surahFor(s.ref.surah) case final Surah of)
-          (ref: s.ref, surah: of),
-    ];
+    // RELEASE-1.5(mutashabihat): the ayah menu's "Similar ayahs" entry.
+    // final List<SimilarRef> similar = <SimilarRef>[
+    //   for (final SimilarAyah s
+    //       in (await sl<MutashabihatRepository>().index()).similarTo(ayah))
+    //     if (cubit.surahFor(s.ref.surah) case final Surah of)
+    //       (ref: s.ref, surah: of),
+    // ];
+    const List<SimilarRef> similar = <SimilarRef>[]; // RELEASE-1.5: remove
+    // END RELEASE-1.5(mutashabihat)
     final ({int first, int last})? juz = cubit.juzSpanOf(surah.number);
     if (!context.mounted) return;
     final AyahAction? action = await showModalBottomSheet<AyahAction>(

@@ -45,18 +45,24 @@ class OnboardingScreen extends StatefulWidget {
     OnboardingPage(
       Icons.record_voice_over_outlined,
       LocaleKeys.onboardingTestTitle,
-      LocaleKeys.onboardingTestBody,
+      // RELEASE-1.4(tasmee): the body that names the listener.
+      // LocaleKeys.onboardingTestBody,
+      LocaleKeys.onboardingTestBodySolo, // RELEASE-1.4(tasmee): remove
     ),
-    OnboardingPage(
-      Icons.event_repeat,
-      LocaleKeys.onboardingReviewTitle,
-      LocaleKeys.onboardingReviewBody,
-    ),
-    OnboardingPage(
-      Icons.compare_arrows,
-      LocaleKeys.onboardingSimilarTitle,
-      LocaleKeys.onboardingSimilarBody,
-    ),
+    // RELEASE-1.4(review-ladder, hifz-plan)
+    // OnboardingPage(
+    //   Icons.event_repeat,
+    //   LocaleKeys.onboardingReviewTitle,
+    //   LocaleKeys.onboardingReviewBody,
+    // ),
+    // END RELEASE-1.4(review-ladder, hifz-plan)
+    // RELEASE-1.5(mutashabihat)
+    // OnboardingPage(
+    //   Icons.compare_arrows,
+    //   LocaleKeys.onboardingSimilarTitle,
+    //   LocaleKeys.onboardingSimilarBody,
+    // ),
+    // END RELEASE-1.5(mutashabihat)
     OnboardingPage(
       Icons.tune_outlined,
       LocaleKeys.onboardingYoursTitle,

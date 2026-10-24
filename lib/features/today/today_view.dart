@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+// RELEASE-1.4(review-ladder): needed again by the due list.
+// import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,7 +14,8 @@ import '../../core/widgets/panel.dart';
 import '../../core/widgets/range_label.dart';
 import '../../data/models/app_settings.dart';
 import '../../data/models/surah.dart';
-import '../../domain/engine/bookends.dart';
+// RELEASE-1.4(bookends)
+// import '../../domain/engine/bookends.dart';
 import '../../domain/entities/ayah_ref.dart';
 import '../../domain/entities/daily_wird.dart';
 import '../../domain/entities/hifz_plan.dart';
@@ -97,25 +99,27 @@ class TodayView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final ReviewState review = context.watch<ReviewCubit>().state;
-    final DateTime now = context.read<ReviewCubit>().clock();
-    final Bookend? bookend = settings.bookends
-        ? const Bookends().suggest(
-            <ReviewCard>[for (final ReviewItem i in review.items) i.card],
-            now,
-            taken: settings.bookendTaken,
-          )
-        : null;
-    final ReviewItem? bookendItem = bookend == null
-        ? null
-        : review.items
-              .where((ReviewItem i) => i.card.id == bookend.card.id)
-              .firstOrNull;
-    // The morning's portion is due on the ladder too: one row, not two.
-    final List<ReviewItem> due = <ReviewItem>[
-      for (final ReviewItem i in review.dueToday)
-        if (i.card.id != bookendItem?.card.id) i,
-    ];
+    // RELEASE-1.4(review-ladder, bookends)
+    // final ReviewState review = context.watch<ReviewCubit>().state;
+    // final DateTime now = context.read<ReviewCubit>().clock();
+    // final Bookend? bookend = settings.bookends
+    //     ? const Bookends().suggest(
+    //         <ReviewCard>[for (final ReviewItem i in review.items) i.card],
+    //         now,
+    //         taken: settings.bookendTaken,
+    //       )
+    //     : null;
+    // final ReviewItem? bookendItem = bookend == null
+    //     ? null
+    //     : review.items
+    //           .where((ReviewItem i) => i.card.id == bookend.card.id)
+    //           .firstOrNull;
+    // // The morning's portion is due on the ladder too: one row, not two.
+    // final List<ReviewItem> due = <ReviewItem>[
+    //   for (final ReviewItem i in review.dueToday)
+    //     if (i.card.id != bookendItem?.card.id) i,
+    // ];
+    // END RELEASE-1.4(review-ladder, bookends)
     final HifzPlan? plan = settings.hifzPlan;
     final Portion? portion = plan?.current;
 
@@ -156,42 +160,46 @@ class TodayView extends StatelessWidget {
             ],
           ),
         ),
-        if (bookend != null && bookendItem != null) ...<Widget>[
-          SizedBox(height: 12.h),
-          AppCard(
-            filled: true,
-            padding: EdgeInsetsDirectional.zero,
-            child: BookendRow(
-              bookend: bookend,
-              item: bookendItem,
-              onTaken: onBookendTaken,
-            ),
-          ),
-        ],
-        if (due.isNotEmpty) ...<Widget>[
-          SectionTitle(
-            title: LocaleKeys.todayDue.tr(),
-            action: LocaleKeys.todayAll.tr(
-              args: <String>[review.dueToday.length.toLocalisedString()],
-            ),
-            onAction: () => context.pushNamed(AppRoutes.reviewsName),
-          ),
-          AppCard(
-            padding: EdgeInsetsDirectional.zero,
-            child: Column(
-              children: <Widget>[
-                for (
-                  int i = 0;
-                  i < due.length && i < shownDue;
-                  i++
-                ) ...<Widget>[
-                  if (i > 0) const Divider(height: 1),
-                  _DueRow(item: due[i], now: now),
-                ],
-              ],
-            ),
-          ),
-        ],
+        // RELEASE-1.4(bookends)
+        // if (bookend != null && bookendItem != null) ...<Widget>[
+        //   SizedBox(height: 12.h),
+        //   AppCard(
+        //     filled: true,
+        //     padding: EdgeInsetsDirectional.zero,
+        //     child: BookendRow(
+        //       bookend: bookend,
+        //       item: bookendItem,
+        //       onTaken: onBookendTaken,
+        //     ),
+        //   ),
+        // ],
+        // END RELEASE-1.4(bookends)
+        // RELEASE-1.4(review-ladder)
+        // if (due.isNotEmpty) ...<Widget>[
+        //   SectionTitle(
+        //     title: LocaleKeys.todayDue.tr(),
+        //     action: LocaleKeys.todayAll.tr(
+        //       args: <String>[review.dueToday.length.toLocalisedString()],
+        //     ),
+        //     onAction: () => context.pushNamed(AppRoutes.reviewsName),
+        //   ),
+        //   AppCard(
+        //     padding: EdgeInsetsDirectional.zero,
+        //     child: Column(
+        //       children: <Widget>[
+        //         for (
+        //           int i = 0;
+        //           i < due.length && i < shownDue;
+        //           i++
+        //         ) ...<Widget>[
+        //           if (i > 0) const Divider(height: 1),
+        //           _DueRow(item: due[i], now: now),
+        //         ],
+        //       ],
+        //     ),
+        //   ),
+        // ],
+        // END RELEASE-1.4(review-ladder)
         if (place != null) ...<Widget>[
           SectionTitle(title: LocaleKeys.todayContinue.tr()),
           AppCard(
@@ -239,50 +247,52 @@ class TodayView extends StatelessWidget {
             ),
           ),
         ],
-        if (plan != null && portion != null) ...<Widget>[
-          SizedBox(height: 12.h),
-          AppCard(
-            padding: EdgeInsetsDirectional.all(16.r),
-            onTap: () => context.pushNamed(AppRoutes.hifzPlanName),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        LocaleKeys.todayPlanDays.tr(
-                          args: <String>[
-                            _range(context, plan.from, plan.to) ?? '',
-                            plan.days.toLocalisedString(),
-                          ],
-                        ),
-                        style: theme.textTheme.titleSmall,
-                      ),
-                    ),
-                    Text(
-                      LocaleKeys.todayPlanProgress.tr(
-                        args: <String>[
-                          plan.completed.toLocalisedString(),
-                          plan.portions.length.toLocalisedString(),
-                        ],
-                      ),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10.h),
-                ProgressBar(
-                  value: plan.portions.isEmpty
-                      ? 0
-                      : plan.completed / plan.portions.length,
-                ),
-              ],
-            ),
-          ),
-        ],
+        // RELEASE-1.4(hifz-plan)
+        // if (plan != null && portion != null) ...<Widget>[
+        //   SizedBox(height: 12.h),
+        //   AppCard(
+        //     padding: EdgeInsetsDirectional.all(16.r),
+        //     onTap: () => context.pushNamed(AppRoutes.hifzPlanName),
+        //     child: Column(
+        //       crossAxisAlignment: CrossAxisAlignment.stretch,
+        //       children: <Widget>[
+        //         Row(
+        //           children: <Widget>[
+        //             Expanded(
+        //               child: Text(
+        //                 LocaleKeys.todayPlanDays.tr(
+        //                   args: <String>[
+        //                     _range(context, plan.from, plan.to) ?? '',
+        //                     plan.days.toLocalisedString(),
+        //                   ],
+        //                 ),
+        //                 style: theme.textTheme.titleSmall,
+        //               ),
+        //             ),
+        //             Text(
+        //               LocaleKeys.todayPlanProgress.tr(
+        //                 args: <String>[
+        //                   plan.completed.toLocalisedString(),
+        //                   plan.portions.length.toLocalisedString(),
+        //                 ],
+        //               ),
+        //               style: theme.textTheme.labelMedium?.copyWith(
+        //                 color: theme.colorScheme.onSurfaceVariant,
+        //               ),
+        //             ),
+        //           ],
+        //         ),
+        //         SizedBox(height: 10.h),
+        //         ProgressBar(
+        //           value: plan.portions.isEmpty
+        //               ? 0
+        //               : plan.completed / plan.portions.length,
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ],
+        // END RELEASE-1.4(hifz-plan)
       ],
     );
   }
@@ -381,7 +391,9 @@ class _NewPortion extends StatelessWidget {
       );
       start = () => openPortion(context, portion!);
     } else {
-      subtitle = LocaleKeys.todayEmptyBody.tr();
+      // RELEASE-1.4(hifz-plan): the body that offers a plan.
+      // subtitle = LocaleKeys.todayEmptyBody.tr();
+      subtitle = LocaleKeys.todayEmptyBodyNoPlan.tr(); // RELEASE-1.4: remove
     }
 
     const Color onHero = AppColors.cream;
@@ -451,13 +463,16 @@ class _NewPortion extends StatelessWidget {
                         : LocaleKeys.todayStart.tr(),
                   ),
                 ),
-                if (start == null)
-                  TextButton(
-                    style: TextButton.styleFrom(foregroundColor: onHero),
-                    onPressed: () => context.pushNamed(AppRoutes.hifzPlanName),
-                    child: Text(LocaleKeys.todayPlan.tr()),
-                  )
-                else
+                // RELEASE-1.4(hifz-plan)
+                // if (start == null)
+                //   TextButton(
+                //     style: TextButton.styleFrom(foregroundColor: onHero),
+                //     onPressed: () => context.pushNamed(AppRoutes.hifzPlanName),
+                //     child: Text(LocaleKeys.todayPlan.tr()),
+                //   )
+                // else
+                // END RELEASE-1.4(hifz-plan)
+                if (start != null) // RELEASE-1.4(hifz-plan): remove this line
                   IconButton(
                     color: onHero,
                     tooltip: LocaleKeys.wirdEdit.tr(),
@@ -589,6 +604,8 @@ class _ReviewPart extends StatelessWidget {
 }
 
 /// A review the schedule has due: its place on the ladder, its range, when.
+// RELEASE-1.4(review-ladder): remove the ignore once the due list is back.
+// ignore: unused_element
 class _DueRow extends StatelessWidget {
   const _DueRow({required this.item, required this.now});
 

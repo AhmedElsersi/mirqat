@@ -336,6 +336,7 @@ class LocaleKeys {
   static const String onboardingStart = 'onboarding.start';
   static const String onboardingStep = 'onboarding.step';
   static const String onboardingTestBody = 'onboarding.test_body';
+  static const String onboardingTestBodySolo = 'onboarding.test_body_solo';
   static const String onboardingTestTitle = 'onboarding.test_title';
   static const String onboardingYoursBody = 'onboarding.yours_body';
   static const String onboardingYoursTitle = 'onboarding.yours_title';
@@ -645,6 +646,7 @@ class LocaleKeys {
   static const String todayContinue = 'today.continue';
   static const String todayDue = 'today.due';
   static const String todayEmptyBody = 'today.empty_body';
+  static const String todayEmptyBodyNoPlan = 'today.empty_body_no_plan';
   static const String todayEmptyTitle = 'today.empty_title';
   static const String todayMark = 'today.mark';
   static const String todayPage = 'today.page';

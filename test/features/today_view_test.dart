@@ -110,25 +110,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a few due: one row each, and nothing overflows at 320 dp', (
-    WidgetTester tester,
-  ) async {
-    await pump(tester, 2);
-    expect(find.text('حان موعد مراجعته'), findsOneWidget);
-    expect(dueRows(), findsNWidgets(2));
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'a few due: one row each, and nothing overflows at 320 dp',
+    (WidgetTester tester) async {
+      await pump(tester, 2);
+      expect(find.text('حان موعد مراجعته'), findsOneWidget);
+      expect(dueRows(), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+    },
+    skip:
+        true /* RELEASE-1.4(review-ladder): its entry point is commented out */,
+  );
 
-  testWidgets('many due: three rows, and the rest a tap away', (
-    WidgetTester tester,
-  ) async {
-    await pump(tester, 5);
-    await tester.drag(find.byType(ListView), const Offset(0, -500));
-    await tester.pump();
-    expect(dueRows(), findsNWidgets(TodayView.shownDue));
-    expect(find.text('الكل (٥)'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'many due: three rows, and the rest a tap away',
+    (WidgetTester tester) async {
+      await pump(tester, 5);
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pump();
+      expect(dueRows(), findsNWidgets(TodayView.shownDue));
+      expect(find.text('الكل (٥)'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+    skip:
+        true /* RELEASE-1.4(review-ladder): its entry point is commented out */,
+  );
 
   final HifzPlan plan = HifzPlan(
     from: const AyahRef(1, 1),
@@ -148,7 +154,7 @@ void main() {
     expect(find.text('حفظ اليوم: ١ من ٢'), findsOneWidget);
     expect(find.textContaining('خطة الحفظ'), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
+  }, skip: true /* RELEASE-1.4(hifz-plan): its entry point is commented out */);
 
   testWidgets('the reader\'s own new portion wins over the plan\'s', (
     WidgetTester tester,
@@ -182,24 +188,32 @@ void main() {
       expect(find.byIcon(Icons.bedtime_outlined), findsNothing);
     });
 
-    testWidgets('on, in the morning: last night\'s portion first — one row, '
-        'not a second one beside its review', (WidgetTester tester) async {
-      await pump(tester, 2, bookends: true);
-      expect(find.byIcon(Icons.wb_twilight), findsOneWidget);
-      expect(find.text('هذا الصباح'), findsOneWidget);
-      // Two cards were due: one is the morning's, one stays a review.
-      expect(dueRows(), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+    testWidgets(
+      'on, in the morning: last night\'s portion first — one row, '
+      'not a second one beside its review',
+      (WidgetTester tester) async {
+        await pump(tester, 2, bookends: true);
+        expect(find.byIcon(Icons.wb_twilight), findsOneWidget);
+        expect(find.text('هذا الصباح'), findsOneWidget);
+        // Two cards were due: one is the morning's, one stays a review.
+        expect(dueRows(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+      skip: true /* RELEASE-1.4(bookends): its entry point is commented out */,
+    );
 
-    testWidgets('on, at night: today\'s new portion, to hear once more, even '
-        'with nothing due', (WidgetTester tester) async {
-      // The cards were memorized on 30 November; it is that night.
-      await pump(tester, 1, bookends: true, now: DateTime(2026, 11, 30, 22));
-      expect(find.byIcon(Icons.bedtime_outlined), findsOneWidget);
-      expect(find.text('قبل النوم'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+    testWidgets(
+      'on, at night: today\'s new portion, to hear once more, even '
+      'with nothing due',
+      (WidgetTester tester) async {
+        // The cards were memorized on 30 November; it is that night.
+        await pump(tester, 1, bookends: true, now: DateTime(2026, 11, 30, 22));
+        expect(find.byIcon(Icons.bedtime_outlined), findsOneWidget);
+        expect(find.text('قبل النوم'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+      skip: true /* RELEASE-1.4(bookends): its entry point is commented out */,
+    );
 
     testWidgets('taken up, it is gone', (WidgetTester tester) async {
       await pump(

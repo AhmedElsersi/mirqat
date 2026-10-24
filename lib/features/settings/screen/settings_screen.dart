@@ -186,13 +186,15 @@ class SettingsScreen extends StatelessWidget {
                         onTap: () =>
                             context.pushNamed(AppRoutes.sessionSettingsName),
                       ),
-                      _SwitchRow(
-                        icon: Icons.bedtime_outlined,
-                        title: LocaleKeys.reviewBookendsTitle.tr(),
-                        subtitle: LocaleKeys.reviewBookendsHint.tr(),
-                        value: settings.bookends,
-                        onChanged: cubit.setBookends,
-                      ),
+                      // RELEASE-1.4(bookends)
+                      // _SwitchRow(
+                      //   icon: Icons.bedtime_outlined,
+                      //   title: LocaleKeys.reviewBookendsTitle.tr(),
+                      //   subtitle: LocaleKeys.reviewBookendsHint.tr(),
+                      //   value: settings.bookends,
+                      //   onChanged: cubit.setBookends,
+                      // ),
+                      // END RELEASE-1.4(bookends)
                     ],
                   ),
 
@@ -555,6 +557,8 @@ class _SwitchRow extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onChanged,
+    // RELEASE-1.4(bookends): the bookends row is the one that sets this.
+    // ignore: unused_element_parameter
     this.subtitle,
   });
 
