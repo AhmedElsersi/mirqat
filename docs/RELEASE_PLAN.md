@@ -88,10 +88,14 @@ These are deliberate. None of them is visible.
 
 ## Before 1.3 itself
 
-- [ ] Merge `main` into `dev`. `main` is at 1.2.1+32 while `dev` still says 1.2.0+29.
-  Then set 1.3.0 with the next build number.
-- [ ] Confirm the QPC V2 page fonts are live on R2 under `fonts/qpc-v2/`. The face falls
-  back quietly, but it would ship looking unfinished.
+- [x] Merge `main` into `dev`. `main` is at 1.2.1+32 while `dev` still says 1.2.0+29.
+  Then set 1.3.0 with the next build number. *Done 2026-10-24: 1.3.0+33.*
+- [x] Confirm the QPC V2 page fonts are live on R2 under `fonts/qpc-v2/`. The face falls
+  back quietly, but it would ship looking unfinished. *Checked 2026-10-24: all 604
+  downloaded, each matching its size and sha256 in `qpc_v2_fonts.json`.*
 - [ ] Check on a device: a first launch (five slides), Today with nothing set, My hifz
   with no weak spots, a backup round trip.
-- [ ] Update the store listing (`docs/PLAY_LISTING.md`) so it names only the 1.3 features.
+- [x] Update the store listing (`docs/PLAY_LISTING.md`) so it names only the 1.3 features.
+  *Done 2026-10-24, in `store/apple/LISTING.md` too: a "Tools for memorizing" section,
+  and new release notes in both languages.*
+- [ ] Retake the store screenshots: `03-home.png` shows the old home.

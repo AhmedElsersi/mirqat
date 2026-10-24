@@ -61,7 +61,8 @@ any edit. Items only the account holder can answer are marked **verify**.
 • المصحف كاملًا بصفحاته المعروفة، ٦٠٤ صفحات، للقراءة دون إنترنت.
 • اقرأ المصحف متصلًا، أو سورةً سورة، أو جزءًا جزءًا.
 • يتذكّر التطبيق آخر صفحة قرأتها ويعيدك إليها، ويحتفظ بسجل لآخر المواضع.
-• حجم الخط قابل للتكبير، وللصفحة مظهر فاتح وآخر داكن.
+• حجم الخط قابل للتكبير، وللصفحة مظهر فاتح وآخر داكن، ويمكنك اختيار خط مصحف المدينة نفسه.
+• شارك آية أو صفحة كاملة صورةً.
 
 الجلسة فوق النص
 • لا شاشة منفصلة للتشغيل: اضغط على الصفحة فتظهر أدوات الجلسة، وتُظلَّل الآية التي تُتلى وتتبعها الصفحة.
@@ -75,6 +76,15 @@ any edit. Items only the account holder can answer are marked **verify**.
 • الوقفات بين الآيات والتكرارات والخطوات، وسرعة التلاوة.
 • غيّر الإعدادات أثناء الجلسة، واختر: ابدأ من جديد، أو أكمل من الآية الحالية.
 
+أدوات الحفظ
+• وِرد اليوم في صفحة: حفظ جديد، ومراجعة القريب، ومراجعة القديم — كلٌّ بضغطة.
+• الاسترجاع: يصمت التطبيق لتقرأ الآية من حفظك، ثم يُسمعك إياها.
+• اختبار الوصل: في آخر الجلسة تُسأل عن كل آية: ما الذي بعدها؟
+• عرض الحفظ: تُستر الصفحة، وتكشف الآية بلمسة.
+• مواضع التعثّر: علّم حيث تتعثّر، فتُكرَّر أكثر في الجلسات وتظهر في قائمة السور.
+• طرق جاهزة للجلسة: حفظ جديد، ومراجعة، وتثبيت، واستماع — واحفظ طريقتك باسم تختاره.
+• مؤقّت النوم، و«ثلاثًا أخرى» للآية، واستئناف الجلسة التي لم تكتمل.
+
 التلاوة
 • القرآن كاملًا، ١١٤ سورة، بصوت الشيخ أحمد خليل شاهين.
 • تُبَثّ التلاوة عبر الإنترنت، ويمكنك تنزيل أي سورة للاستماع دون اتصال.
@@ -82,7 +92,7 @@ any edit. Items only the account holder can answer are marked **verify**.
 
 تقدّمك
 • يتابع التطبيق ما كرّرته من كل آية وما حفظته من كل سورة.
-• كل ذلك محفوظ على جهازك وحده.
+• كل ذلك محفوظ على جهازك وحده، ويمكنك نسخه إلى ملف ونقله إلى جهاز جديد.
 
 بلا إعلانات، وبلا حسابات، ولا يجمع التطبيق أي بيانات عنك.
 ```
@@ -90,7 +100,12 @@ any edit. Items only the account holder can answer are marked **verify**.
 <!-- field: whatsnew ar 4000 -->
 **What's New in This Version**
 ```
-الإصدار الأول على آب ستور.
+• صفحة رئيسية جديدة بأربعة أقسام: اليوم، والمصحف، وحفظي، والإعدادات.
+• وِرد اليوم: حفظ جديد ومراجعتان، كلٌّ بضغطة.
+• الاسترجاع واختبار الوصل: الجلسة تختبر حفظك، لا تُسمعك فقط.
+• عرض الحفظ يستر الصفحة، ومواضع التعثّر تتذكّر أين تنقطع.
+• طرق جاهزة للجلسة وطرقك الخاصة، ومؤقّت للنوم، واستئناف الجلسة.
+• خط مصحف المدينة، ومشاركة الصفحة صورةً، ونسخ التقدّم إلى ملف.
 ```
 
 ## English (`en-US`)
@@ -130,7 +145,8 @@ The mushaf in your hands
 • The whole mushaf in its familiar 604 pages, readable with no connection.
 • Read it cover to cover, or one surah or one juz at a time.
 • The app remembers the last page you read and takes you back to it, and keeps a history of your recent places.
-• The text can be made larger, and the page has a light and a dark appearance.
+• The text can be made larger, the page has a light and a dark appearance, and you can choose the Madinah mushaf's own script.
+• Share an ayah, or a whole page, as an image.
 
 The session plays over the text
 • There is no separate player screen: tap the page and the session controls come up; the ayah being recited is marked, and the page follows it.
@@ -144,6 +160,15 @@ Every session, your way
 • The pauses between ayahs, repeats and steps, and the speed of recitation.
 • Change the settings mid-session and choose: start again, or carry on from the current ayah.
 
+Tools for memorizing
+• Today's wird on one page: a new portion, a recent review and an old review, each one tap away.
+• Recall: the app falls silent while you recite an ayah from memory, then plays it back.
+• Test the links: at the end of a session, for each ayah, what comes next?
+• Memorization view: the page is covered, and a tap reveals one ayah.
+• Weak spots: mark where you slip; those places are drilled more and shown on the surah list.
+• Ready ways of working: new portion, review, deep drill and listen — or save your own under a name.
+• A sleep timer, "three more" for an ayah, and picking up a session left unfinished.
+
 Recitation
 • The whole Quran, all 114 surahs, recited by Sheikh Ahmed Khalil Shaheen.
 • Recitation streams over the internet, and any surah can be downloaded to listen offline.
@@ -151,7 +176,7 @@ Recitation
 
 Your progress
 • The app keeps track of how often you have repeated each ayah and what you have memorized of each surah.
-• All of it stays on your device.
+• All of it stays on your device, and you can back it up to a file and take it to a new phone.
 
 No ads, no accounts, and the app collects nothing about you.
 ```
@@ -159,7 +184,12 @@ No ads, no accounts, and the app collects nothing about you.
 <!-- field: whatsnew en 4000 -->
 **What's New in This Version**
 ```
-First release on the App Store.
+• A new home in four tabs: Today, Mushaf, My hifz and Settings.
+• Today's wird: a new portion and two reviews, each one tap away.
+• Recall and Test the links: a session now tests you, not only recites.
+• Memorization view covers the page; weak spots remember where you slip.
+• Ready ways of working and your own, a sleep timer, and resuming a session.
+• The Madinah mushaf's own script, sharing a page as an image, and backing up your progress.
 ```
 
 ## Screenshots
