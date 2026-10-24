@@ -34,12 +34,25 @@ class SettingsCubit extends Cubit<SettingsState> {
     // Someone else saved — a session keeping its values as defaults, say.
     // Taken up at once, so that the next save from here does not write an
     // older copy back over theirs.
+    // Its own saves come back on the same stream, and are passed over: the
+    // echo of one arrives while the next is being written, and taking it up
+    // would put the older map back over the newer one.
     _saved = _settings.changes.listen((AppSettings saved) {
+      final int own = _ownSaves.indexWhere(
+        (AppSettings s) => identical(s, saved),
+      );
+      if (own >= 0) {
+        _ownSaves.removeAt(own);
+        return;
+      }
       if (saved != state.settings) emit(state.copyWith(settings: saved));
     });
   }
 
   StreamSubscription<AppSettings>? _saved;
+
+  /// Saves made here whose echo has not come back yet.
+  final List<AppSettings> _ownSaves = <AppSettings>[];
 
   @override
   Future<void> close() async {
@@ -315,7 +328,10 @@ class SettingsCubit extends Cubit<SettingsState> {
     // rather than a control that silently springs back.
     emit(state.copyWith(settings: next, errorMessage: null));
 
+    _ownSaves.add(next);
     final result = await _settings.save(next);
+    // A failed save sends no echo.
+    if (result.isLeft()) _ownSaves.remove(next);
     result.fold(
       (Failure f) => emit(state.copyWith(errorMessage: f.message)),
       (_) {},
