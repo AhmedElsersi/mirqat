@@ -336,9 +336,17 @@ void main() {
       await openReader(tester);
       await openSheet(tester);
 
-      // The range is two rows that open their pickers; the first stepper
-      // in the sheet is the repeat count.
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
+      // The range's own steppers come first in the sheet; the repeat count
+      // is the first stepper of the tuning controls under them.
+      await AppHarness.tapAndRun(
+        tester,
+        find
+            .descendant(
+              of: find.byType(SessionTuningControls),
+              matching: find.byIcon(Icons.add),
+            )
+            .first,
+      );
 
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
@@ -356,16 +364,22 @@ void main() {
       await openReader(tester);
 
       await openSheet(tester);
-      // The "from" row opens its picker; its stepper up twice: ayahs 3..7.
+      // The "from" row's stepper is right there in the sheet; up twice:
+      // ayahs 3..7.
+      final Finder from = find.byKey(const ValueKey<String>('session-from'));
       await AppHarness.tapAndRun(
         tester,
-        find.byKey(const ValueKey<String>('session-from')),
+        find.descendant(of: from, matching: find.byIcon(Icons.add)),
       );
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).last);
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).last);
-      await AppHarness.tapAndRun(tester, find.text('تم'));
-      // The row names the new start.
-      expect(find.text('سورة الفاتحة، الآية ٣'), findsOneWidget);
+      await AppHarness.tapAndRun(
+        tester,
+        find.descendant(of: from, matching: find.byIcon(Icons.add)),
+      );
+      // The row's stepper reads the new start.
+      expect(
+        find.descendant(of: from, matching: find.text('٣')),
+        findsOneWidget,
+      );
 
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
@@ -388,14 +402,13 @@ void main() {
       await openSheet(tester);
 
       // Pull "to" down to 1, so from == to == 1.
-      await AppHarness.tapAndRun(
-        tester,
-        find.byKey(const ValueKey<String>('session-to')),
-      );
+      final Finder to = find.byKey(const ValueKey<String>('session-to'));
       for (int i = 0; i < 6; i++) {
-        await AppHarness.tapAndRun(tester, find.byIcon(Icons.remove).last);
+        await AppHarness.tapAndRun(
+          tester,
+          find.descendant(of: to, matching: find.byIcon(Icons.remove)),
+        );
       }
-      await AppHarness.tapAndRun(tester, find.text('تم'));
 
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
@@ -415,14 +428,15 @@ void main() {
       final MushafCubit cubit = await openReader(tester);
       await openSheet(tester);
 
-      // The "to" row opens its pickers: the surah is the dropdown there.
+      // The "to" row's surah dropdown is right there in the sheet.
       await AppHarness.tapAndRun(
         tester,
-        find.byKey(const ValueKey<String>('session-to')),
-      );
-      await AppHarness.tapAndRun(
-        tester,
-        find.byWidgetPredicate((Widget w) => w is DropdownButtonFormField<int>),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('session-to')),
+          matching: find.byWidgetPredicate(
+            (Widget w) => w is DropdownButtonFormField<int>,
+          ),
+        ),
       );
       await AppHarness.tapAndRun(tester, find.textContaining('البقرة').last);
 

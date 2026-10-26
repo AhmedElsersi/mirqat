@@ -199,9 +199,9 @@ class _Reciters extends StatelessWidget {
   }
 }
 
-/// From a surah and an ayah to a surah and an ayah: two rows, each opening
-/// its pickers. The end may be in a later surah than the start, never an
-/// earlier one.
+/// From a surah and an ayah to a surah and an ayah, both picked right here:
+/// the surah from a dropdown, the ayah with a stepper beside it. The end may
+/// be in a later surah than the start, never an earlier one.
 class _Range extends StatelessWidget {
   const _Range({required this.state, required this.config});
 
@@ -219,8 +219,39 @@ class _Range extends StatelessWidget {
         FieldLabel(LocaleKeys.sessionSetupRange.tr()),
         SessionListCard(
           children: <Widget>[
-            _RangeRow(state: state, isEnd: false),
-            _RangeRow(state: state, isEnd: true),
+            Padding(
+              key: const ValueKey<String>('session-from'),
+              padding: EdgeInsetsDirectional.symmetric(
+                horizontal: 14.w,
+                vertical: 12.h,
+              ),
+              child: _RangeEnd(
+                label: LocaleKeys.sessionSetupFrom.tr(),
+                surahs: state.surahs,
+                value: config.start,
+                onChanged: cubit.setStart,
+                isEnd: false,
+              ),
+            ),
+            Padding(
+              key: const ValueKey<String>('session-to'),
+              padding: EdgeInsetsDirectional.symmetric(
+                horizontal: 14.w,
+                vertical: 12.h,
+              ),
+              child: _RangeEnd(
+                label: LocaleKeys.sessionSetupTo.tr(),
+                // A range only runs forward, so the end is offered from the
+                // start's surah on.
+                surahs: <Surah>[
+                  for (final Surah s in state.surahs)
+                    if (s.number >= config.surahNumber) s,
+                ],
+                value: config.end,
+                onChanged: cubit.setEnd,
+                isEnd: true,
+              ),
+            ),
           ],
         ),
         if (!state.rangeChosen && !state.isActive)
@@ -245,138 +276,6 @@ class _Range extends StatelessWidget {
       ],
     );
   }
-}
-
-/// One end of the range, named — «سورة الملك · الآية ١» — on a row that
-/// opens its surah and ayah pickers.
-class _RangeRow extends StatelessWidget {
-  const _RangeRow({required this.state, required this.isEnd});
-
-  final SessionState state;
-  final bool isEnd;
-
-  Future<void> _pick(BuildContext context) {
-    final SessionCubit cubit = context.read<SessionCubit>();
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => BlocProvider<SessionCubit>.value(
-        value: cubit,
-        child: _RangePicker(isEnd: isEnd),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final SessionConfig config = state.config!;
-    final AyahRef value = isEnd ? config.end : config.start;
-    final Surah? surah = state.surah(value.surah);
-    return InkWell(
-      key: ValueKey<String>(isEnd ? 'session-to' : 'session-from'),
-      onTap: () => _pick(context),
-      child: Padding(
-        padding: EdgeInsetsDirectional.symmetric(
-          horizontal: 14.w,
-          vertical: 11.h,
-        ),
-        child: Row(
-          children: <Widget>[
-            TileIcon(
-              isEnd ? Icons.vertical_align_top : Icons.vertical_align_bottom,
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    isEnd
-                        ? LocaleKeys.sessionSetupTo.tr()
-                        : LocaleKeys.sessionSetupFrom.tr(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  Text(
-                    LocaleKeys.mushafAyahReference.tr(
-                      args: <String>[
-                        surah == null ? '' : _surahName(context, surah),
-                        value.ayah.toLocalisedString(),
-                      ],
-                    ),
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The surah and the ayah of one end of the range, applied as they are
-/// picked — the summary behind the sheet follows them.
-class _RangePicker extends StatelessWidget {
-  const _RangePicker({required this.isEnd});
-
-  final bool isEnd;
-
-  @override
-  Widget build(BuildContext context) => BlocBuilder<SessionCubit, SessionState>(
-    builder: (BuildContext context, SessionState state) {
-      final SessionConfig? config = state.config;
-      if (config == null) return const SizedBox.shrink();
-      final SessionCubit cubit = context.read<SessionCubit>();
-      return SafeArea(
-        child: Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(
-            16.w,
-            0,
-            16.w,
-            12.h + MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              _RangeEnd(
-                label: isEnd
-                    ? LocaleKeys.sessionSetupTo.tr()
-                    : LocaleKeys.sessionSetupFrom.tr(),
-                // A range only runs forward, so the end is offered from the
-                // start's surah on.
-                surahs: isEnd
-                    ? <Surah>[
-                        for (final Surah s in state.surahs)
-                          if (s.number >= config.surahNumber) s,
-                      ]
-                    : state.surahs,
-                value: isEnd ? config.end : config.start,
-                onChanged: isEnd ? cubit.setEnd : cubit.setStart,
-                isEnd: isEnd,
-              ),
-              SizedBox(height: 16.h),
-              FilledButton(
-                style: FilledButton.styleFrom(minimumSize: Size(0, 48.r)),
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(LocaleKeys.commonDone.tr()),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
 }
 
 class _RangeEnd extends StatelessWidget {
@@ -412,7 +311,6 @@ class _RangeEnd extends StatelessWidget {
         Row(
           children: <Widget>[
             Expanded(
-              flex: 3,
               child: DropdownButtonFormField<int>(
                 // Keyed by its value: a form field keeps the value it was
                 // built with, and the other end can move this one.
@@ -446,8 +344,9 @@ class _RangeEnd extends StatelessWidget {
               ),
             ),
             SizedBox(width: 12.w),
+            // Half and half: the stepper's two buttons must fit even on the
+            // narrowest phone, inside the card's own padding.
             Expanded(
-              flex: 2,
               child: StepperField(
                 value: value.ayah,
                 min: 1,
