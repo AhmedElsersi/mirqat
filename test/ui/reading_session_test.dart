@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mirqat/core/widgets/session_controls.dart';
 import 'package:mirqat/core/widgets/reciter_avatar.dart';
 import 'package:mirqat/core/di/injection.dart';
 import 'package:mirqat/core/widgets/ayah_text.dart';
@@ -322,10 +323,7 @@ void main() {
         'and tells the bar', (WidgetTester tester) async {
       await openFatiha(tester);
       await longPressFirstWord(tester);
-      await AppHarness.tapAndRun(
-        tester,
-        find.byTooltip('اجعلها نهاية النطاق'),
-      );
+      await AppHarness.tapAndRun(tester, find.byTooltip('اجعلها نهاية النطاق'));
 
       expect(player().loads, isEmpty);
       final SessionState state = sessionOf(tester).state;
@@ -343,6 +341,15 @@ void main() {
   });
 
   group('settings changed under a running session', () {
+    // The range's own steppers come first in the sheet; the repeat count is
+    // the first stepper of the tuning controls under them.
+    Finder repeatCountPlus() => find
+        .descendant(
+          of: find.byType(SessionTuningControls),
+          matching: find.byIcon(Icons.add),
+        )
+        .first;
+
     testWidgets('are not left hanging: putting the sheet away asks what to do '
         'with them', (WidgetTester tester) async {
       await openFatiha(tester);
@@ -354,8 +361,7 @@ void main() {
       );
 
       await AppHarness.openSessionSheet(tester);
-      // The range is two rows now; the first stepper is the repeat count.
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
+      await AppHarness.tapAndRun(tester, repeatCountPlus());
       expect(player().loads, hasLength(1), reason: 'nothing happens unasked');
       expect(find.text('أكمل من الآية الحالية'), findsOneWidget);
 
@@ -379,7 +385,7 @@ void main() {
       final int repeats = player().loads.single.plan.config.repeatCount;
 
       await AppHarness.openSessionSheet(tester);
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
+      await AppHarness.tapAndRun(tester, repeatCountPlus());
       await AppHarness.tapAndRun(tester, find.byIcon(Icons.close));
 
       expect(find.byType(AlertDialog), findsOneWidget);
