@@ -106,9 +106,9 @@ void main() {
       final BuildContext context = tester.element(find.byType(Scaffold).first);
       expect(Localizations.localeOf(context).languageCode, 'en');
       expect(Directionality.of(context), TextDirection.ltr);
-      // The wordmark is the brand's name, so it is the Arabic string on both
-      // locales (owner decision D1).
-      expect(find.text('اقرأ وارتق'), findsOneWidget);
+      // And the tabs speak English.
+      expect(find.text('Settings'), findsWidgets);
+      expect(find.text('Mushaf'), findsWidgets);
     });
 
     testWidgets('no user-facing string is a raw translation key', (
@@ -143,7 +143,7 @@ void main() {
       await tester.scrollUntilVisible(
         find.text(catalog.last.nameAr),
         600,
-        scrollable: AppHarness.homeScrollable(ListView),
+        scrollable: AppHarness.homeScrollable(CustomScrollView),
       );
       expect(find.text(catalog.last.nameAr), findsOneWidget);
     });
@@ -207,14 +207,14 @@ void main() {
       await tester.scrollUntilVisible(
         find.text(unrecorded.nameAr),
         300,
-        scrollable: AppHarness.homeScrollable(ListView),
+        scrollable: AppHarness.homeScrollable(CustomScrollView),
       );
       expect(markerIn(unrecorded), findsOneWidget);
 
       await tester.scrollUntilVisible(
         find.text(recorded.nameAr),
         -300,
-        scrollable: AppHarness.homeScrollable(ListView),
+        scrollable: AppHarness.homeScrollable(CustomScrollView),
       );
       expect(markerIn(recorded), findsNothing);
     });
@@ -231,7 +231,7 @@ void main() {
       await tester.scrollUntilVisible(
         find.text(unrecorded.nameAr),
         300,
-        scrollable: AppHarness.homeScrollable(ListView),
+        scrollable: AppHarness.homeScrollable(CustomScrollView),
       );
       await AppHarness.openReading(tester, find.text(unrecorded.nameAr));
       await AppHarness.showReadingBar(tester);
@@ -316,6 +316,10 @@ void main() {
       await harness.pumpApp(tester);
       await openReader(tester);
       await openSheet(tester);
+      // What is on the device folds away with the rest of the audio.
+      await tester.ensureVisible(find.text('القارئ والصوت والوقفات'));
+      await AppHarness.frames(tester, 200);
+      await AppHarness.tapAndRun(tester, find.text('القارئ والصوت والوقفات'));
 
       expect(find.byType(AudioPackTile), findsOneWidget);
       // No surah audio ships any more: Al-Fatiha comes from the manifest, so
@@ -332,8 +336,17 @@ void main() {
       await openReader(tester);
       await openSheet(tester);
 
-      // Steppers in the sheet, in order: from ayah, to ayah, repeat count.
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).at(2));
+      // The range's own steppers come first in the sheet; the repeat count
+      // is the first stepper of the tuning controls under them.
+      await AppHarness.tapAndRun(
+        tester,
+        find
+            .descendant(
+              of: find.byType(SessionTuningControls),
+              matching: find.byIcon(Icons.add),
+            )
+            .first,
+      );
 
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
@@ -351,9 +364,22 @@ void main() {
       await openReader(tester);
 
       await openSheet(tester);
-      // "From" stepper up twice: ayahs 3..7.
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
-      await AppHarness.tapAndRun(tester, find.byIcon(Icons.add).first);
+      // The "from" row's stepper is right there in the sheet; up twice:
+      // ayahs 3..7.
+      final Finder from = find.byKey(const ValueKey<String>('session-from'));
+      await AppHarness.tapAndRun(
+        tester,
+        find.descendant(of: from, matching: find.byIcon(Icons.add)),
+      );
+      await AppHarness.tapAndRun(
+        tester,
+        find.descendant(of: from, matching: find.byIcon(Icons.add)),
+      );
+      // The row's stepper reads the new start.
+      expect(
+        find.descendant(of: from, matching: find.text('٣')),
+        findsOneWidget,
+      );
 
       final SessionSummary summary = tester.widget<SessionSummary>(
         find.byType(SessionSummary),
@@ -364,7 +390,7 @@ void main() {
       await AppHarness.tapAndRun(tester, find.byIcon(Icons.close));
 
       // The bar reflects the sheet's range, in Arabic numerals.
-      expect(find.text('سورة الفاتحة · الآيات ٣ - ٧'), findsOneWidget);
+      expect(find.text('سورة الفاتحة، الآيات ٣ - ٧'), findsOneWidget);
       expect(find.text('سورة الفاتحة كاملة'), findsNothing);
     });
 
@@ -376,8 +402,12 @@ void main() {
       await openSheet(tester);
 
       // Pull "to" down to 1, so from == to == 1.
+      final Finder to = find.byKey(const ValueKey<String>('session-to'));
       for (int i = 0; i < 6; i++) {
-        await AppHarness.tapAndRun(tester, find.byIcon(Icons.remove).at(1));
+        await AppHarness.tapAndRun(
+          tester,
+          find.descendant(of: to, matching: find.byIcon(Icons.remove)),
+        );
       }
 
       final SessionSummary summary = tester.widget<SessionSummary>(
@@ -387,7 +417,7 @@ void main() {
 
       await AppHarness.tapAndRun(tester, find.byIcon(Icons.close));
 
-      expect(find.text('سورة الفاتحة · الآية ١'), findsOneWidget);
+      expect(find.text('سورة الفاتحة، الآية ١'), findsOneWidget);
       expect(startButton(tester).onPressed, isNotNull);
     });
 
@@ -398,12 +428,15 @@ void main() {
       final MushafCubit cubit = await openReader(tester);
       await openSheet(tester);
 
-      // The "to" surah picker: second of the two dropdowns.
+      // The "to" row's surah dropdown is right there in the sheet.
       await AppHarness.tapAndRun(
         tester,
-        find
-            .byWidgetPredicate((Widget w) => w is DropdownButtonFormField<int>)
-            .at(1),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('session-to')),
+          matching: find.byWidgetPredicate(
+            (Widget w) => w is DropdownButtonFormField<int>,
+          ),
+        ),
       );
       await AppHarness.tapAndRun(tester, find.textContaining('البقرة').last);
 
@@ -466,6 +499,16 @@ void main() {
   });
 }
 
-/// The declared length of the home list or grid.
-int? _itemCount(WidgetTester tester, Type scrollView) =>
-    (tester.widget(find.byType(scrollView)) as ScrollView).semanticChildCount;
+/// The declared length of the home list or grid. The list is a sliver list
+/// in a card, a divider between every two rows; the grid declares its own.
+int? _itemCount(WidgetTester tester, Type scrollView) {
+  if (scrollView == ListView) {
+    final int? n = tester
+        .widget<SliverList>(find.byType(SliverList))
+        .delegate
+        .estimatedChildCount;
+    return n == null ? null : (n + 1) ~/ 2;
+  }
+  return (tester.widget(find.byType(scrollView)) as ScrollView)
+      .semanticChildCount;
+}

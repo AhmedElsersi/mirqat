@@ -5,7 +5,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/bootstrap.dart';
 import '../../../core/di/injection.dart';
+import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/ladder_mark.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../data/models/app_info.dart';
 import '../../../services/link_opener.dart';
 import '../../../services/update_policy.dart';
@@ -104,18 +108,26 @@ class _Notes extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return Padding(
       padding: EdgeInsetsDirectional.only(top: 16.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            LocaleKeys.updateWhatsNew.tr(),
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.primary,
+      child: AppCard(
+        filled: true,
+        padding: EdgeInsetsDirectional.all(16.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              LocaleKeys.updateWhatsNew.tr(),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          SizedBox(height: 4.h),
-          Text(notes, style: theme.textTheme.bodyMedium?.copyWith(height: 1.7)),
-        ],
+            SizedBox(height: 4.h),
+            Text(
+              notes,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.7),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -131,36 +143,42 @@ class _OptionalCard extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
 
     return Padding(
-      padding: EdgeInsetsDirectional.all(24.r),
+      padding: EdgeInsetsDirectional.symmetric(horizontal: 16.w),
       child: Material(
         color: theme.colorScheme.surface,
         elevation: 8,
-        borderRadius: BorderRadius.circular(24.r),
+        borderRadius: BorderRadius.circular(26.r),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 420.w),
           child: SingleChildScrollView(
-            padding: EdgeInsetsDirectional.all(24.r),
+            padding: EdgeInsetsDirectional.symmetric(
+              horizontal: 20.w,
+              vertical: 24.h,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Icon(
-                  Icons.system_update_outlined,
-                  size: 36.r,
-                  color: theme.colorScheme.primary,
-                ),
-                SizedBox(height: 12.h),
+                const Align(child: LadderMark(current: 2)),
+                SizedBox(height: 16.h),
                 Text(
                   LocaleKeys.updateOptionalTitle.tr(),
-                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   LocaleKeys.updateOptionalBody.tr(),
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.7),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.7,
+                  ),
                 ),
                 _Notes(state: state),
-                SizedBox(height: 20.h),
+                SizedBox(height: 18.h),
                 Row(
                   children: <Widget>[
                     Expanded(
@@ -178,9 +196,10 @@ class _OptionalCard extends StatelessWidget {
                     ),
                     SizedBox(width: 12.w),
                     Expanded(
-                      child: FilledButton(
+                      child: FilledButton.icon(
                         onPressed: () => _openStore(context, state),
-                        child: Text(LocaleKeys.updateNow.tr()),
+                        icon: const Icon(Icons.download_outlined),
+                        label: Text(LocaleKeys.updateNow.tr()),
                       ),
                     ),
                   ],
@@ -215,43 +234,25 @@ class _RequiredPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(
-                  Icons.system_update_outlined,
-                  size: 64.r,
-                  color: theme.colorScheme.primary,
-                ),
-                SizedBox(height: 24.h),
-                Text(
-                  LocaleKeys.updateRequiredTitle.tr(),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall,
-                ),
-                SizedBox(height: 12.h),
-                Text(
-                  LocaleKeys.updateRequiredBody.tr(),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
-                ),
+                const _Seal(Icons.system_update_outlined),
+                _Title(LocaleKeys.updateRequiredTitle.tr()),
+                _Body(LocaleKeys.updateRequiredBody.tr()),
+                // Which version is wanted, where the rule names one — in the
+                // tag the closed sign gives to when the app is back.
                 if (state.target.isNotEmpty) ...<Widget>[
-                  SizedBox(height: 8.h),
-                  Text(
-                    LocaleKeys.updateTargetVersion.tr(
+                  SizedBox(height: 16.h),
+                  AppTag(
+                    label: LocaleKeys.updateTargetVersion.tr(
                       args: <String>[state.target],
-                    ),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
                 _Notes(state: state),
-                SizedBox(height: 28.h),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () => _openStore(context, state),
-                    child: Text(LocaleKeys.updateNow.tr()),
-                  ),
+                SizedBox(height: 26.h),
+                FilledButton.icon(
+                  onPressed: () => _openStore(context, state),
+                  icon: const Icon(Icons.download_outlined),
+                  label: Text(LocaleKeys.updateNow.tr()),
                 ),
               ],
             ),
@@ -286,48 +287,34 @@ class _MaintenancePage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(
-                  Icons.construction_outlined,
-                  size: 64.r,
-                  color: theme.colorScheme.primary,
-                ),
-                SizedBox(height: 24.h),
-                Text(
+                const _Seal(Icons.build_outlined),
+                _Title(
                   title.isEmpty
                       ? LocaleKeys.updateMaintenanceTitle.tr()
                       : title,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall,
                 ),
-                SizedBox(height: 12.h),
-                Text(
+                _Body(
                   message.isEmpty
                       ? LocaleKeys.updateMaintenanceBody.tr()
                       : message,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
                 ),
                 if (sign.until case final DateTime until) ...<Widget>[
-                  SizedBox(height: 12.h),
-                  Text(
-                    LocaleKeys.updateMaintenanceUntil.tr(
-                      args: <String>[_clock(until.toLocal())],
-                    ),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  SizedBox(height: 16.h),
+                  // When to expect the app back: a sign nobody remembered
+                  // cannot keep people out for good, and this says so.
+                  AppTag(
+                    label: LocaleKeys.updateMaintenanceUntil.tr(
+                      args: <String>[_clock(context, until.toLocal())],
                     ),
                   ),
                 ],
-                SizedBox(height: 28.h),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: state.retrying
-                        ? null
-                        : () => context.read<UpdateCubit>().retry(),
-                    child: Text(LocaleKeys.updateRetry.tr()),
-                  ),
+                SizedBox(height: 26.h),
+                FilledButton.icon(
+                  onPressed: state.retrying
+                      ? null
+                      : () => context.read<UpdateCubit>().retry(),
+                  icon: const Icon(Icons.refresh),
+                  label: Text(LocaleKeys.updateRetry.tr()),
                 ),
               ],
             ),
@@ -337,10 +324,83 @@ class _MaintenancePage extends StatelessWidget {
     );
   }
 
-  /// `2026-10-01 02:00`, in the phone's own zone. Written by hand rather
-  /// than through a formatting package the app does not depend on.
-  static String _clock(DateTime t) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
+  /// The time, in the phone's own zone and the reader's digits — «١٠:٣٠ م»
+  /// — with the date before it only where it is not today.
+  static String _clock(BuildContext context, DateTime t) {
+    final String locale = context.locale.toString();
+    final DateTime now = DateTime.now();
+    final bool today =
+        t.year == now.year && t.month == now.month && t.day == now.day;
+    final DateFormat format = today
+        ? DateFormat.jm(locale)
+        : DateFormat.MMMd(locale).add_jm();
+    return format.format(t).withLocalisedDigits();
   }
+}
+
+/// The heading of a page that is the only thing on screen.
+class _Title extends StatelessWidget {
+  const _Title(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text,
+    textAlign: TextAlign.center,
+    style: Theme.of(
+      context,
+    ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+  );
+}
+
+/// What such a page says under its heading: quiet, and kept to a short
+/// measure so it reads as a line or two rather than a paragraph.
+class _Body extends StatelessWidget {
+  const _Body(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsetsDirectional.only(top: 10.h),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 280.w),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.7,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The mark on a page that is the only thing on screen: the icon set in a
+/// gold wash, which is the one place gold is a surface — a seal, not a fill.
+class _Seal extends StatelessWidget {
+  const _Seal(this.icon);
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 78.r,
+    height: 78.r,
+    margin: EdgeInsetsDirectional.only(bottom: 18.h),
+    decoration: BoxDecoration(
+      color: AppColors.gold.withValues(alpha: 0.2),
+      shape: BoxShape.circle,
+    ),
+    child: Icon(
+      icon,
+      size: 34.r,
+      color: Theme.of(context).colorScheme.onSurface,
+    ),
+  );
 }

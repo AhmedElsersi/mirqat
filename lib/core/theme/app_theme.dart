@@ -78,6 +78,33 @@ class AppTheme {
           centerTitle: true,
         ),
         dividerTheme: DividerThemeData(color: outline, space: 1, thickness: 1),
+        // The four tabs: the page's own surface, the chosen one marked with
+        // the gold the rest of the app reserves for "where you are".
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: surface,
+          surfaceTintColor: AppColors.transparent,
+          // The design's `--gold-soft`: a wash of gold behind the chosen
+          // tab's icon, a pill — never a gold surface.
+          indicatorColor: AppColors.gold.withValues(alpha: 0.2),
+          indicatorShape: const StadiumBorder(),
+          height: 68,
+          labelTextStyle: WidgetStateProperty.resolveWith(
+            (Set<WidgetState> states) => TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: states.contains(WidgetState.selected)
+                  ? textPrimary
+                  : textSecondary,
+            ),
+          ),
+          iconTheme: WidgetStateProperty.resolveWith(
+            (Set<WidgetState> states) => IconThemeData(
+              color: states.contains(WidgetState.selected)
+                  ? textPrimary
+                  : textSecondary,
+            ),
+          ),
+        ),
       ),
     );
   }

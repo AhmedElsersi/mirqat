@@ -29,6 +29,8 @@ class MemorizationProgress extends Equatable {
     this.status = MemorizationStatus.notStarted,
     this.lastSessionAt,
     this.cumulativeRepeats = 0,
+    this.stumbles = 0,
+    this.lastStumbleAt,
   });
 
   final int surahNumber;
@@ -38,6 +40,15 @@ class MemorizationProgress extends Equatable {
 
   /// Every repetition this ayah has been played across all sessions.
   final int cumulativeRepeats;
+
+  /// How many times the reader has said they stumble here — where recall
+  /// slips, whether or not the ayah is memorized. Zero is no stumble mark.
+  final int stumbles;
+
+  /// When the last stumble was marked. Null while there is none.
+  final DateTime? lastStumbleAt;
+
+  bool get isStumbled => stumbles > 0;
 
   /// Storage key: `<surah>:<ayah>`.
   String get storageKey => keyFor(surahNumber, ayahNumber);
@@ -49,12 +60,17 @@ class MemorizationProgress extends Equatable {
     MemorizationStatus? status,
     DateTime? lastSessionAt,
     int? cumulativeRepeats,
+    int? stumbles,
+    DateTime? lastStumbleAt,
+    bool clearStumbles = false,
   }) => MemorizationProgress(
     surahNumber: surahNumber,
     ayahNumber: ayahNumber,
     status: status ?? this.status,
     lastSessionAt: lastSessionAt ?? this.lastSessionAt,
     cumulativeRepeats: cumulativeRepeats ?? this.cumulativeRepeats,
+    stumbles: clearStumbles ? 0 : (stumbles ?? this.stumbles),
+    lastStumbleAt: clearStumbles ? null : (lastStumbleAt ?? this.lastStumbleAt),
   );
 
   Map<String, dynamic> toMap() => <String, dynamic>{
@@ -63,10 +79,17 @@ class MemorizationProgress extends Equatable {
     'status': status.storageValue,
     'lastSessionAt': lastSessionAt?.toIso8601String(),
     'cumulativeRepeats': cumulativeRepeats,
+    'stumbles': stumbles,
+    'lastStumbleAt': lastStumbleAt?.toIso8601String(),
   };
 
+  /// Fields added after the first release — the stumbles — are read
+  /// forgivingly: a record written before them, or holding a value of the
+  /// wrong type, reads as having none rather than failing the ayah.
   factory MemorizationProgress.fromMap(Map<dynamic, dynamic> map) {
     final Object? lastSessionAt = map['lastSessionAt'];
+    final Object? stumbles = map['stumbles'];
+    final Object? lastStumbleAt = map['lastStumbleAt'];
     return MemorizationProgress(
       surahNumber: map['surahNumber'] as int,
       ayahNumber: map['ayahNumber'] as int,
@@ -75,6 +98,10 @@ class MemorizationProgress extends Equatable {
           ? DateTime.tryParse(lastSessionAt)
           : null,
       cumulativeRepeats: map['cumulativeRepeats'] as int? ?? 0,
+      stumbles: stumbles is int && stumbles > 0 ? stumbles : 0,
+      lastStumbleAt: lastStumbleAt is String
+          ? DateTime.tryParse(lastStumbleAt)
+          : null,
     );
   }
 
@@ -85,5 +112,7 @@ class MemorizationProgress extends Equatable {
     status,
     lastSessionAt,
     cumulativeRepeats,
+    stumbles,
+    lastStumbleAt,
   ];
 }

@@ -51,7 +51,8 @@ are marked **verify**.
 • المصحف كاملًا بصفحاته المعروفة، ٦٠٤ صفحات، للقراءة دون إنترنت.
 • اقرأ المصحف متصلًا، أو سورةً سورة، أو جزءًا جزءًا.
 • يتذكّر التطبيق آخر صفحة قرأتها ويعيدك إليها، ويحتفظ بسجل لآخر المواضع.
-• حجم الخط قابل للتكبير، وللصفحة مظهر فاتح وآخر داكن.
+• حجم الخط قابل للتكبير، وللصفحة مظهر فاتح وآخر داكن، ويمكنك اختيار خط مصحف المدينة نفسه.
+• شارك آية أو صفحة كاملة صورةً.
 
 الجلسة فوق النص
 • لا شاشة منفصلة للتشغيل: اضغط على الصفحة فتظهر أدوات الجلسة، وتُظلَّل الآية التي تُتلى وتتبعها الصفحة.
@@ -65,6 +66,15 @@ are marked **verify**.
 • الوقفات بين الآيات والتكرارات والخطوات، وسرعة التلاوة.
 • غيّر الإعدادات أثناء الجلسة، واختر: ابدأ من جديد، أو أكمل من الآية الحالية.
 
+أدوات الحفظ
+• وِرد اليوم في صفحة: حفظ جديد، ومراجعة القريب، ومراجعة القديم — كلٌّ بضغطة.
+• الاسترجاع: يصمت التطبيق لتقرأ الآية من حفظك، ثم يُسمعك إياها.
+• اختبار الوصل: في آخر الجلسة تُسأل عن كل آية: ما الذي بعدها؟
+• عرض الحفظ: تُستر الصفحة، وتكشف الآية بلمسة.
+• مواضع التعثّر: علّم حيث تتعثّر، فتُكرَّر أكثر في الجلسات وتظهر في قائمة السور.
+• طرق جاهزة للجلسة: حفظ جديد، ومراجعة، وتثبيت، واستماع — واحفظ طريقتك باسم تختاره.
+• مؤقّت النوم، و«ثلاثًا أخرى» للآية، واستئناف الجلسة التي لم تكتمل.
+
 التلاوة
 • القرآن كاملًا، ١١٤ سورة، بصوت الشيخ أحمد خليل شاهين.
 • تُبَثّ التلاوة عبر الإنترنت، ويمكنك تنزيل أي سورة للاستماع دون اتصال.
@@ -72,7 +82,7 @@ are marked **verify**.
 
 تقدّمك
 • يتابع التطبيق ما كرّرته من كل آية وما حفظته من كل سورة.
-• كل ذلك محفوظ على جهازك وحده.
+• كل ذلك محفوظ على جهازك وحده، ويمكنك نسخه إلى ملف ونقله إلى جهاز جديد.
 
 بلا إعلانات، وبلا حسابات، ولا يجمع التطبيق أي بيانات عنك.
 ```
@@ -80,12 +90,12 @@ are marked **verify**.
 <!-- field: whatsnew ar 500 -->
 **Release notes** (≤ 500, per release)
 ```
-• المصحف كاملًا بصفحاته المعروفة: اقرأه متصلًا، أو سورةً سورة، أو جزءًا جزءًا.
-• الجلسة تُتلى فوق النص: تُظلَّل الآية وتتبعها الصفحة، بلا شاشة منفصلة.
-• يمكن أن يمتد النطاق من سورة إلى سورة لاحقة.
-• الرئيسية: السور والأجزاء، ومتابعة القراءة من آخر موضع، وسجل للمواضع.
-• الإعدادات في بطاقات، وتعريف بالتطبيق وطريقة استخدامه.
-• تكبير الخط في صفحات المصحف.
+• صفحة رئيسية جديدة بأربعة أقسام: اليوم، والمصحف، وحفظي، والإعدادات.
+• وِرد اليوم: حفظ جديد ومراجعتان، كلٌّ بضغطة.
+• الاسترجاع واختبار الوصل: الجلسة تختبر حفظك، لا تُسمعك فقط.
+• عرض الحفظ يستر الصفحة، ومواضع التعثّر تتذكّر أين تنقطع.
+• طرق جاهزة للجلسة وطرقك الخاصة، ومؤقّت للنوم، واستئناف الجلسة.
+• خط مصحف المدينة، ومشاركة الصفحة صورةً، ونسخ التقدّم إلى ملف.
 ```
 
 ## English (`en-US`)
@@ -113,7 +123,8 @@ The mushaf in your hands
 • The whole mushaf in its familiar 604 pages, readable with no connection.
 • Read it cover to cover, or one surah or one juz at a time.
 • The app remembers the last page you read and takes you back to it, and keeps a history of your recent places.
-• The text can be made larger, and the page has a light and a dark appearance.
+• The text can be made larger, the page has a light and a dark appearance, and you can choose the Madinah mushaf's own script.
+• Share an ayah, or a whole page, as an image.
 
 The session plays over the text
 • There is no separate player screen: tap the page and the session controls come up; the ayah being recited is marked, and the page follows it.
@@ -127,6 +138,15 @@ Every session, your way
 • The pauses between ayahs, repeats and steps, and the speed of recitation.
 • Change the settings mid-session and choose: start again, or carry on from the current ayah.
 
+Tools for memorizing
+• Today's wird on one page: a new portion, a recent review and an old review, each one tap away.
+• Recall: the app falls silent while you recite an ayah from memory, then plays it back.
+• Test the links: at the end of a session, for each ayah, what comes next?
+• Memorization view: the page is covered, and a tap reveals one ayah.
+• Weak spots: mark where you slip; those places are drilled more and shown on the surah list.
+• Ready ways of working: new portion, review, deep drill and listen — or save your own under a name.
+• A sleep timer, "three more" for an ayah, and picking up a session left unfinished.
+
 Recitation
 • The whole Quran, all 114 surahs, recited by Sheikh Ahmed Khalil Shaheen.
 • Recitation streams over the internet, and any surah can be downloaded to listen offline.
@@ -134,7 +154,7 @@ Recitation
 
 Your progress
 • The app keeps track of how often you have repeated each ayah and what you have memorized of each surah.
-• All of it stays on your device.
+• All of it stays on your device, and you can back it up to a file and take it to a new phone.
 
 No ads, no accounts, and the app collects nothing about you.
 ```
@@ -142,12 +162,12 @@ No ads, no accounts, and the app collects nothing about you.
 <!-- field: whatsnew en 500 -->
 **Release notes** (≤ 500, per release)
 ```
-• The whole mushaf in its printed pages: read it cover to cover, or one surah or one juz at a time.
-• A session now plays over the text: the ayah is marked and the page follows it.
-• A range may run from one surah into a later one.
-• Home: surahs and ajzaa, continue from where you stopped, and a reading history.
-• Settings in cards, an introduction, and pages on how to use the app.
-• Larger text in the mushaf.
+• A new home in four tabs: Today, Mushaf, My hifz and Settings.
+• Today's wird: a new portion and two reviews, each one tap away.
+• Recall and Test the links: a session now tests you, not only recites.
+• Memorization view covers the page; weak spots remember where you slip.
+• Ready ways of working and your own, a sleep timer, and resuming a session.
+• The Madinah mushaf's own script, sharing a page as an image, and backing up your progress.
 ```
 
 ## Graphics
@@ -172,24 +192,40 @@ and Play falls back to the default language's.
 
 Upload in file-name order; the first three are what shows in search results.
 
+Each frame is the running app — real pages, a real session streaming from the CDN,
+never a mock-up — set in the brand's green with a headline above it by
+`tool/store_frames.py`. The raw captures go to `store/raw/` (not committed);
+the headlines, their order and which scenes each set takes are that script's.
+Phones take the list above (Play: the first eight). Tablets take only the
+scenes on the mushaf page — 02 to 07 — because a list on a tablet is mostly
+empty cream.
+
 | # | File | What it shows |
 |---|---|---|
-| 1 | `01-reading.png` | A surah opening in the mushaf's own page layout, framed. |
-| 2 | `02-session.png` | A session playing over the text: the ayah marked, the controls, the repeat counter. |
-| 3 | `03-home.png` | The home page: the surahs, their progress, and "continue reading". |
-| 4 | `04-session-settings.png` | The session's settings: reciter, range across surahs, streaming or offline. |
-| 5 | `05-ajzaa.png` | The thirty ajzaa, as a grid. |
-| 6 | `06-method.png` | The introduction's leaf on the method. |
-| 7 | `07-settings.png` | Settings, in cards. |
+| 1 | `01-today.png` | Today: the day's wird — the new portion, the near review, the old review — each one tap away. *New in 1.3.* |
+| 2 | `02-recall.png` | A recall round: the app falls silent and covers the ayah so it is recited from memory, then plays it. *New.* |
+| 3 | `03-reading.png` | The whole mushaf in the Madinah print's own hand (QPC V2), page by page, offline. |
+| 4 | `04-session.png` | Talqeen playing over the page: the ayah marked, repeated, then joined to the next. |
+| 5 | `05-memorization.png` | Memorization view: only each ayah's first words show; a tap reveals the rest. *New.* |
+| 6 | `06-stumble.png` | The ayah menu: marking a stumble, so later sessions repeat it more. *New.* |
+| 7 | `07-presets.png` | Session presets: new portion, review, consolidation, listening, or your own. *New.* |
+| 8 | `08-my-hifz.png` | My hifz: what is memorized, juz by juz, and the stumbles in one place. *New.* |
+| 9 | `09-index.png` | The index: surah by surah and juz by juz, with stumbles shown. (App Store only.) |
+| 10 | `10-font.png` | Choosing the mushaf's face, with a live preview and text size. *New.* (App Store only.) |
 
 Regenerate — start the emulator first; the phone AVD is a 1080 × 1920 copy of
 the stock Medium Phone, the tablet is the stock Medium Tablet turned to portrait
 (`adb shell settings put system user_rotation 1`):
 
 ```
-tool/store_screenshots_android.sh emulator-5554 store/google/phone
-tool/store_screenshots_android.sh emulator-5556 store/google/tablet
+tool/store_screenshots_android.sh emulator-5554 store/raw/android-phone
+tool/store_screenshots_android.sh emulator-5556 store/raw/android-tablet
+tool/store_frames.py store/raw/android-phone  store/google/phone  phone  --size 1080x1920
+tool/store_frames.py store/raw/android-tablet store/google/tablet tablet --size 1600x2560
 ```
+
+Run one emulator at a time: two at once starve each other and System UI's
+"isn't responding" dialog ends up in the shots.
 
 If the session scene times out, check the emulator is online; starting it with
 `-dns-server 8.8.8.8` fixes the usual case.

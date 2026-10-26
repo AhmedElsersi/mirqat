@@ -41,6 +41,28 @@ abstract class ProgressLocalDataSource {
 
   Future<void> clearSurah(int surahNumber, int ayahCount);
 
+  /// Counts one more stumble on an ayah and stamps it [at].
+  Future<void> markStumble(int surahNumber, int ayahNumber, {DateTime? at});
+
+  /// Takes the stumble mark off an ayah. Its repeats and status stay.
+  Future<void> clearStumble(int surahNumber, int ayahNumber);
+
+  /// Takes back one stumble — a mark made by mistake. The last one taken
+  /// back clears the mark.
+  Future<void> undoStumble(int surahNumber, int ayahNumber);
+
+  /// Every ayah carrying a stumble mark, the most recently marked first. A
+  /// record that cannot be read is left out rather than failing the list —
+  /// one bad record must not hide every other weak spot.
+  Future<List<MemorizationProgress>> stumbled();
+
+  /// Every record that can be read, in mushaf order — what a backup holds.
+  Future<List<MemorizationProgress>> all();
+
+  /// How many ayahs are marked memorized. A record that cannot be read is
+  /// not counted.
+  Future<int> memorizedCount();
+
   /// Fires once per record written, for screens that show a progress summary
   /// they did not write themselves.
   ///
@@ -167,6 +189,99 @@ class ProgressLocalDataSourceImpl implements ProgressLocalDataSource {
       );
     }
   }
+
+  @override
+  Future<void> markStumble(
+    int surahNumber,
+    int ayahNumber, {
+    DateTime? at,
+  }) async {
+    final MemorizationProgress current = await get(surahNumber, ayahNumber);
+    await save(
+      current.copyWith(
+        stumbles: current.stumbles + 1,
+        lastStumbleAt: at ?? DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> clearStumble(int surahNumber, int ayahNumber) async {
+    final MemorizationProgress current = await get(surahNumber, ayahNumber);
+    if (!current.isStumbled) return;
+    await save(current.copyWith(clearStumbles: true));
+  }
+
+  @override
+  Future<void> undoStumble(int surahNumber, int ayahNumber) async {
+    final MemorizationProgress current = await get(surahNumber, ayahNumber);
+    if (!current.isStumbled) return;
+    await save(
+      current.stumbles == 1
+          ? current.copyWith(clearStumbles: true)
+          : current.copyWith(stumbles: current.stumbles - 1),
+    );
+  }
+
+  @override
+  Future<List<MemorizationProgress>> stumbled() async {
+    final List<MemorizationProgress> out = <MemorizationProgress>[];
+    for (final Map<dynamic, dynamic> stored in _requireBox.values) {
+      final MemorizationProgress record;
+      try {
+        record = MemorizationProgress.fromMap(stored);
+      } catch (_) {
+        continue;
+      }
+      if (record.isStumbled) out.add(record);
+    }
+    out.sort((MemorizationProgress a, MemorizationProgress b) {
+      final DateTime? x = a.lastStumbleAt;
+      final DateTime? y = b.lastStumbleAt;
+      if (x == null || y == null) {
+        if (x == y) return _mushafOrder(a, b);
+        return x == null ? 1 : -1;
+      }
+      final int byTime = y.compareTo(x);
+      return byTime != 0 ? byTime : _mushafOrder(a, b);
+    });
+    return List<MemorizationProgress>.unmodifiable(out);
+  }
+
+  @override
+  Future<List<MemorizationProgress>> all() async {
+    final List<MemorizationProgress> out = <MemorizationProgress>[];
+    for (final Map<dynamic, dynamic> stored in _requireBox.values) {
+      try {
+        out.add(MemorizationProgress.fromMap(stored));
+      } catch (_) {
+        continue;
+      }
+    }
+    out.sort(_mushafOrder);
+    return out;
+  }
+
+  @override
+  Future<int> memorizedCount() async {
+    int n = 0;
+    for (final Map<dynamic, dynamic> stored in _requireBox.values) {
+      try {
+        if (MemorizationProgress.fromMap(stored).status ==
+            MemorizationStatus.memorized) {
+          n++;
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+    return n;
+  }
+
+  static int _mushafOrder(MemorizationProgress a, MemorizationProgress b) =>
+      a.surahNumber != b.surahNumber
+      ? a.surahNumber - b.surahNumber
+      : a.ayahNumber - b.ayahNumber;
 
   @override
   Stream<void> watchChanges() => _requireBox.watch();

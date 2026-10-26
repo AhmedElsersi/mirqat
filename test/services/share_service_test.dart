@@ -74,4 +74,38 @@ void main() {
       isFalse,
     );
   });
+
+  test('a file — a backup — is copied under share/, where the platform can '
+      'reach it, and handed over with its type', () async {
+    MethodCall? seen;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall call) async {
+          seen = call;
+          return null;
+        });
+    final File backup = File(p.join(tmp.path, 'mirqat-progress-x.json'))
+      ..writeAsStringSync('{"format":"mirqat-progress"}');
+
+    expect(
+      await service().shareFile(backup.path, mimeType: 'application/json'),
+      isTrue,
+    );
+    final Map<Object?, Object?> args = seen!.arguments as Map<Object?, Object?>;
+    expect(args['mimeType'], 'application/json');
+    final String path = args['path']! as String;
+    expect(path, p.join(tmp.path, 'share', 'mirqat-progress-x.json'));
+    expect(File(path).readAsStringSync(), '{"format":"mirqat-progress"}');
+    // The original stays where it was.
+    expect(backup.existsSync(), isTrue);
+  });
+
+  test('a file that is not there is a quiet no', () async {
+    expect(
+      await service().shareFile(
+        p.join(tmp.path, 'gone.json'),
+        mimeType: 'application/json',
+      ),
+      isFalse,
+    );
+  });
 }

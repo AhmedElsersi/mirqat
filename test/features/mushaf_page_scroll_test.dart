@@ -35,6 +35,8 @@ Future<void> pump(
   WidgetTester tester,
   Size size, {
   double textScale = 1,
+  double bottomInset = 0,
+  AyahRef? highlighted,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -47,10 +49,11 @@ Future<void> pump(
           body: MushafPageView(
             page: fullPage(),
             linesPerFullPage: 15,
-            highlighted: null,
+            highlighted: highlighted,
             selected: null,
             onWordLongPress: (_) {},
             textScale: textScale,
+            bottomInset: bottomInset,
           ),
         ),
       ),
@@ -58,6 +61,16 @@ Future<void> pump(
   );
   await tester.pump();
 }
+
+double maxScroll(WidgetTester tester) => tester
+    .state<ScrollableState>(
+      find.descendant(
+        of: find.byType(SingleChildScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    )
+    .position
+    .maxScrollExtent;
 
 /// The width alone sizes the text; the height never squeezes it. A page that
 /// is taller than the glass scrolls, frame and all.
@@ -68,7 +81,83 @@ void main() {
     await pump(tester, const Size(412, 915));
     expect(tester.takeException(), isNull);
     expect(find.byType(IslamicFrame), findsOneWidget);
-    expect(find.byType(SingleChildScrollView), findsNothing);
+    expect(maxScroll(tester), 0);
+  });
+
+  testWidgets('with the session bar up, the page can be scrolled clear of it, '
+      'and keeps its size', (WidgetTester tester) async {
+    await pump(tester, const Size(412, 915));
+    final Size whole = tester.getSize(find.byType(IslamicFrame));
+
+    await pump(tester, const Size(412, 915), bottomInset: 120);
+    expect(tester.takeException(), isNull);
+    // Showing the bar never re-lays the page; it only adds room below it.
+    expect(tester.getSize(find.byType(IslamicFrame)), whole);
+    expect(maxScroll(tester), closeTo(120, 0.5));
+
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -400),
+    );
+    await tester.pump();
+    expect(
+      tester.getBottomLeft(find.byType(IslamicFrame)).dy,
+      lessThanOrEqualTo(915 - 120 + 0.5),
+    );
+  });
+
+  testWidgets('the ayah being recited is scrolled out from under the bar, '
+      'and back up when the recitation returns to the top', (
+    WidgetTester tester,
+  ) async {
+    // Each test-page line is one ayah: 2:15 is the last line.
+    double offset() => tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byType(SingleChildScrollView),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position
+        .pixels;
+    double bottomOf(int ayah) => tester
+        .getBottomLeft(
+          find
+              .byWidgetPredicate(
+                (Widget w) => w is AyahText && !w.isMarker && w.text == 'كلمة',
+              )
+              .at((ayah - 1) * 6),
+        )
+        .dy;
+
+    await pump(
+      tester,
+      const Size(412, 915),
+      bottomInset: 120,
+      highlighted: const AyahRef(2, 1),
+    );
+    await tester.pumpAndSettle();
+    expect(offset(), 0, reason: 'the first line is already in sight');
+
+    await pump(
+      tester,
+      const Size(412, 915),
+      bottomInset: 120,
+      highlighted: const AyahRef(2, 15),
+    );
+    await tester.pumpAndSettle();
+    expect(offset(), greaterThan(0));
+    expect(bottomOf(15), lessThanOrEqualTo(915 - 120 + 0.5));
+
+    await pump(
+      tester,
+      const Size(412, 915),
+      bottomInset: 120,
+      highlighted: const AyahRef(2, 1),
+    );
+    await tester.pumpAndSettle();
+    expect(offset(), 0);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a wide, short screen scrolls the page instead of shrinking it', (

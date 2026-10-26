@@ -1,0 +1,31 @@
+<!-- title: المتابعة -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <div class="grow"><p class="eyebrow">المتابعة</p><p class="h3">سورة {{surah 78}}</p></div>
+  </header>
+
+  <!-- Where the surah stands, once, at the top — instead of a status word
+       repeated on every ayah. -->
+  <section class="card">
+    <div class="row">
+      <span class="ring" style="--p:60;width:52px;height:52px"><span>٦٠٪</span></span>
+      <div class="grow"><p class="h1" style="font-size:22px">{{n 24}} من {{ayahs 78}} آية</p>
+        <p class="muted tiny">محفوظة، و{{n 6}} قيد الحفظ</p></div>
+      <span class="ladder" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="now"></i><i></i></span>
+    </div>
+  </section>
+
+  <div class="legend" style="margin:16px 4px 10px">
+    <span><i class="full"></i> محفوظة</span>
+    <span><i class="half"></i> قيد الحفظ</span>
+    <span><i></i> لم يبدأ</span>
+    <span><i style="border:0;background:none;position:relative;top:4px;width:4px;height:4px;border-radius:50%;background:var(--text-2)"></i> كرّرتها في جلسة</span>
+  </div>
+
+  <!-- One cell per ayah: its number, and its state as a tint. The colour says
+       what the word used to say, and forty ayahs now fit on one screen. -->
+  <div class="cells">{{cells 78 full=1-18,21-24,40 half=19,20,25-28 rep=5,9,14,19,20,40}}</div>
+
+  <p class="note" style="margin-top:14px"><i data-lucide="hand"></i> المس آية لتعليمها محفوظة، والمسها مرة أخرى لإلغاء التعليم.</p>
+</div>

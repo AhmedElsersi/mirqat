@@ -235,6 +235,20 @@ void main() {
       );
     });
 
+    test('knows which juz a surah lies in, once the catalog is read', () async {
+      final MushafCubit cubit = newCubit();
+      addTearDown(cubit.close);
+      expect(cubit.juzSpanOf(2), isNull);
+      await cubit.init();
+      // Read beside the first page: give it the moment it needs.
+      for (int i = 0; i < 20 && cubit.juzSpanOf(2) == null; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(cubit.juzSpanOf(2), (first: 1, last: 3));
+      expect(cubit.juzSpanOf(67), (first: 29, last: 29));
+      expect(cubit.juzSpanOf(999), isNull);
+    });
+
     test('init on an ayah opens its page with it highlighted', () async {
       final MushafCubit cubit = newCubit();
       addTearDown(cubit.close);

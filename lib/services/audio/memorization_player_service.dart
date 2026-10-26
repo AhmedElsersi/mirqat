@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import '../../core/error/exceptions.dart';
 import '../../data/models/reciter.dart';
 import '../../data/models/surah.dart';
+import '../../domain/entities/ayah_ref.dart';
 import '../../domain/entities/playback_unit.dart';
 import '../../domain/entities/session_plan.dart';
 import 'audio_resolver.dart';
@@ -69,25 +70,35 @@ class MemorizationPlayerService {
 
   PlaybackQueue? get queue => _queue;
 
-  /// The ayah currently being recited. Spacers and preambles leave it
-  /// unchanged rather than clearing it.
+  /// The ayah currently being recited — or asked back, inside a recall gap.
+  /// Plain spacers and preambles leave it unchanged rather than clearing it.
   PlaybackUnit? get currentUnit {
     final int? index = _player.currentIndex;
     if (index == null) return _lastUnit;
-    return _queue?.unitAt(index) ?? _lastUnit;
+    return _queue?.momentAt(index)?.unit ?? _lastUnit;
   }
 
   PlaybackUnit? _lastUnit;
 
-  /// Emits each time the recited ayah changes.
-  Stream<PlaybackUnit> get currentUnitStream {
+  /// Emits each time the recited ayah changes. Recall gaps are left out: this
+  /// is the stream of actual plays, which is what the lock screen mirrors and
+  /// what counts as a recitation. The page watches [momentStream] instead.
+  Stream<PlaybackUnit> get currentUnitStream => momentStream
+      .where((PlaybackMoment m) => !m.recalling)
+      .map((PlaybackMoment m) => m.unit)
+      .distinct();
+
+  /// Emits each time the session moves between an ayah sounding and an ayah
+  /// being asked back from memory — a recall gap is one moment, however many
+  /// silence clips it is laid out in.
+  Stream<PlaybackMoment> get momentStream {
     final PlaybackQueue? queue = _queue;
-    if (queue == null) return const Stream<PlaybackUnit>.empty();
-    return queue.unitStreamFrom(_player.currentIndexStream).map((
-      PlaybackUnit unit,
+    if (queue == null) return const Stream<PlaybackMoment>.empty();
+    return queue.momentStreamFrom(_player.currentIndexStream).map((
+      PlaybackMoment moment,
     ) {
-      _lastUnit = unit;
-      return unit;
+      _lastUnit = moment.unit;
+      return moment;
     });
   }
 
@@ -104,11 +115,15 @@ class MemorizationPlayerService {
   /// is where to pick the plan up — 0 for a session from the top, and the
   /// index of an ayah play for one carried over from a session whose settings
   /// changed under it.
+  /// [recallClips] sizes the recall gaps: the measured length of each ayah's
+  /// clip, where it could be measured. An ayah missing from it gets the fixed
+  /// fallback gap — the session still asks, it just cannot tailor the wait.
   Future<void> load({
     required SessionPlan plan,
     required Reciter reciter,
     required List<Surah> surahs,
     int startAtUnit = 0,
+    Map<AyahRef, Duration> recallClips = const <AyahRef, Duration>{},
   }) async {
     final List<int> needed = plan.surahNumbers;
     for (final int number in needed) {
@@ -149,6 +164,7 @@ class MemorizationPlayerService {
         surahs: inPlan.skip(1),
         reciter: reciter,
       ),
+      recallClips: recallClips,
     );
     _queue = queue;
     _lastUnit = null;
@@ -177,6 +193,9 @@ class MemorizationPlayerService {
       unit.surahNumber,
     ).sourceFor(unit.ayahNumber),
     SpacerQueueEntry() => _sourcesOf(firstSurah).spacer(),
+    // A recall gap is silence like any other; what it means lives in the
+    // queue entry, not in the audio.
+    RecallGapEntry() => _sourcesOf(firstSurah).spacer(),
     PreambleQueueEntry(kind: PreambleKind.istiadhah) => _requirePreamble(
       _sourcesOf(firstSurah).istiadhah(),
       reciter: reciter,
@@ -264,6 +283,19 @@ class MemorizationPlayerService {
   Future<void> skipToPreviousStep() => _seekToStep(_currentStepIndex - 1);
 
   Future<void> restartCurrentStep() => _seekToStep(_currentStepIndex);
+
+  /// Ends a recall gap early: skips the silence that is left and plays the
+  /// ayah that answers it. Outside a gap it does nothing — the silence is
+  /// the only thing anyone asks to cut short.
+  Future<void> skipRecallGap() async {
+    final PlaybackQueue? queue = _queue;
+    final int? index = _player.currentIndex;
+    if (queue == null || index == null) return;
+    final int next = queue.indexAfterRecallGap(index);
+    if (next == index || next >= queue.length) return;
+    _lastUnit = queue.unitAt(next) ?? _lastUnit;
+    await _player.seek(Duration.zero, index: next);
+  }
 
   /// Changing speed does not move the play position.
   Future<void> setSpeed(double speed) => _player.setSpeed(speed);

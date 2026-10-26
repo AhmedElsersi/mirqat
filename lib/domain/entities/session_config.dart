@@ -146,6 +146,8 @@ class SessionConfig extends Equatable {
     this.betweenStepsPauseMs = defaultBetweenStepsPauseMs,
     this.playbackSpeed = defaultPlaybackSpeed,
     this.playIstiadhah = false,
+    this.recallRounds = defaultRecallRounds,
+    this.chainRecall = false,
   }) : // Spelled out rather than delegating to
        // ConnectMode.defaultFinalFullPass because this constructor is
        // `const` and a const initialiser cannot call a getter. The two
@@ -172,6 +174,13 @@ class SessionConfig extends Equatable {
   static const double defaultPlaybackSpeed = 1.0;
   static const double minPlaybackSpeed = 0.5;
   static const double maxPlaybackSpeed = 1.5;
+
+  /// Off by default: recall rounds ask something of the reader, and asking is
+  /// opted into. Nine at most — a recall is a test, and a test run ten times
+  /// over is a drill, which the repeat count already is.
+  static const int defaultRecallRounds = 0;
+  static const int minRecallRounds = 0;
+  static const int maxRecallRounds = 9;
 
   /// The surah the range starts in.
   final int surahNumber;
@@ -219,6 +228,24 @@ class SessionConfig extends Equatable {
   /// [PlaybackUnit] and never counts toward a repetition.
   final bool playIstiadhah;
 
+  /// How many recall rounds follow each ayah's learn step: a silence as long
+  /// as the ayah, for the reader to recite into from memory, then the ayah
+  /// once as the answer. 0 — the default — asks nothing back.
+  ///
+  /// Only the drill modes recall: [ConnectMode.continuous] has no per-ayah
+  /// steps for a recall to follow, so there the setting is ignored rather
+  /// than refused — a saved default must not block a mode change.
+  final int recallRounds;
+
+  /// Whether the session closes by testing every link of the range — "what
+  /// comes next?": each ayah is played as a cue, the reader recites the one
+  /// after it into a recall gap, and that one plays as the answer.
+  ///
+  /// Unlike [recallRounds] it suits every connect mode, continuous included:
+  /// it is a pass over the range, not a step of the per-ayah drill. A range
+  /// of one ayah has no link, and adds nothing.
+  final bool chainRecall;
+
   SessionConfig copyWith({
     int? surahNumber,
     int? startAyah,
@@ -232,6 +259,8 @@ class SessionConfig extends Equatable {
     int? betweenStepsPauseMs,
     double? playbackSpeed,
     bool? playIstiadhah,
+    int? recallRounds,
+    bool? chainRecall,
   }) => SessionConfig(
     surahNumber: surahNumber ?? this.surahNumber,
     startAyah: startAyah ?? this.startAyah,
@@ -251,7 +280,70 @@ class SessionConfig extends Equatable {
     betweenStepsPauseMs: betweenStepsPauseMs ?? this.betweenStepsPauseMs,
     playbackSpeed: playbackSpeed ?? this.playbackSpeed,
     playIstiadhah: playIstiadhah ?? this.playIstiadhah,
+    recallRounds: recallRounds ?? this.recallRounds,
+    chainRecall: chainRecall ?? this.chainRecall,
   );
+
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'surah': surahNumber,
+    'startAyah': startAyah,
+    'endSurah': endSurahNumber,
+    'endAyah': endAyah,
+    'repeatCount': repeatCount,
+    'connectMode': connectMode.name,
+    'finalFullPass': finalFullPass,
+    'intraBlockPauseMs': intraBlockPauseMs,
+    'betweenRepeatPauseMs': betweenRepeatPauseMs,
+    'betweenStepsPauseMs': betweenStepsPauseMs,
+    'playbackSpeed': playbackSpeed,
+    'playIstiadhah': playIstiadhah,
+    'recallRounds': recallRounds,
+    'chainRecall': chainRecall,
+  };
+
+  /// Null for anything that is not a config this app wrote. Bounds are not
+  /// checked here: the plan builder checks them, against the catalog, and
+  /// refuses what does not fit.
+  static SessionConfig? fromMap(Object? raw) {
+    if (raw is! Map) return null;
+    int? i(String k) => raw[k] is int ? raw[k] as int : null;
+    final int? surah = i('surah');
+    final int? start = i('startAyah');
+    final int? endSurah = i('endSurah');
+    final int? end = i('endAyah');
+    final int? repeats = i('repeatCount');
+    final Object? speed = raw['playbackSpeed'];
+    final ConnectMode? mode = ConnectMode.values
+        .where((ConnectMode m) => m.name == raw['connectMode'])
+        .firstOrNull;
+    if (surah == null ||
+        start == null ||
+        endSurah == null ||
+        end == null ||
+        repeats == null ||
+        mode == null ||
+        speed is! num) {
+      return null;
+    }
+    return SessionConfig(
+      surahNumber: surah,
+      startAyah: start,
+      endSurahNumber: endSurah,
+      endAyah: end,
+      repeatCount: repeats,
+      connectMode: mode,
+      finalFullPass: raw['finalFullPass'] is bool
+          ? raw['finalFullPass'] as bool
+          : null,
+      intraBlockPauseMs: i('intraBlockPauseMs') ?? 0,
+      betweenRepeatPauseMs: i('betweenRepeatPauseMs') ?? 0,
+      betweenStepsPauseMs: i('betweenStepsPauseMs') ?? 0,
+      playbackSpeed: speed.toDouble(),
+      playIstiadhah: raw['playIstiadhah'] == true,
+      recallRounds: i('recallRounds') ?? 0,
+      chainRecall: raw['chainRecall'] == true,
+    );
+  }
 
   @override
   List<Object?> get props => <Object?>[
@@ -267,5 +359,7 @@ class SessionConfig extends Equatable {
     betweenStepsPauseMs,
     playbackSpeed,
     playIstiadhah,
+    recallRounds,
+    chainRecall,
   ];
 }

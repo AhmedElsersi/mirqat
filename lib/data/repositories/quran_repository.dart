@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../core/error/exceptions.dart';
+import '../../domain/entities/ayah_ref.dart';
 import '../../core/error/failures.dart';
 import '../datasources/quran_local_data_source.dart';
 import '../models/ayah.dart';
@@ -31,6 +32,13 @@ abstract class QuranRepository {
     String needle, {
     required int limit,
   });
+
+  /// Each ayah of [from]..[to] with its recitation weight — see
+  /// `QuranLocalDataSource.ayahWeights`.
+  Future<Either<Failure, List<({AyahRef ref, int weight})>>> ayahWeights(
+    AyahRef from,
+    AyahRef to,
+  );
 
   Future<Either<Failure, List<Reciter>>> getReciters();
 
@@ -91,6 +99,12 @@ class QuranRepositoryImpl implements QuranRepository {
     String needle, {
     required int limit,
   }) => _guard(() => _local.searchAyahs(needle, limit: limit));
+
+  @override
+  Future<Either<Failure, List<({AyahRef ref, int weight})>>> ayahWeights(
+    AyahRef from,
+    AyahRef to,
+  ) => _guard(() => _local.ayahWeights(from, to));
 
   @override
   Future<Either<Failure, List<Reciter>>> getReciters() =>

@@ -30,7 +30,7 @@ xcrun simctl boot "$UDID" 2>/dev/null || true
 xcrun simctl bootstatus "$UDID" -b >/dev/null
 xcrun simctl uninstall "$UDID" "$BUNDLE_ID" 2>/dev/null || true
 # The clock Apple's own screenshots show, a full battery, full bars.
-xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged \
+xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState discharging \
   --batteryLevel 100 --cellularBars 4 --wifiBars 3 --dataNetwork wifi
 xcrun simctl ui "$UDID" appearance light
 

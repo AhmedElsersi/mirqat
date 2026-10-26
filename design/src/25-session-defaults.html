@@ -1,0 +1,44 @@
+<!-- title: إعدادات الجلسة -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">إعدادات الجلسة</h1>
+  </header>
+
+  <p class="muted small" style="margin:0 4px 6px">القيم التي تبدأ بها كل جلسة جديدة. ما تغيّره أثناء الجلسة يبقى لتلك الجلسة وحدها.</p>
+
+  <!-- The same order as the session sheet, so the two are learned once:
+       the way of joining, the two numbers, then what folds away. -->
+  <div class="field-label">طريقة الوصل</div>
+  <div class="seg"><span class="on">تراكمي</span><span>متصل</span><span>بدون وصل</span></div>
+  <p class="muted tiny" style="margin:8px 4px 0">آية، ثم آيتان، ثم ثلاث — تقف على كل درجة قبل التي فوقها.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+    <div><div class="field-label" style="margin-top:4px">التكرار</div>
+      <div class="stepper"><button aria-label="زِد"><i data-lucide="plus"></i></button><b>{{n 3}}</b><button aria-label="أنقِص"><i data-lucide="minus"></i></button></div></div>
+    <div><div class="field-label" style="margin-top:4px">الاسترجاع</div>
+      <div class="stepper"><button aria-label="زِد"><i data-lucide="plus"></i></button><b>{{n 1}}</b><button aria-label="أنقِص"><i data-lucide="minus"></i></button></div></div>
+  </div>
+
+  <div class="list" style="margin-top:16px">
+    <div class="li"><span class="ico"><i data-lucide="link-2"></i></span>
+      <div class="grow"><p class="h3">اختبار الوصل</p><p class="muted tiny">ما بعدها؟ في آخر الجلسة</p></div><span class="switch"></span></div>
+    <div class="li"><span class="ico"><i data-lucide="list-restart"></i></span>
+      <div class="grow"><p class="h3">مراجعة كاملة في النهاية</p></div><span class="switch on"></span></div>
+    <div class="li"><span class="ico"><i data-lucide="shield"></i></span>
+      <div class="grow"><p class="h3">الاستعاذة قبل البدء</p></div><span class="switch on"></span></div>
+  </div>
+
+  <div class="field-label">السرعة والوقفات</div>
+  <div class="list">
+    <div class="li"><span class="ico"><i data-lucide="gauge"></i></span>
+      <div class="grow"><p class="h3">سرعة التلاوة</p></div><span class="muted small">١٫٠×</span></div>
+    <div class="li"><span class="ico"><i data-lucide="pause"></i></span>
+      <div class="grow"><p class="h3">الوقفات</p><p class="muted tiny">بين الآيات، وبين التكرارات، وبين الخطوات</p></div>
+      <span class="muted small">صفر</span><i data-lucide="chevron-left" class="chev"></i></div>
+  </div>
+
+  <div class="field-label">نطاق الآيات الافتراضي</div>
+  <div class="seg"><span class="on">السورة كاملة</span><span>آخر نطاق مستخدم</span></div>
+  <p class="muted tiny" style="margin:8px 4px 0">يُستخدم حين تفتح جلسة من سورة لم تحدّد فيها نطاقًا.</p>
+</div>

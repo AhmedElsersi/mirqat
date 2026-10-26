@@ -13,11 +13,20 @@ import '../models/word.dart';
 abstract class QuranPagesRepository {
   Future<Either<Failure, List<Ayah>>> ayahsForPage(int page);
 
-  Future<Either<Failure, PageInfo?>> pageInfo(int page, {int? fromWordId});
+  Future<Either<Failure, PageInfo?>> pageInfo(
+    int page, {
+    int? fromWordId,
+    MushafLayout? layout,
+  });
 
   Future<Either<Failure, List<JuzInfo>>> juzList();
 
-  Future<Either<Failure, List<MushafLine>>> linesForPage(int page);
+  Future<Either<Failure, List<JuzInfo>>> hizbList();
+
+  Future<Either<Failure, List<MushafLine>>> linesForPage(
+    int page, {
+    MushafLayout? layout,
+  });
 
   Future<Either<Failure, List<Word>>> wordsForLine(int page, int line);
 
@@ -32,9 +41,16 @@ abstract class QuranPagesRepository {
 
   Future<Either<Failure, int>> linesPerFullPage();
 
-  Future<Either<Failure, int>> pageForAyah(int surahNumber, int ayahNumber);
+  Future<Either<Failure, int>> pageForAyah(
+    int surahNumber,
+    int ayahNumber, {
+    MushafLayout? layout,
+  });
 
-  Future<Either<Failure, int?>> surahHeadingPage(int surahNumber);
+  Future<Either<Failure, int?>> surahHeadingPage(
+    int surahNumber, {
+    MushafLayout? layout,
+  });
 
   Future<Either<Failure, int>> ayahCount(int surahNumber);
 }
@@ -49,15 +65,25 @@ class QuranPagesRepositoryImpl implements QuranPagesRepository {
       _guard(() => _local.ayahsForPage(page));
 
   @override
-  Future<Either<Failure, PageInfo?>> pageInfo(int page, {int? fromWordId}) =>
-      _guard(() => _local.pageInfo(page, fromWordId: fromWordId));
+  Future<Either<Failure, PageInfo?>> pageInfo(
+    int page, {
+    int? fromWordId,
+    MushafLayout? layout,
+  }) => _guard(
+    () => _local.pageInfo(page, fromWordId: fromWordId, layout: layout),
+  );
 
   @override
   Future<Either<Failure, List<JuzInfo>>> juzList() => _guard(_local.juzList);
 
   @override
-  Future<Either<Failure, List<MushafLine>>> linesForPage(int page) =>
-      _guard(() => _local.linesForPage(page));
+  Future<Either<Failure, List<JuzInfo>>> hizbList() => _guard(_local.hizbList);
+
+  @override
+  Future<Either<Failure, List<MushafLine>>> linesForPage(
+    int page, {
+    MushafLayout? layout,
+  }) => _guard(() => _local.linesForPage(page, layout: layout));
 
   @override
   Future<Either<Failure, List<Word>>> wordsForLine(int page, int line) =>
@@ -81,12 +107,18 @@ class QuranPagesRepositoryImpl implements QuranPagesRepository {
       _guard(_local.linesPerFullPage);
 
   @override
-  Future<Either<Failure, int>> pageForAyah(int surahNumber, int ayahNumber) =>
-      _guard(() => _local.pageForAyah(surahNumber, ayahNumber));
+  Future<Either<Failure, int>> pageForAyah(
+    int surahNumber,
+    int ayahNumber, {
+    MushafLayout? layout,
+  }) =>
+      _guard(() => _local.pageForAyah(surahNumber, ayahNumber, layout: layout));
 
   @override
-  Future<Either<Failure, int?>> surahHeadingPage(int surahNumber) =>
-      _guard(() => _local.surahHeadingPage(surahNumber));
+  Future<Either<Failure, int?>> surahHeadingPage(
+    int surahNumber, {
+    MushafLayout? layout,
+  }) => _guard(() => _local.surahHeadingPage(surahNumber, layout: layout));
 
   @override
   Future<Either<Failure, int>> ayahCount(int surahNumber) =>

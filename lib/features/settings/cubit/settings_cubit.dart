@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failures.dart';
+import '../../../core/theme/quran_font.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/app_settings.dart';
 import '../../../data/models/reading_position.dart';
@@ -11,6 +12,7 @@ import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
+import '../../../domain/entities/daily_wird.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../services/app_version_service.dart';
 import '../../../services/audio/reciter_catalog.dart';
@@ -32,12 +34,25 @@ class SettingsCubit extends Cubit<SettingsState> {
     // Someone else saved — a session keeping its values as defaults, say.
     // Taken up at once, so that the next save from here does not write an
     // older copy back over theirs.
+    // Its own saves come back on the same stream, and are passed over: the
+    // echo of one arrives while the next is being written, and taking it up
+    // would put the older map back over the newer one.
     _saved = _settings.changes.listen((AppSettings saved) {
+      final int own = _ownSaves.indexWhere(
+        (AppSettings s) => identical(s, saved),
+      );
+      if (own >= 0) {
+        _ownSaves.removeAt(own);
+        return;
+      }
       if (saved != state.settings) emit(state.copyWith(settings: saved));
     });
   }
 
   StreamSubscription<AppSettings>? _saved;
+
+  /// Saves made here whose echo has not come back yet.
+  final List<AppSettings> _ownSaves = <AppSettings>[];
 
   @override
   Future<void> close() async {
@@ -152,6 +167,34 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setShowReadingRibbon(bool value) =>
       _save(state.settings.copyWith(showReadingRibbon: value));
 
+  Future<void> setQuranFont(QuranFont font) =>
+      _save(state.settings.copyWith(quranFont: font));
+
+  Future<void> setMemorizationView(MemorizationView view) =>
+      _save(state.settings.copyWith(memorizationView: view));
+
+  Future<void> setShowStumbles(bool value) =>
+      _save(state.settings.copyWith(showStumbles: value));
+
+  Future<void> setBookends(bool value) =>
+      _save(state.settings.copyWith(bookends: value));
+
+  /// The reader took a bookend suggestion up: it is not made again.
+  Future<void> takeBookend(String key) =>
+      _save(state.settings.copyWith(bookendTaken: key));
+
+  /// Sets one part of today's wird, or clears it with null.
+  Future<void> setWird(WirdPart part, WirdRange? range) => _save(
+    state.settings.copyWith(
+      wird: <WirdPart, WirdRange>{
+        for (final MapEntry<WirdPart, WirdRange> e
+            in state.settings.wird.entries)
+          if (e.key != part) e.key: e.value,
+        part: ?range,
+      },
+    ),
+  );
+
   /// The introduction has been read through, or skipped: either way it is
   /// not shown on its own again. It stays one tap away, under How to use.
   Future<void> markOnboardingSeen() =>
@@ -179,6 +222,21 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> setDefaultFinalFullPass(bool value) =>
       _save(state.settings.copyWith(defaultFinalFullPass: value));
+
+  Future<void> setDefaultChainRecall(bool value) =>
+      _save(state.settings.copyWith(defaultChainRecall: value));
+
+  Future<void> setDefaultPlayIstiadhah(bool value) =>
+      _save(state.settings.copyWith(defaultPlayIstiadhah: value));
+
+  Future<void> setDefaultRecallRounds(int value) => _save(
+    state.settings.copyWith(
+      defaultRecallRounds: value.clamp(
+        SessionConfig.minRecallRounds,
+        SessionConfig.maxRecallRounds,
+      ),
+    ),
+  );
 
   Future<void> setDefaultIntraBlockPause(int ms) =>
       _save(state.settings.copyWith(defaultIntraBlockPauseMs: _pause(ms)));
@@ -270,7 +328,10 @@ class SettingsCubit extends Cubit<SettingsState> {
     // rather than a control that silently springs back.
     emit(state.copyWith(settings: next, errorMessage: null));
 
+    _ownSaves.add(next);
     final result = await _settings.save(next);
+    // A failed save sends no echo.
+    if (result.isLeft()) _ownSaves.remove(next);
     result.fold(
       (Failure f) => emit(state.copyWith(errorMessage: f.message)),
       (_) {},

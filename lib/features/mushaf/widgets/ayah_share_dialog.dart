@@ -61,22 +61,59 @@ class AyahShareCard extends StatelessWidget {
           ),
           bottom: LocaleKeys.appName.tr(),
         ),
-        child: Padding(
-          padding: EdgeInsetsDirectional.symmetric(
-            horizontal: 8.w,
-            vertical: 18.h,
-          ),
-          child: AyahText.flowing(
-            ayahs: <FlowingAyah>[
-              FlowingAyah(number: ayah.number, text: ayah.text),
-            ],
-            fontSize: fontFor(ayah.text),
-            textAlign: TextAlign.center,
+        // The full width of the card, whatever the ayah's length. The frame
+        // lays its child out loosely, so a short ayah would otherwise shrink
+        // the frame to the width of its words, pushed to one side, with the
+        // plaques — laid out for the whole card — hanging off its edge.
+        child: SizedBox(
+          width: double.infinity,
+          child: Padding(
+            padding: EdgeInsetsDirectional.symmetric(
+              horizontal: 8.w,
+              vertical: 18.h,
+            ),
+            child: Center(
+              child: AyahText.flowing(
+                ayahs: <FlowingAyah>[
+                  FlowingAyah(number: ayah.number, text: ayah.text),
+                ],
+                fontSize: fontFor(ayah.text),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
       ),
     ),
   );
+}
+
+/// Captures what [boundary] draws — a [RepaintBoundary]'s key — and hands it
+/// to the platform's share sheet. False when there was nothing to capture or
+/// the share did not go.
+Future<bool> shareBoundary(
+  GlobalKey boundary, {
+  required String filename,
+  required String caption,
+}) async {
+  final RenderObject? render = boundary.currentContext?.findRenderObject();
+  if (render is! RenderRepaintBoundary) return false;
+
+  // 3x the card's logical size: crisp on any feed the image lands in.
+  final ui.Image image = await render.toImage(pixelRatio: 3);
+  try {
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    if (png == null) return false;
+    return sl<ShareService>().shareImage(
+      png.buffer.asUint8List(),
+      filename: filename,
+      text: caption,
+    );
+  } finally {
+    image.dispose();
+  }
 }
 
 /// Shows the card a long-pressed ayah would be shared as, and shares it.
@@ -105,7 +142,11 @@ class _AyahShareDialogState extends State<AyahShareDialog> {
 
     final String caption =
         '${LocaleKeys.mushafAyahReference.tr(args: <String>[_surahName(context), widget.ayah.number.toLocalisedString()])} — ${LocaleKeys.appName.tr()}';
-    final bool shared = await _captureAndShare(caption);
+    final bool shared = await shareBoundary(
+      _card,
+      filename: 'ayah_${widget.ayah.surahNumber}_${widget.ayah.number}.png',
+      caption: caption,
+    );
 
     if (!mounted) return;
     if (shared) {
@@ -115,27 +156,6 @@ class _AyahShareDialogState extends State<AyahShareDialog> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(LocaleKeys.commonError.tr())));
-    }
-  }
-
-  Future<bool> _captureAndShare(String caption) async {
-    final RenderObject? render = _card.currentContext?.findRenderObject();
-    if (render is! RenderRepaintBoundary) return false;
-
-    // 3x the card's logical size: crisp on any feed the image lands in.
-    final ui.Image image = await render.toImage(pixelRatio: 3);
-    try {
-      final ByteData? png = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
-      if (png == null) return false;
-      return sl<ShareService>().shareImage(
-        png.buffer.asUint8List(),
-        filename: 'ayah_${widget.ayah.surahNumber}_${widget.ayah.number}.png',
-        text: caption,
-      );
-    } finally {
-      image.dispose();
     }
   }
 

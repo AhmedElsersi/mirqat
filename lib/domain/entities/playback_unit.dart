@@ -21,8 +21,14 @@ class PlaybackUnit extends Equatable {
     int? blockToSurah,
     required this.isLastUnitOfRepeat,
     required this.isLastUnitOfStep,
+    this.asked = false,
   }) : blockFromSurah = blockFromSurah ?? surahNumber,
        blockToSurah = blockToSurah ?? surahNumber;
+
+  /// Whether this play answers a recall gap: the queue lays a silence as
+  /// long as the ayah before it, for the reader to recite it into from
+  /// memory ([PlanStep.isAsked]).
+  final bool asked;
 
   /// Index into [SessionPlan.steps].
   final int stepIndex;
@@ -39,7 +45,9 @@ class PlaybackUnit extends Equatable {
   /// Which repetition of the step this is, 1-based.
   final int repeatIndex;
 
-  /// Always equal to the config's `repeatCount`.
+  /// How many times the owning step is played through: the config's
+  /// `repeatCount` for most steps, more for an ayah being reinforced, the
+  /// recall rounds for a recall step.
   final int totalRepeats;
 
   /// Block bounds of the owning step, for highlighting the whole block while
@@ -74,6 +82,7 @@ class PlaybackUnit extends Equatable {
     blockToSurah,
     isLastUnitOfRepeat,
     isLastUnitOfStep,
+    asked,
   ];
 
   @override

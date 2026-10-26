@@ -17,8 +17,12 @@ import 'core/localization/app_localization.dart';
 import 'core/localization/locale_keys.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/quran_font.dart';
 import 'core/theme/window_chrome.dart';
+import 'core/widgets/ayah_text.dart';
+import 'data/datasources/quran_pages_local_data_source.dart';
 import 'data/models/app_settings.dart';
+import 'data/models/mushaf_line.dart';
 import 'features/settings/cubit/settings_cubit.dart';
 import 'features/update/cubit/update_cubit.dart';
 import 'features/update/widgets/update_gate.dart';
@@ -110,11 +114,24 @@ class _IqraWartaqAppState extends State<IqraWartaqApp>
   /// fixed from the first frame; only this property changes.
   ThemeMode _themeMode = ThemeMode.system;
 
-  /// Watches the chosen theme once the cubit is built.
+  /// The mushaf's face, followed the same way and for the same reason: the
+  /// scope that carries it is in the tree from the first frame, and only its
+  /// value changes.
+  QuranFont _quranFont = QuranFont.fallback;
+
+  /// Watches the chosen theme and face once the cubit is built.
   void _followTheme(SettingsCubit cubit) {
     _settingsSub = cubit.stream.listen((SettingsState state) {
       final ThemeMode next = _themeModeOf(state.settings.themeMode);
-      if (mounted && next != _themeMode) setState(() => _themeMode = next);
+      final QuranFont font = state.settings.quranFont;
+      // Every page lookup follows the print the face is drawn to: a surah
+      // opened from the index lands on its page in that print.
+      sl<QuranPagesLocalDataSource>().activeLayout = MushafLayout.forFont(font);
+      if (!mounted || (next == _themeMode && font == _quranFont)) return;
+      setState(() {
+        _themeMode = next;
+        _quranFont = font;
+      });
     });
   }
 
@@ -209,7 +226,10 @@ class _IqraWartaqAppState extends State<IqraWartaqApp>
               // A no-op off Windows, and deduplicated, so the resize rebuilds
               // cost nothing.
               WindowChrome.follow(Theme.of(context));
-              return UpdateGate(child: child ?? const SizedBox.shrink());
+              return QuranFontScope(
+                font: _quranFont,
+                child: UpdateGate(child: child ?? const SizedBox.shrink()),
+              );
             },
           ),
         ),

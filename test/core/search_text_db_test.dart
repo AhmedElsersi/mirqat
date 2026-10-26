@@ -36,9 +36,10 @@ void main() {
     final Database db = await RepoQuranDatabase().open();
     Future<int> hits(String typed) async =>
         (await db.rawQuery(
-          'SELECT COUNT(*) AS n FROM ayahs WHERE text_search LIKE ?',
-          <Object>['%${searchableQuery(typed)}%'],
-        )).single['n']! as int;
+              'SELECT COUNT(*) AS n FROM ayahs WHERE text_search LIKE ?',
+              <Object>['%${searchableQuery(typed)}%'],
+            )).single['n']!
+            as int;
 
     // The rasm writes these with letters nobody types: superscript alef in
     // العالمين and الرحمن, hamza on the line in قرآن.

@@ -36,6 +36,8 @@ String failureMessage(
 /// Compact rendering of a step, for readable expectations.
 String describe(PlanStep step) => switch (step) {
   LearnStep(ayah: final int a) => 'LEARN $a x${step.repeats}',
+  RecallStep(ayah: final int a) => 'RECALL $a x${step.repeats}',
+  ChainStep(:final cue, :final next) => 'CHAIN $cue>$next',
   ConnectStep(from: final int f, to: final int t) =>
     'CONNECT $f-$t x${step.repeats}',
 };

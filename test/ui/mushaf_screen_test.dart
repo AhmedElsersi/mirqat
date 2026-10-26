@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,8 @@ import 'package:mirqat/features/mushaf/screen/mushaf_screen.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_actions_sheet.dart';
 import 'package:mirqat/features/mushaf/widgets/ayah_share_dialog.dart';
 import 'package:mirqat/features/mushaf/widgets/mushaf_page_view.dart';
+import 'package:mirqat/features/mushaf/widgets/page_share_dialog.dart';
+import 'package:mirqat/features/session/widgets/session_bar.dart';
 import 'package:mirqat/features/mushaf/widgets/paper_turn.dart';
 import 'package:mirqat/data/models/app_settings.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -278,17 +281,53 @@ void main() {
         for (final int page in pages) {
           await showPage(tester, cubit, page);
           expect(tester.takeException(), isNull, reason: 'page $page');
-          expect(
+          // The page sits in a scroll view either way, so that the session
+          // bar can lend it room to scroll; with the bar down, there is none.
+          for (final ScrollableState s in tester.stateList<ScrollableState>(
             find.descendant(
               of: pageView(page),
               matching: find.byType(Scrollable),
             ),
-            findsNothing,
-            reason: 'page $page must not scroll',
-          );
+          )) {
+            expect(
+              s.position.maxScrollExtent,
+              0,
+              reason: 'page $page must not scroll',
+            );
+          }
         }
       });
     }
+
+    testWidgets('with the session bar up, the page gains the bar\'s height to '
+        'scroll by, and loses it when the bar goes', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await openMushaf(tester);
+
+      double room() => tester
+          .state<ScrollableState>(
+            find.descendant(of: pageView(1), matching: find.byType(Scrollable)),
+          )
+          .position
+          .maxScrollExtent;
+
+      expect(room(), 0);
+      await tester.tapAt(tester.getCenter(pageView(1)));
+      await frames(tester);
+      final double bar = tester.getSize(find.byType(SessionBar)).height;
+      expect(bar, greaterThan(0));
+      expect(room(), closeTo(bar, 0.5));
+      expect(tester.takeException(), isNull);
+
+      await tester.tapAt(tester.getCenter(pageView(1)));
+      await frames(tester);
+      expect(room(), 0);
+    });
   });
 
   group('taps', () {
@@ -351,12 +390,12 @@ void main() {
 
       await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text(LocaleKeys.mushafShareAyah.tr()), findsOneWidget);
+      expect(find.byTooltip(LocaleKeys.mushafShareAyah.tr()), findsOneWidget);
 
       // The tap starts a quran.db read, which only completes in the real
       // zone — same reasoning as every other real-zone block here.
       await tester.runAsync(() async {
-        await tester.tap(find.text(LocaleKeys.mushafShareAyah.tr()));
+        await tester.tap(find.byTooltip(LocaleKeys.mushafShareAyah.tr()));
         await tester.pump();
         await Future<void>.delayed(const Duration(milliseconds: 100));
       });
@@ -405,6 +444,81 @@ void main() {
       expect(find.byType(AyahShareDialog), findsNothing);
     });
 
+    testWidgets('the page an ayah is on can be shared whole: drawn as the '
+        'reading view draws it, nothing to scroll, handed over as a png', (
+      WidgetTester tester,
+    ) async {
+      final MushafCubit cubit = await openMushaf(tester);
+
+      final List<MethodCall> calls = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('com.mirqat.app/share'),
+        (MethodCall call) async {
+          calls.add(call);
+          return null;
+        },
+      );
+
+      // A full page of fifteen lines is the most a card has to hold: shown
+      // first, straight from the dialog, to see that it fits.
+      await real(tester, () => cubit.ensurePage(3));
+      unawaited(
+        showDialog<void>(
+          context: tester.element(find.byType(MushafView)),
+          builder: (_) => PageShareDialog(
+            page: cubit.state.pages[3]!,
+            linesPerFullPage: cubit.state.linesPerFullPage,
+          ),
+        ),
+      );
+      await frames(tester);
+      for (final ScrollableState s in tester.stateList<ScrollableState>(
+        find.descendant(
+          of: find.byType(PageShareCard),
+          matching: find.byType(Scrollable),
+        ),
+      )) {
+        expect(s.position.maxScrollExtent, 0, reason: 'a full page fits whole');
+      }
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text(LocaleKeys.commonCancel.tr()));
+      await frames(tester);
+      expect(find.byType(PageShareDialog), findsNothing);
+
+      // And from the menu, as a reader reaches it.
+      await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.byTooltip(LocaleKeys.mushafSharePage.tr()));
+      await frames(tester);
+
+      final Finder card = find.byType(PageShareCard);
+      expect(card, findsOneWidget);
+      final MushafPageView drawn = tester.widget(
+        find.descendant(of: card, matching: find.byType(MushafPageView)),
+      );
+      expect(drawn.page, cubit.state.pages[1]);
+      expect(drawn.highlighted, isNull);
+      expect(drawn.ribbon, isFalse);
+      expect(tester.takeException(), isNull);
+
+      await tester.runAsync(() async {
+        await tester.tap(find.text(LocaleKeys.mushafShare.tr()));
+        await tester.pump();
+        for (int i = 0; i < 200 && calls.isEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      });
+      await frames(tester);
+
+      expect(calls, hasLength(1));
+      final Map<Object?, Object?> args =
+          calls.single.arguments as Map<Object?, Object?>;
+      expect(args['mimeType'], 'image/png');
+      expect(args['path']! as String, endsWith('page_1.png'));
+      expect(File(args['path']! as String).lengthSync(), greaterThan(0));
+      expect(find.byType(PageShareDialog), findsNothing);
+    });
+
     testWidgets('an ayah can be marked as where the reader stopped: the sheet '
         'offers it, the page tints it in its own colour, and the sheet then '
         'offers to take it off', (WidgetTester tester) async {
@@ -427,8 +541,8 @@ void main() {
 
       await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text(LocaleKeys.mushafMarkHere.tr()), findsOneWidget);
-      expect(find.text(LocaleKeys.mushafUnmark.tr()), findsNothing);
+      expect(find.byTooltip(LocaleKeys.mushafMarkHere.tr()), findsOneWidget);
+      expect(find.byTooltip(LocaleKeys.mushafUnmark.tr()), findsNothing);
       await closeSheet();
 
       // The write itself, in real time: a store write begun under the
@@ -465,8 +579,8 @@ void main() {
 
       await tester.longPress(find.byWidget(renderedWords(tester, 1).first));
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text(LocaleKeys.mushafUnmark.tr()), findsOneWidget);
-      expect(find.text(LocaleKeys.mushafMarkHere.tr()), findsNothing);
+      expect(find.byTooltip(LocaleKeys.mushafUnmark.tr()), findsOneWidget);
+      expect(find.byTooltip(LocaleKeys.mushafMarkHere.tr()), findsNothing);
       await closeSheet();
 
       await tester.runAsync(settings.clearReadingMark);

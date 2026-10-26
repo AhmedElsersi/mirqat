@@ -8,14 +8,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/di/injection.dart';
 import '../../../core/desktop.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../data/models/app_settings.dart';
-import '../../../data/models/surah.dart';
-import '../../../data/models/reading_position.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../home/cubit/home_index_cubit.dart';
 import '../../home/cubit/home_index_state.dart';
@@ -23,183 +22,121 @@ import '../../home/widgets/juz_widgets.dart';
 import '../../mushaf/mushaf_args.dart';
 import '../../mushaf/reading_section.dart';
 import '../../settings/cubit/settings_cubit.dart';
-import '../../settings/cubit/settings_state.dart';
-import '../../update/cubit/update_cubit.dart';
 import '../cubit/surah_list_cubit.dart';
 import '../cubit/surah_list_state.dart';
 import '../widgets/error_view.dart';
 import '../widgets/surah_row.dart';
 import '../widgets/surah_tile.dart';
 
-/// Home: the surahs and the ajzaa, side by side as two tabs.
+/// The Mushaf tab: the way into the text — search, where the reader stopped,
+/// and the surahs and ajzaa side by side as two tabs.
 ///
 /// How they are drawn — a list, a grid, or not at all because the app opens
-/// straight onto the mushaf — is a setting, not a button here: it is chosen
-/// once and lived with, and three icons for it crowded out the two things
-/// this bar is for, the way back to where you were and the settings.
-class SurahListScreen extends StatelessWidget {
-  const SurahListScreen({super.key});
+/// straight onto the mushaf — is a setting, not a button here. The cubits it
+/// reads are the home shell's, shared with the other tabs.
+class SurahListScreen extends StatefulWidget {
+  const SurahListScreen({this.place, this.onOpenPlace, super.key});
+
+  /// Where the reader stopped, and how to go back there.
+  final PlaceItem? place;
+  final VoidCallback? onOpenPlace;
 
   @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: <BlocProvider<dynamic>>[
-        BlocProvider<SurahListCubit>(
-          create: (_) => sl<SurahListCubit>()..load(),
-        ),
-        BlocProvider<HomeIndexCubit>(
-          create: (_) => sl<HomeIndexCubit>()..load(),
-        ),
-      ],
-      child: const _SurahListView(),
-    );
-  }
+  State<SurahListScreen> createState() => _SurahListScreenState();
 }
 
-class _SurahListView extends StatefulWidget {
-  const _SurahListView();
-
-  @override
-  State<_SurahListView> createState() => _SurahListViewState();
-}
-
-class _SurahListViewState extends State<_SurahListView> {
+class _SurahListScreenState extends State<SurahListScreen> {
   final ScrollController _surahScroll = ScrollController();
   final ScrollController _juzScroll = ScrollController();
-
-  /// Whether this launch has already decided how to open. It is decided
-  /// exactly once, the first moment the settings and the history are both
-  /// known — and never again. Coming *back* to the index from the mushaf must
-  /// stay on the index; and choosing "mushaf" in Settings must not throw the
-  /// mushaf open over the Settings screen, which is what re-deciding on every
-  /// change of the setting did.
-  bool _launchDecided = false;
-
-  /// Whether this launch has looked for an update yet. Asked from here, the
-  /// first screen past the splash and the introduction, and once: the cubit
-  /// goes on listening for a newer `app.json` by itself.
-  bool _updateChecked = false;
-
-  void _checkForUpdate(SettingsState settings) {
-    if (_updateChecked || !settings.settingsRead) return;
-    _updateChecked = true;
-    // After the frame: this runs during build, and the answer may be a state
-    // change in a cubit above this widget.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<UpdateCubit>().check(
-        lastPrompted: settings.settings.updatePromptedAt,
-      );
-    });
-  }
+  final ScrollController _hizbScroll = ScrollController();
 
   @override
   void dispose() {
     _surahScroll.dispose();
     _juzScroll.dispose();
+    _hizbScroll.dispose();
     super.dispose();
-  }
-
-  /// In mushaf mode the app opens on the last page read, with this screen
-  /// underneath it as the index — so "back" from the mushaf lands here, and
-  /// there is always a way to another surah, the history and the settings.
-  void _decideLaunch(HomeViewMode mode, PlaceItem? last, bool loaded) {
-    if (_launchDecided || !loaded) return;
-    _launchDecided = true;
-    final int? page = launchPage(mode: mode, last: last?.position);
-    if (page == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _openMushaf(context, page: page);
-    });
-  }
-
-  /// Where the reader left off — the mark they set, or the page the app
-  /// kept — with the surah's names looked up. Null before anything is read.
-  PlaceItem? _lastPlace(
-    BuildContext context,
-    SettingsState settings,
-    HomeIndexState index,
-  ) {
-    final ReadingPosition? position = lastPlace(
-      mark: settings.settings.readingMark,
-      history: index.last?.position,
-    );
-    if (position == null) return null;
-    final Surah? surah = context.read<HomeIndexCubit>().surahOf(
-      position.surahNumber,
-    );
-    return surah == null ? null : PlaceItem(position: position, surah: surah);
   }
 
   @override
   Widget build(BuildContext context) {
-    final SettingsState settings = context.watch<SettingsCubit>().state;
-    final HomeViewMode viewMode = settings.settings.homeViewMode;
+    final ThemeData theme = Theme.of(context);
+    final HomeViewMode viewMode = context.select<SettingsCubit, HomeViewMode>(
+      (SettingsCubit c) => c.state.settings.homeViewMode,
+    );
+    final bool marked = context.select<SettingsCubit, bool>(
+      (SettingsCubit c) => c.state.settings.readingMark != null,
+    );
     final HomeIndexState index = context.watch<HomeIndexCubit>().state;
-    final PlaceItem? last = _lastPlace(context, settings, index);
-    if (settings.status.isReady) _decideLaunch(viewMode, last, index.loaded);
-    _checkForUpdate(settings);
+    final PlaceItem? last = widget.place;
 
     // The mushaf has no list shape of its own; its index is the plain list.
     final bool grid = viewMode == HomeViewMode.grid;
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(LocaleKeys.appName.tr()),
-          actions: <Widget>[
-            IconButton(
-              onPressed: () => context.pushNamed(AppRoutes.searchName),
-              tooltip: LocaleKeys.searchTitle.tr(),
-              icon: const Icon(Icons.search),
-            ),
-            IconButton(
-              onPressed: () async {
-                await context.pushNamed<void>(AppRoutes.historyName);
-                if (context.mounted) {
-                  await context.read<HomeIndexCubit>().refreshHistory();
-                }
-              },
-              tooltip: LocaleKeys.homeHistory.tr(),
-              icon: const Icon(Icons.history),
-            ),
-            IconButton(
-              onPressed: () => context.pushNamed(AppRoutes.settingsName),
-              tooltip: LocaleKeys.settingsTitle.tr(),
-              icon: const Icon(Icons.settings_outlined),
-            ),
-          ],
-          bottom: TabBar(
-            tabs: <Widget>[
-              Tab(text: LocaleKeys.homeTabSurahs.tr()),
-              Tab(text: LocaleKeys.homeTabAjzaa.tr()),
-            ],
-          ),
-        ),
-        body: DesktopWidth(
-          child: Column(
-            children: <Widget>[
-              if (last != null)
-                _ContinueCard(
-                  place: last,
-                  label: LocaleKeys.homeContinueReading.tr(),
-                  // The icon says which it is: a mark the reader set, or
-                  // the page the app remembered.
-                  icon: settings.settings.readingMark == null
-                      ? Icons.bookmark
-                      : Icons.bookmark_added,
-                  onTap: () => _openMushaf(context, page: last.position.page),
+        body: SafeArea(
+          bottom: false,
+          child: DesktopWidth(
+            child: Column(
+              children: <Widget>[
+                Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(16.w, 8.h, 12.w, 0),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          LocaleKeys.tabsMushaf.tr(),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton.outlined(
+                        onPressed: () async {
+                          await context.pushNamed<void>(AppRoutes.historyName);
+                          if (context.mounted) {
+                            await context
+                                .read<HomeIndexCubit>()
+                                .refreshHistory();
+                          }
+                        },
+                        tooltip: LocaleKeys.homeHistory.tr(),
+                        icon: const Icon(Icons.history),
+                      ),
+                    ],
+                  ),
                 ),
-              Expanded(
-                child: TabBarView(
-                  children: <Widget>[
-                    _surahs(context, grid: grid, mode: viewMode),
-                    _ajzaa(context, index, grid: grid, mode: viewMode),
-                  ],
+                _SearchField(
+                  onTap: () => context.pushNamed(AppRoutes.searchName),
                 ),
-              ),
-            ],
+                if (last != null)
+                  _ContinueCard(
+                    place: last,
+                    // The icon says which it is: a mark the reader set, or
+                    // the page the app remembered.
+                    icon: marked ? Icons.bookmark_added : Icons.bookmark,
+                    onTap: widget.onOpenPlace ?? () {},
+                  ),
+                const _SegmentedTabs(),
+                Expanded(
+                  child: TabBarView(
+                    children: <Widget>[
+                      _surahs(context, grid: grid, mode: viewMode),
+                      _ajzaa(context, index, grid: grid, mode: viewMode),
+                      _ajzaa(
+                        context,
+                        index,
+                        grid: grid,
+                        mode: viewMode,
+                        ahzab: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -254,30 +191,39 @@ class _SurahListViewState extends State<_SurahListView> {
     HomeIndexState index, {
     required bool grid,
     required HomeViewMode mode,
+    bool ahzab = false,
   }) {
     if (!index.loaded) return const Center(child: CircularProgressIndicator());
 
-    // The same choice a surah makes: the mushaf at the juz's first page, or
-    // that juz on its own.
-    void open(JuzItem juz) => mode == HomeViewMode.mushaf
-        ? _openMushaf(context, page: juz.info.page)
-        : _openMushaf(context, section: SectionRequest.juz(juz.info.number));
+    final List<JuzItem> parts = ahzab ? index.ahzab : index.ajzaa;
+    final ScrollController scroll = ahzab ? _hizbScroll : _juzScroll;
+    final String nameKey = ahzab
+        ? LocaleKeys.homeHizbName
+        : LocaleKeys.homeJuzName;
+
+    // The same choice a surah makes: the mushaf at the part's first page, or
+    // that juz on its own. A hizb is not a reading section the app knows, so
+    // it always opens the mushaf where it begins.
+    void open(JuzItem part) => ahzab || mode == HomeViewMode.mushaf
+        ? openMushaf(context, page: part.info.page)
+        : openMushaf(context, section: SectionRequest.juz(part.info.number));
 
     if (!grid) {
-      return ListView.separated(
-        controller: _juzScroll,
-        padding: EdgeInsetsDirectional.only(bottom: 24.h),
-        itemCount: index.ajzaa.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
-        itemBuilder: (BuildContext context, int i) =>
-            JuzRow(item: index.ajzaa[i], onTap: () => open(index.ajzaa[i])),
+      return ListCardView(
+        controller: scroll,
+        itemCount: parts.length,
+        itemBuilder: (BuildContext context, int i) => JuzRow(
+          item: parts[i],
+          nameKey: nameKey,
+          onTap: () => open(parts[i]),
+        ),
       );
     }
 
     final bool wide =
         MediaQuery.sizeOf(context).width >= AppConstants.tabletBreakpoint;
     return GridView.builder(
-      controller: _juzScroll,
+      controller: scroll,
       padding: EdgeInsetsDirectional.all(12.r),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: wide ? 3 : 2,
@@ -293,9 +239,12 @@ class _SurahListViewState extends State<_SurahListView> {
             math.max(1, ScreenUtil().scaleWidth) *
             MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6),
       ),
-      itemCount: index.ajzaa.length,
-      itemBuilder: (BuildContext context, int i) =>
-          JuzTile(item: index.ajzaa[i], onTap: () => open(index.ajzaa[i])),
+      itemCount: parts.length,
+      itemBuilder: (BuildContext context, int i) => JuzTile(
+        item: parts[i],
+        nameKey: nameKey,
+        onTap: () => open(parts[i]),
+      ),
     );
   }
 }
@@ -304,13 +253,11 @@ class _SurahListViewState extends State<_SurahListView> {
 class _ContinueCard extends StatelessWidget {
   const _ContinueCard({
     required this.place,
-    required this.label,
     required this.icon,
     required this.onTap,
   });
 
   final PlaceItem place;
-  final String label;
   final IconData icon;
   final VoidCallback onTap;
 
@@ -319,51 +266,50 @@ class _ContinueCard extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final bool arabic = context.locale.languageCode == 'ar';
     return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(12.w, 10.h, 12.w, 4.h),
+      padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 0),
       child: Material(
-        color: theme.colorScheme.primary,
-        borderRadius: BorderRadius.circular(16.r),
+        color: AppColors.forest,
+        borderRadius: BorderRadius.circular(18.r),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: EdgeInsetsDirectional.symmetric(
-              horizontal: 16.w,
-              vertical: 12.h,
-            ),
+            padding: EdgeInsetsDirectional.all(16.r),
             child: Row(
               children: <Widget>[
-                Icon(icon, color: theme.colorScheme.secondary),
+                Icon(icon, color: AppColors.gold),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        label,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onPrimary.withValues(
-                            alpha: 0.8,
-                          ),
+                        LocaleKeys.homeContinueAt.tr(
+                          args: <String>[
+                            arabic ? place.surah.nameAr : place.surah.nameEn,
+                            place.position.ayahNumber.toLocalisedString(),
+                          ],
+                        ),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: AppColors.cream,
                         ),
                       ),
                       SizedBox(height: 2.h),
                       Text(
-                        LocaleKeys.homePlace.tr(
+                        LocaleKeys.homePage.tr(
                           args: <String>[
-                            arabic ? place.surah.nameAr : place.surah.nameEn,
-                            place.position.ayahNumber.toLocalisedString(),
                             place.position.page.toLocalisedString(),
                           ],
                         ),
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onPrimary,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.cream.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: theme.colorScheme.onPrimary),
+                // An arrow, not a chevron: this one goes somewhere else.
+                const Icon(Icons.arrow_forward, color: AppColors.cream),
               ],
             ),
           ),
@@ -387,11 +333,9 @@ class _SurahList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    return ListCardView(
       controller: controller,
-      padding: EdgeInsetsDirectional.only(bottom: 24.h),
       itemCount: items.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (BuildContext context, int index) {
         final SurahListItem item = items[index];
         return SurahRow(
@@ -456,7 +400,7 @@ Future<void> _openSurah(
   required bool inMushaf,
 }) async {
   if (!inMushaf) {
-    return _openMushaf(
+    return openMushaf(
       context,
       section: SectionRequest.surah(item.surah.number),
     );
@@ -464,21 +408,22 @@ Future<void> _openSurah(
   final int? page = await context.read<HomeIndexCubit>().pageOfSurah(
     item.surah.number,
   );
-  if (context.mounted) await _openMushaf(context, page: page);
+  if (context.mounted) await openMushaf(context, page: page);
 }
 
 /// Opens the reading view: the whole mushaf at [page], or one [section] of
 /// it. The mushaf writes down where the reader gets to; this only reads it
 /// back when they return.
-Future<void> _openMushaf(
+Future<void> openMushaf(
   BuildContext context, {
   int? page,
   SectionRequest? section,
+  bool tasmee = false,
 }) async {
   final HomeIndexCubit index = context.read<HomeIndexCubit>();
   await context.pushNamed<void>(
     AppRoutes.mushafName,
-    extra: MushafArgs(initialPage: page, section: section),
+    extra: MushafArgs(initialPage: page, section: section, tasmee: tasmee),
   );
   await index.refreshHistory();
 }
@@ -490,3 +435,85 @@ void _openProgress(BuildContext context, SurahListItem item) =>
         AppRoutes.surahNumberParam: '${item.surah.number}',
       },
     );
+
+/// Search, as a field: in an index of 114 surahs and 604 pages it is the
+/// quickest way in, so it is shown, not hidden behind an icon.
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(16.w, 12.h, 16.w, 0),
+      child: Material(
+        color: theme.colorScheme.surface,
+        shape: StadiumBorder(
+          side: BorderSide(color: theme.colorScheme.outline),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: 50.r,
+            child: Row(
+              children: <Widget>[
+                SizedBox(width: 14.w),
+                Icon(Icons.search, color: theme.colorScheme.onSurfaceVariant),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    LocaleKeys.searchHint.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The surahs | ajzaa switch, drawn as a segmented control.
+class _SegmentedTabs extends StatelessWidget {
+  const _SegmentedTabs();
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(16.w, 14.h, 16.w, 8.h),
+      child: Container(
+        padding: EdgeInsetsDirectional.all(4.r),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14.r),
+        ),
+        child: TabBar(
+          dividerHeight: 0,
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicator: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          labelColor: theme.colorScheme.onSurface,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+          labelStyle: theme.textTheme.titleSmall,
+          tabs: <Widget>[
+            Tab(height: 40.r, text: LocaleKeys.homeTabSurahs.tr()),
+            Tab(height: 40.r, text: LocaleKeys.homeTabAjzaa.tr()),
+            Tab(height: 40.r, text: LocaleKeys.homeTabAhzab.tr()),
+          ],
+        ),
+      ),
+    );
+  }
+}

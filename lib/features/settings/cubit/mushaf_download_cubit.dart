@@ -6,6 +6,8 @@ import '../../../core/error/failures.dart';
 import '../../../core/state/load_status.dart';
 import '../../../data/models/audio_pack.dart';
 import '../../../data/models/reciter.dart';
+import '../../../data/models/surah.dart';
+import '../../../data/repositories/quran_repository.dart';
 import '../../../services/audio/audio_pack_service.dart';
 import '../../../services/audio/reciter_catalog.dart';
 import 'mushaf_download_state.dart';
@@ -21,12 +23,18 @@ class MushafDownloadCubit extends Cubit<MushafDownloadState> {
   MushafDownloadCubit({
     required AudioPackService packService,
     required ReciterCatalog reciterCatalog,
+    QuranRepository? quranRepository,
   }) : _packs = packService,
        _reciters = reciterCatalog,
+       _quran = quranRepository,
        super(const MushafDownloadState());
 
   final AudioPackService _packs;
   final ReciterCatalog _reciters;
+
+  /// Where the surah being fetched gets its name. Optional: without it the
+  /// running card names the surah by its number.
+  final QuranRepository? _quran;
 
   StreamSubscription<BulkDownload>? _runs;
   StreamSubscription<PackDownload>? _downloads;
@@ -130,10 +138,22 @@ class MushafDownloadCubit extends Cubit<MushafDownloadState> {
       );
     }
 
+    Map<int, String> names = state.surahNames;
+    if (names.isEmpty && _quran != null) {
+      names = (await _quran.getSurahs()).fold(
+        (_) => const <int, String>{},
+        (List<Surah> surahs) => <int, String>{
+          for (final Surah s in surahs) s.number: s.nameAr,
+        },
+      );
+      if (isClosed) return;
+    }
+
     emit(
       MushafDownloadState(
         status: LoadStatus.ready,
         reciters: List<ReciterOffline>.unmodifiable(rows),
+        surahNames: names,
       ),
     );
   }

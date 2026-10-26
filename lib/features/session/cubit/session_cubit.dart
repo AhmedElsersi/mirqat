@@ -7,20 +7,32 @@ import 'package:just_audio/just_audio.dart' as ja;
 import '../../../core/error/exceptions.dart';
 import '../../../core/error/failures.dart';
 import '../../../data/models/app_settings.dart';
+import '../../../data/models/memorization_progress.dart';
 import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../data/repositories/quran_repository.dart';
 import '../../../data/repositories/settings_repository.dart';
+import '../../../data/repositories/practice_repository.dart';
+import '../../../data/repositories/review_repository.dart';
 import '../../../domain/engine/repetition_plan_builder.dart';
+import '../../../domain/engine/review_scheduler.dart';
+import '../../../domain/entities/review_card.dart';
 import '../../../domain/entities/ayah_ref.dart';
+import '../../../domain/entities/hifz_plan.dart';
+import '../../../domain/entities/interrupted_session.dart';
+import '../../../domain/entities/saved_preset.dart';
+import '../../../domain/entities/practice_stats.dart';
+import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/session_config.dart';
 import '../../../domain/entities/session_plan.dart';
 import '../../../services/audio/ayah_duration_service.dart';
 import '../../../services/audio/memorization_player_service.dart';
+import '../../../services/audio/playback_queue.dart';
 import '../../../services/audio/reciter_catalog.dart';
 import '../../../services/keep_awake_service.dart';
+import '../session_request.dart';
 import 'session_state.dart';
 
 /// The memorization session of one reading screen: what it would be, and —
@@ -43,8 +55,16 @@ class SessionCubit extends Cubit<SessionState> {
     required MemorizationPlayerService playerService,
     required ProgressRepository progressRepository,
     required KeepAwakeService keepAwakeService,
+    required ReviewRepository reviewRepository,
+    required PracticeRepository practiceRepository,
+    ReviewScheduler reviewScheduler = const ReviewScheduler(),
+    this.clock = DateTime.now,
     this.pauseSettleTime = const Duration(milliseconds: 600),
+    this.placeSaveDelay = const Duration(seconds: 3),
   }) : _quran = quranRepository,
+       _reviews = reviewRepository,
+       _practice = practiceRepository,
+       _scheduler = reviewScheduler,
        _settings = settingsRepository,
        _reciters = reciterCatalog,
        _durations = durationService,
@@ -62,15 +82,48 @@ class SessionCubit extends Cubit<SessionState> {
   final MemorizationPlayerService _player;
   final ProgressRepository _progress;
   final KeepAwakeService _keepAwake;
+  final ReviewRepository _reviews;
+  final PracticeRepository _practice;
+
+  /// Runs while the session is actually playing: the listening time the
+  /// practice log is given, measured rather than estimated.
+  final Stopwatch _listening = Stopwatch();
+  final ReviewScheduler _scheduler;
+
+  /// Today, as far as the review ladder is concerned. A test hands in its
+  /// own.
+  final DateTime Function() clock;
+
+  /// Every ayah heard at least once since the session was started from the
+  /// top. A session stopped before all of its range was heard has nothing to
+  /// grade: the reader did not recite it through.
+  final Set<AyahRef> _heard = <AyahRef>{};
 
   /// How long a pause slider has to rest before a running session is
   /// re-queued with the new gaps. Re-queuing restarts the ayah being heard,
   /// which is fine once and maddening thirty times a second.
   final Duration pauseSettleTime;
 
-  StreamSubscription<PlaybackUnit>? _unitSub;
+  /// How long after an ayah begins its place is written down for resuming.
+  /// Not on every play: a write a second, for a whole session, is a lot of
+  /// writes to keep a place a few seconds more exact.
+  final Duration placeSaveDelay;
+  Timer? _placeTimer;
+  AyahRef? _placeToSave;
+
+  /// Moved on whenever the place is forgotten, so a save already under way
+  /// — reading the settings when the session was stopped — does not write a
+  /// finished session back as interrupted.
+  int _placeGeneration = 0;
+
+  StreamSubscription<PlaybackMoment>? _unitSub;
   StreamSubscription<ja.PlayerState>? _stateSub;
   Timer? _pauseTimer;
+  Timer? _sleepTimer;
+
+  /// The step the session was on when "end of this step" was chosen: the
+  /// session pauses as soon as a play of any other step begins.
+  int? _sleepStep;
   int _estimateToken = 0;
 
   /// How many times each ayah has actually been recited this session. Written
@@ -88,7 +141,9 @@ class SessionCubit extends Cubit<SessionState> {
     final AppSettings settings = (await _settings.read()).getOrElse(
       () => const AppSettings(),
     );
+    final Set<AyahRef> stumbled = await _readStumbled();
     if (isClosed) return;
+    final InterruptedSession? interrupted = settings.interruptedSession;
 
     emit(
       state.copyWith(
@@ -99,8 +154,164 @@ class SessionCubit extends Cubit<SessionState> {
             .where((Reciter r) => r.id == settings.reciterId)
             .firstOrNull,
         defaults: settings,
+        stumbled: stumbled,
+        resumeOffer: interrupted != null && interrupted.isFresh(clock())
+            ? interrupted
+            : null,
       ),
     );
+  }
+
+  // --- picking an interrupted session up ------------------------------------
+
+  /// Takes up the session the app was closed in: its settings, its reciter
+  /// where they still have the range, and the drill of the ayah it had
+  /// reached — or the top, if the plan no longer holds that ayah.
+  Future<void> resume() async {
+    final InterruptedSession? offer = state.resumeOffer;
+    if (offer == null) return;
+    emit(state.copyWith(clearResumeOffer: true));
+    final Reciter? reciter = state.reciters
+        .where((Reciter r) => r.id == offer.reciterId)
+        .firstOrNull;
+    if (reciter != null) emit(state.copyWith(chosenReciter: reciter));
+    _apply(offer.config, rangeChosen: true);
+    final SessionPlan? plan = state.plan;
+    final Reciter? who = state.reciter;
+    if (plan == null || who == null) return;
+    _heard.clear();
+    await _run(
+      plan,
+      who,
+      startAtUnit: plan.firstUnitOf(offer.at) ?? 0,
+      autoplay: true,
+    );
+  }
+
+  /// Waves the offer away, and forgets the session.
+  Future<void> dismissResume() async {
+    emit(state.copyWith(clearResumeOffer: true));
+    await _forgetPlace();
+  }
+
+  void _schedulePlaceSave(AyahRef at) {
+    _placeToSave = at;
+    _placeTimer ??= Timer(placeSaveDelay, () {
+      _placeTimer = null;
+      unawaited(_savePlace());
+    });
+  }
+
+  /// Writes down where the running session is, for picking it up after the
+  /// app is closed under it.
+  Future<void> _savePlace() async {
+    final AyahRef? at = _placeToSave;
+    final SessionPlan? plan = state.activePlan;
+    final Reciter? reciter = state.activeReciter;
+    if (at == null || plan == null || reciter == null) return;
+    final int generation = _placeGeneration;
+    final AppSettings fresh = await _freshSettings();
+    if (generation != _placeGeneration) return;
+    await _settings.save(
+      fresh.copyWith(
+        interruptedSession: InterruptedSession(
+          config: plan.config,
+          reciterId: reciter.id,
+          at: at,
+          savedAt: clock(),
+        ),
+      ),
+    );
+  }
+
+  /// The session ended as sessions should — played out, or stopped on
+  /// purpose: there is nothing to pick up.
+  Future<void> _forgetPlace() async {
+    _placeTimer?.cancel();
+    _placeTimer = null;
+    _placeToSave = null;
+    _placeGeneration++;
+    final AppSettings fresh = await _freshSettings();
+    if (fresh.interruptedSession == null) return;
+    await _settings.save(fresh.copyWith(clearInterruptedSession: true));
+  }
+
+  // --- stumbles -------------------------------------------------------------
+
+  /// Every stumbled ayah, as a set. Storage that cannot be read costs the
+  /// marks, never the session.
+  Future<Set<AyahRef>> _readStumbled() async =>
+      (await _progress.stumbled()).fold(
+        (Failure _) => const <AyahRef>{},
+        (List<MemorizationProgress> records) => <AyahRef>{
+          for (final MemorizationProgress r in records)
+            AyahRef(r.surahNumber, r.ayahNumber),
+        },
+      );
+
+  /// The reader slips at [ayah]: it is marked on the page, and the next plan
+  /// over it drills it more. A plan already playing is left as it is.
+  Future<void> markStumble(AyahRef ayah) async {
+    await _progress.markStumble(ayah.surah, ayah.ayah);
+    await refreshStumbles();
+  }
+
+  Future<void> clearStumble(AyahRef ayah) async {
+    await _progress.clearStumble(ayah.surah, ayah.ayah);
+    await refreshStumbles();
+  }
+
+  /// Reads the marks again — after they were changed here, or elsewhere.
+  Future<void> refreshStumbles() async {
+    final Set<AyahRef> stumbled = await _readStumbled();
+    if (isClosed || setEquals(stumbled, state.stumbled)) return;
+    emit(state.copyWith(stumbled: stumbled));
+    // The plan that would play next drills the new marks; nothing about the
+    // running session changes, so nothing is asked.
+    final SessionConfig? config = state.config;
+    if (config != null) _apply(config, rangeChosen: state.rangeChosen);
+  }
+
+  // --- tasmee' --------------------------------------------------------------
+
+  /// The reader recites to a listener, who holds the phone and follows the
+  /// page. Nothing plays: a running session is stopped first, because the
+  /// reader's own voice is the recitation now.
+  Future<void> startTasmee() async {
+    if (state.tasmee) return;
+    if (state.phase != SessionPhase.idle) await stop();
+    if (isClosed) return;
+    emit(state.copyWith(tasmee: true, tasmeeMarks: const <AyahRef>[]));
+  }
+
+  /// The listener heard a slip at [ayah]: it is noted as a stumble, which
+  /// marks it on the page and makes every later drill over it longer.
+  Future<void> markInTasmee(AyahRef ayah) async {
+    if (!state.tasmee) return;
+    emit(state.copyWith(tasmeeMarks: <AyahRef>[...state.tasmeeMarks, ayah]));
+    await _progress.markStumble(ayah.surah, ayah.ayah, at: clock());
+    await refreshStumbles();
+  }
+
+  /// Takes back the last slip noted — a tap on the wrong word.
+  Future<void> undoTasmeeMark() async {
+    if (!state.tasmee || state.tasmeeMarks.isEmpty) return;
+    final AyahRef last = state.tasmeeMarks.last;
+    emit(
+      state.copyWith(
+        tasmeeMarks: state.tasmeeMarks.sublist(0, state.tasmeeMarks.length - 1),
+      ),
+    );
+    await _progress.undoStumble(last.surah, last.ayah);
+    await refreshStumbles();
+  }
+
+  /// Ends the sitting. Returns the slips noted, for the screen to say how
+  /// many; they stay noted as stumbles.
+  List<AyahRef> endTasmee() {
+    final List<AyahRef> marks = state.tasmeeMarks;
+    emit(state.copyWith(tasmee: false, tasmeeMarks: const <AyahRef>[]));
+    return marks;
   }
 
   // --- the range -----------------------------------------------------------
@@ -172,6 +383,18 @@ class SessionCubit extends Cubit<SessionState> {
     result.fold((Failure _) {}, (_) => emit(state.copyWith(defaults: next)));
   }
 
+  /// Sets up the session a screen was opened for: its range, chosen; its
+  /// preset over the reader's defaults; and, if asked, starts it.
+  Future<void> applyRequest(SessionRequest request) async {
+    if (!state.ready) return;
+    chooseRange(_clamped(request.from), _clamped(request.to));
+    final SessionConfig? config = state.config;
+    if (config == null) return;
+    _apply(request.preset.applyTo(config), rangeChosen: true);
+    if (request.presetKey case final String key) _choosePreset(key);
+    if (request.autostart && state.canStart) await start();
+  }
+
   /// A range the reader picked — from an ayah's actions, or the sheet.
   void chooseRange(AyahRef from, AyahRef to) {
     if (!state.ready) return;
@@ -223,6 +446,8 @@ class SessionCubit extends Cubit<SessionState> {
       betweenStepsPauseMs: base.betweenStepsPauseMs,
       playbackSpeed: base.playbackSpeed,
       playIstiadhah: base.playIstiadhah,
+      recallRounds: base.recallRounds,
+      chainRecall: base.chainRecall,
     );
   }
 
@@ -240,6 +465,9 @@ class SessionCubit extends Cubit<SessionState> {
     betweenRepeatPauseMs: settings.defaultBetweenRepeatPauseMs,
     betweenStepsPauseMs: settings.defaultBetweenStepsPauseMs,
     playbackSpeed: settings.defaultPlaybackSpeed,
+    recallRounds: settings.defaultRecallRounds,
+    chainRecall: settings.defaultChainRecall,
+    playIstiadhah: settings.defaultPlayIstiadhah,
   );
 
   // --- tuning --------------------------------------------------------------
@@ -275,11 +503,96 @@ class SessionCubit extends Cubit<SessionState> {
       betweenStepsPauseMs: c.betweenStepsPauseMs,
       playbackSpeed: c.playbackSpeed,
       playIstiadhah: c.playIstiadhah,
+      recallRounds: c.recallRounds,
+      chainRecall: c.chainRecall,
     ),
   );
 
+  /// Lays [preset] over the settings as they stand — one tap for a way of
+  /// working. Like any other change, under a running session it waits for
+  /// the reader to say start again or carry on.
+  void applyPreset(SessionPreset preset, {String? key}) {
+    _change((SessionConfig c) => preset.applyTo(c));
+    if (key != null) _choosePreset(key);
+  }
+
+  /// A way of working the reader saved, laid over the form like the others.
+  void applySaved(SavedPreset saved) => applyPreset(
+    SessionPreset(
+      repeatCount: saved.repeatCount,
+      connectMode: saved.connectMode,
+      recallRounds: saved.recallRounds,
+      chainRecall: saved.chainRecall,
+    ),
+    key: savedPresetKey(saved.name),
+  );
+
+  /// The key a saved way of working is shown as chosen by.
+  static String savedPresetKey(String name) => 'saved:$name';
+
+  /// Notes [key] as the chip chosen, against the form as it now stands.
+  void _choosePreset(String key) {
+    final SessionConfig? c = state.config;
+    if (c == null) return;
+    emit(state.copyWith(presetKey: key, presetWay: c));
+  }
+
+  /// Saves the form's way of working under [name]. The same name again
+  /// replaces it; past [SavedPreset.maxSaved] the oldest goes.
+  Future<void> savePreset(String name) async {
+    final SessionConfig? c = state.config;
+    String trimmed = name.trim();
+    if (c == null || trimmed.isEmpty) return;
+    if (trimmed.length > SavedPreset.maxNameLength) {
+      trimmed = trimmed.substring(0, SavedPreset.maxNameLength).trim();
+    }
+    final AppSettings fresh = await _freshSettings();
+    final List<SavedPreset> kept = <SavedPreset>[
+      for (final SavedPreset p in fresh.savedPresets)
+        if (p.name != trimmed) p,
+      SavedPreset.of(trimmed, c),
+    ];
+    await _saveDefaults(
+      fresh.copyWith(
+        savedPresets: kept.length > SavedPreset.maxSaved
+            ? kept.sublist(kept.length - SavedPreset.maxSaved)
+            : kept,
+      ),
+    );
+  }
+
+  Future<void> deletePreset(String name) async {
+    final AppSettings fresh = await _freshSettings();
+    await _saveDefaults(
+      fresh.copyWith(
+        savedPresets: <SavedPreset>[
+          for (final SavedPreset p in fresh.savedPresets)
+            if (p.name != name) p,
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveDefaults(AppSettings next) async {
+    final result = await _settings.save(next);
+    if (isClosed) return;
+    result.fold((Failure _) {}, (_) => emit(state.copyWith(defaults: next)));
+  }
+
   void setFinalFullPass(bool value) =>
       _change((SessionConfig c) => c.copyWith(finalFullPass: value));
+
+  void setChainRecall(bool value) =>
+      _change((SessionConfig c) => c.copyWith(chainRecall: value));
+
+  void setRecallRounds(int value) => _change(
+    (SessionConfig c) => c.copyWith(
+      recallRounds: value.clamp(
+        SessionConfig.minRecallRounds,
+        SessionConfig.maxRecallRounds,
+      ),
+    ),
+  );
 
   void setPlayIstiadhah(bool value) =>
       _change((SessionConfig c) => c.copyWith(playIstiadhah: value));
@@ -324,8 +637,16 @@ class SessionCubit extends Cubit<SessionState> {
       betweenStepsPauseMs: draft.betweenStepsPauseMs,
     );
     if (next == active.config) return;
-    final SessionPlan? plan = _build(next);
-    if (plan == null) return;
+    // The same steps and plays, with new gaps: the gaps live in the config
+    // and the queue, never in the plan's units. Rebuilding instead would
+    // pick up anything that changed since the session began — a stumble
+    // marked meanwhile adds plays — and the play it resumes at would no
+    // longer be the one it was on.
+    final SessionPlan plan = SessionPlan(
+      config: next,
+      steps: active.steps,
+      units: active.units,
+    );
     final PlaybackUnit? unit = state.currentUnit;
     await _run(
       plan,
@@ -338,7 +659,7 @@ class SessionCubit extends Cubit<SessionState> {
   // --- defaults ------------------------------------------------------------
 
   /// Reloads the tuning from the persisted defaults, leaving the range alone.
-  void resetToDefaults() {
+  void resetToDefaults({String? key}) {
     final SessionConfig? c = state.config;
     if (c == null) return;
     final SessionConfig d = _fromDefaults(state.defaults);
@@ -356,9 +677,12 @@ class SessionCubit extends Cubit<SessionState> {
         betweenStepsPauseMs: d.betweenStepsPauseMs,
         playbackSpeed: d.playbackSpeed,
         playIstiadhah: c.playIstiadhah,
+        recallRounds: d.recallRounds,
+        chainRecall: d.chainRecall,
       ),
       rangeChosen: state.rangeChosen,
     );
+    if (key != null) _choosePreset(key);
   }
 
   /// The settings as they are stored *now*, to change one thing in. Not the
@@ -380,6 +704,9 @@ class SessionCubit extends Cubit<SessionState> {
       defaultBetweenRepeatPauseMs: c.betweenRepeatPauseMs,
       defaultBetweenStepsPauseMs: c.betweenStepsPauseMs,
       defaultPlaybackSpeed: c.playbackSpeed,
+      defaultRecallRounds: c.recallRounds,
+      defaultChainRecall: c.chainRecall,
+      defaultPlayIstiadhah: c.playIstiadhah,
     );
     final result = await _settings.save(next);
     if (isClosed) return;
@@ -397,7 +724,19 @@ class SessionCubit extends Cubit<SessionState> {
     final SessionPlan? plan = state.plan;
     final Reciter? reciter = state.reciter;
     if (plan == null || reciter == null) return;
-    emit(state.copyWith(phase: SessionPhase.loading, clearFailure: true));
+    // A recitation starting is the end of reciting to a listener.
+    if (state.tasmee) endTasmee();
+    _heard.clear();
+    _cancelSleep();
+    emit(
+      state.copyWith(
+        phase: SessionPhase.loading,
+        clearFailure: true,
+        clearGradeOffer: true,
+        clearSleep: true,
+        clearResumeOffer: true,
+      ),
+    );
     await _recordProgress();
     unawaited(_rememberRange(plan.config));
     await _run(plan, reciter, startAtUnit: 0, autoplay: true);
@@ -414,8 +753,17 @@ class SessionCubit extends Cubit<SessionState> {
     final int at = restart || here == null ? 0 : (plan.firstUnitOf(here) ?? 0);
     // Said before anything is awaited: the question has been answered, and
     // whoever asked it must see that now, not when the new queue has loaded.
+    // Another plan numbers its steps its own way: a pause waiting for the end
+    // of one of the old plan's steps has nothing left to wait for.
+    if (_sleepStep != null) {
+      _cancelSleep();
+      emit(state.copyWith(clearSleep: true));
+    }
     emit(state.copyWith(phase: SessionPhase.loading, clearFailure: true));
-    if (restart) await _recordProgress();
+    if (restart) {
+      _heard.clear();
+      await _recordProgress();
+    }
     await _run(plan, reciter, startAtUnit: at, autoplay: true);
   }
 
@@ -449,12 +797,15 @@ class SessionCubit extends Cubit<SessionState> {
 
     emit(state.copyWith(phase: SessionPhase.loading, clearFailure: true));
 
+    final Map<AyahRef, Duration> recallClips;
     try {
+      recallClips = await _recallClips(plan, reciter);
       await _player.load(
         plan: plan,
         reciter: reciter,
         surahs: state.surahs,
         startAtUnit: startAtUnit < 0 ? 0 : startAtUnit,
+        recallClips: recallClips,
       );
     } catch (e) {
       _fail(e);
@@ -462,17 +813,51 @@ class SessionCubit extends Cubit<SessionState> {
     }
     if (isClosed) return;
 
-    _unitSub = _player.currentUnitStream.listen((PlaybackUnit unit) {
-      _played.update(unit.ref, (int n) => n + 1, ifAbsent: () => 1);
-      emit(state.copyWith(currentUnit: unit));
+    _unitSub = _player.momentStream.listen((PlaybackMoment moment) {
+      // A recall gap is the reader's recitation, not the reciter's: only the
+      // plays are counted.
+      if (!moment.recalling) {
+        _played.update(moment.unit.ref, (int n) => n + 1, ifAbsent: () => 1);
+        _heard.add(moment.unit.ref);
+        _schedulePlaceSave(moment.unit.ref);
+      }
+      emit(
+        state.copyWith(
+          currentUnit: moment.unit,
+          recalling: moment.recalling,
+          recallGap: moment.recalling
+              ? _recallGapLength(recallClips[moment.unit.ref])
+              : null,
+        ),
+      );
+      // Past the step it was set on — not merely another one: going back a
+      // step is the reader's own doing, not the step coming to its end.
+      final int? sleepStep = _sleepStep;
+      if (sleepStep != null && moment.unit.stepIndex > sleepStep) {
+        _sleepNow();
+      }
     });
     _stateSub = _player.playerStateStream.listen(
       (ja.PlayerState s) {
         final bool finished = s.processingState == ja.ProcessingState.completed;
+        final bool justFinished = finished && !state.finished;
+        if (s.playing && !finished) {
+          _listening.start();
+        } else {
+          _listening.stop();
+        }
         emit(
           state.copyWith(playing: s.playing && !finished, finished: finished),
         );
         if (finished) unawaited(_recordProgress());
+        if (justFinished && state.sleepTimerSet) {
+          _cancelSleep();
+          emit(state.copyWith(clearSleep: true));
+        }
+        if (justFinished) {
+          _offerGrade(plan.config, force: true);
+          unawaited(_forgetPlace());
+        }
       },
       // A connection lost mid-session surfaces here rather than at load. What
       // was recited up to that point is still worth keeping.
@@ -500,6 +885,47 @@ class SessionCubit extends Cubit<SessionState> {
     } catch (e) {
       _fail(e);
     }
+  }
+
+  /// How long the silence of a recall gap lasts for an ayah whose clip is
+  /// [clip], as the queue lays it out and the player plays it at the
+  /// session's speed.
+  Duration _recallGapLength(Duration? clip) {
+    final PlaybackQueueBuilder builder = _player.queueBuilder;
+    final double speed = state.config?.playbackSpeed ?? 1.0;
+    final int ms = builder.recallSpacerCount(clip) * builder.spacerMs;
+    return Duration(milliseconds: (ms / (speed <= 0 ? 1.0 : speed)).round());
+  }
+
+  /// Measured clip lengths for the plan's recall gaps, where they can be
+  /// measured. Unlike the summary's estimate, a partial map is fine here: a
+  /// surah that would have to be streamed simply gets the fixed fallback gap,
+  /// because an unmeasured ayah is a reason not to show a number, never a
+  /// reason not to ask the reader back.
+  Future<Map<AyahRef, Duration>> _recallClips(
+    SessionPlan plan,
+    Reciter reciter,
+  ) async {
+    if (!plan.units.any((PlaybackUnit u) => u.asked)) {
+      return const <AyahRef, Duration>{};
+    }
+    final Map<AyahRef, Duration> clips = <AyahRef, Duration>{};
+    for (final int number in plan.surahNumbers) {
+      final Surah? surah = state.surah(number);
+      if (surah == null) continue;
+      try {
+        final Map<int, Duration> one = await _durations.durationsFor(
+          reciter: reciter,
+          surah: surah,
+        );
+        for (final MapEntry<int, Duration> e in one.entries) {
+          clips[AyahRef(number, e.key)] = e.value;
+        }
+      } on Object {
+        // Unmeasurable is not a failure of the session, only of tailoring.
+      }
+    }
+    return clips;
   }
 
   void _fail(Object error) {
@@ -541,6 +967,85 @@ class SessionCubit extends Cubit<SessionState> {
     await (state.playing ? _player.pause() : _player.play());
   }
 
+  // --- the sleep timer -----------------------------------------------------
+
+  /// Pauses the session after [after] — never stops it: the place is kept,
+  /// and play takes it up again. Null cancels the timer.
+  void setSleepTimer(Duration? after) {
+    _cancelSleep();
+    if (after == null || !state.isActive) {
+      emit(state.copyWith(clearSleep: true));
+      return;
+    }
+    _sleepTimer = Timer(after, _sleepNow);
+    emit(state.copyWith(sleepAt: clock().add(after), sleepAtEndOfStep: false));
+  }
+
+  /// Pauses the session once the step it is on — this ayah's drill, this
+  /// join — has been played out.
+  void sleepAtEndOfStep() {
+    _cancelSleep();
+    final PlaybackUnit? unit = state.currentUnit;
+    if (!state.isActive || unit == null) return;
+    _sleepStep = unit.stepIndex;
+    emit(state.copyWith(clearSleep: true));
+    emit(state.copyWith(sleepAtEndOfStep: true));
+  }
+
+  void _sleepNow() {
+    _cancelSleep();
+    if (isClosed) return;
+    emit(state.copyWith(clearSleep: true));
+    if (state.isActive && state.playing) unawaited(_player.pause());
+  }
+
+  void _cancelSleep() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepStep = null;
+  }
+
+  // --- one more time --------------------------------------------------------
+
+  /// Drills the ayah being recited [times] more, now, then carries on with
+  /// the step it was in from that step's start. The engine is not asked to
+  /// change a plan: a one-off learn step is laid into the running plan's own
+  /// steps, which is the same session with a little more of one ayah.
+  Future<void> repeatCurrentAyah({int times = 3}) async {
+    final SessionPlan? active = state.activePlan;
+    final Reciter? reciter = state.activeReciter;
+    final PlaybackUnit? unit = state.currentUnit;
+    if (!state.isActive || active == null || reciter == null || unit == null) {
+      return;
+    }
+    final int at = unit.stepIndex;
+    // Every step from [at] on moves one along; a pause waiting for the end
+    // of one of them must wait for the same step under its new number.
+    final int? sleepStep = _sleepStep;
+    if (sleepStep != null && sleepStep >= at) _sleepStep = sleepStep + 1;
+    final List<PlanStep> steps = <PlanStep>[
+      ...active.steps.take(at),
+      LearnStep(surah: unit.surahNumber, ayah: unit.ayahNumber, repeats: times),
+      ...active.steps.skip(at),
+    ];
+    final SessionPlan plan = SessionPlan(
+      config: active.config,
+      steps: List<PlanStep>.unmodifiable(steps),
+      units: _builder.flatten(steps, active.config),
+    );
+    await _run(
+      plan,
+      reciter,
+      startAtUnit: plan.firstUnitOfStep(at),
+      autoplay: state.playing || state.finished,
+    );
+  }
+
+  /// "Reveal it": the reader has recited the ayah back, or would rather
+  /// hear it now, so the silence of the recall gap gives way to the play
+  /// that answers it.
+  Future<void> revealRecall() => _player.skipRecallGap();
+
   Future<void> nextStep() => _player.skipToNextStep();
 
   Future<void> previousStep() => _player.skipToPreviousStep();
@@ -548,7 +1053,11 @@ class SessionCubit extends Cubit<SessionState> {
   /// Ends the session: what was recited is written down, the lock screen is
   /// cleared, and the bar goes back to offering a start.
   Future<void> stop() async {
+    final SessionConfig? running = state.activePlan?.config;
+    if (running != null && !state.finished) _offerGrade(running);
     _pauseTimer?.cancel();
+    _cancelSleep();
+    await _forgetPlace();
     await _unitSub?.cancel();
     await _stateSub?.cancel();
     _unitSub = null;
@@ -556,7 +1065,13 @@ class SessionCubit extends Cubit<SessionState> {
     await _player.endSession();
     await _recordProgress();
     if (isClosed) return;
-    emit(state.copyWith(phase: SessionPhase.idle, clearSession: true));
+    emit(
+      state.copyWith(
+        phase: SessionPhase.idle,
+        clearSession: true,
+        clearSleep: true,
+      ),
+    );
   }
 
   Future<void> setKeepAwake(bool enabled) async {
@@ -564,13 +1079,85 @@ class SessionCubit extends Cubit<SessionState> {
     if (!isClosed) emit(state.copyWith(keepAwake: enabled));
   }
 
+  // --- self-grading --------------------------------------------------------
+
+  /// Asks how [config]'s range went — when the session played out ([force]),
+  /// or was stopped once every ayah of it had been heard.
+  void _offerGrade(SessionConfig config, {bool force = false}) {
+    if (isClosed) return;
+    if (!force) {
+      final List<AyahRef> range = RepetitionPlanBuilder.rangeOf(
+        config,
+        state.ayahCounts,
+      );
+      if (range.isEmpty || !range.every(_heard.contains)) return;
+    }
+    emit(state.copyWith(gradeOffer: (from: config.start, to: config.end)));
+  }
+
+  /// The reader's grade for the range just recited: its review card is
+  /// started, or moved along the ladder. A card that cannot be written costs
+  /// the grade, never the session.
+  Future<void> grade(Grade grade) async {
+    final ({AyahRef from, AyahRef to})? offer = state.gradeOffer;
+    if (offer == null) return;
+    emit(state.copyWith(clearGradeOffer: true));
+    final DateTime now = clock();
+    final ReviewCard? existing = (await _reviews.get(
+      ReviewCard.idFor(offer.from, offer.to),
+    )).getOrElse(() => null);
+    await _reviews.save(
+      existing == null
+          ? _scheduler.start(
+              from: offer.from,
+              to: offer.to,
+              grade: grade,
+              now: now,
+            )
+          : _scheduler.grade(existing, grade, now),
+    );
+    if (grade != Grade.forgot) await _advancePlan(offer.from, offer.to);
+  }
+
+  /// Today's portion of the hifz plan, recited through and held: the plan
+  /// moves on to the next. Only that exact portion counts — a range that
+  /// happens to overlap it is not the day's work done.
+  Future<void> _advancePlan(AyahRef from, AyahRef to) async {
+    final AppSettings settings = await _freshSettings();
+    final HifzPlan? plan = settings.hifzPlan;
+    final Portion? today = plan?.current;
+    if (plan == null || today == null || today.from != from || today.to != to) {
+      return;
+    }
+    final AppSettings next = settings.copyWith(
+      hifzPlan: plan.copyWith(completed: plan.completed + 1),
+    );
+    final result = await _settings.save(next);
+    if (isClosed) return;
+    result.fold((Failure _) {}, (_) => emit(state.copyWith(defaults: next)));
+  }
+
+  /// Waves the question away. Nothing is written.
+  void dismissGrade() => emit(state.copyWith(clearGradeOffer: true));
+
   /// Writes what was actually recited, then clears the tally so a stop
   /// followed by a completion cannot double-count.
   Future<void> _recordProgress() async {
-    if (_played.isEmpty) return;
+    final int seconds = _listening.elapsed.inSeconds;
+    if (_played.isEmpty && seconds == 0) return;
     final Map<AyahRef, int> tally = Map<AyahRef, int>.of(_played);
     _played.clear();
-    final DateTime now = DateTime.now();
+    _listening.reset();
+    final DateTime now = clock();
+    // The day's practice, beside the per-ayah record. A log that cannot be
+    // written costs the statistics, never the session.
+    await _practice.add(
+      now,
+      PracticeDay(
+        plays: tally.values.fold(0, (int a, int b) => a + b),
+        seconds: seconds,
+      ),
+    );
     for (final MapEntry<AyahRef, int> e in tally.entries) {
       await _progress.recordRepeats(e.key.surah, e.key.ayah, e.value, at: now);
     }
@@ -586,7 +1173,7 @@ class SessionCubit extends Cubit<SessionState> {
 
   void _apply(SessionConfig config, {required bool rangeChosen}) {
     final (SessionPlan? plan, String? error) = _builder
-        .build(config, ayahCounts: state.ayahCounts)
+        .build(config, ayahCounts: state.ayahCounts, reinforce: state.stumbled)
         .fold((Failure f) => (null, f.message), (SessionPlan p) => (p, null));
     emit(
       state.copyWith(
@@ -600,10 +1187,6 @@ class SessionCubit extends Cubit<SessionState> {
     );
     unawaited(_estimate());
   }
-
-  SessionPlan? _build(SessionConfig config) => _builder
-      .build(config, ayahCounts: state.ayahCounts)
-      .fold((Failure _) => null, (SessionPlan plan) => plan);
 
   /// Adds up real clip lengths for the summary. Only when every surah of the
   /// range can be measured on the device; otherwise there is no honest number
@@ -655,6 +1238,14 @@ class SessionCubit extends Cubit<SessionState> {
   @override
   Future<void> close() async {
     _pauseTimer?.cancel();
+    _cancelSleep();
+    // Leaving the screen mid-session is an interruption: the place waiting
+    // to be written is written now, not lost with the timer.
+    if (_placeTimer != null) {
+      _placeTimer!.cancel();
+      _placeTimer = null;
+      await _savePlace();
+    }
     await _unitSub?.cancel();
     await _stateSub?.cancel();
     await _recordProgress();

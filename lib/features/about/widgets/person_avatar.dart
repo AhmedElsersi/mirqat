@@ -22,8 +22,8 @@ class PersonAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return CircleAvatar(
-      radius: 44.r,
-      backgroundColor: theme.colorScheme.primary,
+      radius: 29.r,
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
       foregroundImage: switch (sl<AppInfoService>().resolve(photo)) {
         final Uri resolved => NetworkImage('$resolved'),
         null => null,
@@ -33,8 +33,9 @@ class PersonAvatar extends StatelessWidget {
           : (Object _, StackTrace? _) {},
       child: Text(
         name.isEmpty ? '' : name.characters.first,
-        style: theme.textTheme.headlineMedium?.copyWith(
-          color: theme.colorScheme.onPrimary,
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: theme.colorScheme.onSurface,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

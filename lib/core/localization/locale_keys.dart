@@ -7,6 +7,7 @@
 class LocaleKeys {
   const LocaleKeys._();
 
+  static const String aboutAboutApp = 'about.about_app';
   static const String aboutContact = 'about.contact';
   static const String aboutDeveloper = 'about.developer';
   static const String aboutDeveloperRole = 'about.developer_role';
@@ -22,12 +23,58 @@ class LocaleKeys {
   static const String aboutLinkLinkedin = 'about.link_linkedin';
   static const String aboutLinkPhone = 'about.link_phone';
   static const String aboutLinkWhatsapp = 'about.link_whatsapp';
+  static const String aboutRowHint = 'about.row_hint';
   static const String aboutShowIntro = 'about.show_intro';
+  static const String aboutTagNoAccounts = 'about.tag_no_accounts';
+  static const String aboutTagNoAds = 'about.tag_no_ads';
+  static const String aboutTagNoTracking = 'about.tag_no_tracking';
+  static const String aboutTitle = 'about.title';
+  static const String aboutDeveloperLabel = 'about.developer_label';
   static const String aboutUs = 'about.us';
 
   static const String appName = 'app.name';
   static const String appSlogan = 'app.slogan';
   static const String appSubtitle = 'app.subtitle';
+
+  static const String ayahMenuEnd = 'ayah_menu.end';
+  static const String ayahMenuListen = 'ayah_menu.listen';
+  static const String ayahMenuMark = 'ayah_menu.mark';
+  static const String ayahMenuMemorize = 'ayah_menu.memorize';
+  static const String ayahMenuRange = 'ayah_menu.range';
+  static const String ayahMenuRangeHint = 'ayah_menu.range_hint';
+  static const String ayahMenuShareAyah = 'ayah_menu.share_ayah';
+  static const String ayahMenuSharePage = 'ayah_menu.share_page';
+  static const String ayahMenuStart = 'ayah_menu.start';
+  static const String ayahMenuStumble = 'ayah_menu.stumble';
+  static const String ayahMenuUnmark = 'ayah_menu.unmark';
+
+  static const String backupExport = 'backup.export';
+  static const String backupExportFailed = 'backup.export_failed';
+  static const String backupExportNow = 'backup.export_now';
+  static const String backupHint = 'backup.hint';
+  static const String backupHoldsPlan = 'backup.holds_plan';
+  static const String backupSizeKb = 'backup.size_kb';
+  static const String backupHoldsProgress = 'backup.holds_progress';
+  static const String backupHoldsReviews = 'backup.holds_reviews';
+  static const String backupHoldsWeakSpots = 'backup.holds_weak_spots';
+  static const String backupImport = 'backup.import';
+  static const String backupImportConfirm = 'backup.import_confirm';
+  static const String backupImportThis = 'backup.import_this';
+  static const String backupIntro = 'backup.intro';
+  static const String backupMergeNote = 'backup.merge_note';
+  static const String backupMerged = 'backup.merged';
+  static const String backupNewer = 'backup.newer';
+  static const String backupNoAccount = 'backup.no_account';
+  static const String backupNone = 'backup.none';
+  static const String backupNotABackup = 'backup.not_a_backup';
+  static const String backupPick = 'backup.pick';
+  static const String backupPickHint = 'backup.pick_hint';
+  static const String backupRefresh = 'backup.refresh';
+  static const String backupSavedAt = 'backup.saved_at';
+  static const String backupShare = 'backup.share';
+  static const String backupTitle = 'backup.title';
+  static const String backupUnreadable = 'backup.unreadable';
+  static const String backupWhere = 'backup.where';
 
   static const String commonAyahNumber = 'common.ayah_number';
   static const String commonAyahRange = 'common.ayah_range';
@@ -36,6 +83,8 @@ class LocaleKeys {
   static const String commonClose = 'common.close';
   static const String commonDone = 'common.done';
   static const String commonError = 'common.error';
+  static const String commonMore = 'common.more';
+  static const String commonPercent = 'common.percent';
   static const String commonRetry = 'common.retry';
 
   static const String downloadsBitrate = 'downloads.bitrate';
@@ -54,12 +103,20 @@ class LocaleKeys {
   static const String downloadsRedownloadReciter =
       'downloads.redownload_reciter';
   static const String downloadsRetryFailed = 'downloads.retry_failed';
+  static const String downloadsSavedCount = 'downloads.saved_count';
   static const String downloadsSavedEmpty = 'downloads.saved_empty';
   static const String downloadsSavedTitle = 'downloads.saved_title';
   static const String downloadsSavedTotal = 'downloads.saved_total';
   static const String downloadsSection = 'downloads.section';
   static const String downloadsSizeMb = 'downloads.size_mb';
   static const String downloadsStale = 'downloads.stale';
+  static const String downloadsStaleNewer = 'downloads.stale_newer';
+  static const String downloadsRedownload = 'downloads.redownload';
+  static const String downloadsFailedStreams = 'downloads.failed_streams';
+  static const String downloadsWholeScreenTitle =
+      'downloads.whole_screen_title';
+  static const String downloadsWholeStop = 'downloads.whole_stop';
+  static const String downloadsWholeAboutSize = 'downloads.whole_about_size';
   static const String downloadsStreaming = 'downloads.streaming';
   static const String downloadsVerifying = 'downloads.verifying';
   static const String downloadsWholeCancelled = 'downloads.whole_cancelled';
@@ -74,14 +131,32 @@ class LocaleKeys {
   static const String downloadsWholeDownload = 'downloads.whole_download';
   static const String downloadsWholeFinished = 'downloads.whole_finished';
   static const String downloadsWholeIntro = 'downloads.whole_intro';
+  static const String downloadsWholeKeepOpen = 'downloads.whole_keep_open';
   static const String downloadsWholeNone = 'downloads.whole_none';
   static const String downloadsWholeOnDevice = 'downloads.whole_on_device';
+  static const String downloadsWholeOthers = 'downloads.whole_others';
+  static const String downloadsWholeReciters = 'downloads.whole_reciters';
   static const String downloadsWholeRemaining = 'downloads.whole_remaining';
   static const String downloadsWholeRemainingUnsized =
       'downloads.whole_remaining_unsized';
   static const String downloadsWholeRunFailed = 'downloads.whole_run_failed';
   static const String downloadsWholeRunning = 'downloads.whole_running';
   static const String downloadsWholeTitle = 'downloads.whole_title';
+
+  static const String drillAgain = 'drill.again';
+  static const String drillContinue = 'drill.continue';
+  static const String drillDone = 'drill.done';
+  static const String drillHadIt = 'drill.had_it';
+  static const String drillItIs = 'drill.it_is';
+  static const String drillNoSlips = 'drill.no_slips';
+  static const String drillRight = 'drill.right';
+  static const String drillRound = 'drill.round';
+  static const String drillSharedPhrase = 'drill.shared_phrase';
+  static const String drillShow = 'drill.show';
+  static const String drillSlipped = 'drill.slipped';
+  static const String drillSlips = 'drill.slips';
+  static const String drillTitle = 'drill.title';
+  static const String drillWhich = 'drill.which';
 
   static const String durationMinutes = 'duration.minutes';
   static const String durationMinutesSeconds = 'duration.minutes_seconds';
@@ -90,19 +165,26 @@ class LocaleKeys {
   static const String historyClear = 'history.clear';
   static const String historyClearConfirm = 'history.clear_confirm';
   static const String historyEmpty = 'history.empty';
+  static const String historyOnDevice = 'history.on_device';
   static const String historyTitle = 'history.title';
   static const String historyToday = 'history.today';
   static const String historyYesterday = 'history.yesterday';
+  static const String historyPlace = 'history.place';
 
   static const String homeContinueReading = 'home.continue_reading';
+  static const String homeContinueAt = 'home.continue_at';
   static const String homeHistory = 'home.history';
+  static const String homeHizbName = 'home.hizb_name';
   static const String homeJuzName = 'home.juz_name';
   static const String homeJuzStarts = 'home.juz_starts';
   static const String homePage = 'home.page';
   static const String homePlace = 'home.place';
+  static const String homeTabAhzab = 'home.tab_ahzab';
   static const String homeTabAjzaa = 'home.tab_ajzaa';
   static const String homeTabSurahs = 'home.tab_surahs';
 
+  static const String howtoBackupBody = 'howto.backup_body';
+  static const String howtoBackupTitle = 'howto.backup_title';
   static const String howtoChangeBody = 'howto.change_body';
   static const String howtoChangeTitle = 'howto.change_title';
   static const String howtoListenBody = 'howto.listen_body';
@@ -111,28 +193,57 @@ class LocaleKeys {
   static const String howtoModesTitle = 'howto.modes_title';
   static const String howtoOfflineBody = 'howto.offline_body';
   static const String howtoOfflineTitle = 'howto.offline_title';
+  static const String howtoPlanBody = 'howto.plan_body';
+  static const String howtoPlanTitle = 'howto.plan_title';
+  static const String howtoPresetsBody = 'howto.presets_body';
+  static const String howtoPresetsTitle = 'howto.presets_title';
   static const String howtoRangeBody = 'howto.range_body';
   static const String howtoRangeTitle = 'howto.range_title';
   static const String howtoReadBody = 'howto.read_body';
   static const String howtoReadTitle = 'howto.read_title';
+  static const String howtoRecallBody = 'howto.recall_body';
+  static const String howtoRecallTitle = 'howto.recall_title';
   static const String howtoResumeBody = 'howto.resume_body';
   static const String howtoResumeTitle = 'howto.resume_title';
+  static const String howtoReviewBody = 'howto.review_body';
+  static const String howtoReviewTitle = 'howto.review_title';
+  static const String howtoSimilarBody = 'howto.similar_body';
+  static const String howtoSimilarTitle = 'howto.similar_title';
+  static const String howtoStumbleBody = 'howto.stumble_body';
+  static const String howtoStumbleTitle = 'howto.stumble_title';
+  static const String howtoTasmeeBody = 'howto.tasmee_body';
+  static const String howtoTasmeeTitle = 'howto.tasmee_title';
+  static const String howtoViewBody = 'howto.view_body';
+  static const String howtoViewTitle = 'howto.view_title';
+
+  static const String memorizationViewFirstWords =
+      'memorization_view.first_words';
+  static const String memorizationViewHint = 'memorization_view.hint';
+  static const String memorizationViewMarkersOnly =
+      'memorization_view.markers_only';
+  static const String memorizationViewOff = 'memorization_view.off';
+  static const String memorizationViewTitle = 'memorization_view.title';
 
   static const String mushafAyahReference = 'mushaf.ayah_reference';
   static const String mushafBack = 'mushaf.back';
   static const String mushafClearRange = 'mushaf.clear_range';
+  static const String mushafClearStumble = 'mushaf.clear_stumble';
   static const String mushafHintLongPress = 'mushaf.hint_long_press';
+  static const String mushafHizbHalfLabel = 'mushaf.hizb_half_label';
   static const String mushafHizbLabel = 'mushaf.hizb_label';
   static const String mushafHizbQuarterLabel = 'mushaf.hizb_quarter_label';
-  static const String mushafHizbHalfLabel = 'mushaf.hizb_half_label';
   static const String mushafHizbThreeQuartersLabel =
       'mushaf.hizb_three_quarters_label';
   static const String mushafJuzLabel = 'mushaf.juz_label';
+  static const String mushafJuzOne = 'mushaf.juz_one';
+  static const String mushafJuzSpan = 'mushaf.juz_span';
+  static const String mushafListenFromHere = 'mushaf.listen_from_here';
+  static const String mushafMadani = 'mushaf.madani';
+  static const String mushafMakki = 'mushaf.makki';
   static const String mushafMarkHere = 'mushaf.mark_here';
   static const String mushafMemorizeAyah = 'mushaf.memorize_ayah';
   static const String mushafOpen = 'mushaf.open';
   static const String mushafPage = 'mushaf.page';
-  static const String mushafPlayFromHere = 'mushaf.play_from_here';
   static const String mushafSectionEnd = 'mushaf.section_end';
   static const String mushafSectionNext = 'mushaf.section_next';
   static const String mushafSectionPrevious = 'mushaf.section_previous';
@@ -140,9 +251,75 @@ class LocaleKeys {
   static const String mushafSetRangeStart = 'mushaf.set_range_start';
   static const String mushafShare = 'mushaf.share';
   static const String mushafShareAyah = 'mushaf.share_ayah';
+  static const String mushafSharePage = 'mushaf.share_page';
+  static const String mushafSimilarAyahs = 'mushaf.similar_ayahs';
+  static const String mushafSimilarMore = 'mushaf.similar_more';
+  static const String mushafSimilarResembles = 'mushaf.similar_resembles';
+  static const String mushafStumbleHere = 'mushaf.stumble_here';
+  static const String mushafStumbleMarked = 'mushaf.stumble_marked';
+  static const String mushafSurahAbout = 'mushaf.surah_about';
   static const String mushafSurahLabel = 'mushaf.surah_label';
   static const String mushafTitle = 'mushaf.title';
   static const String mushafUnmark = 'mushaf.unmark';
+
+  static const String mushafFontDefaultHint = 'mushaf_font.default_hint';
+  static const String mushafFontDefaultSize = 'mushaf_font.default_size';
+  static const String mushafFontFace = 'mushaf_font.face';
+  static const String mushafFontHafsV18 = 'mushaf_font.hafs_v18';
+  static const String mushafFontHafsV22 = 'mushaf_font.hafs_v22';
+  static const String mushafFontHafsV22Name = 'mushaf_font.hafs_v22_name';
+  static const String mushafFontSize = 'mushaf_font.size';
+  static const String mushafFontSizeHint = 'mushaf_font.size_hint';
+  static const String mushafFontHint = 'mushaf_font.hint';
+  static const String mushafFontOnlyMatching = 'mushaf_font.only_matching';
+  static const String mushafFontPreview = 'mushaf_font.preview';
+  static const String mushafFontQpcFontsCount = 'mushaf_font.qpc_fonts_count';
+  static const String mushafFontQpcFontsDelete = 'mushaf_font.qpc_fonts_delete';
+  static const String mushafFontQpcFontsDownloadAll =
+      'mushaf_font.qpc_fonts_download_all';
+  static const String mushafFontQpcFontsDownloading =
+      'mushaf_font.qpc_fonts_downloading';
+  static const String mushafFontQpcFontsFailed = 'mushaf_font.qpc_fonts_failed';
+  static const String mushafFontQpcFontsSizeHint =
+      'mushaf_font.qpc_fonts_size_hint';
+  static const String mushafFontQpcFontsStop = 'mushaf_font.qpc_fonts_stop';
+  static const String mushafFontQpcFontsTitle = 'mushaf_font.qpc_fonts_title';
+  static const String mushafFontQpcV2 = 'mushaf_font.qpc_v2';
+  static const String mushafFontQpcV2Hint = 'mushaf_font.qpc_v2_hint';
+  static const String mushafFontTitle = 'mushaf_font.title';
+
+  static const String mutashabihatAllSurahs = 'mutashabihat.all_surahs';
+  static const String mutashabihatAndOthers = 'mutashabihat.and_others';
+  static const String mutashabihatDrill = 'mutashabihat.drill';
+  static const String mutashabihatAyahsTag = 'mutashabihat.ayahs_tag';
+  static const String mutashabihatCounts = 'mutashabihat.counts';
+  static const String mutashabihatEmpty = 'mutashabihat.empty';
+  static const String mutashabihatFirstAt = 'mutashabihat.first_at';
+  static const String mutashabihatHint = 'mutashabihat.hint';
+  static const String mutashabihatInSurah = 'mutashabihat.in_surah';
+  static const String mutashabihatIntro = 'mutashabihat.intro';
+  static const String mutashabihatNoneInSurah = 'mutashabihat.none_in_surah';
+  static const String mutashabihatPhraseTitle = 'mutashabihat.phrase_title';
+  static const String mutashabihatShown = 'mutashabihat.shown';
+  static const String mutashabihatSurah = 'mutashabihat.surah';
+  static const String mutashabihatSurahsTag = 'mutashabihat.surahs_tag';
+  static const String mutashabihatTitle = 'mutashabihat.title';
+
+  static const String myHifzFirstJuz = 'my_hifz.first_juz';
+  static const String myHifzJuzMap = 'my_hifz.juz_map';
+  static const String myHifzLastJuz = 'my_hifz.last_juz';
+  static const String myHifzMemorized = 'my_hifz.memorized';
+  static const String myHifzOnDevice = 'my_hifz.on_device';
+  static const String myHifzPhrases = 'my_hifz.phrases';
+  static const String myHifzPlanNone = 'my_hifz.plan_none';
+  static const String myHifzPortion = 'my_hifz.portion';
+  static const String myHifzPlanSpan = 'my_hifz.plan_span';
+  static const String myHifzPractice = 'my_hifz.practice';
+  static const String myHifzReview = 'my_hifz.review';
+  static const String myHifzSchedule = 'my_hifz.schedule';
+  static const String myHifzTitle = 'my_hifz.title';
+  static const String myHifzTools = 'my_hifz.tools';
+  static const String myHifzWeakHint = 'my_hifz.weak_hint';
 
   static const String onboardingControlBody = 'onboarding.control_body';
   static const String onboardingControlTitle = 'onboarding.control_title';
@@ -151,10 +328,43 @@ class LocaleKeys {
   static const String onboardingNext = 'onboarding.next';
   static const String onboardingReadBody = 'onboarding.read_body';
   static const String onboardingReadTitle = 'onboarding.read_title';
+  static const String onboardingReviewBody = 'onboarding.review_body';
+  static const String onboardingReviewTitle = 'onboarding.review_title';
+  static const String onboardingSimilarBody = 'onboarding.similar_body';
+  static const String onboardingSimilarTitle = 'onboarding.similar_title';
   static const String onboardingSkip = 'onboarding.skip';
   static const String onboardingStart = 'onboarding.start';
+  static const String onboardingStep = 'onboarding.step';
+  static const String onboardingTestBody = 'onboarding.test_body';
+  static const String onboardingTestBodySolo = 'onboarding.test_body_solo';
+  static const String onboardingTestTitle = 'onboarding.test_title';
   static const String onboardingYoursBody = 'onboarding.yours_body';
   static const String onboardingYoursTitle = 'onboarding.yours_title';
+
+  static const String planAyahCount = 'plan.ayah_count';
+  static const String planCreate = 'plan.create';
+  static const String planDay = 'plan.day';
+  static const String planDays = 'plan.days';
+  static const String planDaysCount = 'plan.days_count';
+  static const String planDelete = 'plan.delete';
+  static const String planDeleteConfirm = 'plan.delete_confirm';
+  static const String planFinished = 'plan.finished';
+  static const String planHint = 'plan.hint';
+  static const String planHowItMoves = 'plan.how_it_moves';
+  static const String planIntro = 'plan.intro';
+  static const String planNew = 'plan.new';
+  static const String planPast = 'plan.past';
+  static const String planPastCount = 'plan.past_count';
+  static const String planPortions = 'plan.portions';
+  static const String planPreview = 'plan.preview';
+  static const String planProgress = 'plan.progress';
+  static const String planRange = 'plan.range';
+  static const String planStart = 'plan.start';
+  static const String planTitle = 'plan.title';
+  static const String planToday = 'plan.today';
+  static const String planTodayLine = 'plan.today_line';
+  static const String planTodayShort = 'plan.today_short';
+  static const String planWhereItShows = 'plan.where_it_shows';
 
   static const String playerErrorConfig = 'player.error_config';
   static const String playerErrorOffline = 'player.error_offline';
@@ -165,22 +375,97 @@ class LocaleKeys {
   static const String playerPause = 'player.pause';
   static const String playerPlay = 'player.play';
   static const String playerPreviousStep = 'player.previous_step';
+  static const String playerRecallHint = 'player.recall_hint';
+  static const String playerRecallNow = 'player.recall_now';
+  static const String playerRecallReveal = 'player.recall_reveal';
+  static const String playerRepeatAyah = 'player.repeat_ayah';
   static const String playerRepeatHeader = 'player.repeat_header';
   static const String playerStepHeader = 'player.step_header';
   static const String playerStop = 'player.stop';
+  static const String playerThreeMore = 'player.three_more';
 
+  static const String presetsDeep = 'presets.deep';
+  static const String presetsDelete = 'presets.delete';
+  static const String presetsDeleteConfirm = 'presets.delete_confirm';
+  static const String presetsListen = 'presets.listen';
+  static const String presetsNew = 'presets.new';
+  static const String presetsOld = 'presets.old';
+  static const String presetsRecent = 'presets.recent';
+  static const String presetsSave = 'presets.save';
+  static const String presetsSaveAction = 'presets.save_action';
+  static const String presetsSaveHint = 'presets.save_hint';
+  static const String presetsSaveTitle = 'presets.save_title';
+  static const String presetsTitle = 'presets.title';
+
+  static const String progressDrilled = 'progress.drilled';
+  static const String progressOfAyahs = 'progress.of_ayahs';
+  static const String progressMemorizedAndStarted =
+      'progress.memorized_and_started';
   static const String progressMarkMemorized = 'progress.mark_memorized';
   static const String progressRepeats = 'progress.repeats';
   static const String progressStatusInProgress = 'progress.status_in_progress';
   static const String progressStatusMemorized = 'progress.status_memorized';
   static const String progressStatusNotStarted = 'progress.status_not_started';
+  static const String progressTapHint = 'progress.tap_hint';
   static const String progressTitle = 'progress.title';
   static const String progressUnmarkMemorized = 'progress.unmark_memorized';
 
+  static const String readerNewSession = 'reader.new_session';
+  static const String readerReciterAndAudio = 'reader.reciter_and_audio';
+  static const String readerReciterAudioPauses = 'reader.reciter_audio_pauses';
+  static const String readerSpeedValue = 'reader.speed_value';
   static const String readerResetDefaults = 'reader.reset_defaults';
   static const String readerSaveAsDefault = 'reader.save_as_default';
   static const String readerSavedAsDefault = 'reader.saved_as_default';
   static const String readerSessionSettings = 'reader.session_settings';
+
+  static const String resumeAt = 'resume.at';
+  static const String resumeDismiss = 'resume.dismiss';
+  static const String resumeGo = 'resume.go';
+  static const String resumeTitle = 'resume.title';
+
+  static const String reviewAll = 'review.all';
+  static const String reviewBookendMorning = 'review.bookend_morning';
+  static const String reviewBookendMorningBody = 'review.bookend_morning_body';
+  static const String reviewBookendMorningTitle =
+      'review.bookend_morning_title';
+  static const String reviewBookendNight = 'review.bookend_night';
+  static const String reviewBookendNightBody = 'review.bookend_night_body';
+  static const String reviewBookendNightTitle = 'review.bookend_night_title';
+  static const String reviewBookendsHint = 'review.bookends_hint';
+  static const String reviewBookendsTitle = 'review.bookends_title';
+  static const String reviewDueOn = 'review.due_on';
+  static const String reviewDueToday = 'review.due_today';
+  static const String reviewDueTomorrow = 'review.due_tomorrow';
+  static const String reviewEmpty = 'review.empty';
+  static const String reviewForget = 'review.forget';
+  static const String reviewForgetConfirm = 'review.forget_confirm';
+  static const String reviewGradeForgot = 'review.grade_forgot';
+  static const String reviewGradeLater = 'review.grade_later';
+  static const String reviewGradeQuestion = 'review.grade_question';
+  static const String reviewGradeShaky = 'review.grade_shaky';
+  static const String reviewGradeSolid = 'review.grade_solid';
+  static const String reviewHint = 'review.hint';
+  static const String reviewLastGrade = 'review.last_grade';
+  static const String reviewLater = 'review.later';
+  static const String reviewMore = 'review.more';
+  static const String reviewStart = 'review.start';
+  static const String reviewTierManzil = 'review.tier_manzil';
+  static const String reviewTierSabaq = 'review.tier_sabaq';
+  static const String reviewTierSabqi = 'review.tier_sabqi';
+  static const String reviewTitle = 'review.title';
+  static const String reviewToday = 'review.today';
+  static const String reviewTodayTitle = 'review.today_title';
+
+  static const String searchAyahs = 'search.ayahs';
+  static const String searchHint = 'search.hint';
+  static const String searchMoreResults = 'search.more_results';
+  static const String searchNoResults = 'search.no_results';
+  static const String searchOpenPage = 'search.open_page';
+  static const String searchPrompt = 'search.prompt';
+  static const String searchPlace = 'search.place';
+  static const String searchSurahs = 'search.surahs';
+  static const String searchTitle = 'search.title';
 
   static const String sessionAyah = 'session.ayah';
   static const String sessionBackToAyah = 'session.back_to_ayah';
@@ -205,6 +490,9 @@ class LocaleKeys {
       'session_setup.between_repeat_pause';
   static const String sessionSetupBetweenStepsPause =
       'session_setup.between_steps_pause';
+  static const String sessionSetupChainRecall = 'session_setup.chain_recall';
+  static const String sessionSetupChainRecallHint =
+      'session_setup.chain_recall_hint';
   static const String sessionSetupConnectContinuous =
       'session_setup.connect_continuous';
   static const String sessionSetupConnectContinuousHint =
@@ -223,12 +511,21 @@ class LocaleKeys {
   static const String sessionSetupIntraBlockPause =
       'session_setup.intra_block_pause';
   static const String sessionSetupMilliseconds = 'session_setup.milliseconds';
+  static const String sessionSetupPauses = 'session_setup.pauses';
+  static const String sessionSetupPausesHint = 'session_setup.pauses_hint';
+  static const String sessionSetupPausesNone = 'session_setup.pauses_none';
+  static const String sessionSetupPausesShort = 'session_setup.pauses_short';
   static const String sessionSetupPlayIstiadhah =
       'session_setup.play_istiadhah';
   static const String sessionSetupPlaybackSpeed =
       'session_setup.playback_speed';
   static const String sessionSetupRange = 'session_setup.range';
+  static const String sessionSetupRecallRounds = 'session_setup.recall_rounds';
+  static const String sessionSetupRecallRoundsHint =
+      'session_setup.recall_rounds_hint';
   static const String sessionSetupRepeatCount = 'session_setup.repeat_count';
+  static const String sessionSetupSpeedAndPauses =
+      'session_setup.speed_and_pauses';
   static const String sessionSetupSummary = 'session_setup.summary';
   static const String sessionSetupTo = 'session_setup.to';
 
@@ -248,18 +545,19 @@ class LocaleKeys {
   static const String settingsDefaultPauses = 'settings.default_pauses';
   static const String settingsDefaultRangeBehaviour =
       'settings.default_range_behaviour';
+  static const String settingsDefaultRangeHint = 'settings.default_range_hint';
   static const String settingsHomeViewGrid = 'settings.home_view_grid';
   static const String settingsHomeViewList = 'settings.home_view_list';
   static const String settingsHomeViewMode = 'settings.home_view_mode';
   static const String settingsHomeViewMushaf = 'settings.home_view_mushaf';
   static const String settingsHomeViewMushafHint =
       'settings.home_view_mushaf_hint';
-  static const String settingsPageTurn = 'settings.page_turn';
-  static const String settingsPageTurnNormal = 'settings.page_turn_normal';
-  static const String settingsPageTurnPaper = 'settings.page_turn_paper';
   static const String settingsLanguage = 'settings.language';
   static const String settingsLanguageAr = 'settings.language_ar';
   static const String settingsLanguageEn = 'settings.language_en';
+  static const String settingsPageTurn = 'settings.page_turn';
+  static const String settingsPageTurnNormal = 'settings.page_turn_normal';
+  static const String settingsPageTurnPaper = 'settings.page_turn_paper';
   static const String settingsRangeLastUsed = 'settings.range_last_used';
   static const String settingsRangeWholeSurah = 'settings.range_whole_surah';
   static const String settingsReadingRibbon = 'settings.reading_ribbon';
@@ -276,32 +574,93 @@ class LocaleKeys {
       'settings.section_session_hint';
   static const String settingsSectionStorage = 'settings.section_storage';
   static const String settingsSessionPageHint = 'settings.session_page_hint';
+  static const String settingsShowStumbles = 'settings.show_stumbles';
+  static const String settingsShowStumblesHint = 'settings.show_stumbles_hint';
   static const String settingsTheme = 'settings.theme';
   static const String settingsThemeDark = 'settings.theme_dark';
   static const String settingsThemeLight = 'settings.theme_light';
   static const String settingsThemeSystem = 'settings.theme_system';
-  static const String searchAyahs = 'search.ayahs';
-  static const String searchHint = 'search.hint';
-  static const String searchMoreResults = 'search.more_results';
-  static const String searchNoResults = 'search.no_results';
-  static const String searchOpenPage = 'search.open_page';
-  static const String searchPrompt = 'search.prompt';
-  static const String searchSurahs = 'search.surahs';
-  static const String searchTitle = 'search.title';
-
   static const String settingsTitle = 'settings.title';
+  static const String settingsFirstScreen = 'settings.first_screen';
+  static const String settingsOpensToday = 'settings.opens_today';
+  static const String settingsOpensLastPage = 'settings.opens_last_page';
+  static const String settingsDownloads = 'settings.downloads';
+  static const String settingsDownloadsHint = 'settings.downloads_hint';
   static const String settingsVersion = 'settings.version';
   static const String settingsWholeMushaf = 'settings.whole_mushaf';
   static const String settingsWholeMushafHint = 'settings.whole_mushaf_hint';
   static const String settingsWifiOnly = 'settings.wifi_only';
   static const String settingsWifiOnlyHint = 'settings.wifi_only_hint';
 
+  static const String similarCount = 'similar.count';
+  static const String similarListen = 'similar.listen';
+  static const String similarNone = 'similar.none';
+  static const String similarSource = 'similar.source';
+  static const String similarTitle = 'similar.title';
+
+  static const String sleepEndOfStep = 'sleep.end_of_step';
+  static const String sleepMinutes = 'sleep.minutes';
+  static const String sleepOff = 'sleep.off';
+  static const String sleepTitle = 'sleep.title';
+  static const String sleepUntil = 'sleep.until';
+
+  static const String statsDays = 'stats.days';
+  static const String statsDaysHint = 'stats.days_hint';
+  static const String statsHint = 'stats.hint';
+  static const String statsMemorized = 'stats.memorized';
+  static const String statsMinutes = 'stats.minutes';
+  static const String statsNote = 'stats.note';
+  static const String statsPlays = 'stats.plays';
+  static const String statsReviewCards = 'stats.review_cards';
+  static const String statsTitle = 'stats.title';
+
   static const String surahListAyahCount = 'surah_list.ayah_count';
+  static const String surahListAyahCountFew = 'surah_list.ayah_count_few';
   static const String surahListEmpty = 'surah_list.empty';
   static const String surahListNotStarted = 'surah_list.not_started';
+  static const String surahListPageShort = 'surah_list.page_short';
   static const String surahListProgress = 'surah_list.progress';
   static const String surahListReadingOnly = 'surah_list.reading_only';
   static const String surahListTitle = 'surah_list.title';
+  static const String surahListWeakSpots = 'surah_list.weak_spots';
+
+  static const String tabsHifz = 'tabs.hifz';
+  static const String tabsMushaf = 'tabs.mushaf';
+  static const String tabsSettings = 'tabs.settings';
+  static const String tabsToday = 'tabs.today';
+
+  static const String tasmeeCount = 'tasmee.count';
+  static const String tasmeeEnd = 'tasmee.end';
+  static const String tasmeeHint = 'tasmee.hint';
+  static const String tasmeeNoSlips = 'tasmee.no_slips';
+  static const String tasmeeNoted = 'tasmee.noted';
+  static const String tasmeeSlipsNoted = 'tasmee.slips_noted';
+  static const String tasmeeStart = 'tasmee.start';
+  static const String tasmeeTitle = 'tasmee.title';
+  static const String tasmeeUndo = 'tasmee.undo';
+
+  static const String todayAdd = 'today.add';
+  static const String todayAll = 'today.all';
+  static const String todayAyahsSpan = 'today.ayahs_span';
+  static const String todayChain = 'today.chain';
+  static const String todayContinue = 'today.continue';
+  static const String todayDue = 'today.due';
+  static const String todayEmptyBody = 'today.empty_body';
+  static const String todayEmptyBodyNoPlan = 'today.empty_body_no_plan';
+  static const String todayEmptyTitle = 'today.empty_title';
+  static const String todayMark = 'today.mark';
+  static const String todayPage = 'today.page';
+  static const String todayPlan = 'today.plan';
+  static const String todayPlanDays = 'today.plan_days';
+  static const String todayPlanProgress = 'today.plan_progress';
+  static const String todayRecall = 'today.recall';
+  static const String todaySet = 'today.set';
+  static const String todayStart = 'today.start';
+  static const String todayTitle = 'today.title';
+  static const String todayWholeSurah = 'today.whole_surah';
+  static const String todayWholeSurahs = 'today.whole_surahs';
+  static const String todayAyahsCross = 'today.ayahs_cross';
+  static const String todayRecallRound = 'today.recall_round';
 
   static const String updateLater = 'update.later';
   static const String updateMaintenanceBody = 'update.maintenance_body';
@@ -315,4 +674,23 @@ class LocaleKeys {
   static const String updateRetry = 'update.retry';
   static const String updateTargetVersion = 'update.target_version';
   static const String updateWhatsNew = 'update.whats_new';
+
+  static const String weakSpotsCount = 'weak_spots.count';
+  static const String weakSpotsDrill = 'weak_spots.drill';
+  static const String weakSpotsEmpty = 'weak_spots.empty';
+  static const String weakSpotsHint = 'weak_spots.hint';
+  static const String weakSpotsNote = 'weak_spots.note';
+  static const String weakSpotsSorted = 'weak_spots.sorted';
+  static const String weakSpotsTitle = 'weak_spots.title';
+
+  static const String wirdAdd = 'wird.add';
+  static const String wirdEdit = 'wird.edit';
+  static const String wirdEmpty = 'wird.empty';
+  static const String wirdHint = 'wird.hint';
+  static const String wirdNextPortion = 'wird.next_portion';
+  static const String wirdNotSet = 'wird.not_set';
+  static const String wirdRemove = 'wird.remove';
+  static const String wirdSave = 'wird.save';
+  static const String wirdSet = 'wird.set';
+  static const String wirdTitle = 'wird.title';
 }

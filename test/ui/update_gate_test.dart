@@ -6,7 +6,6 @@ import 'package:mirqat/core/di/injection.dart';
 import 'package:mirqat/data/datasources/asset_reader.dart';
 import 'package:mirqat/data/repositories/settings_repository.dart';
 import 'package:mirqat/features/settings/screen/settings_screen.dart';
-import 'package:mirqat/features/surah_list/widgets/surah_row.dart';
 import 'package:mirqat/features/update/cubit/update_cubit.dart';
 import 'package:mirqat/services/app_info_service.dart';
 import 'package:mirqat/services/app_version_service.dart';
@@ -85,7 +84,7 @@ void main() {
     publish();
     await harness.pumpApp(tester);
     expect(find.text('تحديث'), findsNothing);
-    expect(find.byType(SurahRow), findsWidgets);
+    expect(find.byType(NavigationBar), findsWidgets);
   });
 
   testWidgets('a newer version is mentioned, with what is new, and "later" '
@@ -98,7 +97,7 @@ void main() {
 
     await AppHarness.tapAndSettle(tester, find.text('لاحقًا'));
     expect(find.text('يتوفّر إصدار أحدث'), findsNothing);
-    expect(find.byType(SurahRow).hitTestable(), findsWidgets);
+    expect(find.byType(NavigationBar).hitTestable(), findsWidgets);
 
     // Written down, so that the next launch — today — keeps quiet too.
     final DateTime? at = await tester.runAsync<DateTime?>(
@@ -128,7 +127,7 @@ void main() {
   ) async {
     publish(latest: '9.0.0');
     await harness.pumpApp(tester);
-    expect(find.byType(SurahRow).hitTestable(), findsNothing);
+    expect(find.byType(NavigationBar).hitTestable(), findsNothing);
   });
 
   testWidgets('below the minimum there is one button and no way past it', (
@@ -139,7 +138,7 @@ void main() {
 
     expect(find.text('يلزم تحديث التطبيق'), findsOneWidget);
     expect(find.text('لاحقًا'), findsNothing);
-    expect(find.byType(SurahRow).hitTestable(), findsNothing);
+    expect(find.byType(NavigationBar).hitTestable(), findsNothing);
 
     // Back cannot put it away: it is not a route, so there is nothing of it
     // to pop.

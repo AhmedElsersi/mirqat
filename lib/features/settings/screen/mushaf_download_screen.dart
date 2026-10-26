@@ -8,6 +8,8 @@ import '../../../core/di/injection.dart';
 import '../../../core/extensions/number_extensions.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/state/load_status.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/reciter_avatar.dart';
 import '../../../data/models/audio_pack.dart';
 import '../../../data/models/reciter.dart';
@@ -31,7 +33,7 @@ class MushafDownloadScreen extends StatelessWidget {
   Widget build(BuildContext context) => BlocProvider<MushafDownloadCubit>(
     create: (_) => sl<MushafDownloadCubit>()..load(),
     child: Scaffold(
-      appBar: AppBar(title: Text(LocaleKeys.downloadsWholeTitle.tr())),
+      appBar: AppBar(title: Text(LocaleKeys.downloadsWholeScreenTitle.tr())),
       body: BlocBuilder<MushafDownloadCubit, MushafDownloadState>(
         builder: (BuildContext context, MushafDownloadState state) {
           if (state.status.isLoading) {
@@ -59,15 +61,50 @@ class MushafDownloadScreen extends StatelessWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                for (final ReciterOffline entry in state.reciters)
-                  _ReciterCard(
+                // A run under way is what the screen is about while it
+                // lasts, so it leads as a card; the rest are rows under it.
+                for (final ReciterOffline entry in state.reciters.where(
+                  (ReciterOffline e) => e.isRunning,
+                ))
+                  _RunningCard(
                     entry: entry,
-                    // One run at a time, so a reciter's button stands down
-                    // while another's is going: two runs would split one
-                    // connection and read as one stalled bar each.
-                    blocked: state.anyRunning && !entry.isRunning,
                     cubit: cubit,
+                    surahNames: state.surahNames,
                   ),
+                if (state.reciters.any(
+                  (ReciterOffline e) => !e.isRunning,
+                )) ...<Widget>[
+                  FieldLabel(
+                    state.anyRunning
+                        ? LocaleKeys.downloadsWholeOthers.tr()
+                        : LocaleKeys.downloadsWholeReciters.tr(),
+                  ),
+                  AppCard(
+                    padding: EdgeInsetsDirectional.zero,
+                    child: Column(
+                      children: <Widget>[
+                        for (final ReciterOffline entry in state.reciters.where(
+                          (ReciterOffline e) => !e.isRunning,
+                        )) ...<Widget>[
+                          if (entry !=
+                              state.reciters.firstWhere(
+                                (ReciterOffline e) => !e.isRunning,
+                              ))
+                            const Divider(height: 1),
+                          _ReciterRow(
+                            entry: entry,
+                            // One run at a time, so a reciter's button
+                            // stands down while another's is going: two
+                            // runs would split one connection and read as
+                            // one stalled bar each.
+                            blocked: state.anyRunning,
+                            cubit: cubit,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
                 if (state.errorMessage != null)
                   Padding(
                     padding: EdgeInsetsDirectional.only(top: 8.h),
@@ -87,9 +124,112 @@ class MushafDownloadScreen extends StatelessWidget {
   );
 }
 
-/// One reciter: who they are, how much of them is here, and the one action.
-class _ReciterCard extends StatelessWidget {
-  const _ReciterCard({
+/// The run under way: whose, which surah, how far the whole has got and how
+/// far this surah has, and the one way to stop it.
+class _RunningCard extends StatelessWidget {
+  const _RunningCard({
+    required this.entry,
+    required this.cubit,
+    required this.surahNames,
+  });
+
+  final ReciterOffline entry;
+  final MushafDownloadCubit cubit;
+  final Map<int, String> surahNames;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colors = theme.colorScheme;
+    final BulkDownload run = entry.run;
+    final PackDownload? current = entry.current;
+    final Color sabr = theme.brightness == Brightness.dark
+        ? AppColors.sabrDark
+        : AppColors.sabrLight;
+
+    return Padding(
+      padding: EdgeInsetsDirectional.only(bottom: 4.h),
+      child: AppCard(
+        border: colors.primary,
+        padding: EdgeInsetsDirectional.all(16.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                ReciterAvatar(reciter: entry.reciter, diameter: 44),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        entry.reciter.nameAr,
+                        style: theme.textTheme.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        LocaleKeys.downloadsWholeRunning.tr(
+                          args: <String>[
+                            surahNames[run.currentSurah] ??
+                                (run.currentSurah ?? 0).toLocalisedString(),
+                            (run.done + 1)
+                                .clamp(1, run.total)
+                                .toLocalisedString(),
+                            run.total.toLocalisedString(),
+                          ],
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton.outlined(
+                  onPressed: () => cubit.cancel(entry.reciter),
+                  tooltip: LocaleKeys.downloadsWholeStop.tr(),
+                  icon: const Icon(Icons.stop_rounded),
+                ),
+              ],
+            ),
+            SizedBox(height: 14.h),
+            // The run's own bar: how far through the queue it is —
+            // determinate from the first surah, because the queue's length
+            // is known before a byte is fetched. Under it, the surah being
+            // fetched; indeterminate while hashing and unzipping.
+            ProgressBar(value: run.progress),
+            if (current != null && current.isBusy) ...<Widget>[
+              SizedBox(height: 6.h),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(2.r),
+                child: LinearProgressIndicator(
+                  value:
+                      current.status == PackStatus.downloading &&
+                          current.progress > 0
+                      ? current.progress
+                      : null,
+                  minHeight: 4.r,
+                  color: sabr,
+                  backgroundColor: colors.surfaceContainerHighest,
+                ),
+              ),
+            ],
+            SizedBox(height: 10.h),
+            // The one thing a reader has to know: it needs the app left open.
+            AppNote(LocaleKeys.downloadsWholeKeepOpen.tr()),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A reciter not being fetched now: who they are, how much of them is here,
+/// and the one action.
+class _ReciterRow extends StatelessWidget {
+  const _ReciterRow({
     required this.entry,
     required this.blocked,
     required this.cubit,
@@ -105,60 +245,41 @@ class _ReciterCard extends StatelessWidget {
     final ColorScheme colors = theme.colorScheme;
     final Reciter reciter = entry.reciter;
     final PendingDownloads pending = entry.pending;
-
-    return Padding(
-      padding: EdgeInsetsDirectional.only(bottom: 12.h),
-      child: Material(
-        color: colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-          side: BorderSide(color: colors.outline),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: EdgeInsetsDirectional.all(14.r),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  ReciterAvatar(reciter: reciter, diameter: 40),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          reciter.nameAr,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          LocaleKeys.downloadsWholeOnDevice.tr(
-                            args: <String>[
-                              pending.onDevice.toLocalisedString(),
-                              pending.offered.toLocalisedString(),
-                            ],
-                          ),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _Action(entry: entry, blocked: blocked, cubit: cubit),
-                ],
-              ),
-              SizedBox(height: 10.h),
-              _Status(entry: entry),
-            ],
-          ),
-        ),
+    final String attribution = reciter.attribution.of(
+      context.locale.languageCode,
+    );
+    return ListTile(
+      contentPadding: EdgeInsetsDirectional.fromSTEB(14.w, 8.h, 10.w, 8.h),
+      leading: ReciterAvatar(reciter: reciter, diameter: 40),
+      title: Text(
+        reciter.nameAr,
+        style: theme.textTheme.titleSmall,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _Status(entry: entry),
+          // Whom the recitation is served through, where the reciter
+          // credits a library for it.
+          if (attribution.isNotEmpty)
+            Text(
+              attribution,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          // How much of this reciter is already here, where some is.
+          if (!entry.isComplete &&
+              pending.offered > 0 &&
+              pending.onDevice > 0) ...<Widget>[
+            SizedBox(height: 8.h),
+            ProgressBar(value: pending.onDevice / pending.offered),
+          ],
+        ],
+      ),
+      trailing: _Action(entry: entry, blocked: blocked, cubit: cubit),
     );
   }
 }
@@ -177,46 +298,6 @@ class _Status extends StatelessWidget {
     final BulkDownload run = entry.run;
     final PendingDownloads pending = entry.pending;
 
-    if (run.isRunning) {
-      final PackDownload? current = entry.current;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            LocaleKeys.downloadsWholeRunning.tr(
-              args: <String>[
-                (run.currentSurah ?? 0).toLocalisedString(),
-                (run.done + 1).clamp(1, run.total).toLocalisedString(),
-                run.total.toLocalisedString(),
-              ],
-            ),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.onSurfaceVariant,
-            ),
-          ),
-          SizedBox(height: 6.h),
-          // The run's own bar: how far through the queue it is. Determinate
-          // from the first surah, because the queue's length is known before
-          // a byte is fetched.
-          LinearProgressIndicator(value: run.progress, minHeight: 5.h),
-          if (current != null && current.isBusy) ...<Widget>[
-            SizedBox(height: 4.h),
-            // The surah being fetched, under the run. Indeterminate while
-            // hashing and unzipping, which have no percentage to report.
-            LinearProgressIndicator(
-              value:
-                  current.status == PackStatus.downloading &&
-                      current.progress > 0
-                  ? current.progress
-                  : null,
-              minHeight: 2.h,
-              backgroundColor: colors.surfaceContainerHighest,
-            ),
-          ],
-        ],
-      );
-    }
-
     final (String text, Color colour) = switch (run.status) {
       BulkStatus.cancelled => (
         LocaleKeys.downloadsWholeCancelled.tr(),
@@ -230,7 +311,9 @@ class _Status extends StatelessWidget {
       ),
       BulkStatus.finished when pending.isComplete => (
         LocaleKeys.downloadsWholeComplete.tr(),
-        colors.onSurfaceVariant,
+        theme.brightness == Brightness.dark
+            ? AppColors.sabrDark
+            : AppColors.sabrLight,
       ),
       BulkStatus.finished => (
         LocaleKeys.downloadsWholeFinished.tr(
@@ -238,8 +321,14 @@ class _Status extends StatelessWidget {
         ),
         colors.onSurfaceVariant,
       ),
-      BulkStatus.idle ||
-      BulkStatus.running => (_remaining(pending), colors.onSurfaceVariant),
+      BulkStatus.idle || BulkStatus.running => (
+        _remaining(entry),
+        pending.isComplete
+            ? (theme.brightness == Brightness.dark
+                  ? AppColors.sabrDark
+                  : AppColors.sabrLight)
+            : colors.onSurfaceVariant,
+      ),
     };
 
     return Column(
@@ -252,7 +341,7 @@ class _Status extends StatelessWidget {
           Padding(
             padding: EdgeInsetsDirectional.only(top: 2.h),
             child: Text(
-              _remaining(pending),
+              _remaining(entry),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colors.onSurfaceVariant,
               ),
@@ -265,14 +354,37 @@ class _Status extends StatelessWidget {
   /// What is left to fetch — with a size where the manifest gives one, and
   /// without where it does not. A reciter published without packs has no
   /// sizes to add up, and a figure is never guessed.
-  static String _remaining(PendingDownloads pending) {
+  ///
+  /// One line: how much of the reciter is here and what is left where some
+  /// is; their bitrate and the whole cost where none is yet.
+  static String _remaining(ReciterOffline entry) {
+    final PendingDownloads pending = entry.pending;
     if (pending.isComplete) return LocaleKeys.downloadsWholeComplete.tr();
     final String count = pending.surahs.length.toLocalisedString();
-    return pending.bytes > 0
-        ? LocaleKeys.downloadsWholeRemaining.tr(
-            args: <String>[count, megabytes(pending.bytes)],
-          )
-        : LocaleKeys.downloadsWholeRemainingUnsized.tr(args: <String>[count]);
+    final int? bitrate = entry.reciter.remote?.bitrate;
+    return joinDetails(<String>[
+      if (pending.onDevice > 0)
+        LocaleKeys.downloadsWholeOnDevice.tr(
+          args: <String>[
+            pending.onDevice.toLocalisedString(),
+            pending.offered.toLocalisedString(),
+          ],
+        )
+      else if (bitrate != null && bitrate > 0)
+        LocaleKeys.downloadsBitrate.tr(
+          args: <String>[bitrate.toLocalisedString()],
+        ),
+      if (pending.bytes <= 0)
+        LocaleKeys.downloadsWholeRemainingUnsized.tr(args: <String>[count])
+      else if (pending.onDevice > 0)
+        LocaleKeys.downloadsWholeRemaining.tr(
+          args: <String>[megabytes(pending.bytes)],
+        )
+      else
+        LocaleKeys.downloadsWholeAboutSize.tr(
+          args: <String>[megabytes(pending.bytes)],
+        ),
+    ]);
   }
 }
 
@@ -291,23 +403,26 @@ class _Action extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
     if (entry.isRunning) {
-      return IconButton(
+      return IconButton.outlined(
         onPressed: () => cubit.cancel(entry.reciter),
-        tooltip: LocaleKeys.commonCancel.tr(),
-        icon: const Icon(Icons.stop_circle_outlined),
+        tooltip: LocaleKeys.downloadsWholeStop.tr(),
+        icon: const Icon(Icons.stop_rounded),
       );
     }
     if (entry.isComplete) {
       return Icon(
-        Icons.offline_pin_outlined,
-        color: Theme.of(context).colorScheme.primary,
+        Icons.check_circle_outline,
+        color: theme.brightness == Brightness.dark
+            ? AppColors.sabrDark
+            : AppColors.sabrLight,
       );
     }
-    return IconButton(
+    return IconButton.outlined(
       onPressed: blocked ? null : () => _confirm(context),
       tooltip: LocaleKeys.downloadsWholeDownload.tr(),
-      icon: const Icon(Icons.download_for_offline_outlined),
+      icon: const Icon(Icons.download_outlined),
     );
   }
 

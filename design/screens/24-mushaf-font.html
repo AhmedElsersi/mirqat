@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>خط المصحف</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">خط المصحف</h1>
+  </header>
+
+  <!-- The preview comes first: a change to the face or the size is seen before
+       it is read about. The four-line note on reflowing became one line. -->
+  <section class="frame" style="height:auto;padding:12px 10px 16px;margin-bottom:6px">
+    <div class="frame-top"><span>سورة النبإ</span><span>الجزء ٣٠</span></div>
+    <div class="page" style="font-size:19px;--line:34px">
+<div class="m-line m-head"><span class="cartouche">سورة النبإ</span></div>
+<div class="m-line centred"><span class="w">بِسۡمِ</span><span class="w">ٱللَّهِ</span><span class="w">ٱلرَّحۡمَٰنِ</span><span class="w">ٱلرَّحِيمِ</span></div>
+<div class="m-line"><span class="w">عَمَّ</span><span class="w">يَتَسَآءَلُونَ</span><span class="m">١</span><span class="w">عَنِ</span><span class="w">ٱلنَّبَإِ</span><span class="w">ٱلۡعَظِيمِ</span><span class="m">٢</span><span class="w">ٱلَّذِي</span><span class="w">هُمۡ</span><span class="w">فِيهِ</span><span class="w">مُخۡتَلِفُونَ</span><span class="m">٣</span></div>
+<div class="m-line"><span class="w">كـَلَّا</span><span class="w">سَيَعۡلَمُونَ</span><span class="m">٤</span><span class="w">ثُمَّ</span><span class="w">كـَلَّا</span><span class="w">سَيَعۡلَمُونَ</span><span class="m">٥</span><span class="w">أَلَمۡ</span><span class="w">نَجۡعَلِ</span><span class="w">ٱلۡأَرۡضَ</span><span class="w">مِهَٰدٗا</span><span class="m">٦</span></div>
+    </div>
+    <div class="frame-foot" style="position:static;padding-top:6px">معاينة</div>
+  </section>
+
+  <div class="field-label">نوع الخط</div>
+  <div class="list">
+    <div class="li">
+      <span class="ico"><i data-lucide="circle"></i></span>
+      <div class="grow"><p class="h3">حفص العثماني — الإصدار ٢٫٢</p><p class="muted tiny">الافتراضي، مرفق بالتطبيق</p></div>
+    </div>
+    <div class="li">
+      <span class="ico"><i data-lucide="circle"></i></span>
+      <div class="grow"><p class="h3">حفص العثماني — الإصدار ٠٫١٨</p></div>
+    </div>
+    <div class="li">
+      <span class="ico" style="color:var(--primary)"><i data-lucide="circle-dot"></i></span>
+      <div class="grow"><p class="h3">مصحف المدينة — QPC الإصدار الثاني</p>
+        <p class="muted tiny">كل صفحة بخطها كما طُبعت، وبأسطرها. يُنزَّل خط الصفحة حين تفتحها أول مرة.</p></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:10px"><i data-lucide="shield-check"></i>
+    لا تُعرض إلا الخطوط المصمَّمة لرسم هذا المصحف، فكل علامة فيه تُرسم كما هي.</p>
+
+  <div class="row" style="margin-top:18px">
+    <div class="field-label grow" style="margin:0 2px">حجم الخط</div>
+    <span class="tag">٢٨</span>
+  </div>
+  <div class="slider" aria-label="حجم الخط">
+    <div class="track"><i style="width:45%"></i>
+      <span class="tick" style="inset-inline-start:27%;top:-3px"></span>
+      <span class="knob" style="inset-inline-start:45%;top:-8px"></span></div>
+  </div>
+  <p class="muted tiny" style="margin:2px 4px 0">بالحجم الافتراضي (٢٤) تظهر الصفحة كما طُبعت سطرًا بسطر؛ وأكبر منه تُعاد تعبئة الأسطر وتصبح الصفحة قابلة للتمرير.</p>
+
+  <div class="field-label">خطوط الصفحات</div>
+  <section class="card">
+    <div class="row"><div class="grow"><p class="h3">على الجهاز: ١٢٠ من ٦٠٤</p>
+      <p class="muted tiny">كل صفحة بخطها، نحو ١٣٦ م.ب للمصحف كله</p></div>
+      <span class="ring" style="--p:20"><span>٢٠٪</span></span></div>
+    <div class="bar" style="margin-top:12px"><i style="width:20%"></i></div>
+    <button class="btn btn-ghost btn-block" style="margin-top:14px"><i data-lucide="download"></i> تنزيل خطوط المصحف كله (١٣٦ م.ب)</button>
+    <p style="text-align:center;margin-top:10px"><button class="muted small">حذف خطوط الصفحات</button></p>
+  </section>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

@@ -2,24 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/about/screen/developer_screen.dart';
-import '../../features/about/screen/idea_screen.dart';
+import '../../features/about/screen/about_screen.dart';
 import '../../features/about/screen/how_to_use_screen.dart';
-import '../../features/about/screen/info_page_screen.dart';
+import '../../features/hifz_plan/screen/hifz_plan_screen.dart';
+import '../../features/backup/screen/backup_screen.dart';
 import '../../features/history/screen/history_screen.dart';
 import '../../features/mushaf/mushaf_args.dart';
 import '../../features/mushaf/screen/mushaf_screen.dart';
 import '../../features/onboarding/screen/onboarding_screen.dart';
 import '../../features/progress/screen/progress_screen.dart';
+import '../../features/review/screen/reviews_screen.dart';
+import '../../domain/entities/ayah_ref.dart';
 import '../../features/search/screen/search_screen.dart';
+import '../../features/similar/screen/drill_screen.dart';
+import '../../features/similar/screen/mutashabihat_screen.dart';
+import '../../features/similar/screen/phrase_screen.dart';
+import '../../features/similar/screen/similar_screen.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
 import '../../features/settings/cubit/settings_state.dart';
 import '../../features/settings/screen/downloads_screen.dart';
 import '../../features/settings/screen/mushaf_download_screen.dart';
+import '../../features/settings/screen/mushaf_font_screen.dart';
 import '../../features/settings/screen/session_settings_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/splash/screen/splash_screen.dart';
-import '../../features/surah_list/screen/surah_list_screen.dart';
+import '../../features/stats/screen/stats_screen.dart';
+import '../../features/home/screen/home_shell.dart';
+import '../../features/weak_spots/screen/weak_spots_screen.dart';
 import 'app_routes.dart';
 
 /// GoRouter configuration. Typed arguments travel in `state.extra`.
@@ -77,7 +86,7 @@ class AppRouter {
         path: AppRoutes.surahListPath,
         name: AppRoutes.surahListName,
         builder: (BuildContext context, GoRouterState state) =>
-            const SurahListScreen(),
+            const HomeShell(),
       ),
       GoRoute(
         path: AppRoutes.progressPath,
@@ -105,6 +114,54 @@ class AppRouter {
             const SearchScreen(),
       ),
       GoRoute(
+        path: AppRoutes.similarPath,
+        name: AppRoutes.similarName,
+        builder: (BuildContext context, GoRouterState state) =>
+            SimilarScreen(ayah: state.extra! as AyahRef),
+      ),
+      GoRoute(
+        path: AppRoutes.mutashabihatPath,
+        name: AppRoutes.mutashabihatName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const MutashabihatScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.mutashabihatPhrasePath,
+        name: AppRoutes.mutashabihatPhraseName,
+        builder: (BuildContext context, GoRouterState state) =>
+            PhraseScreen(phraseId: state.extra! as int),
+      ),
+      GoRoute(
+        path: AppRoutes.mutashabihatDrillPath,
+        name: AppRoutes.mutashabihatDrillName,
+        builder: (BuildContext context, GoRouterState state) =>
+            DrillScreen(phraseId: state.extra! as int),
+      ),
+      GoRoute(
+        path: AppRoutes.statsPath,
+        name: AppRoutes.statsName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const StatsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.hifzPlanPath,
+        name: AppRoutes.hifzPlanName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const HifzPlanScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.reviewsPath,
+        name: AppRoutes.reviewsName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const ReviewsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.weakSpotsPath,
+        name: AppRoutes.weakSpotsName,
+        builder: (BuildContext context, GoRouterState state) =>
+            const WeakSpotsScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.settingsPath,
         name: AppRoutes.settingsName,
         builder: (BuildContext context, GoRouterState state) =>
@@ -117,34 +174,28 @@ class AppRouter {
                 const SessionSettingsScreen(),
           ),
           GoRoute(
+            path: AppRoutes.backupPath,
+            name: AppRoutes.backupName,
+            builder: (BuildContext context, GoRouterState state) =>
+                const BackupScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.mushafFontPath,
+            name: AppRoutes.mushafFontName,
+            builder: (BuildContext context, GoRouterState state) =>
+                const MushafFontScreen(),
+          ),
+          GoRoute(
             path: AppRoutes.howToUsePath,
             name: AppRoutes.howToUseName,
             builder: (BuildContext context, GoRouterState state) =>
                 const HowToUseScreen(),
           ),
           GoRoute(
-            path: AppRoutes.goalPath,
-            name: AppRoutes.goalName,
+            path: AppRoutes.aboutPath,
+            name: AppRoutes.aboutName,
             builder: (BuildContext context, GoRouterState state) =>
-                const InfoPageScreen(page: InfoPage.goal),
-          ),
-          GoRoute(
-            path: AppRoutes.aboutUsPath,
-            name: AppRoutes.aboutUsName,
-            builder: (BuildContext context, GoRouterState state) =>
-                const InfoPageScreen(page: InfoPage.about),
-          ),
-          GoRoute(
-            path: AppRoutes.ideaPath,
-            name: AppRoutes.ideaName,
-            builder: (BuildContext context, GoRouterState state) =>
-                const IdeaScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.developerPath,
-            name: AppRoutes.developerName,
-            builder: (BuildContext context, GoRouterState state) =>
-                const DeveloperScreen(),
+                const AboutScreen(),
           ),
           GoRoute(
             path: AppRoutes.downloadsPath,

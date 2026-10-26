@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مرقاة — مقترح التصميم</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+  :root { --forest:#0B4E35; --cream:#F9F4E6; --gold:#E1B45C; --muted:#65706B; --line:#DED6C0; }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "IBM Plex Sans Arabic", system-ui, sans-serif; background: #EFE8D4; color: var(--forest); }
+  header { padding: 40px 32px 8px; max-width: 1400px; margin: 0 auto; display: flex; gap: 24px; align-items: end; flex-wrap: wrap; }
+  header .grow { flex: 1; min-width: 280px; }
+  h1 { font-size: 30px; }
+  header p { color: var(--muted); margin-top: 6px; max-width: 70ch; line-height: 1.7; }
+  .toggle { display: flex; background: #fff8; border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+  .toggle button { font: inherit; border: 0; background: none; padding: 8px 18px; border-radius: 999px; cursor: pointer; color: var(--forest); font-weight: 600; }
+  .toggle button.on { background: var(--forest); color: var(--cream); }
+  main { max-width: 1400px; margin: 0 auto; padding: 20px 32px 60px; }
+  h2.group { font-size: 19px; margin: 34px 0 4px; }
+  h2.group span { color: var(--muted); font-size: 14px; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 36px 24px; padding-top: 20px; }
+  figure { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .phone { width: 322px; height: 690px; border-radius: 44px; background: #111; padding: 10px; box-shadow: 0 18px 40px #04241A33; }
+  .phone .glass { width: 100%; height: 100%; border-radius: 35px; overflow: hidden; position: relative; }
+  .phone iframe { width: 390px; height: 844px; border: 0; transform: scale(.7744); transform-origin: top right; position: absolute; top: 0; right: 0; }
+  figcaption { text-align: center; max-width: 320px; }
+  figcaption b { display: block; font-size: 16px; }
+  figcaption span { color: var(--muted); font-size: 13px; line-height: 1.6; }
+  figcaption a { color: var(--forest); font-size: 12.5px; }
+  @media (max-width: 400px) { header, main { padding-inline: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="grow">
+    <h1>مرقاة — مقترح تصميم حديث</h1>
+    <p>أربعة أقسام بدل صفحة رئيسية مكدّسة وإعدادات تحمل كل شيء: «اليوم» يقول ما تفعله الآن، و«المصحف» للقراءة، و«حفظي» لأدوات التثبيت، و«الإعدادات» للإعدادات وحدها. ثم بقية الشاشات التي تُفتح من هذه الأقسام — البحث، والسجل، والمراجعة، والخطة، والمتشابهات، والتنزيلات، والخطوط، وعن التطبيق — كلها هنا. الألوان والخطوط هي ألوان الهوية نفسها، وكل نصٍّ قرآني مأخوذ من quran.db حرفًا حرفًا. التفاصيل في README.md.</p>
+  </div>
+  <div class="toggle" role="group" aria-label="المظهر">
+    <button class="on" data-theme="light">فاتح</button>
+    <button data-theme="dark">داكن</button>
+  </div>
+</header>
+<main id="screens"></main>
+<script>
+  const groups = [
+    ['الأقسام الأربعة', 'شريط تنقّل في الأسفل، وكل قسم يجيب سؤالًا واحدًا.', [
+      ['01-today', 'اليوم', 'الصفحة الأولى: وِرد اليوم — حفظ جديد بارز، والمراجعتان، وما حان موعده، ثم موضع القراءة.'],
+      ['02-mushaf-index', 'المصحف', 'فهرس مدمج: بحث ظاهر، ومتابعة القراءة، وصفّ واحد لكل سورة مع حلقة تقدّم.'],
+      ['07-my-hifz', 'حفظي', 'خريطة ما حُفظ عبر الأجزاء، والمراجعة، والخطة، وأدوات التثبيت.'],
+      ['10-settings', 'الإعدادات', 'إعدادات فقط — انتقلت أدوات الحفظ إلى «حفظي».'],
+    ]],
+    ['المصحف والقراءة', 'ما يُفتح من قسم المصحف، والجلسة فوق الصفحة.', [
+      ['03-reading', 'القراءة والجلسة', 'الصفحة كما هي، وشريط جلسة يقول أين أنت من الدرجات.'],
+      ['04-recall', 'اقرأ من حفظك', 'جولة استرجاع: مكان الآية ظاهر وحبرها مستور، بلا عدّاد ضاغط.'],
+      ['05-session-sheet', 'إعدادات الجلسة', 'الطريقة أولًا، ثم النطاق والرقمان المهمّان، والبقية مطويّة.'],
+      ['06-ayah-actions', 'قائمة الآية', 'ستّ أفعال في شبكة يصلها الإبهام، والقراءة تحتها.'],
+      ['12-search', 'البحث', 'صندوق في الصفحة لا أيقونة في الشريط، والسور صفٌّ واحد، وكل آية تامّة في بطاقتها.'],
+      ['13-history', 'سجل القراءة', 'المواضع مجموعة تحت يومها، ورقم الصفحة يتصدّر الصفّ بدل تكرار التاريخ.'],
+      ['14-progress', 'متابعة سورة', 'حال السورة مرة واحدة في الأعلى، وخلية لكل آية بلونها — أربعون آية في شاشة.'],
+    ]],
+    ['الحفظ وأدواته', 'ما يُفتح من «حفظي» و«اليوم».', [
+      ['09-wird-editor', 'تعديل الورد', 'ثلاثة أجزاء، لكلٍّ نطاق يبقى حتى يتغيّر، وزرّ «المقطع التالي».'],
+      ['15-reviews', 'جدول المراجعة', 'الدرجات الثلاث مرشِّحًا في الأعلى، و«الآن» قبل «لاحقًا»، وزرّ بدءٍ واحد في كل صفّ.'],
+      ['16-plan', 'خطة الحفظ', 'مقطع اليوم بارزٌ بزرّ واحد، والستّون صفًّا انطوى ما مضى منها.'],
+      ['17-plan-new', 'خطة جديدة', 'النطاق صفّان، والأيام بأرقام جاهزة، وحصيلة الاختيار سطرٌ قبل الزرّ.'],
+      ['18-weak-spots', 'مواضع التعثّر', 'الأكثر تعثّرًا أولًا، و«تكرار هذه الآية» زرٌّ لا أيقونة خفية.'],
+      ['20-mutashabihat', 'المتشابهات', 'العبارة أولًا وبأكبر خط، والسورة مرشِّحًا، والتمرين من البطاقة نفسها.'],
+      ['21-phrase', 'عبارة متشابهة', 'الآيات تامّة، والمشترك مظلَّل، والتمرين سببُ فتح الشاشة فصار زرًّا.'],
+      ['08-drill', 'تمرين المتشابهات', 'عبارة حقيقية من بيانات المتشابهات، وما بعدها مستور.'],
+      ['19-practice', 'سجلّ المواظبة', 'أربعة أرقام تُقال مرة واحدة، بلا سلاسل ولا أوسمة ولا ذكرٍ ليومٍ فائت.'],
+      ['26-backup', 'نسخ التقدّم', 'ما في النسخة أربع علامات لا فقرة، والمسار سطرٌ لاتيني يُقرأ من اليسار.'],
+    ]],
+    ['الإعدادات', 'الشاشات التي تُفتح من قسم الإعدادات.', [
+      ['25-session-defaults', 'إعدادات الجلسة', 'ترتيب ورقة الجلسة نفسه، فيُتعلَّم مرة واحدة.'],
+      ['24-mushaf-font', 'خط المصحف', 'المعاينة أولًا، والملاحظة الطويلة صارت سطرًا، وخطوط الصفحات في بطاقتها.'],
+      ['22-downloads', 'التسجيلات المحفوظة', 'الإجمالي في الأعلى، وأفعال القارئ في صفّه، والمتعثّر في قسمه.'],
+      ['23-whole-mushaf', 'المصحف كاملًا', 'ما يُنزَّل الآن هو موضوع الشاشة، ثم القرّاء الآخرون صفًّا صفًّا.'],
+      ['27-about', 'عن التطبيق', 'أربع شاشات نصّية صارت صفحة واحدة: الهدف، ومن نحن، وصاحب الفكرة، والمطوّر.'],
+    ]],
+    ['المقدّمة والتنبيهات', 'ما يظهر فوق التطبيق كله.', [
+      ['11-onboarding', 'المقدّمة', 'المنهج مرسومًا بدرجات الهوية، صاعدةً إلى اليسار.'],
+      ['28-update', 'تحديث متوفّر', 'التحديث الاختياري يتكلّم مرة فوق التطبيق، ويقبل «لاحقًا».'],
+      ['29-maintenance', 'صيانة', 'شيء واحد على الشاشة، وزرٌّ واحد، وموعد العودة.'],
+    ]],
+  ];
+  const main = document.getElementById('screens');
+  let theme = 'light';
+  try { theme = localStorage.getItem('mirqat-design-theme') || 'light'; } catch (e) {}
+  function render() {
+    main.innerHTML = groups.map(([name, note, screens]) => `
+      <h2 class="group">${name} <span>— ${note}</span></h2>
+      <div class="grid">${screens.map(([file, title, text]) => `
+        <figure>
+          <div class="phone"><div class="glass"><iframe loading="lazy" title="${title}" src="screens/${file}.html?theme=${theme}"></iframe></div></div>
+          <figcaption><b>${title}</b><span>${text}</span><br><a href="screens/${file}.html?theme=${theme}">افتح وحدها</a></figcaption>
+        </figure>`).join('')}</div>`).join('');
+    document.querySelectorAll('.toggle button').forEach((b) => b.classList.toggle('on', b.dataset.theme === theme));
+    document.body.style.background = theme === 'dark' ? '#0b1410' : '#EFE8D4';
+    document.querySelector('h1').style.color = theme === 'dark' ? '#F9F4E6' : '';
+    document.querySelectorAll('h2.group').forEach((h) => { h.style.color = theme === 'dark' ? '#F9F4E6' : ''; });
+  }
+  document.querySelectorAll('.toggle button').forEach((b) => b.addEventListener('click', () => {
+    theme = b.dataset.theme;
+    try { localStorage.setItem('mirqat-design-theme', theme); } catch (e) {}
+    render();
+  }));
+  render();
+</script>
+</body>
+</html>

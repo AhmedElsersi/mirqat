@@ -1,0 +1,57 @@
+<!-- title: خط المصحف -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">خط المصحف</h1>
+  </header>
+
+  <!-- The preview comes first: a change to the face or the size is seen before
+       it is read about. The four-line note on reflowing became one line. -->
+  <section class="frame" style="height:auto;padding:12px 10px 16px;margin-bottom:6px">
+    <div class="frame-top"><span>سورة {{surah 78}}</span><span>الجزء ٣٠</span></div>
+    <div class="page" style="font-size:19px;--line:34px">
+{{page 582 lines=1-4}}
+    </div>
+    <div class="frame-foot" style="position:static;padding-top:6px">معاينة</div>
+  </section>
+
+  <div class="field-label">نوع الخط</div>
+  <div class="list">
+    <div class="li">
+      <span class="ico"><i data-lucide="circle"></i></span>
+      <div class="grow"><p class="h3">حفص العثماني — الإصدار ٢٫٢</p><p class="muted tiny">الافتراضي، مرفق بالتطبيق</p></div>
+    </div>
+    <div class="li">
+      <span class="ico"><i data-lucide="circle"></i></span>
+      <div class="grow"><p class="h3">حفص العثماني — الإصدار ٠٫١٨</p></div>
+    </div>
+    <div class="li">
+      <span class="ico" style="color:var(--primary)"><i data-lucide="circle-dot"></i></span>
+      <div class="grow"><p class="h3">مصحف المدينة — QPC الإصدار الثاني</p>
+        <p class="muted tiny">كل صفحة بخطها كما طُبعت، وبأسطرها. يُنزَّل خط الصفحة حين تفتحها أول مرة.</p></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:10px"><i data-lucide="shield-check"></i>
+    لا تُعرض إلا الخطوط المصمَّمة لرسم هذا المصحف، فكل علامة فيه تُرسم كما هي.</p>
+
+  <div class="row" style="margin-top:18px">
+    <div class="field-label grow" style="margin:0 2px">حجم الخط</div>
+    <span class="tag">{{n 28}}</span>
+  </div>
+  <div class="slider" aria-label="حجم الخط">
+    <div class="track"><i style="width:45%"></i>
+      <span class="tick" style="inset-inline-start:27%;top:-3px"></span>
+      <span class="knob" style="inset-inline-start:45%;top:-8px"></span></div>
+  </div>
+  <p class="muted tiny" style="margin:2px 4px 0">بالحجم الافتراضي ({{n 24}}) تظهر الصفحة كما طُبعت سطرًا بسطر؛ وأكبر منه تُعاد تعبئة الأسطر وتصبح الصفحة قابلة للتمرير.</p>
+
+  <div class="field-label">خطوط الصفحات</div>
+  <section class="card">
+    <div class="row"><div class="grow"><p class="h3">على الجهاز: {{n 120}} من {{n 604}}</p>
+      <p class="muted tiny">كل صفحة بخطها، نحو {{n 136}} م.ب للمصحف كله</p></div>
+      <span class="ring" style="--p:20"><span>٢٠٪</span></span></div>
+    <div class="bar" style="margin-top:12px"><i style="width:20%"></i></div>
+    <button class="btn btn-ghost btn-block" style="margin-top:14px"><i data-lucide="download"></i> تنزيل خطوط المصحف كله ({{n 136}} م.ب)</button>
+    <p style="text-align:center;margin-top:10px"><button class="muted small">حذف خطوط الصفحات</button></p>
+  </section>
+</div>

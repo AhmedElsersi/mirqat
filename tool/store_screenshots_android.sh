@@ -41,6 +41,10 @@ demo network -e wifi show -e level 4 -e fully true
 demo network -e mobile hide
 demo notifications -e visible false
 "${ADB[@]}" shell cmd uimode night no >/dev/null
+# A busy emulator raises "System UI isn't responding" over the app, and a
+# screenshot would keep it. Error dialogs are hidden, and any open one shut.
+"${ADB[@]}" shell settings put global hide_error_dialogs 1
+"${ADB[@]}" shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
 
 LOG="$(mktemp -t store_shots)"
 flutter run -d "$SERIAL" -t tool/store_screenshots.dart \

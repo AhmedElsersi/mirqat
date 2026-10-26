@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'ayah_ref.dart';
 import 'playback_unit.dart';
 import 'plan_step.dart';
+import 'recall_gap.dart';
 import 'session_config.dart';
 
 /// A built session: the ordered steps, and the flat queue of ayah plays they
@@ -71,6 +72,11 @@ class SessionPlan extends Equatable {
           'No duration supplied for ayah ${unit.ref}; cannot estimate '
           'the session length without it.',
         );
+      }
+      // An asked play is preceded by its silence — the gap the reader
+      // recites into — which the queue lays out in spacer clips.
+      if (unit.asked) {
+        micros += RecallGap.of(clip).inMicroseconds;
       }
       micros += clip.inMicroseconds;
 

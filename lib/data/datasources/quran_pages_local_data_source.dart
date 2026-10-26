@@ -11,12 +11,17 @@ import 'quran_database_opener.dart';
 
 /// The mushaf page/line/word queries over `quran.db`.
 abstract class QuranPagesLocalDataSource {
+  /// The layout a query follows when it is not told one: the one the
+  /// reader's face is drawn to, kept up to date by the app.
+  MushafLayout get activeLayout;
+  set activeLayout(MushafLayout layout);
+
   /// The ayahs that start, continue or end on [page], in ayah order. An ayah
   /// that spans a page boundary appears in full on every page it touches.
   Future<List<Ayah>> ayahsForPage(int page);
 
-  /// Every printed line of [page], in top-to-bottom order.
-  Future<List<MushafLine>> linesForPage(int page);
+  /// Every printed line of [page] in [layout], in top-to-bottom order.
+  Future<List<MushafLine>> linesForPage(int page, {MushafLayout? layout});
 
   /// The words that make up one line, in reading order.
   Future<List<Word>> wordsForLine(int page, int line);
@@ -31,10 +36,14 @@ abstract class QuranPagesLocalDataSource {
   /// How many pages the layout has.
   /// The surah, juz, hizb and rub' the page opens in, or null for a page with
   /// no words on it.
-  Future<PageInfo?> pageInfo(int page, {int? fromWordId});
+  Future<PageInfo?> pageInfo(int page, {int? fromWordId, MushafLayout? layout});
 
   /// Every juz and where it begins, in order.
   Future<List<JuzInfo>> juzList();
+
+  /// The sixty ahzab, each by where it begins. Same shape as a juz: a
+  /// number, the ayah it opens on, and that ayah's page.
+  Future<List<JuzInfo>> hizbList();
 
   Future<int> pageCount();
 
@@ -42,12 +51,16 @@ abstract class QuranPagesLocalDataSource {
   Future<int> linesPerFullPage();
 
   /// The page [surahNumber]:[ayahNumber] is printed on.
-  Future<int> pageForAyah(int surahNumber, int ayahNumber);
+  Future<int> pageForAyah(
+    int surahNumber,
+    int ayahNumber, {
+    MushafLayout? layout,
+  });
 
   /// The page [surahNumber]'s heading is printed on, or null if the layout
   /// gives it none. Not always the page of its first ayah: a heading can be
   /// the last line of the page before.
-  Future<int?> surahHeadingPage(int surahNumber);
+  Future<int?> surahHeadingPage(int surahNumber, {MushafLayout? layout});
 
   /// How many ayahs [surahNumber] has, read straight from `quran.db`.
   Future<int> ayahCount(int surahNumber);
@@ -57,6 +70,9 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   QuranPagesLocalDataSourceImpl(this._database);
 
   final QuranDatabaseOpener _database;
+
+  @override
+  MushafLayout activeLayout = MushafLayout.hafs;
 
   @override
   Future<List<Ayah>> ayahsForPage(int page) async {
@@ -77,10 +93,13 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   }
 
   @override
-  Future<List<MushafLine>> linesForPage(int page) async {
+  Future<List<MushafLine>> linesForPage(
+    int page, {
+    MushafLayout? layout,
+  }) async {
     final Database db = await _database.open();
     final List<Map<String, Object?>> rows = await db.query(
-      'lines',
+      (layout ?? activeLayout).table,
       where: 'page = ?',
       whereArgs: <int>[page],
       orderBy: 'line',
@@ -139,7 +158,11 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   }
 
   @override
-  Future<PageInfo?> pageInfo(int page, {int? fromWordId}) async {
+  Future<PageInfo?> pageInfo(
+    int page, {
+    int? fromWordId,
+    MushafLayout? layout,
+  }) async {
     final Database db = await _database.open();
     // The first word on the page, not the first ayah to *start* on it: a page
     // usually opens in the middle of an ayah that began on the one before.
@@ -149,7 +172,8 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
     final List<Map<String, Object?>> rows = await db.rawQuery(
       'SELECT a.surah AS surah, a.juz AS juz, a.hizb AS hizb, a.rub AS rub '
       'FROM words w JOIN ayahs a ON a.surah = w.surah AND a.ayah = w.ayah '
-      'WHERE w.page = ? AND w.id >= ? ORDER BY w.id LIMIT 1',
+      'WHERE w.${(layout ?? activeLayout).pageColumn} = ? AND w.id >= ? '
+      'ORDER BY w.id LIMIT 1',
       <Object>[page, fromWordId ?? 0],
     );
     if (rows.isEmpty) return null;
@@ -162,24 +186,42 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
     );
   }
 
-  /// Thirty rows out of a read-only database: read once, kept for good.
-  Future<List<JuzInfo>>? _juzList;
+  /// Thirty rows out of a read-only database: read once for each layout,
+  /// kept for good.
+  final Map<MushafLayout, Future<List<JuzInfo>>> _juzList =
+      <MushafLayout, Future<List<JuzInfo>>>{};
+
+  final Map<MushafLayout, Future<List<JuzInfo>>> _hizbList =
+      <MushafLayout, Future<List<JuzInfo>>>{};
 
   @override
-  Future<List<JuzInfo>> juzList() => _juzList ??= _readJuzList();
+  Future<List<JuzInfo>> juzList() =>
+      _juzList[activeLayout] ??= _readJuzList('juz', activeLayout);
 
-  Future<List<JuzInfo>> _readJuzList() async {
+  @override
+  Future<List<JuzInfo>> hizbList() =>
+      _hizbList[activeLayout] ??= _readJuzList('hizb', activeLayout);
+
+  /// The starts of every [division] — `juz` or `hizb`, both columns of
+  /// `ayahs` — as the index rows need them.
+  Future<List<JuzInfo>> _readJuzList(
+    String division,
+    MushafLayout layout,
+  ) async {
     final Database db = await _database.open();
-    // The first ayah of each juz is the one with the lowest id in it.
+    // The first ayah of each part is the one with the lowest id in it; its
+    // page is where its first word is printed in [layout].
     final List<Map<String, Object?>> rows = await db.rawQuery(
-      'SELECT a.juz AS juz, a.surah AS surah, a.ayah AS ayah, a.page AS page '
-      'FROM ayahs a JOIN (SELECT juz, MIN(id) AS first FROM ayahs GROUP BY juz) '
-      'f ON f.first = a.id ORDER BY a.juz',
+      'SELECT a.$division AS n, a.surah AS surah, a.ayah AS ayah, '
+      '(SELECT MIN(w.${layout.pageColumn}) FROM words w '
+      'WHERE w.surah = a.surah AND w.ayah = a.ayah) AS page '
+      'FROM ayahs a JOIN (SELECT $division, MIN(id) AS first FROM ayahs '
+      'GROUP BY $division) f ON f.first = a.id ORDER BY a.$division',
     );
     return <JuzInfo>[
       for (final Map<String, Object?> row in rows)
         JuzInfo(
-          number: row['juz']! as int,
+          number: row['n']! as int,
           surahNumber: row['surah']! as int,
           ayahNumber: row['ayah']! as int,
           page: row['page']! as int,
@@ -205,8 +247,23 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   }
 
   @override
-  Future<int> pageForAyah(int surahNumber, int ayahNumber) async {
+  Future<int> pageForAyah(
+    int surahNumber,
+    int ayahNumber, {
+    MushafLayout? layout,
+  }) async {
     final Database db = await _database.open();
+    if ((layout ?? activeLayout) == MushafLayout.qpcV2) {
+      // The page its first word is printed on, in that print.
+      final int? page =
+          (await db.rawQuery(
+                'SELECT MIN(page_v2) AS page FROM words '
+                'WHERE surah = ? AND ayah = ?',
+                <int>[surahNumber, ayahNumber],
+              )).single['page']
+              as int?;
+      if (page != null) return page;
+    }
     final List<Map<String, Object?>> rows = await db.query(
       'ayahs',
       columns: <String>['page'],
@@ -223,10 +280,10 @@ class QuranPagesLocalDataSourceImpl implements QuranPagesLocalDataSource {
   }
 
   @override
-  Future<int?> surahHeadingPage(int surahNumber) async {
+  Future<int?> surahHeadingPage(int surahNumber, {MushafLayout? layout}) async {
     final Database db = await _database.open();
     final List<Map<String, Object?>> rows = await db.query(
-      'lines',
+      (layout ?? activeLayout).table,
       columns: <String>['page'],
       where: "line_type = 'surah_name' AND surah_number = ?",
       whereArgs: <int>[surahNumber],

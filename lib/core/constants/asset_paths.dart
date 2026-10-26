@@ -35,6 +35,15 @@ class AssetPaths {
   /// `QuranDatabase` rather than opened straight from the bundle.
   static const String quranDatabase = '$_data/quran.db';
 
+  /// Ayahs that share a phrase — QUL's Mutashabihat ul Quran, references
+  /// only, built by `tool/build_mutashabihat.py`. Absent until that data is
+  /// imported, and its absence only hides the feature.
+  static const String mutashabihat = '$_data/mutashabihat.json';
+
+  /// The QPC V2 page fonts on the CDN: where each is, and the size and
+  /// digest each download is held to. Written by tool/build_qpc_fonts.py.
+  static const String qpcV2Fonts = '$_data/qpc_v2_fonts.json';
+
   /// The WAV, not the MP3. MP3 cannot encode exactly 400 ms — encoder delay
   /// and frame padding leave the shipped MP3 at 391.7 ms, and that error
   /// accumulates across every gap in a session. The WAV is sample-exact at

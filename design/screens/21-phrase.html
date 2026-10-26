@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>عبارة متشابهة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">عبارة متشابهة</h1>
+  </header>
+
+  <!-- The phrase itself, then the drill that uses it — the drill was an icon
+       in the app bar, and it is the reason this screen is open. -->
+  <section class="card" style="background:var(--surface-2)">
+    <p class="quran" style="font-size:23px;text-align:center">وَلَقَدۡ أَنزَلۡنَآ إِلَيۡكَ ءَايَٰتِۭ بَيِّنَٰتٖۖ</p>
+    <div class="row" style="margin-top:14px">
+      <span class="tag gold">٤ آيات</span><span class="tag">٣ سور</span>
+      <span class="grow"></span>
+      <button class="btn btn-primary" style="height:40px;font-size:13.5px"><i data-lucide="dumbbell"></i> تمرين التفريق</button>
+    </div>
+  </section>
+
+  <!-- Each ayah whole, with the shared words tinted: where they agree is
+       plain, and so is where they part. -->
+  <div class="field-label">سورة البقرة — الآيات: ١</div>
+  <article class="card">
+    <p class="quran compare"><span class="w sh">وَلَقَدۡ</span> <span class="w sh">أَنزَلۡنَآ</span> <span class="w sh">إِلَيۡكَ</span> <span class="w sh">ءَايَٰتِۭ</span> <span class="w sh">بَيِّنَٰتٖۖ</span> <span class="w">وَمَا</span> <span class="w">يَكۡفُرُ</span> <span class="w">بِهَآ</span> <span class="w">إِلَّا</span> <span class="w">ٱلۡفَٰسِقُونَ</span> <span class="m">٩٩</span></p>
+    <div class="row" style="margin-top:10px">
+      <p class="muted tiny grow">الآية ٩٩، صفحة ١٥</p>
+      <button class="icon-btn" style="width:34px;height:34px" aria-label="استمع إلى الآية"><i data-lucide="volume-2"></i></button>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </article>
+
+  <div class="field-label">سورة النور — الآيات: ٢</div>
+  <div class="stack">
+    <article class="card">
+      <p class="quran compare"><span class="w sh">وَلَقَدۡ</span> <span class="w sh">أَنزَلۡنَآ</span> <span class="w sh">إِلَيۡكُمۡ</span> <span class="w sh">ءَايَٰتٖ</span> <span class="w sh">مُّبَيِّنَٰتٖ</span> <span class="w">وَمَثَلٗا</span> <span class="w">مِّنَ</span> <span class="w">ٱلَّذِينَ</span> <span class="w">خَلَوۡاْ</span> <span class="w">مِن</span> <span class="w">قَبۡلِكُمۡ</span> <span class="w">وَمَوۡعِظَةٗ</span> <span class="w">لِّلۡمُتَّقِينَ</span> <span class="m">٣٤</span></p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">الآية ٣٤، صفحة ٣٥٤</p>
+        <button class="icon-btn" style="width:34px;height:34px" aria-label="استمع إلى الآية"><i data-lucide="volume-2"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+    <article class="card">
+      <p class="quran compare"><span class="w sh">لَّقَدۡ</span> <span class="w sh">أَنزَلۡنَآ</span> <span class="w sh">ءَايَٰتٖ</span> <span class="w sh">مُّبَيِّنَٰتٖۚ</span> <span class="w">وَٱللَّهُ</span> <span class="w">يَهۡدِي</span> <span class="w">مَن</span> <span class="w">يَشَآءُ</span> <span class="w">إِلَىٰ</span> <span class="w">صِرَٰطٖ</span> <span class="w">مُّسۡتَقِيمٖ</span> <span class="m">٤٦</span></p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">الآية ٤٦، صفحة ٣٥٦</p>
+        <button class="icon-btn" style="width:34px;height:34px" aria-label="استمع إلى الآية"><i data-lucide="volume-2"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+  </div>
+
+  <div class="field-label">سورة المجادلة — الآيات: ١</div>
+  <article class="card">
+    <p class="quran compare"><span class="w">إِنَّ</span> <span class="w">ٱلَّذِينَ</span> <span class="w">يُحَآدُّونَ</span> <span class="w">ٱللَّهَ</span> <span class="w">وَرَسُولَهُۥ</span> <span class="w">كُبِتُواْ</span> <span class="w">كَمَا</span> <span class="w">كُبِتَ</span> <span class="w">ٱلَّذِينَ</span> <span class="w">مِن</span> <span class="w">قَبۡلِهِمۡۚ</span> <span class="w sh">وَقَدۡ</span> <span class="w sh">أَنزَلۡنَآ</span> <span class="w sh">ءَايَٰتِۭ</span> <span class="w sh">بَيِّنَٰتٖۚ</span> <span class="w">وَلِلۡكَٰفِرِينَ</span> <span class="w">عَذَابٞ</span> <span class="w">مُّهِينٞ</span> <span class="m">٥</span></p>
+    <div class="row" style="margin-top:10px">
+      <p class="muted tiny grow">الآية ٥، صفحة ٥٤٢</p>
+      <button class="icon-btn" style="width:34px;height:34px" aria-label="استمع إلى الآية"><i data-lucide="volume-2"></i></button>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </article>
+
+  <p class="note" style="margin-top:16px"><i data-lucide="book-marked"></i>
+    المتشابهات من «متشابهات القرآن» في مكتبة QUL، والألفاظ المشتركة مظلَّلة.</p>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

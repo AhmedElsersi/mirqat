@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نسخ التقدّم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">نسخ التقدّم</h1>
+  </header>
+
+  <!-- What is in a copy, as four tags instead of a paragraph. -->
+  <section class="card">
+    <div class="row"><span class="ico"><i data-lucide="hard-drive-download"></i></span>
+      <div class="grow"><p class="h3">ملف على جهازك، بلا حساب ولا خادم</p></div></div>
+    <div class="chips" style="margin-top:12px;flex-wrap:wrap">
+      <span class="tag">حفظ الآيات</span><span class="tag">جدول المراجعة</span>
+      <span class="tag">مواضع التعثّر</span><span class="tag">خطة الحفظ</span>
+    </div>
+  </section>
+
+  <div class="field-label">حفظ نسخة</div>
+  <section class="card">
+    <button class="btn btn-primary btn-block"><i data-lucide="save"></i> احفظ الآن</button>
+    <p class="muted tiny" style="margin-top:12px">حُفظت النسخة في:</p>
+    <p class="mono" style="margin-top:6px">…/Documents/mirqat-progress-2026-10-22-0941.json</p>
+    <button class="chip" style="margin-top:10px"><i data-lucide="share-2"></i> أرسلها أو احفظها في مكان آخر</button>
+  </section>
+
+  <div class="field-label">استيراد نسخة</div>
+  <section class="card">
+    <button class="btn btn-ghost btn-block"><i data-lucide="folder-open"></i> اختر ملف نسخة…</button>
+    <p class="muted tiny" style="margin-top:10px">من التنزيلات أو Drive أو أي مكان على الجهاز.</p>
+    <div class="list" style="margin-top:12px">
+      <div class="li">
+        <span class="ico"><i data-lucide="file-json"></i></span>
+        <div class="grow"><p class="h3" style="direction:ltr;text-align:left">mirqat-progress-2026-10-15-2030.json</p>
+          <p class="muted tiny">١٥ أكتوبر ٢٠٢٦، ٨٤ ك.ب</p></div>
+        <button class="chip">استيراد</button>
+      </div>
+    </div>
+    <p class="note" style="margin-top:12px"><i data-lucide="git-merge"></i>
+      تُدمَج النسخة ولا يُحذف شيء: يؤخذ الأكثر تقدّمًا في كل آية، والأحدث في كل مراجعة.</p>
+  </section>
+
+  <div class="card row" style="margin-top:12px;color:var(--sabr)">
+    <i data-lucide="check-circle-2"></i>
+    <p class="grow small">تمّ. آيات: ٤١٢، مراجعات: ٢١، أيام: ٤٦</p>
+  </div>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

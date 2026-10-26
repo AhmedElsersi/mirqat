@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مواضع التعثّر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles/app.css">
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="device">
+<div class="status" aria-hidden="true"><span>٩:٤١</span>
+<span class="status-icons"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <div class="grow"><p class="eyebrow">مواضع التعثّر</p><p class="h3">٧ آيات، الأكثر تعثّرًا أولًا</p></div>
+  </header>
+
+  <!-- The number of stumbles is the row's own tag, and the one action used
+       most — drill this ayah alone — is a button, not a hidden icon. -->
+  <div class="list">
+    <div class="li">
+      <span class="ico" style="color:var(--error)"><i data-lucide="flag"></i></span>
+      <div class="grow"><p class="h3">البقرة، الآية ٢٨٦</p>
+        <p class="muted tiny">تعثّرت ٥ مرات، صفحة ٤٩</p></div>
+      <button class="play" aria-label="تكرار هذه الآية"><i data-lucide="repeat-1"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="إزالة العلامة"><i data-lucide="x"></i></button>
+    </div>
+    <div class="li">
+      <span class="ico" style="color:var(--error)"><i data-lucide="flag"></i></span>
+      <div class="grow"><p class="h3">النساء، الآية ١١</p>
+        <p class="muted tiny">تعثّرت ٣ مرات، صفحة ٧٨</p></div>
+      <button class="play" aria-label="تكرار هذه الآية"><i data-lucide="repeat-1"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="إزالة العلامة"><i data-lucide="x"></i></button>
+    </div>
+    <div class="li">
+      <span class="ico" style="color:var(--error)"><i data-lucide="flag"></i></span>
+      <div class="grow"><p class="h3">عبس، الآية ٣٧</p>
+        <p class="muted tiny">تعثّرت مرتين، صفحة ٥٨٥</p></div>
+      <button class="play" aria-label="تكرار هذه الآية"><i data-lucide="repeat-1"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="إزالة العلامة"><i data-lucide="x"></i></button>
+    </div>
+    <div class="li">
+      <span class="ico" style="color:var(--error)"><i data-lucide="flag"></i></span>
+      <div class="grow"><p class="h3">التكوير، الآية ٢</p>
+        <p class="muted tiny">تعثّرت مرة، صفحة ٥٨٦</p></div>
+      <button class="play" aria-label="تكرار هذه الآية"><i data-lucide="repeat-1"></i></button>
+      <button class="icon-btn" style="width:32px" aria-label="إزالة العلامة"><i data-lucide="x"></i></button>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:16px"><i data-lucide="repeat"></i>
+    تُكرَّر هذه الآيات أكثر في جلساتك. تُضاف من قائمة الآية في المصحف، أو من تسميعٍ على غيرك.</p>
+</div>
+
+</div>
+<script src="../styles/screen.js"></script>
+</body>
+</html>

@@ -26,6 +26,41 @@ class AppRoutes {
   static const String searchPath = '/search';
   static const String searchName = 'search';
 
+  /// An ayah beside the ayahs it is easily confused with. An `AyahRef` in
+  /// `state.extra`.
+  static const String similarPath = '/similar';
+  static const String similarName = 'similar';
+
+  /// Every phrase the Quran repeats across its ayahs, one card each.
+  static const String mutashabihatPath = '/mutashabihat';
+  static const String mutashabihatName = 'mutashabihat';
+
+  /// One such phrase and every ayah it occurs in. The phrase id, an `int`,
+  /// in `state.extra`.
+  static const String mutashabihatPhrasePath = '/mutashabihat/phrase';
+  static const String mutashabihatPhraseName = 'mutashabihat-phrase';
+
+  /// The drill over one such phrase. The phrase id, an `int`, in
+  /// `state.extra`.
+  static const String mutashabihatDrillPath = '/mutashabihat/drill';
+  static const String mutashabihatDrillName = 'mutashabihat-drill';
+
+  /// The reader's practice, in plain numbers.
+  static const String statsPath = '/stats';
+  static const String statsName = 'stats';
+
+  /// The hifz plan: made, and followed.
+  static const String hifzPlanPath = '/plan';
+  static const String hifzPlanName = 'hifz_plan';
+
+  /// Every range kept on the review ladder.
+  static const String reviewsPath = '/reviews';
+  static const String reviewsName = 'reviews';
+
+  /// Every ayah the reader stumbles at.
+  static const String weakSpotsPath = '/weak-spots';
+  static const String weakSpotsName = 'weak_spots';
+
   static const String settingsPath = '/settings';
   static const String settingsName = 'settings';
 
@@ -39,18 +74,20 @@ class AppRoutes {
   static const String sessionSettingsName = 'session_settings';
   static const String howToUsePath = 'how-to-use';
   static const String howToUseName = 'how_to_use';
-  static const String goalPath = 'goal';
-  static const String goalName = 'goal';
-  static const String aboutUsPath = 'about';
-  static const String aboutUsName = 'about_us';
-  static const String ideaPath = 'idea';
-  static const String ideaName = 'app_idea';
-  static const String developerPath = 'developer';
-  static const String developerName = 'developer';
+  static const String aboutPath = 'about';
+  static const String aboutName = 'about';
 
   /// The saved-recitations list. A child of settings, so the back button
   /// returns there rather than to the home screen.
   static const String downloadsPath = 'downloads';
+
+  /// The reader's progress saved to a file and taken back in.
+  static const String backupPath = 'backup';
+  static const String backupName = 'backup';
+
+  /// The mushaf's face and text size, with a preview.
+  static const String mushafFontPath = 'mushaf-font';
+  static const String mushafFontName = 'mushaf_font';
   static const String downloadsName = 'downloads';
 
   /// The whole-mushaf download, a child of the saved-recitations route's

@@ -1,7 +1,12 @@
 import 'package:equatable/equatable.dart';
 
+import '../../core/theme/quran_font.dart';
 import 'reading_position.dart';
 
+import '../../domain/entities/daily_wird.dart';
+import '../../domain/entities/hifz_plan.dart';
+import '../../domain/entities/interrupted_session.dart';
+import '../../domain/entities/saved_preset.dart';
 import '../../domain/entities/session_config.dart';
 
 /// Theme preference. A local enum rather than Flutter's ThemeMode so the data
@@ -68,6 +73,32 @@ enum PageTurnStyle {
       if (style.storageValue == value) return style;
     }
     return PageTurnStyle.slide;
+  }
+}
+
+/// How much of the page's text is covered while reading, for testing oneself
+/// against it — the old practice of covering the page a little more each
+/// pass. Covered words keep their place on the page; only their ink is
+/// withheld, and a tap on one reveals its ayah.
+enum MemorizationView {
+  /// The page as it is printed.
+  off('off'),
+
+  /// Only the first word of each ayah shows — the cue to recite the rest.
+  firstWords('first_words'),
+
+  /// Every word is covered; the ayah markers alone say where each ayah is.
+  markersOnly('markers_only');
+
+  const MemorizationView(this.storageValue);
+
+  final String storageValue;
+
+  static MemorizationView fromStorage(Object? value) {
+    for (final MemorizationView view in MemorizationView.values) {
+      if (view.storageValue == value) return view;
+    }
+    return MemorizationView.off;
   }
 }
 
@@ -143,16 +174,28 @@ class AppSettings extends Equatable {
         SessionConfig.defaultBetweenRepeatPauseMs,
     this.defaultBetweenStepsPauseMs = SessionConfig.defaultBetweenStepsPauseMs,
     this.defaultPlaybackSpeed = SessionConfig.defaultPlaybackSpeed,
+    this.defaultRecallRounds = SessionConfig.defaultRecallRounds,
+    this.defaultChainRecall = false,
+    this.defaultPlayIstiadhah = false,
     this.defaultRangeBehaviour = RangeBehaviour.wholeSurah,
     this.lastRanges = const <int, AyahRange>{},
     this.themeMode = AppThemeMode.system,
     this.homeViewMode = HomeViewMode.mushaf,
     this.pageTurnStyle = PageTurnStyle.slide,
     this.arabicFontSize = defaultArabicFontSize,
+    this.quranFont = QuranFont.fallback,
     this.audioQuality = AudioQuality.standard,
     this.readingMark,
     this.downloadOverWifiOnly = true,
     this.showReadingRibbon = true,
+    this.memorizationView = MemorizationView.off,
+    this.showStumbles = true,
+    this.bookends = false,
+    this.bookendTaken,
+    this.savedPresets = const <SavedPreset>[],
+    this.wird = const <WirdPart, WirdRange>{},
+    this.hifzPlan,
+    this.interruptedSession,
     this.onboardingSeen = false,
     this.updatePromptedAt,
   });
@@ -185,6 +228,19 @@ class AppSettings extends Equatable {
   final int defaultBetweenStepsPauseMs;
   final double defaultPlaybackSpeed;
 
+  /// How many recall rounds a new session starts with — the silence after an
+  /// ayah's learn step for the reader to recite it back into (see
+  /// [SessionConfig.recallRounds]). 0, the product default, asks nothing.
+  final int defaultRecallRounds;
+
+  /// Whether a new session closes by testing each link of its range — "what
+  /// comes next?" ([SessionConfig.chainRecall]). Off by default.
+  final bool defaultChainRecall;
+
+  /// Whether a new session opens with the isti'adhah, where the reciter has
+  /// one ([SessionConfig.playIstiadhah]). Off by default.
+  final bool defaultPlayIstiadhah;
+
   final RangeBehaviour defaultRangeBehaviour;
 
   /// Last range used, per surah number.
@@ -201,6 +257,9 @@ class AppSettings extends Equatable {
   /// How the mushaf's pages turn — folding like paper, or the plain slide.
   final PageTurnStyle pageTurnStyle;
   final double arabicFontSize;
+
+  /// The face the mushaf's text is drawn in ([QuranFont]).
+  final QuranFont quranFont;
 
   /// Which bitrate downloads and streams ask for, where the reciter offers a
   /// choice.
@@ -221,6 +280,38 @@ class AppSettings extends Equatable {
   /// On by default; the ribbon lies over the page's margin, translucent, and
   /// a reader who would rather have the page bare turns it off.
   final bool showReadingRibbon;
+
+  /// How much of the page is covered while reading ([MemorizationView]).
+  /// Off by default: the page is the printed page until the reader asks.
+  final MemorizationView memorizationView;
+
+  /// Whether ayahs the reader stumbles at are dotted on the page. On by
+  /// default; the marks still make the drill longer either way.
+  final bool showStumbles;
+
+  /// Whether the Today card suggests the day's new portion again before
+  /// sleep, and once more the next morning (NEW_IDEAS §5). Off by default:
+  /// it is an option the reader takes up, not a routine laid on them.
+  final bool bookends;
+
+  /// The last bookend suggestion the reader took up (`Bookend.key`), so it
+  /// is not made again. Null: none yet.
+  final String? bookendTaken;
+
+  /// Ways of working the reader named and saved, oldest first.
+  final List<SavedPreset> savedPresets;
+
+  /// The ranges the reader set for today's wird — new, recent, old — each
+  /// kept until they change it.
+  final DailyWird wird;
+
+  /// The reader's plan to memorize a range in so many days, if they made
+  /// one. Null: no plan.
+  final HifzPlan? hifzPlan;
+
+  /// The session the app was closed in the middle of, to offer back. Null:
+  /// none — the last one played out, or was stopped on purpose.
+  final InterruptedSession? interruptedSession;
 
   /// Whether the introduction has been shown. False for a fresh install —
   /// and for one updating from before there was an introduction, which is
@@ -249,17 +340,31 @@ class AppSettings extends Equatable {
     int? defaultBetweenRepeatPauseMs,
     int? defaultBetweenStepsPauseMs,
     double? defaultPlaybackSpeed,
+    int? defaultRecallRounds,
+    bool? defaultChainRecall,
+    bool? defaultPlayIstiadhah,
     RangeBehaviour? defaultRangeBehaviour,
     Map<int, AyahRange>? lastRanges,
     AppThemeMode? themeMode,
     HomeViewMode? homeViewMode,
     PageTurnStyle? pageTurnStyle,
     double? arabicFontSize,
+    QuranFont? quranFont,
     AudioQuality? audioQuality,
     ReadingPosition? readingMark,
     bool clearReadingMark = false,
     bool? downloadOverWifiOnly,
     bool? showReadingRibbon,
+    MemorizationView? memorizationView,
+    bool? showStumbles,
+    bool? bookends,
+    String? bookendTaken,
+    List<SavedPreset>? savedPresets,
+    DailyWird? wird,
+    HifzPlan? hifzPlan,
+    bool clearHifzPlan = false,
+    InterruptedSession? interruptedSession,
+    bool clearInterruptedSession = false,
     bool? onboardingSeen,
     DateTime? updatePromptedAt,
   }) => AppSettings(
@@ -278,16 +383,30 @@ class AppSettings extends Equatable {
     defaultBetweenStepsPauseMs:
         defaultBetweenStepsPauseMs ?? this.defaultBetweenStepsPauseMs,
     defaultPlaybackSpeed: defaultPlaybackSpeed ?? this.defaultPlaybackSpeed,
+    defaultRecallRounds: defaultRecallRounds ?? this.defaultRecallRounds,
+    defaultChainRecall: defaultChainRecall ?? this.defaultChainRecall,
+    defaultPlayIstiadhah: defaultPlayIstiadhah ?? this.defaultPlayIstiadhah,
     defaultRangeBehaviour: defaultRangeBehaviour ?? this.defaultRangeBehaviour,
     lastRanges: lastRanges ?? this.lastRanges,
     themeMode: themeMode ?? this.themeMode,
     homeViewMode: homeViewMode ?? this.homeViewMode,
     pageTurnStyle: pageTurnStyle ?? this.pageTurnStyle,
     arabicFontSize: arabicFontSize ?? this.arabicFontSize,
+    quranFont: quranFont ?? this.quranFont,
     audioQuality: audioQuality ?? this.audioQuality,
     readingMark: clearReadingMark ? null : (readingMark ?? this.readingMark),
     downloadOverWifiOnly: downloadOverWifiOnly ?? this.downloadOverWifiOnly,
     showReadingRibbon: showReadingRibbon ?? this.showReadingRibbon,
+    memorizationView: memorizationView ?? this.memorizationView,
+    showStumbles: showStumbles ?? this.showStumbles,
+    bookends: bookends ?? this.bookends,
+    bookendTaken: bookendTaken ?? this.bookendTaken,
+    savedPresets: savedPresets ?? this.savedPresets,
+    wird: wird ?? this.wird,
+    hifzPlan: clearHifzPlan ? null : (hifzPlan ?? this.hifzPlan),
+    interruptedSession: clearInterruptedSession
+        ? null
+        : (interruptedSession ?? this.interruptedSession),
     onboardingSeen: onboardingSeen ?? this.onboardingSeen,
     updatePromptedAt: updatePromptedAt ?? this.updatePromptedAt,
   );
@@ -305,6 +424,9 @@ class AppSettings extends Equatable {
     'defaultBetweenRepeatPauseMs': defaultBetweenRepeatPauseMs,
     'defaultBetweenStepsPauseMs': defaultBetweenStepsPauseMs,
     'defaultPlaybackSpeed': defaultPlaybackSpeed,
+    'defaultRecallRounds': defaultRecallRounds,
+    'defaultChainRecall': defaultChainRecall,
+    'defaultPlayIstiadhah': defaultPlayIstiadhah,
     'defaultRangeBehaviour': defaultRangeBehaviour.storageValue,
     // Hive stores plain maps, so the surah number becomes a string key and the
     // range a two-element list.
@@ -316,6 +438,7 @@ class AppSettings extends Equatable {
     'homeViewMode': homeViewMode.storageValue,
     'pageTurnStyle': pageTurnStyle.storageValue,
     'arabicFontSize': arabicFontSize,
+    'quranFont': quranFont.storageValue,
     // The bitrate itself, not the enum name: it is the number the manifest
     // and every path use, so a stored 64 stays meaningful even if these cases
     // are ever renamed.
@@ -323,6 +446,16 @@ class AppSettings extends Equatable {
     'readingMark': readingMark?.toMap(),
     'downloadOverWifiOnly': downloadOverWifiOnly,
     'showReadingRibbon': showReadingRibbon,
+    'memorizationView': memorizationView.storageValue,
+    'showStumbles': showStumbles,
+    'bookends': bookends,
+    'bookendTaken': bookendTaken,
+    'savedPresets': <Map<String, dynamic>>[
+      for (final SavedPreset p in savedPresets) p.toMap(),
+    ],
+    'wird': dailyWirdToMap(wird),
+    'hifzPlan': hifzPlan?.toMap(),
+    'interruptedSession': interruptedSession?.toMap(),
     'onboardingSeen': onboardingSeen,
     'updatePromptedAt': updatePromptedAt?.millisecondsSinceEpoch,
   };
@@ -352,6 +485,17 @@ class AppSettings extends Equatable {
     defaultPlaybackSpeed:
         (map['defaultPlaybackSpeed'] as num?)?.toDouble() ??
         SessionConfig.defaultPlaybackSpeed,
+    // Read forgivingly and held to its bounds: a value the plan builder would
+    // refuse must not reach it, or every session would fail to build.
+    defaultRecallRounds: switch (map['defaultRecallRounds']) {
+      final int n => n.clamp(
+        SessionConfig.minRecallRounds,
+        SessionConfig.maxRecallRounds,
+      ),
+      _ => SessionConfig.defaultRecallRounds,
+    },
+    defaultChainRecall: map['defaultChainRecall'] == true,
+    defaultPlayIstiadhah: map['defaultPlayIstiadhah'] == true,
     defaultRangeBehaviour: RangeBehaviour.fromStorage(
       map['defaultRangeBehaviour'] as String?,
     ),
@@ -361,6 +505,7 @@ class AppSettings extends Equatable {
     pageTurnStyle: PageTurnStyle.fromStorage(map['pageTurnStyle'] as String?),
     arabicFontSize:
         (map['arabicFontSize'] as num?)?.toDouble() ?? defaultArabicFontSize,
+    quranFont: QuranFont.fromStorage(map['quranFont']),
     audioQuality: AudioQuality.fromStorage(map['audioQuality']),
     readingMark: switch (map['readingMark']) {
       final Map<dynamic, dynamic> m
@@ -370,6 +515,20 @@ class AppSettings extends Equatable {
     },
     downloadOverWifiOnly: map['downloadOverWifiOnly'] as bool? ?? true,
     showReadingRibbon: map['showReadingRibbon'] as bool? ?? true,
+    memorizationView: MemorizationView.fromStorage(map['memorizationView']),
+    showStumbles: map['showStumbles'] != false,
+    bookends: map['bookends'] == true,
+    bookendTaken: map['bookendTaken'] is String
+        ? map['bookendTaken'] as String
+        : null,
+    savedPresets: <SavedPreset>[
+      if (map['savedPresets'] is List)
+        for (final Object? raw in map['savedPresets'] as List)
+          ?SavedPreset.fromMap(raw),
+    ],
+    wird: dailyWirdFromMap(map['wird']),
+    hifzPlan: HifzPlan.fromMap(map['hifzPlan']),
+    interruptedSession: InterruptedSession.fromMap(map['interruptedSession']),
     onboardingSeen: map['onboardingSeen'] as bool? ?? false,
     updatePromptedAt: map['updatePromptedAt'] is int
         ? DateTime.fromMillisecondsSinceEpoch(map['updatePromptedAt'] as int)
@@ -406,16 +565,28 @@ class AppSettings extends Equatable {
     defaultBetweenRepeatPauseMs,
     defaultBetweenStepsPauseMs,
     defaultPlaybackSpeed,
+    defaultRecallRounds,
+    defaultChainRecall,
+    defaultPlayIstiadhah,
     defaultRangeBehaviour,
     lastRanges,
     themeMode,
     homeViewMode,
     pageTurnStyle,
     arabicFontSize,
+    quranFont,
     audioQuality,
     readingMark,
     downloadOverWifiOnly,
     showReadingRibbon,
+    memorizationView,
+    showStumbles,
+    bookends,
+    bookendTaken,
+    savedPresets,
+    wird,
+    hifzPlan,
+    interruptedSession,
     onboardingSeen,
     updatePromptedAt,
   ];

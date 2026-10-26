@@ -16,6 +16,10 @@ import '../entities/session_plan.dart';
 class RepetitionPlanBuilder {
   const RepetitionPlanBuilder();
 
+  /// How many more times a reinforced ayah — one the reader stumbles at — is
+  /// drilled than the rest.
+  static const int reinforceExtra = 2;
+
   /// Builds the plan, or a [SessionConfigFailure] describing why the config is
   /// unusable.
   ///
@@ -23,10 +27,16 @@ class RepetitionPlanBuilder {
   /// against a hardcoded constant (CLAUDE.md A.2 rule 2). A session inside one
   /// surah passes [surahAyahCount]; one that runs on into later surahs passes
   /// [ayahCounts], surah number to ayah count, for every surah it touches.
+  ///
+  /// [reinforce] names ayahs the reader stumbles at: each one's learn step is
+  /// drilled [reinforceExtra] more times. Like the counts it is handed in —
+  /// the engine never reads storage. Ayahs outside the range are ignored,
+  /// and continuous mode, which has no per-ayah step, is unchanged by it.
   Either<Failure, SessionPlan> build(
     SessionConfig config, {
     int? surahAyahCount,
     Map<int, int>? ayahCounts,
+    Set<AyahRef> reinforce = const <AyahRef>{},
   }) {
     final Map<int, int> counts = <int, int>{
       config.surahNumber: ?surahAyahCount,
@@ -37,7 +47,11 @@ class RepetitionPlanBuilder {
       return Left<Failure, SessionPlan>(SessionConfigFailure(error));
     }
 
-    final List<PlanStep> steps = _buildSteps(config, rangeOf(config, counts));
+    final List<AyahRef> range = rangeOf(config, counts);
+    final List<PlanStep> steps = List<PlanStep>.unmodifiable(<PlanStep>[
+      ..._buildSteps(config, range, reinforce),
+      if (config.chainRecall) ..._chainSteps(range),
+    ]);
     return Right<Failure, SessionPlan>(
       SessionPlan(config: config, steps: steps, units: flatten(steps, config)),
     );
@@ -48,8 +62,14 @@ class RepetitionPlanBuilder {
     SessionConfig config, {
     int? surahAyahCount,
     Map<int, int>? ayahCounts,
-  }) => build(config, surahAyahCount: surahAyahCount, ayahCounts: ayahCounts)
-      .fold(
+    Set<AyahRef> reinforce = const <AyahRef>{},
+  }) =>
+      build(
+        config,
+        surahAyahCount: surahAyahCount,
+        ayahCounts: ayahCounts,
+        reinforce: reinforce,
+      ).fold(
         (Failure f) => throw SessionConfigException(f.message),
         (SessionPlan plan) => plan,
       );
@@ -122,6 +142,11 @@ class RepetitionPlanBuilder {
           '${SessionConfig.minPlaybackSpeed} and '
           '${SessionConfig.maxPlaybackSpeed}, got ${config.playbackSpeed}.';
     }
+    if (config.recallRounds < SessionConfig.minRecallRounds ||
+        config.recallRounds > SessionConfig.maxRecallRounds) {
+      return 'recallRounds must be between ${SessionConfig.minRecallRounds} '
+          'and ${SessionConfig.maxRecallRounds}, got ${config.recallRounds}.';
+    }
     if (config.intraBlockPauseMs < 0 ||
         config.betweenRepeatPauseMs < 0 ||
         config.betweenStepsPauseMs < 0) {
@@ -143,13 +168,20 @@ class RepetitionPlanBuilder {
   /// ```
   /// for i in startAyah..endAyah:
   ///     LearnStep(i)
+  ///     if recallRounds > 0: RecallStep(i)
   ///     if i > startAyah: ConnectStep(...)
   /// if finalFullPass:  ConnectStep(startAyah, endAyah)
   /// ```
   ///
   /// The connect step after the first learn step is never emitted — joining a
-  /// single ayah to nothing is a no-op.
-  List<PlanStep> _buildSteps(SessionConfig config, List<AyahRef> range) {
+  /// single ayah to nothing is a no-op. The recall step sits between learning
+  /// an ayah and joining it on: the ayah is asked back while it is freshest,
+  /// and the join then confirms it in its place.
+  List<PlanStep> _buildSteps(
+    SessionConfig config,
+    List<AyahRef> range,
+    Set<AyahRef> reinforce,
+  ) {
     final int n = config.repeatCount;
     final List<PlanStep> steps = <PlanStep>[];
 
@@ -170,8 +202,21 @@ class RepetitionPlanBuilder {
     // session began, exactly as it would inside one surah.
     for (int i = 0; i < range.length; i++) {
       steps.add(
-        LearnStep(surah: range[i].surah, ayah: range[i].ayah, repeats: n),
+        LearnStep(
+          surah: range[i].surah,
+          ayah: range[i].ayah,
+          repeats: reinforce.contains(range[i]) ? n + reinforceExtra : n,
+        ),
       );
+      if (config.recallRounds > 0) {
+        steps.add(
+          RecallStep(
+            surah: range[i].surah,
+            ayah: range[i].ayah,
+            repeats: config.recallRounds,
+          ),
+        );
+      }
 
       if (i == 0) continue;
 
@@ -194,6 +239,15 @@ class RepetitionPlanBuilder {
 
     return List<PlanStep>.unmodifiable(steps);
   }
+
+  /// The closing pass of links: every ayah of the range but the last cues the
+  /// one after it. After the drill, not inside it, because what it tests —
+  /// whether one ayah calls up the next — is only fair to ask once all of
+  /// them have been learned.
+  List<PlanStep> _chainSteps(List<AyahRef> range) => <PlanStep>[
+    for (int i = 0; i + 1 < range.length; i++)
+      ChainStep(cue: range[i], next: range[i + 1]),
+  ];
 
   /// Expands [steps] into the flat queue: one [PlaybackUnit] per ayah play.
   List<PlaybackUnit> flatten(List<PlanStep> steps, SessionConfig config) {
@@ -220,6 +274,7 @@ class RepetitionPlanBuilder {
               blockToSurah: step.toRef.surah,
               isLastUnitOfRepeat: lastOfRepeat,
               isLastUnitOfStep: lastOfRepeat && repeat == step.repeats,
+              asked: step.isAsked(position),
             ),
           );
         }

@@ -1,0 +1,63 @@
+<!-- title: عبارة متشابهة -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">عبارة متشابهة</h1>
+  </header>
+
+  <!-- The phrase itself, then the drill that uses it — the drill was an icon
+       in the app bar, and it is the reason this screen is open. -->
+  <section class="card" style="background:var(--surface-2)">
+    <p class="quran" style="font-size:23px;text-align:center">{{words 2:99:1-5}}</p>
+    <div class="row" style="margin-top:14px">
+      <span class="tag gold">{{n 4}} آيات</span><span class="tag">{{n 3}} سور</span>
+      <span class="grow"></span>
+      <button class="btn btn-primary" style="height:40px;font-size:13.5px"><i data-lucide="dumbbell"></i> تمرين التفريق</button>
+    </div>
+  </section>
+
+  <!-- Each ayah whole, with the shared words tinted: where they agree is
+       plain, and so is where they part. -->
+  <div class="field-label">سورة {{surah 2}} — الآيات: {{n 1}}</div>
+  <article class="card">
+    <p class="quran compare">{{marked 2:99 1-5}}</p>
+    <div class="row" style="margin-top:10px">
+      <p class="muted tiny grow">الآية {{n 99}}، صفحة {{n 15}}</p>
+      <button class="icon-btn" style="width:34px;height:34px" aria-label="استمع إلى الآية"><i data-lucide="volume-2"></i></button>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </article>
+
+  <div class="field-label">سورة {{surah 24}} — الآيات: {{n 2}}</div>
+  <div class="stack">
+    <article class="card">
+      <p class="quran compare">{{marked 24:34 1-5}}</p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">الآية {{n 34}}، صفحة {{n 354}}</p>
+        <button class="icon-btn" style="width:34px;height:34px" aria-label="استمع إلى الآية"><i data-lucide="volume-2"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+    <article class="card">
+      <p class="quran compare">{{marked 24:46 1-4}}</p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">الآية {{n 46}}، صفحة {{n 356}}</p>
+        <button class="icon-btn" style="width:34px;height:34px" aria-label="استمع إلى الآية"><i data-lucide="volume-2"></i></button>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+  </div>
+
+  <div class="field-label">سورة {{surah 58}} — الآيات: {{n 1}}</div>
+  <article class="card">
+    <p class="quran compare">{{marked 58:5 12-15}}</p>
+    <div class="row" style="margin-top:10px">
+      <p class="muted tiny grow">الآية {{n 5}}، صفحة {{n 542}}</p>
+      <button class="icon-btn" style="width:34px;height:34px" aria-label="استمع إلى الآية"><i data-lucide="volume-2"></i></button>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </article>
+
+  <p class="note" style="margin-top:16px"><i data-lucide="book-marked"></i>
+    المتشابهات من «متشابهات القرآن» في مكتبة QUL، والألفاظ المشتركة مظلَّلة.</p>
+</div>

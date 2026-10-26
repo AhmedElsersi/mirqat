@@ -1,85 +1,135 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mirqat/features/mushaf/widgets/paper_turn.dart';
 
 /// The paper turn: the next page lying flat beneath the current one, and the
-/// current leaf folding over the spine across the whole drag — edge-on only
-/// as it lands. The geometry is tested as arithmetic; the widget is tested
-/// inside the same kind of pager the mushaf uses — LTR axis, reversed.
+/// current leaf folded over it along a crease that comes in from the lifted
+/// corner and reaches the binding as the turn lands. The geometry is tested
+/// as arithmetic; the widget is tested inside the same kind of pager the
+/// mushaf uses — LTR axis, reversed.
 void main() {
   group('the pose', () {
     test('a page at rest lies flat, neither turning nor beneath a turn', () {
       final PaperTurnPose pose = PaperTurn.poseFor(0, spread: false);
-      expect(pose.angle, 0);
+      expect(pose.fold, 0);
+      expect(pose.tilt, 0);
       expect(pose.turning, isFalse);
       expect(pose.hidden, isFalse);
       expect(pose.shade, 0);
       expect(pose.underShade, 0);
     });
 
-    test('the lift-off is gentle: near flat the angle grows slower than '
+    test('the lift-off is gentle: near flat the crease moves slower than '
         'the drag', () {
-      // Smoothstep: at a twentieth of the turn the fold is well under a
-      // twentieth of the way to edge-on.
-      final double early = PaperTurn.poseFor(0.05, spread: false).angle.abs();
-      expect(early, lessThan(0.05 * math.pi / 2));
+      // Smoothstep: at a twentieth of the turn the crease is well under a
+      // twentieth of the way to the binding.
+      expect(PaperTurn.poseFor(0.05, spread: false).fold, lessThan(0.05));
     });
 
-    test('the leaf is tied to the hand through the whole turn: halfway it is '
-        'half folded, and edge-on comes only as the turn lands', () {
-      // Symmetric easing passes through its own middle: half the drag is
-      // half the fold.
-      expect(
-        PaperTurn.poseFor(0.5, spread: false).angle,
-        closeTo(-math.pi / 4, 1e-9),
-      );
-      // Deep into the drag the leaf still shows its face…
-      final double late = PaperTurn.poseFor(0.9, spread: false).angle.abs();
-      expect(late, lessThan(math.pi / 2));
-      // …and reaches edge-on only at the very end, where the pager lands and
-      // the page beneath simply is the page.
-      expect(
-        PaperTurn.poseFor(0.999, spread: false).angle,
-        closeTo(-math.pi / 2, 0.01),
-      );
-      expect(PaperTurn.poseFor(1.0, spread: false).angle, 0);
+    test('the crease comes in from the free edge and reaches the binding '
+        'only as the pager lands, standing upright by then', () {
+      // Symmetric easing passes through its own middle.
+      expect(PaperTurn.poseFor(0.5, spread: false).fold, closeTo(0.5, 1e-9));
+      final PaperTurnPose late = PaperTurn.poseFor(0.999, spread: false);
+      expect(late.fold, closeTo(1, 0.01));
+      expect(late.tilt, closeTo(0, 0.01));
+      expect(PaperTurn.poseFor(1.0, spread: false).fold, 0);
       expect(PaperTurn.poseFor(1.0, spread: false).turning, isFalse);
     });
 
-    test('a positive delta is the leaf being lifted, about the spine — the '
-        'right edge, where a mushaf is bound', () {
+    test('lifted by its corner, the crease leans at first and stands up as '
+        'it travels', () {
+      final double early = PaperTurn.poseFor(0.1, spread: false).tilt;
+      final double mid = PaperTurn.poseFor(0.5, spread: false).tilt;
+      final double late = PaperTurn.poseFor(0.9, spread: false).tilt;
+      expect(early, greaterThan(0));
+      expect(early, lessThanOrEqualTo(PaperTurn.corner));
+      expect(mid, lessThan(early));
+      expect(late, lessThan(mid));
+    });
+
+    test('on a spread the binding is the centre fold, and the crease stops '
+        'there', () {
+      expect(PaperTurn.poseFor(0.25, spread: true).spine, 0.5);
+      expect(PaperTurn.poseFor(0.999, spread: true).fold, closeTo(0.5, 0.01));
+      expect(PaperTurn.poseFor(0.25, spread: false).spine, 1);
+    });
+
+    test('a positive delta is the leaf being folded', () {
       final PaperTurnPose pose = PaperTurn.poseFor(0.25, spread: false);
       expect(pose.turning, isTrue);
       expect(pose.hidden, isFalse);
-      expect(pose.hinge, Alignment.centerRight);
-      expect(pose.angle, lessThan(0));
+      expect(pose.fold, greaterThan(0));
     });
 
     test('a negative delta is the leaf lying beneath a turn: flat, and '
-        'painted by the leaf being lifted off it', () {
+        'painted by the leaf being folded off it', () {
       for (final double delta in <double>[-0.1, -0.5, -0.9]) {
         final PaperTurnPose pose = PaperTurn.poseFor(delta, spread: false);
         expect(pose.hidden, isTrue, reason: '$delta');
         expect(pose.turning, isFalse, reason: '$delta');
-        expect(pose.angle, 0, reason: '$delta');
+        expect(pose.fold, 0, reason: '$delta');
       }
     });
 
-    test('an open spread turns about the centre spine', () {
-      expect(PaperTurn.poseFor(0.25, spread: true).hinge, Alignment.center);
-    });
-
-    test('the lifted leaf falls deeper into shadow as it rises; the page '
-        'beneath comes out of it', () {
+    test('the crease is in shadow from the first lift; the fold throws its '
+        'shadow on the page beneath most midway, and none once it has lain '
+        'down', () {
       final PaperTurnPose early = PaperTurn.poseFor(0.1, spread: false);
-      final PaperTurnPose late = PaperTurn.poseFor(0.8, spread: false);
+      final PaperTurnPose mid = PaperTurn.poseFor(0.5, spread: false);
+      final PaperTurnPose late = PaperTurn.poseFor(0.999, spread: false);
       expect(early.shade, greaterThan(0));
       expect(late.shade, greaterThan(early.shade));
       expect(late.shade, lessThan(1));
       expect(early.underShade, greaterThan(0));
-      expect(late.underShade, lessThan(early.underShade));
+      expect(mid.underShade, greaterThan(early.underShade));
+      expect(late.underShade, lessThan(mid.underShade));
+    });
+  });
+
+  group('the geometry', () {
+    const Size size = Size(100, 160);
+
+    test('at rest the crease lies on the free edge, so the flat side is the '
+        'whole page and nothing is folded over', () {
+      final PaperTurnPose rest = PaperTurn.poseFor(0, spread: false);
+      final Rect page = Offset.zero & size;
+      expect(
+        PaperTurn.sideOfCrease(rest, size, page, free: false).getBounds(),
+        page,
+      );
+      expect(
+        PaperTurn.sideOfCrease(rest, size, page, free: true).getBounds().width,
+        0,
+      );
+      expect(PaperTurn.foldMatrix(rest, size), Matrix4.identity());
+    });
+
+    test('the crease leans with its foot ahead: it crosses the bottom edge '
+        'further from the free edge than the top', () {
+      final PaperTurnPose pose = PaperTurn.poseFor(0.5, spread: false);
+      final double foot = PaperTurn.creaseX(pose, size, size.height);
+      final double head = PaperTurn.creaseX(pose, size, 0);
+      expect(foot, closeTo(50, 1e-9));
+      expect(head, lessThan(foot));
+    });
+
+    test('the mirror carries the free edge over the crease, onto the page: '
+        'the foot of the free edge lands twice the fold away from it', () {
+      final PaperTurnPose pose = PaperTurn.poseFor(0.999, spread: false);
+      // Upright by now, so the mirror is a plain reflection in x.
+      final Matrix4 m = PaperTurn.foldMatrix(pose, size);
+      final Offset landed = MatrixUtils.transformPoint(
+        m,
+        Offset(0, size.height),
+      );
+      expect(landed.dx, closeTo(2 * pose.fold * size.width, 0.5));
+      expect(landed.dy, closeTo(size.height, 0.5));
+      // A point on the crease stays where it is.
+      final Offset foot = Offset(pose.fold * size.width, size.height);
+      final Offset still = MatrixUtils.transformPoint(m, foot);
+      expect(still.dx, closeTo(foot.dx, 1e-6));
+      expect(still.dy, closeTo(foot.dy, 1e-6));
     });
   });
 

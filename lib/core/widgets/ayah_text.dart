@@ -1,7 +1,26 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/quran_font.dart';
+
+/// Which face the mushaf's text is drawn in, for every [AyahText] below it.
+///
+/// Set once, above the router, from the reader's setting. A tree with no
+/// scope — a test, a screen built on its own — draws in the default face.
+class QuranFontScope extends InheritedWidget {
+  const QuranFontScope({required this.font, required super.child, super.key});
+
+  final QuranFont font;
+
+  static QuranFont of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<QuranFontScope>()?.font ??
+      QuranFont.fallback;
+
+  @override
+  bool updateShouldNotify(QuranFontScope old) => old.font != font;
+}
 
 /// How prominently an ayah is drawn within the current step.
 enum AyahEmphasis {
@@ -32,6 +51,16 @@ enum WordTint {
   /// The ayah the reader marked as where they stopped. Its own colour, the
   /// bookmark's, so it is never mistaken for a session's highlight.
   marked,
+
+  /// The ayah a recall round is asking back from memory: the band shows where
+  /// its words lie while their ink is withheld (see `AyahText.word`'s
+  /// `veiled`).
+  veiled,
+
+  /// The words an ayah shares with its look-alike, on the comparison card and
+  /// in the drill: the gold wash of a highlighter, so where it stops shows
+  /// where the two ayahs part.
+  shared,
 }
 
 /// One ayah inside a flowing block, for [AyahText.flowing].
@@ -91,6 +120,9 @@ class AyahText extends StatefulWidget {
        isMarker = false,
        heldBack = false,
        paintsTint = true,
+       veiled = false,
+       glyph = null,
+       glyphPage = null,
        tint = WordTint.none;
 
   /// One word of a mushaf page line, byte-for-byte from quran.db.
@@ -105,6 +137,9 @@ class AyahText extends StatefulWidget {
     this.tint = WordTint.none,
     this.heldBack = false,
     this.paintsTint = true,
+    this.veiled = false,
+    this.glyph,
+    this.glyphPage,
     super.key,
   }) : ayahs = null,
        _word = true,
@@ -129,6 +164,9 @@ class AyahText extends StatefulWidget {
        isMarker = false,
        heldBack = false,
        paintsTint = true,
+       veiled = false,
+       glyph = null,
+       glyphPage = null,
        tint = WordTint.none;
 
   /// Verbatim ayah text, byte-for-byte from `quran.db`. Never generated, never
@@ -164,6 +202,21 @@ class AyahText extends StatefulWidget {
   /// the band wherever there are letters.
   final bool paintsTint;
 
+  /// [AyahText.word] only: the word's ink is withheld — drawn transparent, in
+  /// its exact place at its exact width — while a recall round asks its ayah
+  /// back from memory. The text itself is untouched (A.2 rule 1 is about the
+  /// bytes); this is the reader covering the page with their own hand, and
+  /// the next build with `veiled: false` is the hand lifting.
+  final bool veiled;
+
+  /// [AyahText.word] only: the word's QPC V2 glyph code (`words.glyph_v2`)
+  /// and the page whose font draws it. Given both, the word is drawn from the
+  /// glyph in that page's font — the same word, in the QPC V2 print's hand;
+  /// [text] is what it is in every other face. The caller gives them only
+  /// once that page's font is registered.
+  final String? glyph;
+  final int? glyphPage;
+
   /// The colour behind a tinted word, or null for none. Shared with the page,
   /// which paints a marked run as one band along the line, so that a marked
   /// ayah reads as a stroke of highlighter and not as a row of boxes.
@@ -173,26 +226,61 @@ class AyahText extends StatefulWidget {
     WordTint.highlighted => colors.primary.withValues(alpha: 0.2),
     WordTint.selected => colors.primary.withValues(alpha: 0.26),
     WordTint.marked => colors.secondary.withValues(alpha: 0.28),
+    // Quieter than the recitation highlight: it marks where the hidden words
+    // lie, not which of them is sounding — none of them is.
+    WordTint.veiled => colors.primary.withValues(alpha: 0.1),
+    WordTint.shared => AppColors.gold.withValues(
+      alpha: colors.brightness == Brightness.dark ? 0.26 : 0.3,
+    ),
   };
 
-  /// Width of [text] as [AyahText.word] draws it at [fontSize].
-  static double mushafWordWidth(String text, {required double fontSize}) =>
-      _mushafPainter(text, fontSize).width;
+  /// Width of [text] as [AyahText.word] draws it at [fontSize] in [font] —
+  /// or of [glyph] in [glyphPage]'s font, when both are given.
+  static double mushafWordWidth(
+    String text, {
+    required double fontSize,
+    QuranFont font = QuranFont.fallback,
+    String? glyph,
+    int? glyphPage,
+  }) => _mushafPainter(text, fontSize, font, glyph, glyphPage).width;
 
   /// Natural line height of the mushaf face at [fontSize], tall marks
-  /// included.
-  static double mushafLineHeight({required double fontSize}) =>
-      _mushafPainter(' ', fontSize).preferredLineHeight;
+  /// included — of [glyphPage]'s font, when given.
+  static double mushafLineHeight({
+    required double fontSize,
+    QuranFont font = QuranFont.fallback,
+    int? glyphPage,
+  }) => _mushafPainter(
+    ' ',
+    fontSize,
+    font,
+    glyphPage == null ? null : ' ',
+    glyphPage,
+  ).preferredLineHeight;
 
-  static TextPainter _mushafPainter(String text, double fontSize) =>
-      TextPainter(
-        text: TextSpan(
-          text: text,
-          style: AppTextStyles.mushafWord(fontSize: fontSize),
-        ),
-        textDirection: TextDirection.rtl,
-        textScaler: TextScaler.noScaling,
-      )..layout();
+  static TextStyle _wordStyle(
+    double fontSize,
+    QuranFont font,
+    String? glyph,
+    int? glyphPage,
+  ) => glyph != null && glyphPage != null
+      ? AppTextStyles.mushafGlyph(fontSize: fontSize, page: glyphPage)
+      : AppTextStyles.mushafWord(fontSize: fontSize, font: font);
+
+  static TextPainter _mushafPainter(
+    String text,
+    double fontSize,
+    QuranFont font,
+    String? glyph,
+    int? glyphPage,
+  ) => TextPainter(
+    text: TextSpan(
+      text: glyph != null && glyphPage != null ? glyph : text,
+      style: _wordStyle(fontSize, font, glyph, glyphPage),
+    ),
+    textDirection: TextDirection.rtl,
+    textScaler: TextScaler.noScaling,
+  )..layout();
 
   /// The ayah number, in Arabic-Indic digits and nothing else.
   ///
@@ -271,26 +359,42 @@ class _AyahTextState extends State<AyahText> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final QuranFont font = QuranFontScope.of(context);
 
     if (widget._word) {
+      final bool drawnAsGlyph =
+          widget.glyph != null && widget.glyphPage != null;
       return Text(
-        widget.text,
+        drawnAsGlyph ? widget.glyph! : widget.text,
         textDirection: TextDirection.rtl,
         textScaler: TextScaler.noScaling,
         // One word never wraps. No maxLines: that would clip, and scripture
         // is never truncated (CLAUDE.md A.2 rule 7).
         softWrap: false,
-        style: AppTextStyles.mushafWord(fontSize: widget.fontSize).copyWith(
-          color: (widget.isMarker ? colors.primary : colors.onSurface)
-              .withValues(alpha: widget.heldBack ? 0.32 : 1),
-          backgroundColor: widget.paintsTint
-              ? AyahText.tintColor(colors, widget.tint)
-              : null,
-        ),
+        style:
+            AyahText._wordStyle(
+              widget.fontSize,
+              font,
+              widget.glyph,
+              widget.glyphPage,
+            ).copyWith(
+              // A veiled word keeps its place and its width; only its ink is
+              // withheld, for the reader to supply from memory.
+              color: (widget.isMarker ? colors.primary : colors.onSurface)
+                  .withValues(
+                    alpha: widget.veiled ? 0 : (widget.heldBack ? 0.32 : 1),
+                  ),
+              backgroundColor: widget.paintsTint
+                  ? AyahText.tintColor(colors, widget.tint)
+                  : null,
+            ),
       );
     }
 
-    final TextStyle base = AppTextStyles.ayah(fontSize: widget.fontSize);
+    final TextStyle base = AppTextStyles.ayah(
+      fontSize: widget.fontSize,
+      font: font,
+    );
     final List<FlowingAyah>? flow = widget.ayahs;
 
     if (flow == null) {

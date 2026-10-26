@@ -1,0 +1,55 @@
+<!-- title: المصحف -->
+<div class="scroll">
+  <header class="topbar">
+    <h1 class="h1 grow">المصحف</h1>
+    <button class="icon-btn filled" aria-label="سجل القراءة"><i data-lucide="history"></i></button>
+  </header>
+
+  <!-- Search is the way into a long index, so it is a field, not an icon. -->
+  <label class="row card" style="padding:0 14px;height:50px;border-radius:999px">
+    <i data-lucide="search" class="muted"></i>
+    <span class="muted grow">سورة، أو كلمة، أو رقم صفحة</span>
+  </label>
+
+  <!-- Where the reader stopped, folded into the index rather than stacked above it. -->
+  <div class="card row" style="margin-top:12px;background:var(--hero);border:0;color:var(--hero-text)">
+    <i data-lucide="bookmark" style="color:var(--gold)"></i>
+    <div class="grow"><p class="h3">تابع: سورة {{surah 3}} · الآية {{n 14}}</p><p class="tiny" style="color:var(--hero-text-2)">صفحة {{n 51}}</p></div>
+    <i data-lucide="arrow-left"></i>
+  </div>
+
+  <div class="seg" style="margin-top:16px"><span class="on">السور</span><span>الأجزاء</span><span>الأحزاب</span></div>
+
+  <!-- One line per surah: what it is, and how far the reader has come. -->
+  <div class="list" style="margin-top:12px">
+    <div class="li"><span class="num"><span>١</span></span>
+      <div class="grow"><p class="h3">{{surah 1}}</p><p class="muted tiny">مكية · {{ayahs 1}} آيات · ص ١</p></div>
+      <span class="ring" style="--p:100"><span>✓</span></span></div>
+    <div class="li"><span class="num"><span>٢</span></span>
+      <div class="grow"><p class="h3">{{surah 2}}</p><p class="muted tiny">مدنية · {{ayahs 2}} آية · ص ٢</p></div>
+      <span class="tag" style="color:var(--error)"><i data-lucide="flag" style="width:12px;height:12px"></i> ٣</span>
+      <span class="ring" style="--p:18"><span>١٨٪</span></span></div>
+    <div class="li"><span class="num"><span>٣</span></span>
+      <div class="grow"><p class="h3">{{surah 3}}</p><p class="muted tiny">مدنية · {{ayahs 3}} آية · ص ٥٠</p></div>
+      <span class="ring" style="--p:4"><span>٤٪</span></span></div>
+    <div class="li"><span class="num"><span>٤</span></span>
+      <div class="grow"><p class="h3">{{surah 4}}</p><p class="muted tiny">مدنية · {{ayahs 4}} آية · ص ٧٧</p></div>
+      <span class="ring" style="--p:0"><span></span></span></div>
+    <div class="li"><span class="num"><span>٥</span></span>
+      <div class="grow"><p class="h3">{{surah 5}}</p><p class="muted tiny">مدنية · {{ayahs 5}} آية · ص ١٠٦</p></div>
+      <span class="ring" style="--p:0"><span></span></span></div>
+    <div class="li"><span class="num"><span>٦</span></span>
+      <div class="grow"><p class="h3">{{surah 6}}</p><p class="muted tiny">مكية · {{ayahs 6}} آية · ص ١٢٨</p></div>
+      <span class="ring" style="--p:0"><span></span></span></div>
+    <div class="li"><span class="num"><span>٧</span></span>
+      <div class="grow"><p class="h3">{{surah 7}}</p><p class="muted tiny">مكية · {{ayahs 7}} آية · ص ١٥١</p></div>
+      <span class="ring" style="--p:0"><span></span></span></div>
+  </div>
+</div>
+
+<nav class="tabbar">
+  <a class="tab"><span class="pill"><i data-lucide="sunrise"></i></span>اليوم</a>
+  <a class="tab on"><span class="pill"><i data-lucide="book-open"></i></span>المصحف</a>
+  <a class="tab"><span class="pill"><i data-lucide="layers"></i></span>حفظي</a>
+  <a class="tab"><span class="pill"><i data-lucide="settings-2"></i></span>الإعدادات</a>
+</nav>

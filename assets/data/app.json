@@ -43,10 +43,10 @@
   "update": {
     "android": {
       "min": "1.1.0",
-      "minBuild": 24,
-      "latest": "1.1.0",
-      "latestBuild": 25,
-      "force": true,
+      "minBuild": 25,
+      "latest": "1.2.1",
+      "latestBuild": 32,
+      "force": false,
       "storeUrl": "https://play.google.com/store/apps/details?id=com.mirqat.app"
     },
     "ios": {

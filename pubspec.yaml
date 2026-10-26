@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.2.1+33
+version: 1.3.0+33
 
 environment:
   sdk: ^3.12.0
@@ -210,3 +210,9 @@ flutter:
     - family: QuranUthmani
       fonts:
         - asset: assets/fonts/UthmanicHafs_V22.ttf
+    # The same KFGQPC Hafs script at version 0.18, offered as a choice of
+    # face (QuranFont.hafsV18). Same encoding as the text, so the same marks;
+    # held to every codepoint of quran.db by quran_font_coverage_test.
+    - family: QuranUthmaniV18
+      fonts:
+        - asset: assets/fonts/KFGQPCHafs-Uthmanic-v18.ttf

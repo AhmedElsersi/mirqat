@@ -1,0 +1,33 @@
+<!-- title: ورد اليوم — تعديل -->
+<div class="scroll" aria-hidden="true"><div class="hero" style="margin-top:80px;height:220px"></div></div>
+<div class="scrim"></div>
+
+<!-- Three parts, each a range kept until changed. A part not set is simply off. -->
+<section class="sheet">
+  <div class="grabber"></div>
+  <h2 class="h2">ورد اليوم</h2>
+  <p class="muted small">لكلٍّ منها نطاق تختاره، ويبقى حتى تغيّره.</p>
+
+  <div class="card" style="margin-top:16px">
+    <div class="row"><span class="tag gold">حفظ جديد</span><span class="grow"></span><span class="switch on"></span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+      <div class="stepper" style="padding:10px 12px"><span class="muted tiny">من</span><b class="h3">{{surah 67}} ١</b></div>
+      <div class="stepper" style="padding:10px 12px"><span class="muted tiny">إلى</span><b class="h3">{{surah 67}} ٥</b></div>
+    </div>
+    <button class="chip" style="margin-top:10px"><i data-lucide="arrow-left-to-line"></i> المقطع التالي: ٦–١٠</button>
+  </div>
+
+  <div class="card">
+    <div class="row"><span class="tag">مراجعة القريب</span><span class="grow"></span><span class="switch on"></span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+      <div class="stepper" style="padding:10px 12px"><span class="muted tiny">من</span><b class="h3">{{surah 66}} ١</b></div>
+      <div class="stepper" style="padding:10px 12px"><span class="muted tiny">إلى</span><b class="h3">{{surah 66}} ١٢</b></div>
+    </div>
+  </div>
+
+  <div class="card row">
+    <span class="tag">مراجعة القديم</span><span class="grow muted small">غير محدّد</span><span class="switch"></span>
+  </div>
+
+  <button class="btn btn-primary btn-block" style="margin-top:18px">احفظ</button>
+</section>

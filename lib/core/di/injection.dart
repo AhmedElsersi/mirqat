@@ -4,32 +4,50 @@ import '../../data/datasources/asset_reader.dart';
 import '../../data/datasources/bundle_asset_reader.dart';
 import '../../data/datasources/downloads_database.dart';
 import '../../data/datasources/downloads_local_data_source.dart';
+import '../../data/datasources/practice_local_data_source.dart';
 import '../../data/datasources/progress_local_data_source.dart';
 import '../../data/datasources/quran_database.dart';
 import '../../data/datasources/quran_local_data_source.dart';
 import '../../data/datasources/quran_pages_local_data_source.dart';
 import '../../data/datasources/reading_history_local_data_source.dart';
+import '../../data/datasources/review_local_data_source.dart';
 import '../../data/datasources/settings_local_data_source.dart';
 import '../../data/repositories/downloads_repository.dart';
+import '../../data/repositories/mutashabihat_repository.dart';
+import '../../data/repositories/practice_repository.dart';
 import '../../data/repositories/progress_repository.dart';
 import '../../data/repositories/quran_pages_repository.dart';
 import '../../data/repositories/quran_repository.dart';
 import '../../data/repositories/reading_history_repository.dart';
+import '../../data/repositories/review_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/engine/repetition_plan_builder.dart';
+import '../../domain/engine/review_scheduler.dart';
 import '../../features/about/cubit/app_info_cubit.dart';
+import '../../features/backup/cubit/backup_cubit.dart';
+import '../../features/hifz_plan/cubit/hifz_plan_cubit.dart';
 import '../../features/home/cubit/home_index_cubit.dart';
 import '../../features/mushaf/cubit/mushaf_cubit.dart';
 import '../../features/progress/cubit/progress_cubit.dart';
+import '../../features/review/cubit/review_cubit.dart';
 import '../../features/search/cubit/search_cubit.dart';
 import '../../features/session/cubit/audio_pack_cubit.dart';
 import '../../features/session/cubit/session_cubit.dart';
 import '../../features/settings/cubit/downloads_cubit.dart';
+import '../../features/similar/cubit/drill_cubit.dart';
+import '../../features/similar/cubit/mutashabihat_cubit.dart';
+import '../../features/similar/cubit/phrase_cubit.dart';
+import '../../features/similar/cubit/similar_cubit.dart';
 import '../../features/settings/cubit/mushaf_download_cubit.dart';
 import '../../features/settings/cubit/settings_cubit.dart';
+import '../../features/home/screen/home_shell.dart';
+import '../../features/my_hifz/cubit/my_hifz_cubit.dart';
+import '../../features/stats/cubit/stats_cubit.dart';
 import '../../features/surah_list/cubit/surah_list_cubit.dart';
 import '../../features/update/cubit/update_cubit.dart';
+import '../../features/weak_spots/cubit/weak_spots_cubit.dart';
 import '../../services/app_info_service.dart';
+import '../../services/backup_service.dart';
 import '../../services/app_version_service.dart';
 import '../../services/audio/audio_availability.dart';
 import '../../services/audio/audio_pack_service.dart';
@@ -42,6 +60,7 @@ import '../../services/audio/pack_fetcher.dart';
 import '../../services/audio/reciter_catalog.dart';
 import '../../services/keep_awake_service.dart';
 import '../../services/link_opener.dart';
+import '../../services/qpc_font_service.dart';
 import '../../services/reciter_image_cache.dart';
 import '../../services/share_service.dart';
 
@@ -65,7 +84,7 @@ Future<void> configureDependencies() async {
     () => QuranPagesLocalDataSourceImpl(sl<QuranDatabase>()),
   );
 
-  // The boxes have to be open before anything reads them, so these three are
+  // The boxes have to be open before anything reads them, so these are
   // constructed eagerly rather than lazily.
   final ProgressLocalDataSourceImpl progress = ProgressLocalDataSourceImpl();
   await progress.open();
@@ -81,6 +100,20 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<ReadingHistoryLocalDataSource>(() => history);
   sl.registerLazySingleton<ReadingHistoryRepository>(
     () => ReadingHistoryRepositoryImpl(sl<ReadingHistoryLocalDataSource>()),
+  );
+
+  final ReviewLocalDataSourceImpl reviews = ReviewLocalDataSourceImpl();
+  await reviews.open();
+  sl.registerLazySingleton<ReviewLocalDataSource>(() => reviews);
+  sl.registerLazySingleton<ReviewRepository>(
+    () => ReviewRepositoryImpl(sl<ReviewLocalDataSource>()),
+  );
+
+  final PracticeLocalDataSourceImpl practice = PracticeLocalDataSourceImpl();
+  await practice.open();
+  sl.registerLazySingleton<PracticeLocalDataSource>(() => practice);
+  sl.registerLazySingleton<PracticeRepository>(
+    () => PracticeRepositoryImpl(sl<PracticeLocalDataSource>()),
   );
 
   // Its own database, and lazily: unlike the Hive boxes it opens itself on
@@ -106,12 +139,16 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<SettingsRepository>(
     () => SettingsRepositoryImpl(sl<SettingsLocalDataSource>()),
   );
+  sl.registerLazySingleton<MutashabihatRepository>(
+    () => MutashabihatRepository(sl<AssetReader>()),
+  );
   sl.registerLazySingleton<DownloadsRepository>(
     () => DownloadsRepositoryImpl(sl<DownloadsLocalDataSource>()),
   );
 
   // --- Domain ---
   sl.registerLazySingleton<RepetitionPlanBuilder>(RepetitionPlanBuilder.new);
+  sl.registerLazySingleton<ReviewScheduler>(ReviewScheduler.new);
 
   // --- Services ---
   sl.registerLazySingleton<KeepAwakeService>(KeepAwakeService.new);
@@ -136,6 +173,14 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<ReciterImageCache>(
     () => ReciterImageCache(audioStorage: sl<AudioStorage>()),
     dispose: (ReciterImageCache c) => c.close(),
+  );
+  sl.registerLazySingleton<QpcFontService>(
+    () => QpcFontService(
+      assets: sl<AssetReader>(),
+      manifestService: sl<ManifestService>(),
+      audioStorage: sl<AudioStorage>(),
+    ),
+    dispose: (QpcFontService s) => s.close(),
   );
   sl.registerLazySingleton<AudioResolver>(
     () => AudioResolver(
@@ -211,6 +256,9 @@ Future<void> configureDependencies() async {
       playerService: sl<MemorizationPlayerService>(),
       progressRepository: sl<ProgressRepository>(),
       keepAwakeService: sl<KeepAwakeService>(),
+      reviewRepository: sl<ReviewRepository>(),
+      reviewScheduler: sl<ReviewScheduler>(),
+      practiceRepository: sl<PracticeRepository>(),
     ),
   );
   sl.registerFactory<AudioPackCubit>(
@@ -229,6 +277,85 @@ Future<void> configureDependencies() async {
       progressRepository: sl<ProgressRepository>(),
     ),
   );
+  sl.registerFactory<SimilarCubit>(
+    () => SimilarCubit(
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
+  sl.registerFactory<MutashabihatCubit>(
+    () => MutashabihatCubit(
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
+  sl.registerFactory<DrillCubit>(
+    () => DrillCubit(
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+      progressRepository: sl<ProgressRepository>(),
+    ),
+  );
+  sl.registerFactory<PhraseCubit>(
+    () => PhraseCubit(
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
+  sl.registerLazySingleton<BackupService>(
+    () => BackupService(
+      progressRepository: sl<ProgressRepository>(),
+      reviewRepository: sl<ReviewRepository>(),
+      practiceRepository: sl<PracticeRepository>(),
+      settingsRepository: sl<SettingsRepository>(),
+    ),
+  );
+  sl.registerFactory<BackupCubit>(
+    () => BackupCubit(
+      backupService: sl<BackupService>(),
+      shareService: sl<ShareService>(),
+    ),
+  );
+  sl.registerLazySingleton<HomeTabs>(HomeTabs.new);
+  sl.registerFactory<MyHifzCubit>(
+    () => MyHifzCubit(
+      progressRepository: sl<ProgressRepository>(),
+      quranRepository: sl<QuranRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+      mutashabihatRepository: sl<MutashabihatRepository>(),
+    ),
+  );
+  sl.registerFactory<StatsCubit>(
+    () => StatsCubit(
+      practiceRepository: sl<PracticeRepository>(),
+      progressRepository: sl<ProgressRepository>(),
+      reviewRepository: sl<ReviewRepository>(),
+    ),
+  );
+  sl.registerFactory<HifzPlanCubit>(
+    () => HifzPlanCubit(
+      quranRepository: sl<QuranRepository>(),
+      settingsRepository: sl<SettingsRepository>(),
+    ),
+  );
+  sl.registerFactory<ReviewCubit>(
+    () => ReviewCubit(
+      quranRepository: sl<QuranRepository>(),
+      reviewRepository: sl<ReviewRepository>(),
+      reviewScheduler: sl<ReviewScheduler>(),
+    ),
+  );
+  sl.registerFactory<WeakSpotsCubit>(
+    () => WeakSpotsCubit(
+      quranRepository: sl<QuranRepository>(),
+      progressRepository: sl<ProgressRepository>(),
+      pagesRepository: sl<QuranPagesRepository>(),
+    ),
+  );
   sl.registerFactory<DownloadsCubit>(
     () => DownloadsCubit(
       packService: sl<AudioPackService>(),
@@ -240,6 +367,7 @@ Future<void> configureDependencies() async {
     () => MushafDownloadCubit(
       packService: sl<AudioPackService>(),
       reciterCatalog: sl<ReciterCatalog>(),
+      quranRepository: sl<QuranRepository>(),
     ),
   );
   sl.registerFactory<SettingsCubit>(

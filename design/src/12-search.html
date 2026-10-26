@@ -1,0 +1,54 @@
+<!-- title: البحث -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">البحث</h1>
+  </header>
+
+  <!-- The box is the screen's own, not a field borrowed from the app bar. -->
+  <div class="search">
+    <i data-lucide="search" class="muted"></i>
+    <span class="q">النور</span><span class="caret" aria-hidden="true"></span>
+    <button class="icon-btn" style="width:28px;height:28px" aria-label="مسح"><i data-lucide="x"></i></button>
+  </div>
+  <p class="muted tiny" style="margin:8px 6px 0">اسم سورة، أو كلمة، أو رقم صفحة — ورقمٌ وحده يفتح صفحته.</p>
+
+  <!-- A name answers with the surah; a number would answer here with its page. -->
+  <div class="field-label">السور</div>
+  <div class="list">
+    <div class="li">
+      <span class="num"><span>٢٤</span></span>
+      <div class="grow"><p class="h3">{{surah 24}}</p><p class="muted tiny">مدنية، {{ayahs 24}} آية، صفحة {{n 350}}</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </div>
+
+  <div class="section-title"><h2 class="h2">الآيات</h2><span class="muted small">{{n 13}}</span></div>
+  <div class="stack">
+    <!-- Each hit whole, in the mushaf's own hand: never shortened, and never
+         marked word by word — the match is made against a derived column, and
+         the ayah's own bytes are left alone (CLAUDE.md A.2 rule 1). -->
+    <article class="card">
+      <p class="quran" style="font-size:19px">{{ayah 2:257}}</p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">{{surah 2}}، الآية {{n 257}}، صفحة {{n 43}}</p>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+    <article class="card">
+      <p class="quran" style="font-size:19px">{{ayah 14:1}}</p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">{{surah 14}}، الآية {{n 1}}، صفحة {{n 255}}</p>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+    <article class="card">
+      <p class="quran" style="font-size:19px">{{ayah 6:1}}</p>
+      <div class="row" style="margin-top:10px">
+        <p class="muted tiny grow">{{surah 6}}، الآية {{n 1}}، صفحة {{n 128}}</p>
+        <i data-lucide="chevron-left" class="chev"></i>
+      </div>
+    </article>
+  </div>
+  <p class="note" style="margin-top:16px"><i data-lucide="info"></i> هناك نتائج أخرى — أضِف كلمة لتضييق البحث.</p>
+</div>

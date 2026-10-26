@@ -1,0 +1,56 @@
+<!-- title: خطة الحفظ -->
+<div class="scroll" style="padding-bottom:30px">
+  <header class="topbar">
+    <button class="icon-btn" aria-label="رجوع"><i data-lucide="arrow-right"></i></button>
+    <h1 class="h2 grow">خطة الحفظ</h1>
+    <button class="icon-btn" aria-label="المزيد"><i data-lucide="more-vertical"></i></button>
+  </header>
+
+  <!-- The day's portion is the screen's one prominent thing, with one button.
+       The sixty rows that used to fill this screen are now below, folded. -->
+  <section class="hero">
+    <p class="eyebrow muted">مقطع اليوم</p>
+    <h2 class="h1" style="font-size:23px;margin-top:4px">من {{surah 80}} {{n 35}} إلى {{surah 81}} {{n 2}}</h2>
+    <p class="muted small" style="margin-top:4px">عشر آيات، اليوم {{n 13}} من {{n 60}}</p>
+    <div class="row" style="margin-top:16px">
+      <span class="ladder" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="now"></i><i></i></span>
+      <span class="grow"></span>
+      <button class="btn btn-on-hero"><i data-lucide="play"></i> ابدأ</button>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:12px">
+    <div class="row"><div class="grow"><p class="h3">جزء عمّ</p>
+      <p class="muted tiny">من {{surah 78}} {{n 1}} إلى {{surah 114}} {{ayahs 114}}، {{n 564}} آية</p></div>
+      <span class="muted small">{{n 12}} / {{n 60}}</span></div>
+    <div class="bar" style="margin-top:12px"><i style="width:20%"></i></div>
+    <p class="muted tiny" style="margin-top:8px">أتممت {{n 12}} من {{n 60}} مقطعًا.</p>
+  </section>
+
+  <div class="section-title"><h2 class="h2">المقاطع</h2></div>
+  <div class="list">
+    <div class="li">
+      <span class="ico" style="color:var(--sabr)"><i data-lucide="check"></i></span>
+      <div class="grow"><p class="h3">ما مضى</p><p class="muted tiny">{{n 12}} مقطعًا، من {{surah 78}} {{n 1}} إلى {{surah 80}} {{n 34}}</p></div>
+      <i data-lucide="chevron-down" class="chev"></i>
+    </div>
+    <div class="li" style="background:var(--gold-soft)">
+      <span class="num"><span>{{n 13}}</span></span>
+      <div class="grow"><p class="h3">اليوم</p><p class="muted tiny">من {{surah 80}} {{n 35}} إلى {{surah 81}} {{n 2}}</p></div>
+      <button class="play" aria-label="ابدأ"><i data-lucide="play"></i></button>
+    </div>
+    <div class="li">
+      <span class="num"><span>{{n 14}}</span></span>
+      <div class="grow"><p class="h3">اليوم {{n 14}}</p><p class="muted tiny">{{surah 81}}، الآيات {{n 3}} - {{n 12}}</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+    <div class="li">
+      <span class="num"><span>{{n 15}}</span></span>
+      <div class="grow"><p class="h3">اليوم {{n 15}}</p><p class="muted tiny">{{surah 81}}، الآيات {{n 13}} - {{n 22}}</p></div>
+      <i data-lucide="chevron-left" class="chev"></i>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:14px"><i data-lucide="info"></i>
+    حين تُتم جلسة مقطع اليوم وتقيّمه «متقَن» أو «متذبذب»، تنتقل الخطة إلى المقطع التالي.</p>
+</div>

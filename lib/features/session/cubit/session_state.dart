@@ -4,6 +4,7 @@ import '../../../data/models/app_settings.dart';
 import '../../../data/models/reciter.dart';
 import '../../../data/models/surah.dart';
 import '../../../domain/entities/ayah_ref.dart';
+import '../../../domain/entities/interrupted_session.dart';
 import '../../../domain/entities/playback_unit.dart';
 import '../../../domain/entities/plan_step.dart';
 import '../../../domain/entities/session_config.dart';
@@ -72,11 +73,22 @@ class SessionState extends Equatable {
     this.activePlan,
     this.activeReciter,
     this.currentUnit,
+    this.recalling = false,
+    this.recallGap,
     this.playing = false,
     this.finished = false,
     this.failure,
     this.errorDetail,
     this.keepAwake = false,
+    this.stumbled = const <AyahRef>{},
+    this.gradeOffer,
+    this.sleepAt,
+    this.sleepAtEndOfStep = false,
+    this.tasmee = false,
+    this.tasmeeMarks = const <AyahRef>[],
+    this.resumeOffer,
+    this.presetKey,
+    this.presetWay,
   });
 
   /// Whether the catalog, the reciters and the settings have been read.
@@ -125,6 +137,15 @@ class SessionState extends Equatable {
   /// The ayah being recited. Null before the first unit starts.
   final PlaybackUnit? currentUnit;
 
+  /// True while the session is inside a recall gap: [currentUnit]'s ayah is
+  /// being asked back from memory, and the page veils its words until the
+  /// answering play begins.
+  final bool recalling;
+
+  /// How long the current recall gap's silence lasts, at the session's speed
+  /// — what the bar's quiet progress line runs over. Null outside a gap.
+  final Duration? recallGap;
+
   final bool playing;
   final bool finished;
 
@@ -134,6 +155,53 @@ class SessionState extends Equatable {
   final String? errorDetail;
 
   final bool keepAwake;
+
+  /// Every ayah the reader has marked as one they stumble at. Drawn on the
+  /// page, and drilled more often by any plan that covers it.
+  final Set<AyahRef> stumbled;
+
+  /// A range just recited through, waiting to be told how it went — the
+  /// self-grade that sets when it is next reviewed. Null once answered or
+  /// waved away, and whenever there is nothing to grade.
+  final ({AyahRef from, AyahRef to})? gradeOffer;
+
+  /// When the sleep timer pauses the session. Null while none is set.
+  final DateTime? sleepAt;
+
+  /// Whether the session pauses once the step it is on has been played out.
+  final bool sleepAtEndOfStep;
+
+  bool get sleepTimerSet => sleepAt != null || sleepAtEndOfStep;
+
+  /// Whether the reader is reciting to a listener who holds the phone: the
+  /// page is shown plainly, and a tap on a word notes a slip at its ayah.
+  final bool tasmee;
+
+  /// The slips noted in this sitting, in the order they were noted — the
+  /// last one is what undo takes back.
+  final List<AyahRef> tasmeeMarks;
+
+  /// A session the app was closed in the middle of, offered back on the bar
+  /// until it is taken up, waved away, or a new session starts.
+  final InterruptedSession? resumeOffer;
+
+  /// The way of working last chosen in the sheet — a key the sheet names its
+  /// chips by — and the form's way of working as that choice left it.
+  final String? presetKey;
+  final SessionConfig? presetWay;
+
+  /// The chip to show as chosen: the last one tapped, for as long as the form
+  /// still works the way it set. Changing one of its values by hand leaves
+  /// none chosen, rather than one that no longer says what the form does.
+  String? get activePreset {
+    final SessionConfig? c = config;
+    final SessionConfig? way = presetWay;
+    if (presetKey == null || c == null || way == null) return null;
+    return _wayOf(c) == _wayOf(way) ? presetKey : null;
+  }
+
+  static (int, ConnectMode, int, bool) _wayOf(SessionConfig c) =>
+      (c.repeatCount, c.connectMode, c.recallRounds, c.chainRecall);
 
   bool get isActive => phase == SessionPhase.active;
 
@@ -214,8 +282,17 @@ class SessionState extends Equatable {
   }
 
   /// A record, not a list: two lists are only ever equal to themselves.
-  static (AyahRef, AyahRef, int, ConnectMode, bool) _shapeOf(SessionConfig c) =>
-      (c.start, c.end, c.repeatCount, c.connectMode, c.finalFullPass);
+  static (AyahRef, AyahRef, int, ConnectMode, bool, int, bool) _shapeOf(
+    SessionConfig c,
+  ) => (
+    c.start,
+    c.end,
+    c.repeatCount,
+    c.connectMode,
+    c.finalFullPass,
+    c.recallRounds,
+    c.chainRecall,
+  );
 
   SessionState copyWith({
     bool? ready,
@@ -236,6 +313,8 @@ class SessionState extends Equatable {
     SessionPlan? activePlan,
     Reciter? activeReciter,
     PlaybackUnit? currentUnit,
+    bool? recalling,
+    Duration? recallGap,
     bool clearSession = false,
     bool? playing,
     bool? finished,
@@ -243,6 +322,18 @@ class SessionState extends Equatable {
     bool clearFailure = false,
     String? errorDetail,
     bool? keepAwake,
+    Set<AyahRef>? stumbled,
+    ({AyahRef from, AyahRef to})? gradeOffer,
+    bool clearGradeOffer = false,
+    DateTime? sleepAt,
+    bool? sleepAtEndOfStep,
+    bool clearSleep = false,
+    bool? tasmee,
+    List<AyahRef>? tasmeeMarks,
+    InterruptedSession? resumeOffer,
+    bool clearResumeOffer = false,
+    String? presetKey,
+    SessionConfig? presetWay,
   }) => SessionState(
     ready: ready ?? this.ready,
     surahs: surahs ?? this.surahs,
@@ -261,6 +352,10 @@ class SessionState extends Equatable {
     activePlan: clearSession ? null : (activePlan ?? this.activePlan),
     activeReciter: clearSession ? null : (activeReciter ?? this.activeReciter),
     currentUnit: clearSession ? null : (currentUnit ?? this.currentUnit),
+    recalling: clearSession ? false : (recalling ?? this.recalling),
+    recallGap: clearSession || recalling == false
+        ? null
+        : (recallGap ?? this.recallGap),
     playing: clearSession ? false : (playing ?? this.playing),
     finished: clearSession ? false : (finished ?? this.finished),
     failure: clearFailure || clearSession ? null : (failure ?? this.failure),
@@ -268,6 +363,17 @@ class SessionState extends Equatable {
         ? null
         : (errorDetail ?? this.errorDetail),
     keepAwake: keepAwake ?? this.keepAwake,
+    stumbled: stumbled ?? this.stumbled,
+    gradeOffer: clearGradeOffer ? null : (gradeOffer ?? this.gradeOffer),
+    sleepAt: clearSleep ? null : (sleepAt ?? this.sleepAt),
+    sleepAtEndOfStep: clearSleep
+        ? false
+        : (sleepAtEndOfStep ?? this.sleepAtEndOfStep),
+    tasmee: tasmee ?? this.tasmee,
+    tasmeeMarks: tasmeeMarks ?? this.tasmeeMarks,
+    resumeOffer: clearResumeOffer ? null : (resumeOffer ?? this.resumeOffer),
+    presetKey: presetKey ?? this.presetKey,
+    presetWay: presetWay ?? this.presetWay,
   );
 
   @override
@@ -287,10 +393,21 @@ class SessionState extends Equatable {
     activePlan,
     activeReciter,
     currentUnit,
+    recalling,
+    recallGap,
     playing,
     finished,
     failure,
     errorDetail,
     keepAwake,
+    stumbled,
+    gradeOffer,
+    sleepAt,
+    sleepAtEndOfStep,
+    tasmee,
+    tasmeeMarks,
+    resumeOffer,
+    presetKey,
+    presetWay,
   ];
 }
